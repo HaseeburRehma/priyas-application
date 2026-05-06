@@ -1,0 +1,205 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =============================================================================
+   Design tokens — keep these in lockstep with the HTML prototypes.
+   Tailwind's `theme.extend` (see tailwind.config.ts) reads these variables,
+   so editing here cascades through every utility class.
+   ========================================================================= */
+:root {
+  /* Brand */
+  --primary-50: #eef5e8;
+  --primary-100: #d9e9c8;
+  --primary-200: #bfdaa4;
+  --primary-300: #a4ca7f;
+  --primary-500: #72a94f;
+  --primary-600: #5d8e3f;
+  --primary-700: #487030;
+  --primary-800: #345321;
+
+  --secondary-50: #e5eef3;
+  --secondary-100: #bfd4e0;
+  --secondary-500: #16587c;
+  --secondary-600: #124a68;
+  --secondary-700: #0f3c54;
+  --secondary-800: #0b2d40;
+  --secondary-900: #081f2c;
+
+  --accent-100: #e1eecf;
+  --accent-300: #bed999;
+  --accent-500: #a8cc87;
+  --accent-600: #8bb06b;
+
+  --tertiary-200: #f2ffea;
+
+  /* Semantic */
+  --success-50: #e8f7ef;
+  --success-500: #2d9e6b;
+  --success-700: #1f6e4a;
+
+  --warning-50: #fdefe5;
+  --warning-500: #f4a261;
+  --warning-700: #b36f3a;
+
+  --error-50: #fce7e9;
+  --error-100: #fbd4d7;
+  --error-500: #e63946;
+  --error-700: #a32933;
+
+  --info-50: #e5eef3;
+  --info-500: #16587c;
+
+  --white: #ffffff;
+
+  /* Neutrals */
+  --neutral-50: #f8faf7;
+  --neutral-100: #eef2ec;
+  --neutral-200: #dde3da;
+  --neutral-300: #c3ccbe;
+  --neutral-400: #9da898;
+  --neutral-500: #78857a;
+  --neutral-600: #5a6659;
+  --neutral-700: #414b40;
+  --neutral-800: #2a322a;
+  --neutral-900: #141814;
+
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(20, 24, 20, 0.04);
+  --shadow-sm:
+    0 2px 4px rgba(20, 24, 20, 0.06), 0 1px 2px rgba(20, 24, 20, 0.04);
+  --shadow-md:
+    0 4px 10px rgba(20, 24, 20, 0.08), 0 2px 4px rgba(20, 24, 20, 0.04);
+  --shadow-lg:
+    0 10px 25px rgba(20, 24, 20, 0.1), 0 4px 10px rgba(20, 24, 20, 0.05);
+  --shadow-focus: 0 0 0 3px rgba(114, 169, 79, 0.25);
+}
+
+/* =============================================================================
+   Base
+   ========================================================================= */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    @apply bg-tertiary-200 text-neutral-800 antialiased;
+    /*
+     * Inter handles Latin/Cyrillic/Greek; Noto Sans Tamil covers தமிழ்
+     * glyphs that Inter is missing. Browsers walk the stack per-character.
+     */
+    font-family:
+      var(--font-inter, "Inter"), var(--font-noto-tamil, "Noto Sans Tamil"),
+      system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  :lang(ta) {
+    /* Slightly larger line-height for Tamil to give descenders room. */
+    line-height: 1.6;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  button {
+    font-family: inherit;
+    cursor: pointer;
+  }
+  /* Focus ring respecting the brand */
+  :where(button, a, input, select, textarea):focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+    border-radius: var(--radius-sm);
+  }
+}
+
+/* =============================================================================
+   Component primitives — these mirror the patterns repeated across the HTML
+   prototypes. Keep them lightweight; reach for Tailwind utilities first.
+   ========================================================================= */
+@layer components {
+  /* Buttons --------------------------------------------------------------- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2.5 text-[13px] font-semibold transition;
+    min-height: 40px;
+    letter-spacing: -0.005em;
+  }
+  .btn--primary {
+    @apply bg-primary-500 text-white;
+  }
+  .btn--primary:hover {
+    @apply bg-primary-600 shadow-md;
+  }
+  .btn--primary:active {
+    @apply bg-primary-700;
+  }
+  .btn--tertiary {
+    @apply border-[1.5px] border-primary-500 bg-white text-primary-600;
+  }
+  .btn--tertiary:hover {
+    @apply bg-tertiary-200;
+  }
+  .btn--ghost {
+    @apply text-neutral-600;
+  }
+  .btn--ghost:hover {
+    @apply bg-neutral-100 text-neutral-800;
+  }
+  .btn--danger {
+    @apply bg-error-500 text-white;
+  }
+  .btn--danger:hover {
+    @apply bg-error-700;
+  }
+
+  /* Inputs ---------------------------------------------------------------- */
+  .input {
+    @apply w-full rounded-sm border-[1.5px] border-neutral-200 bg-white px-3.5 py-3 text-[14px] text-neutral-800 transition;
+    min-height: 48px;
+  }
+  .input:focus {
+    @apply border-primary-500 outline-none;
+    box-shadow: var(--shadow-focus);
+  }
+  .input::placeholder {
+    @apply text-neutral-400;
+  }
+
+  /* Cards ----------------------------------------------------------------- */
+  .card {
+    @apply rounded-lg border border-neutral-100 bg-white shadow-xs;
+  }
+  .card-pad {
+    @apply p-5;
+  }
+}
+
+/* =============================================================================
+   Utility helpers
+   ========================================================================= */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--neutral-300);
+  border-radius: 999px;
+}
