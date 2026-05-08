@@ -42,7 +42,7 @@ export function AuthBrandPanel() {
             Priya's Reinigungsservice
           </div>
           <div className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-accent-300">
-            Betrieb Platform
+            {t("brandSubtitle")}
           </div>
         </div>
       </div>
@@ -94,13 +94,13 @@ export function AuthBrandPanel() {
       </div>
 
       <div className="relative z-10 flex items-center justify-between text-[12px] text-white/55">
-        <div>© 2026 Priya's Reinigungsservice</div>
+        <div>{t("brandCopyright")}</div>
         <div className="space-x-1">
-          <a className="hover:text-white" href="#">Datenschutz</a>
+          <a className="hover:text-white" href="#">{t("brandFooterPrivacy")}</a>
           <span>·</span>
-          <a className="hover:text-white" href="#">AGB</a>
+          <a className="hover:text-white" href="#">{t("brandFooterTerms")}</a>
           <span>·</span>
-          <a className="hover:text-white" href="#">Support</a>
+          <a className="hover:text-white" href="#">{t("brandFooterSupport")}</a>
         </div>
       </div>
     </aside>

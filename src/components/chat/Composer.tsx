@@ -23,7 +23,8 @@ type Props = {
 };
 
 type PendingAttachment = ChatAttachment & {
-  /** Local object URL for previewing before upload completes (image/audio). */
+  /** Local object URL for previewing before upload completes
+   *  (image/audio/video). */
   previewUrl?: string;
 };
 
@@ -68,9 +69,10 @@ export function Composer({ channelId, orgId, onSend, disabled }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function classifyKind(mime: string): "image" | "audio" | "file" {
+  function classifyKind(mime: string): "image" | "audio" | "video" | "file" {
     if (mime.startsWith("image/")) return "image";
     if (mime.startsWith("audio/")) return "audio";
+    if (mime.startsWith("video/")) return "video";
     return "file";
   }
 
@@ -105,7 +107,9 @@ export function Composer({ channelId, orgId, onSend, disabled }: Props) {
     try {
       for (const file of Array.from(list)) {
         const previewUrl =
-          file.type.startsWith("image/") || file.type.startsWith("audio/")
+          file.type.startsWith("image/") ||
+          file.type.startsWith("audio/") ||
+          file.type.startsWith("video/")
             ? URL.createObjectURL(file)
             : undefined;
         const att = await uploadOne(file, file.name, file.type || "application/octet-stream");
@@ -241,7 +245,10 @@ export function Composer({ channelId, orgId, onSend, disabled }: Props) {
         <input
           ref={fileRef}
           type="file"
-          accept="image/*,audio/*,application/pdf"
+          // Spec §4.6 — chat supports text, photos, voice, plus arbitrary
+          // attachments. Add video/* and documents so field staff can
+          // share clips and PDFs without falling back to email.
+          accept="image/*,audio/*,video/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
           multiple
           hidden
           onChange={(e) => handleFiles(e.target.files)}
@@ -366,6 +373,19 @@ function PendingChip({
     return (
       <div className="relative flex items-center gap-2 rounded-md border border-neutral-200 bg-neutral-50 px-2 py-1">
         <audio src={attachment.previewUrl} controls className="h-8" />
+        <RemoveButton onRemove={onRemove} />
+      </div>
+    );
+  }
+  if (attachment.kind === "video" && attachment.previewUrl) {
+    return (
+      <div className="relative h-20 w-32 overflow-hidden rounded-md border border-neutral-200 bg-black">
+        <video
+          src={attachment.previewUrl}
+          muted
+          playsInline
+          className="h-full w-full object-cover"
+        />
         <RemoveButton onRemove={onRemove} />
       </div>
     );

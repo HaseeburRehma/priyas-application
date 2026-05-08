@@ -2,11 +2,10 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { format } from "date-fns";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
-import { formatEUR } from "@/lib/utils/format";
+import { useFormat } from "@/lib/utils/i18n-format";
 import type { StatementData } from "@/lib/api/statement";
 
 type Props = { data: StatementData };
@@ -21,6 +20,8 @@ export function ClientStatement({ data }: Props) {
   const tSide = useTranslations("statement.side");
   const tSum = useTranslations("statement.summary");
   const tActions = useTranslations("statement.actions");
+  const f = useFormat();
+  const formatEUR = (cents: number) => f.currencyCents(cents);
   const [tab, setTab] = useState<(typeof TABS)[number]>("statement");
 
   const filtered = useMemo(() => {
@@ -157,7 +158,7 @@ export function ClientStatement({ data }: Props) {
                 {withBalance.map((e) => (
                   <tr key={e.id} className="border-b border-neutral-100 last:border-b-0">
                     <td className="px-5 py-3 align-middle font-mono text-[12px] text-neutral-600">
-                      {format(new Date(e.date), "yyyy-MM-dd")}
+                      {f.date(e.date)}
                     </td>
                     <td className="px-5 py-3 align-middle font-mono text-[12px] font-semibold text-secondary-500">
                       {e.ref}

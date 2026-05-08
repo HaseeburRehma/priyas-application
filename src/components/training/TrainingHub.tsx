@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { useFormat } from "@/lib/utils/i18n-format";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
 import {
@@ -15,14 +15,18 @@ import {
   upsertTrainingModuleAction,
 } from "@/app/actions/training";
 import type {
+  AssignableEmployee,
   TrainingAssignment,
   TrainingHubData,
   TrainingModule,
 } from "@/lib/api/training";
+import { SignaturePad } from "@/components/onboarding/SignaturePad";
+import { useTrainingRealtime } from "@/hooks/training/useTrainingRealtime";
 
 type Props = TrainingHubData;
 
 export function TrainingHub({
+  myEmployeeId,
   canManage,
   modules,
   progress,
@@ -35,6 +39,15 @@ export function TrainingHub({
   const [editor, setEditor] = useState<TrainingModule | "new" | null>(null);
   const [assignFor, setAssignFor] = useState<TrainingModule | null>(null);
   const [active, setActive] = useState<TrainingModule | null>(modules[0] ?? null);
+  // When a mandatory module is being completed, hold the signing dialog
+  // until the user actually signs. Non-mandatory modules complete in one
+  // click as before.
+  const [signingFor, setSigningFor] = useState<TrainingModule | null>(null);
+
+  // Subscribe to training-assignment / progress / module realtime events
+  // so the page reflects assignments and completions without a manual
+  // reload. See src/hooks/training/useTrainingRealtime.ts for the scope.
+  useTrainingRealtime({ myEmployeeId, canManage });
 
   const stats = useMemo(() => {
     const total = modules.length;
@@ -49,6 +62,16 @@ export function TrainingHub({
   }, [modules, progress]);
 
   function setProgress(moduleId: string, state: "start" | "complete" | "reset") {
+    // Intercept "complete" for mandatory modules — spec §4.9 requires a
+    // digital signature on mandatory-module sign-off. Open the SignDialog
+    // and let it call this function back with the SVG attached.
+    if (state === "complete") {
+      const m = modules.find((x) => x.id === moduleId);
+      if (m?.is_mandatory && !signingFor) {
+        setSigningFor(m);
+        return;
+      }
+    }
     start(async () => {
       const r = await updateTrainingProgressAction({
         module_id: moduleId,
@@ -65,6 +88,24 @@ export function TrainingHub({
             ? t("toastReset")
             : t("toastStarted"),
       );
+      router.refresh();
+    });
+  }
+
+  /** Called by the SignDialog after the user has signed. */
+  function completeWithSignature(moduleId: string, signatureSvg: string) {
+    start(async () => {
+      const r = await updateTrainingProgressAction({
+        module_id: moduleId,
+        state: "complete",
+        signature_svg: signatureSvg,
+      });
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      toast.success(t("completedWithSignature"));
+      setSigningFor(null);
       router.refresh();
     });
   }
@@ -237,6 +278,15 @@ export function TrainingHub({
           }}
         />
       )}
+
+      {signingFor && (
+        <SignDialog
+          module={signingFor}
+          pending={pending}
+          onClose={() => setSigningFor(null)}
+          onSign={(svg) => completeWithSignature(signingFor.id, svg)}
+        />
+      )}
     </>
   );
 }
@@ -295,6 +345,7 @@ function ModuleView({
   onDelete: () => void;
 }) {
   const t = useTranslations("training");
+  const f = useFormat();
   const completed = !!progress?.completed_at;
   const started = !!progress?.started_at;
 
@@ -388,12 +439,12 @@ function ModuleView({
                 <span className="font-semibold text-success-700">
                   ✓ {t("completedOn")}
                 </span>{" "}
-                {format(new Date(progress!.completed_at!), "yyyy-MM-dd HH:mm")}
+                {f.dateTime(progress!.completed_at!)}
               </>
             ) : started ? (
               <>
                 {t("startedOn")}{" "}
-                {format(new Date(progress!.started_at!), "yyyy-MM-dd HH:mm")}
+                {f.dateTime(progress!.started_at!)}
               </>
             ) : (
               t("notStartedYet")
@@ -611,7 +662,7 @@ function AssignmentEditor({
   onSaved,
 }: {
   module: TrainingModule;
-  employees: Array<{ id: string; full_name: string }>;
+  employees: AssignableEmployee[];
   existing: Record<string, TrainingAssignment>;
   onClose: () => void;
   onSaved: () => void;
@@ -653,7 +704,18 @@ function AssignmentEditor({
         toast.error(r.error);
         return;
       }
-      toast.success(t("saved"));
+      // Surface the notification fan-out result so the manager knows
+      // whether the assigned employees actually got pinged. Skipped
+      // employees (no profile_id) get an info-toast — the row is
+      // saved, but the employee won't see an in-app prompt.
+      if (r.data.notified > 0) {
+        toast.success(t("savedWithNotify", { n: r.data.notified }));
+      } else {
+        toast.success(t("saved"));
+      }
+      if (r.data.skippedNoProfile > 0) {
+        toast.message(t("skippedNoProfile", { n: r.data.skippedNoProfile }));
+      }
       onSaved();
     });
   }
@@ -718,7 +780,7 @@ function AssignmentEditor({
           <div className="max-h-[280px] overflow-y-auto rounded-md border border-neutral-100">
             {filteredEmployees.length === 0 ? (
               <div className="p-4 text-center text-[12px] text-neutral-500">
-                {t("empty")}
+                {employees.length === 0 ? t("noEmployees") : t("empty")}
               </div>
             ) : (
               <ul>
@@ -733,8 +795,28 @@ function AssignmentEditor({
                           onChange={() => toggle(e.id)}
                           className="h-4 w-4"
                         />
-                        <span className="text-[13px] text-neutral-800">
-                          {e.full_name}
+                        <span className="flex flex-1 items-center gap-2 text-[13px] text-neutral-800">
+                          <span className="truncate">{e.full_name}</span>
+                          {e.status !== "active" && (
+                            <span
+                              className={cn(
+                                "rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase",
+                                e.status === "on_leave"
+                                  ? "bg-warning-50 text-warning-700"
+                                  : "bg-neutral-100 text-neutral-600",
+                              )}
+                            >
+                              {t(`statusBadge.${e.status}` as never)}
+                            </span>
+                          )}
+                          {!e.has_profile && (
+                            <span
+                              title={t("noProfileTooltip")}
+                              className="rounded-full bg-neutral-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-neutral-500"
+                            >
+                              {t("noProfileBadge")}
+                            </span>
+                          )}
                         </span>
                       </label>
                     </li>
@@ -763,6 +845,85 @@ function AssignmentEditor({
             className="btn btn--primary"
           >
             {pending ? "…" : t("save")}
+          </button>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Mandatory-module completion gate. Shows a SignaturePad and forwards the
+ * captured SVG to the parent. Persisted via training_progress.signature_svg
+ * (migration 000025). Spec §4.9 calls for "digital confirmation and
+ * signature upon onboarding completion".
+ */
+function SignDialog({
+  module: m,
+  pending,
+  onClose,
+  onSign,
+}: {
+  module: TrainingModule;
+  pending: boolean;
+  onClose: () => void;
+  onSign: (svg: string) => void;
+}) {
+  const t = useTranslations("training");
+  const [svg, setSvg] = useState<string | null>(null);
+
+  function submit() {
+    if (!svg) {
+      toast.error(t("signatureRequired"));
+      return;
+    }
+    onSign(svg);
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
+      onClick={() => !pending && onClose()}
+    >
+      <div
+        className="w-full max-w-[560px] rounded-lg bg-white shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="border-b border-neutral-100 p-5">
+          <h3 className="text-[16px] font-semibold text-neutral-800">
+            {t("completeWithSignatureTitle")}
+          </h3>
+          <p className="mt-1 text-[12px] leading-[1.5] text-neutral-500">
+            {t("completeWithSignatureBody")}
+          </p>
+          <p className="mt-2 text-[12px] font-medium text-neutral-700">
+            {m.title}
+          </p>
+        </header>
+        <div className="p-5">
+          <SignaturePad height={200} onChange={setSvg} />
+        </div>
+        <footer className="flex justify-end gap-2 border-t border-neutral-100 p-4">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={pending}
+            className="btn btn--ghost border border-neutral-200"
+          >
+            {t("editor.cancel")}
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={pending || !svg}
+            className={cn(
+              "btn btn--primary",
+              (pending || !svg) && "opacity-80",
+            )}
+          >
+            {pending ? "…" : t("completeAndSign")}
           </button>
         </footer>
       </div>

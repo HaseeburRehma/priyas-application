@@ -9,6 +9,7 @@ import { usePresence } from "@/hooks/chat/usePresence";
 import { ChannelList } from "./ChannelList";
 import { ChatThread } from "./ChatThread";
 import { ChannelInfoPanel } from "./ChannelInfoPanel";
+import { NewChannelDialog } from "./NewChannelDialog";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { routes } from "@/lib/constants/routes";
 import type { Channel } from "@/types/chat";
@@ -34,6 +35,10 @@ export function ChatPage({ selectedChannelId }: Props) {
   const { data: channels = [] } = useChannels();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [orgId, setOrgId] = useState<string | null>(null);
+  // Drives the "New channel" dialog. The dialog itself talks to
+  // chat-channels actions and refreshes useChannels via TanStack
+  // invalidation, so the new room shows up in the list automatically.
+  const [newChannelOpen, setNewChannelOpen] = useState(false);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -105,7 +110,11 @@ export function ChatPage({ selectedChannelId }: Props) {
               </svg>
               {t("history")}
             </button>
-            <button type="button" className="btn btn--primary">
+            <button
+              type="button"
+              onClick={() => setNewChannelOpen(true)}
+              className="btn btn--primary"
+            >
               <svg
                 aria-hidden
                 viewBox="0 0 24 24"
@@ -195,6 +204,12 @@ export function ChatPage({ selectedChannelId }: Props) {
           </div>
         )}
       </div>
+
+      <NewChannelDialog
+        mode="channel"
+        open={newChannelOpen}
+        onClose={() => setNewChannelOpen(false)}
+      />
     </div>
   );
 }

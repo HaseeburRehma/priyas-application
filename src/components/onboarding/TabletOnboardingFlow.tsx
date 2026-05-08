@@ -1,17 +1,27 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
 import { onboardClientAction } from "@/app/actions/onboarding";
+import { recordPropertyPhotoAction } from "@/app/actions/property-photos";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import {
+  compressImage,
+  enforcePhotoCap,
+  MAX_PHOTOS_PER_ASSIGNMENT,
+} from "@/lib/utils/image";
 import { SignaturePad } from "./SignaturePad";
 
 type CustomerType = "residential" | "commercial" | "alltagshilfe";
 
-const STEPS = ["type", "client", "address", "service", "review"] as const;
+// Spec §4.10 — "Photo documentation of the property during the first visit."
+// We add a Photos step between Service and Review so the on-site PM can
+// capture initial state without leaving the wizard.
+const STEPS = ["type", "client", "address", "service", "photos", "review"] as const;
 type Step = (typeof STEPS)[number];
 
 export function TabletOnboardingFlow() {
@@ -59,6 +69,20 @@ export function TabletOnboardingFlow() {
     svg: null,
     consent: false,
   });
+  // Files captured by the camera/file picker — uploaded after the action
+  // succeeds and we have a property_id.
+  const [photos, setPhotos] = useState<File[]>([]);
+  // Object URLs for previews. Re-created when `photos` changes; cleaned
+  // up on unmount.
+  const photoPreviews = useMemo(
+    () => photos.map((f) => URL.createObjectURL(f)),
+    [photos],
+  );
+  useEffect(() => {
+    return () => {
+      for (const url of photoPreviews) URL.revokeObjectURL(url);
+    };
+  }, [photoPreviews]);
 
   const stepIndex = STEPS.indexOf(step);
   const canNext = useMemo(() => {
@@ -78,6 +102,7 @@ export function TabletOnboardingFlow() {
       return true;
     }
     if (step === "service") return true;
+    if (step === "photos") return true; // photos step is optional
     if (step === "review") {
       return (
         !!signature.signed_by_name.trim() &&
@@ -159,6 +184,45 @@ export function TabletOnboardingFlow() {
         toast.error(r.error);
         return;
       }
+
+      // Spec §4.10 — upload any photos the user captured against the
+      // freshly-created property. Best-effort: a partial photo upload
+      // doesn't block the client-record creation that already succeeded.
+      if (photos.length > 0 && r.data.property_id) {
+        const supabase = createSupabaseBrowserClient();
+        let failed = 0;
+        for (const original of photos) {
+          try {
+            const file = await compressImage(original);
+            const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+            const path = `${r.data.org_id}/${r.data.property_id}/${Date.now()}-${Math.random()
+              .toString(16)
+              .slice(2, 8)}.${ext}`;
+            const { error: upErr } = await supabase.storage
+              .from("property-photos")
+              .upload(path, file, {
+                upsert: false,
+                contentType: file.type,
+              });
+            if (upErr) {
+              failed += 1;
+              continue;
+            }
+            const recRes = await recordPropertyPhotoAction({
+              property_id: r.data.property_id,
+              storage_path: path,
+              caption: "",
+            });
+            if (!recRes.ok) failed += 1;
+          } catch {
+            failed += 1;
+          }
+        }
+        if (failed > 0) {
+          toast.error(t("photos.someFailed", { n: failed }));
+        }
+      }
+
       toast.success(t("success.toast"));
       router.replace(routes.onboardSuccess);
       router.refresh();
@@ -173,8 +237,12 @@ export function TabletOnboardingFlow() {
             {t("kioskTag")}
           </h1>
         </div>
-        {/* Stepper */}
-        <ol className="mb-7 grid grid-cols-5 gap-2">
+        {/* Stepper — column count tracks STEPS.length so adding/removing
+            a step doesn't desync the layout. */}
+        <ol
+          className="mb-7 grid gap-2"
+          style={{ gridTemplateColumns: `repeat(${STEPS.length}, minmax(0, 1fr))` }}
+        >
           {STEPS.map((s, i) => {
             const done = i < stepIndex;
             const active = s === step;
@@ -227,6 +295,28 @@ export function TabletOnboardingFlow() {
           )}
           {step === "service" && (
             <StepService value={service} onChange={setService} />
+          )}
+          {step === "photos" && (
+            <StepPhotos
+              files={photos}
+              previews={photoPreviews}
+              onAdd={(incoming) => {
+                const { kept, dropped } = enforcePhotoCap(
+                  photos,
+                  incoming,
+                  MAX_PHOTOS_PER_ASSIGNMENT,
+                );
+                if (dropped > 0) {
+                  toast.error(t("photos.limitReached", { dropped }));
+                }
+                if (kept.length > 0) {
+                  setPhotos((prev) => [...prev, ...kept]);
+                }
+              }}
+              onRemove={(idx) =>
+                setPhotos((prev) => prev.filter((_, i) => i !== idx))
+              }
+            />
           )}
           {step === "review" && (
             <StepReview
@@ -623,6 +713,144 @@ function StepService({
           />
         </Field>
       </div>
+    </div>
+  );
+}
+
+function StepPhotos({
+  files,
+  previews,
+  onAdd,
+  onRemove,
+}: {
+  files: File[];
+  previews: string[];
+  onAdd: (files: File[]) => void;
+  onRemove: (idx: number) => void;
+}) {
+  const t = useTranslations("onboarding.photos");
+  const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+
+  function handlePicked(list: FileList | null, source: "library" | "camera") {
+    if (!list || list.length === 0) return;
+    onAdd(Array.from(list));
+    // Allow re-picking the same file again later.
+    if (source === "library" && fileRef.current) fileRef.current.value = "";
+    if (source === "camera" && cameraRef.current) cameraRef.current.value = "";
+  }
+
+  return (
+    <div>
+      <h2 className="mb-1 text-[22px] font-bold text-secondary-500">
+        {t("title")}
+      </h2>
+      <p className="mb-2 text-[13px] text-neutral-500">{t("subtitle")}</p>
+      <p className="mb-6 text-[12px] text-neutral-400">
+        {t("optional", {
+          max: MAX_PHOTOS_PER_ASSIGNMENT,
+          n: files.length,
+        })}
+      </p>
+
+      {/* Upload triggers — separate inputs so iPad/iPhone Safari shows
+          the "Take Photo" sheet for the camera button and the
+          file-picker sheet for the library button. */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        onChange={(e) => handlePicked(e.target.files, "library")}
+      />
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+        onChange={(e) => handlePicked(e.target.files, "camera")}
+      />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => cameraRef.current?.click()}
+          disabled={files.length >= MAX_PHOTOS_PER_ASSIGNMENT}
+          className={cn(
+            "btn btn--primary",
+            files.length >= MAX_PHOTOS_PER_ASSIGNMENT && "opacity-60",
+          )}
+          style={{ minHeight: 56 }}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-5 w-5"
+          >
+            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+            <circle cx={12} cy={13} r={4} />
+          </svg>
+          {t("takePhoto")}
+        </button>
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={files.length >= MAX_PHOTOS_PER_ASSIGNMENT}
+          className={cn(
+            "btn btn--tertiary",
+            files.length >= MAX_PHOTOS_PER_ASSIGNMENT && "opacity-60",
+          )}
+          style={{ minHeight: 56 }}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-5 w-5"
+          >
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5-5 5 5M12 5v12" />
+          </svg>
+          {t("fromLibrary")}
+        </button>
+      </div>
+
+      {/* Thumbnails grid */}
+      {files.length > 0 && (
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          {files.map((f, i) => (
+            <figure
+              key={`${f.name}-${i}`}
+              className="group relative overflow-hidden rounded-md border border-neutral-200 bg-neutral-50"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previews[i] ?? ""}
+                alt=""
+                className="h-32 w-full object-cover"
+              />
+              <button
+                type="button"
+                aria-label={t("removePhoto")}
+                onClick={() => onRemove(i)}
+                className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-md bg-white/90 text-neutral-500 shadow-sm transition hover:text-error-700"
+              >
+                <span aria-hidden>✕</span>
+              </button>
+              <figcaption className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1 text-[10px] text-white">
+                {(f.size / 1024).toFixed(0)} KB
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

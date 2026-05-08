@@ -1,26 +1,55 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { canReachRoute } from "@/lib/rbac/permissions";
+import { canReachRoute, getCurrentRole } from "@/lib/rbac/permissions";
 import { format } from "date-fns";
 
 /**
  * Working-time report — CSV export of every check-in/check-out pair for
- * one calendar month. Used by management for payroll + invoicing audits.
+ * one calendar month.
  *
  *   GET /api/reports/working-time?month=YYYY-MM&employee=<uuid>
  *
- * Without `?employee=` the report covers the whole org.
+ * Two access patterns are allowed:
+ *   1. Managers (admin/dispatcher): can request any employee or the
+ *      whole org (no ?employee= filter).
+ *   2. Field staff: can request *their own* hours by supplying their
+ *      own employee_id (the one linked to their auth profile). Used
+ *      by the "My hours" widget on the dashboard.
+ *
+ * Anyone else gets 403.
  */
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  if (!(await canReachRoute("reports"))) {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  }
   const url = new URL(request.url);
   const month =
     url.searchParams.get("month") ?? format(new Date(), "yyyy-MM");
   const employee = url.searchParams.get("employee");
+
+  // Manager access — full latitude.
+  const isManager = await canReachRoute("reports");
+  if (!isManager) {
+    // Field-staff path: the request must scope to the caller's own
+    // employee_id. Look up the employees row linked to the current
+    // auth profile and reject if the ?employee= param doesn't match.
+    if (!employee) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+    const { userId } = await getCurrentRole();
+    if (!userId) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+    const supabase = await createSupabaseServerClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: emp } = await ((supabase.from("employees") as any))
+      .select("id")
+      .eq("profile_id", userId)
+      .maybeSingle();
+    const ownEmpId = (emp as { id: string } | null)?.id ?? null;
+    if (ownEmpId !== employee) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+  }
 
   // Compute month bounds.
   const monthStart = new Date(`${month}-01T00:00:00.000Z`);

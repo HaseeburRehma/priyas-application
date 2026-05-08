@@ -100,8 +100,25 @@ export function useMessages(channelId: string | null, limit = 100) {
           const [hydrated] = await hydrateSenders([incoming]);
           if (!hydrated) return;
           setMessages((prev) => {
-            // De-dupe in case our optimistic message lost the race.
+            // De-dupe by real id (realtime arrived after the insert
+            // response already swapped the optimistic placeholder).
             if (prev.some((m) => m.id === hydrated.id)) return prev;
+
+            // Also collapse any pending `temp-` placeholder from the
+            // same user with the same body — that's our own
+            // optimistic that hasn't been swapped yet because the
+            // realtime event won the race.
+            const tempIdx = prev.findIndex(
+              (m) =>
+                m.id.startsWith("temp-") &&
+                m.user_id === hydrated.user_id &&
+                (m.body ?? "") === (hydrated.body ?? ""),
+            );
+            if (tempIdx >= 0) {
+              const next = prev.slice();
+              next[tempIdx] = hydrated;
+              return next;
+            }
             return [...prev, hydrated];
           });
         },
@@ -118,5 +135,30 @@ export function useMessages(channelId: string | null, limit = 100) {
     setMessages((prev) => [...prev, m]);
   }, []);
 
-  return { messages, loading, error, append };
+  /**
+   * Replace the temp- placeholder produced by `append()` with the
+   * persisted row once the insert resolves. Fixes the "send one,
+   * see two" duplication where the optimistic and the realtime
+   * arrival had different ids and both stayed in state.
+   */
+  const replace = useCallback(
+    async (tempId: string, real: Message) => {
+      const [hydrated] = await hydrateSenders([real]);
+      const final = hydrated ?? real;
+      setMessages((prev) => {
+        const idx = prev.findIndex((m) => m.id === tempId);
+        if (idx < 0) {
+          // Already swapped (realtime won) — just ensure we have it.
+          if (prev.some((m) => m.id === final.id)) return prev;
+          return [...prev, final];
+        }
+        const next = prev.slice();
+        next[idx] = final;
+        return next;
+      });
+    },
+    [hydrateSenders],
+  );
+
+  return { messages, loading, error, append, replace };
 }

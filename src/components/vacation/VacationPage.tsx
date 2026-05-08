@@ -4,10 +4,10 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
+import { useFormat } from "@/lib/utils/i18n-format";
 import {
   cancelVacationRequestAction,
   createVacationRequestAction,
@@ -42,6 +42,7 @@ export function VacationPage({ data }: Props) {
   const tTabs = useTranslations("vacation.tabs");
   const tTable = useTranslations("vacation.table");
   const router = useRouter();
+  const f = useFormat();
   const [tab, setTab] = useState<"all" | VacationStatus>("all");
   const [formOpen, setFormOpen] = useState(false);
   const [pending, start] = useTransition();
@@ -209,9 +210,9 @@ export function VacationPage({ data }: Props) {
                     {r.employee_name}
                   </td>
                   <td className="px-5 py-3 align-middle font-mono text-[12px] text-neutral-700">
-                    {format(new Date(r.start_date), "yyyy-MM-dd")}
+                    {f.date(r.start_date)}
                     {" – "}
-                    {format(new Date(r.end_date), "yyyy-MM-dd")}
+                    {f.date(r.end_date)}
                   </td>
                   <td className="px-5 py-3 text-right align-middle font-mono text-[13px] font-semibold text-secondary-500">
                     {r.days}
@@ -383,9 +384,10 @@ function RequestForm({
           <button
             type="button"
             onClick={onClose}
+            aria-label={tPage("cancel")}
             className="grid h-8 w-8 place-items-center rounded-md text-neutral-400 hover:bg-neutral-50"
           >
-            ✕
+            <span aria-hidden>✕</span>
           </button>
         </header>
         <form onSubmit={submit} className="overflow-y-auto" noValidate>

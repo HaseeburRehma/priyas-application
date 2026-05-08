@@ -51,10 +51,40 @@ export default defineConfig({
     timezoneId: "Europe/Berlin",
   },
 
+  /**
+   * Browser matrix per spec §8 (Chrome 90+, Safari 15+, Firefox 90+, Edge 90+).
+   *
+   * Run all three: `npm run test:e2e -- --project=chromium --project=firefox --project=webkit`
+   * Run just one:  `npm run test:e2e -- --project=firefox`
+   *
+   * Edge uses the same engine as Chromium so the chromium project covers
+   * both. To exercise Edge specifically, override the channel:
+   *     `--project=chromium --headed -- --browser=msedge`
+   *
+   * The a11y project is split out so its slower axe-core scans don't run
+   * against every browser by default — running it in chromium is enough
+   * for an a11y-tree assertion since the underlying axe rules don't vary
+   * by browser engine.
+   */
   projects: [
     {
       name: "chromium",
-      testIgnore: ["**/stagehand/**"],
+      testIgnore: ["**/stagehand/**", "**/a11y/**"],
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "firefox",
+      testIgnore: ["**/stagehand/**", "**/a11y/**"],
+      use: { ...devices["Desktop Firefox"] },
+    },
+    {
+      name: "webkit",
+      testIgnore: ["**/stagehand/**", "**/a11y/**"],
+      use: { ...devices["Desktop Safari"] },
+    },
+    {
+      name: "a11y",
+      testMatch: ["**/a11y/**/*.spec.ts"],
       use: { ...devices["Desktop Chrome"] },
     },
     {

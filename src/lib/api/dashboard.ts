@@ -331,20 +331,44 @@ export async function loadDashboardData(): Promise<DashboardData> {
     },
   );
 
-  /* ----- Recent activity (audit_log) ------------------------------------ */
+  /* ----- Recent activity (audit_log + actor profile) -------------------- */
+  // Pull recent audit entries, then resolve actor names in one follow-up
+  // query rather than embedding via PostgREST (audit_log doesn't declare
+  // a foreign key on user_id, so the embedded join would need a hint).
   const { data: auditRows } = await supabase
     .from("audit_log")
-    .select("id, action, table_name, after, created_at")
+    .select("id, action, table_name, record_id, user_id, after, created_at")
     .order("created_at", { ascending: false })
     .limit(8);
-
-  const activities: ActivityEntry[] = ((auditRows ?? []) as Array<{
+  type AuditRow = {
     id: number;
     action: string;
     table_name: string;
+    record_id: string | null;
+    user_id: string | null;
     after: Record<string, unknown> | null;
     created_at: string;
-  }>).map((row) => {
+  };
+  const auditList = (auditRows ?? []) as AuditRow[];
+
+  const actorIds = Array.from(
+    new Set(auditList.map((r) => r.user_id).filter((id): id is string => !!id)),
+  );
+  const actorByProfileId = new Map<string, string>();
+  if (actorIds.length > 0) {
+    const { data: actorRows } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", actorIds);
+    for (const p of (actorRows ?? []) as Array<{
+      id: string;
+      full_name: string | null;
+    }>) {
+      actorByProfileId.set(p.id, p.full_name ?? "");
+    }
+  }
+
+  const activities: ActivityEntry[] = auditList.map((row) => {
     const kind: ActivityEntry["kind"] = row.table_name.includes("invoice")
       ? "invoice"
       : row.table_name === "time_entries"
@@ -355,27 +379,43 @@ export async function loadDashboardData(): Promise<DashboardData> {
     return {
       id: String(row.id),
       kind,
-      body: typeof row.after?.message === "string"
-        ? row.after.message
-        : `${row.action} · ${row.table_name}`,
-      meta: typeof row.after?.meta === "string" ? row.after.meta : "—",
+      body:
+        typeof row.after?.message === "string"
+          ? row.after.message
+          : `${row.action} · ${row.table_name}`,
+      actorName: row.user_id
+        ? (actorByProfileId.get(row.user_id) ?? null)
+        : null,
+      table: row.table_name,
+      recordId: row.record_id,
       createdAt: row.created_at,
     };
   });
 
   /* ----- Team utilization ----------------------------------------------- */
-  // Hours scheduled this week per employee, divided by their target (weekly_hours).
+  // Hours scheduled this week per employee, divided by their target.
+  // Now joins through profiles so the role chip is real ("pm" vs "field"
+  // vs "trainee") and the list is sorted by utilization desc instead of
+  // by row index. Limited to top 6 so the panel stays compact.
   const { data: empRows } = await supabase
     .from("employees")
-    .select("id, full_name, weekly_hours, status")
+    .select(
+      `id, full_name, weekly_hours, status,
+       profile:profiles ( id, role )`,
+    )
     .is("deleted_at", null)
     .eq("status", "active");
-  const employees = (empRows ?? []) as Array<{
+  type EmployeeRow = {
     id: string;
     full_name: string;
     weekly_hours: number | null;
     status: string;
-  }>;
+    profile: {
+      id: string;
+      role: "admin" | "dispatcher" | "employee" | null;
+    } | null;
+  };
+  const employees = (empRows ?? []) as unknown as EmployeeRow[];
 
   const { data: weekShiftsForLoad } = await supabase
     .from("shifts")
@@ -397,20 +437,35 @@ export async function loadDashboardData(): Promise<DashboardData> {
     hoursByEmp.set(s.employee_id, (hoursByEmp.get(s.employee_id) ?? 0) + h);
   }
 
-  const teamLoad: TeamLoad[] = employees.slice(0, 6).map((e, idx) => {
-    const hours = hoursByEmp.get(e.id) ?? 0;
-    const target = e.weekly_hours ?? 40;
-    const pct = Math.min(100, Math.round((hours / target) * 100));
-    const tone = TONES[idx % TONES.length] ?? "primary";
-    return {
-      id: e.id,
-      name: e.full_name,
-      role: idx === 0 ? "Team Lead" : "Field Staff",
-      pct,
-      initials: initialsOf(e.full_name),
-      tone,
-    };
-  });
+  // Map profile role → TeamLoad role chip. Mirrors the same mapping the
+  // employees list uses (chipFromProfileRole), kept inline here to
+  // avoid a server↔server import cycle.
+  const roleChipOf = (
+    role: "admin" | "dispatcher" | "employee" | null,
+  ): TeamLoad["role"] => {
+    if (role === "admin" || role === "dispatcher") return "pm";
+    return "field";
+  };
+
+  const teamLoad: TeamLoad[] = employees
+    .map((e, idx): TeamLoad => {
+      const hours = hoursByEmp.get(e.id) ?? 0;
+      const target = e.weekly_hours ?? 40;
+      const pct = Math.min(150, Math.round((hours / target) * 100));
+      const tone = TONES[idx % TONES.length] ?? "primary";
+      return {
+        id: e.id,
+        name: e.full_name,
+        role: roleChipOf(e.profile?.role ?? null),
+        pct,
+        initials: initialsOf(e.full_name),
+        tone,
+        hours: Math.round(hours * 10) / 10,
+        target,
+      };
+    })
+    .sort((a, b) => b.pct - a.pct)
+    .slice(0, 6);
 
   return {
     greetingName,

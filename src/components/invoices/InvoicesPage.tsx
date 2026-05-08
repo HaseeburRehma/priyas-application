@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { format } from "date-fns";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
-import { formatEUR } from "@/lib/utils/format";
+import { useFormat } from "@/lib/utils/i18n-format";
 import { useInvoices } from "@/hooks/invoices/useInvoices";
 import type {
   InvoicesSummary,
@@ -39,6 +38,8 @@ export function InvoicesPage({ summary, canCreate }: Props) {
   const tTable = useTranslations("invoices.table");
   const tSum = useTranslations("invoices.summary");
   const tSide = useTranslations("invoices.side");
+  const f = useFormat();
+  const formatEUR = (cents: number) => f.currencyCents(cents);
 
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<InvoiceStatus | "all">("all");
@@ -76,12 +77,37 @@ export function InvoicesPage({ summary, canCreate }: Props) {
           <p className="text-[13px] text-neutral-500">{t("subtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          <button className="btn btn--ghost border border-neutral-200 bg-white">
+          {/* Import / Export here used to be no-op buttons. The Export
+              link now hits /api/invoices?format=csv (handled in the
+              route below); Import stays parked behind a disabled
+              tooltip until we ship a CSV importer. */}
+          <button
+            type="button"
+            disabled
+            title={t("actions.importComingSoon")}
+            className="btn btn--ghost border border-neutral-200 bg-white opacity-50"
+          >
             {t("actions.import")}
           </button>
-          <button className="btn btn--tertiary">{t("actions.export")}</button>
+          <a
+            href="/api/invoices?format=csv"
+            target="_blank"
+            rel="noopener"
+            className="btn btn--tertiary"
+          >
+            {t("actions.export")}
+          </a>
           {canCreate && (
-            <button className="btn btn--primary">
+            // Invoices are created from time entries via the Lexware
+            // sync flow on each invoice's detail page (or, soon, the
+            // monthly cron). There's no manual "new invoice" form
+            // yet — disable the button rather than ship a dead link.
+            <button
+              type="button"
+              disabled
+              title={t("actions.newComingSoon")}
+              className="btn btn--primary opacity-50"
+            >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
                 <path d="M12 5v14M5 12h14" />
               </svg>
@@ -221,10 +247,10 @@ export function InvoicesPage({ summary, canCreate }: Props) {
                         </Link>
                       </td>
                       <td className="px-5 py-3.5 align-middle font-mono text-[12px] text-neutral-600">
-                        {format(new Date(r.issue_date), "yyyy-MM-dd")}
+                        {f.date(r.issue_date)}
                       </td>
                       <td className="px-5 py-3.5 align-middle font-mono text-[12px] text-neutral-600">
-                        {r.due_date ? format(new Date(r.due_date), "yyyy-MM-dd") : "—"}
+                        {f.date(r.due_date)}
                         {r.days_overdue ? (
                           <span className="ml-2 text-error-700">
                             +{r.days_overdue}d

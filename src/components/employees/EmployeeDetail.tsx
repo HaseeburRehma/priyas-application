@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { format } from "date-fns";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
+import { useFormat } from "@/lib/utils/i18n-format";
 import type { EmployeeDetail as Detail } from "@/lib/api/employees.types";
 import { EmployeeDetailActions } from "./EmployeeDetailActions";
 
@@ -30,6 +30,7 @@ export function EmployeeDetail({
 }) {
   const t = useTranslations("employees.detail");
   const tRole = useTranslations("employees.role");
+  const f = useFormat();
 
   return (
     <>
@@ -76,7 +77,7 @@ export function EmployeeDetail({
               <span>· {detail.team_label}</span>
               {detail.hire_date && (
                 <span>
-                  · {t("statHireDate")}: {format(new Date(detail.hire_date), "yyyy-MM-dd")}
+                  · {t("statHireDate")}: {f.date(detail.hire_date)}
                 </span>
               )}
             </div>
@@ -199,6 +200,7 @@ function Tab({
 
 function UpcomingShiftsCard({ detail }: { detail: Detail }) {
   const t = useTranslations("employees.detail");
+  const f = useFormat();
   return (
     <section className="rounded-lg border border-neutral-100 bg-white">
       <header className="border-b border-neutral-100 p-5">
@@ -218,7 +220,7 @@ function UpcomingShiftsCard({ detail }: { detail: Detail }) {
             className="flex items-center gap-3 border-b border-neutral-100 py-3 last:border-b-0"
           >
             <div className="w-[80px] flex-shrink-0 font-mono text-[12px] font-semibold text-neutral-500">
-              {format(new Date(s.starts_at), "dd. MMM HH:mm")}
+              {f.weekdayShort(s.starts_at)} {f.time(s.starts_at)}
             </div>
             <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full bg-primary-500 ring-[3px] ring-primary-100" />
             <div className="min-w-0 flex-1">
@@ -238,6 +240,7 @@ function UpcomingShiftsCard({ detail }: { detail: Detail }) {
 
 function RecentTimeEntriesCard({ detail }: { detail: Detail }) {
   const t = useTranslations("employees.detail");
+  const f = useFormat();
   return (
     <section className="rounded-lg border border-neutral-100 bg-white">
       <header className="border-b border-neutral-100 p-5">
@@ -257,16 +260,16 @@ function RecentTimeEntriesCard({ detail }: { detail: Detail }) {
             className="flex items-center gap-3 border-b border-neutral-100 py-3 last:border-b-0"
           >
             <div className="w-[80px] flex-shrink-0 font-mono text-[12px] text-neutral-500">
-              {format(new Date(entry.check_in_at), "dd. MMM")}
+              {f.weekdayShort(entry.check_in_at)}
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-[13px] font-semibold text-neutral-800">
                 {entry.property_name}
               </div>
               <div className="text-[11px] text-neutral-500">
-                {format(new Date(entry.check_in_at), "HH:mm")}
+                {f.time(entry.check_in_at)}
                 {entry.check_out_at
-                  ? ` – ${format(new Date(entry.check_out_at), "HH:mm")}`
+                  ? ` – ${f.time(entry.check_out_at)}`
                   : " – …"}
               </div>
             </div>

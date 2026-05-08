@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { loadDashboardData } from "@/lib/api/dashboard";
+import { loadMySelf } from "@/lib/api/my-self";
 import { PageHead } from "@/components/dashboard/PageHead";
 import { KpiGrid } from "@/components/dashboard/KpiGrid";
 import { WeeklyChart } from "@/components/dashboard/WeeklyChart";
@@ -7,6 +8,7 @@ import { TodayShifts } from "@/components/dashboard/TodayShifts";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { TeamUtilization } from "@/components/dashboard/TeamUtilization";
 import { QuickActions } from "@/components/dashboard/QuickActions";
+import { MySelfPanel } from "@/components/dashboard/MySelfPanel";
 
 export const metadata: Metadata = { title: "Übersicht" };
 export const dynamic = "force-dynamic";
@@ -18,11 +20,24 @@ export const dynamic = "force-dynamic";
  * QuickActions links.
  */
 export default async function DashboardPage() {
-  const data = await loadDashboardData();
+  // Two parallel loads:
+  //   - org-level dashboard data (KPIs, today's shifts, charts)
+  //   - the caller's own self-service data (only present when their
+  //     auth profile has a linked employees row).
+  const [data, mySelf] = await Promise.all([
+    loadDashboardData(),
+    loadMySelf(),
+  ]);
 
   return (
     <>
       <PageHead greetingName={data.greetingName} />
+
+      {mySelf && (
+        <div className="mb-6">
+          <MySelfPanel data={mySelf} />
+        </div>
+      )}
 
       <KpiGrid kpis={data.kpis} />
 

@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { format, addDays, startOfMonth, endOfMonth, getDay } from "date-fns";
+import {
+  format,
+  addDays,
+  startOfMonth,
+  endOfMonth,
+  getDay,
+  subMonths,
+  addMonths,
+} from "date-fns";
 import { de as deLocale, enUS as enLocale, ta as taLocale } from "date-fns/locale";
 import { useLocale } from "next-intl";
 import { toast } from "sonner";
@@ -12,6 +20,7 @@ import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
 import type { ScheduleWeek, ServiceLane, ShiftEvent } from "@/lib/api/schedule.types";
 import { updateShiftAction } from "@/app/actions/shifts";
+import { ensureCalendarTokenAction } from "@/app/actions/calendar-token";
 import { PlanShiftDialog } from "./PlanShiftDialog";
 
 const HOURS = Array.from({ length: 13 }, (_, i) => 6 + i); // 06–18
@@ -52,9 +61,47 @@ export function SchedulePage({ week }: Props) {
   const [statusFilter, setStatusFilter] = useState<Set<ShiftEvent["status"]>>(
     new Set(["completed", "scheduled", "in_progress"]),
   );
+  // Employee filter — defaults to "all employees who have shifts in this
+  // week's events". The Sidebar offers per-employee toggles. An empty set
+  // is interpreted as "no employees selected" (hide every event); a set
+  // covering all known employees is "show all" (the default).
+  const allEmployeeIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const e of week.events) for (const m of e.team) ids.add(m.id);
+    return ids;
+  }, [week.events]);
+  const [employeeFilter, setEmployeeFilter] = useState<Set<string>>(
+    () => new Set(allEmployeeIds),
+  );
+  // Re-sync the filter set whenever the visible week changes.
+  useEffect(() => {
+    setEmployeeFilter(new Set(allEmployeeIds));
+  }, [allEmployeeIds]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const router = useRouter();
   const [, dndStart] = useTransition();
+
+  /**
+   * Toolbar + mini-calendar navigation. The /schedule page reads `?date=`
+   * server-side and feeds it into loadScheduleWeek(anchor); pushing a new
+   * URL is therefore the only thing we need to do here. Passing `null`
+   * navigates back to "today" (no query string) so the page resolves the
+   * anchor against `new Date()` again.
+   */
+  function navigateToDate(date: Date | null) {
+    if (date === null) {
+      router.push("/schedule");
+      return;
+    }
+    const iso = format(date, "yyyy-MM-dd");
+    router.push(`/schedule?date=${iso}`);
+  }
+
+  // Anchor for prev/next/today buttons. Falls back to today if the server
+  // somehow returned an empty week (shouldn't happen, but defensive).
+  const weekAnchor = week.days[0]
+    ? new Date(week.days[0])
+    : new Date();
 
   /**
    * Drag-and-drop handler — invoked when a shift block is dropped on a
@@ -95,12 +142,20 @@ export function SchedulePage({ week }: Props) {
 
   const visibleEvents = useMemo(
     () =>
-      week.events.filter(
-        (e) =>
-          (serviceFilter === "all" || e.service_lane === serviceFilter) &&
-          statusFilter.has(e.status),
-      ),
-    [week.events, serviceFilter, statusFilter],
+      week.events.filter((e) => {
+        if (serviceFilter !== "all" && e.service_lane !== serviceFilter) {
+          return false;
+        }
+        if (!statusFilter.has(e.status)) return false;
+        // If an event has no team members assigned (unassigned shift), let
+        // it through — otherwise we'd silently hide unstaffed shifts the
+        // dispatcher needs to see.
+        if (e.team.length === 0) return true;
+        // Otherwise show the event if any of its team members is in the
+        // active filter set.
+        return e.team.some((m) => employeeFilter.has(m.id));
+      }),
+    [week.events, serviceFilter, statusFilter, employeeFilter],
   );
 
   const selected = visibleEvents.find((e) => e.id === selectedId) ?? visibleEvents[0] ?? null;
@@ -124,12 +179,7 @@ export function SchedulePage({ week }: Props) {
           <p className="text-[13px] text-neutral-500">{t("subtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          <button className="btn btn--tertiary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 10l-5 5-5-5M12 15V3" />
-            </svg>
-            {t("actions.export")}
-          </button>
+          <ExportMenu anchorDate={week.days[0] ?? null} />
           <button
             type="button"
             onClick={() => setDialogOpen(true)}
@@ -162,7 +212,12 @@ export function SchedulePage({ week }: Props) {
 
       {/* Toolbar — view tabs + week label + service + filters */}
       <div className="mb-5 flex flex-wrap items-center gap-3 rounded-lg border border-neutral-100 bg-white p-3">
-        <button className="btn btn--ghost border border-neutral-200 bg-white">
+        <button
+          type="button"
+          aria-label={t("prevWeek")}
+          onClick={() => navigateToDate(addDays(weekAnchor, -7))}
+          className="btn btn--ghost border border-neutral-200 bg-white"
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
             <path d="M15 18l-6-6 6-6" />
           </svg>
@@ -170,12 +225,23 @@ export function SchedulePage({ week }: Props) {
         <div className="text-[13px] font-semibold text-neutral-800">
           {week.weekLabel}
         </div>
-        <button className="btn btn--ghost border border-neutral-200 bg-white">
+        <button
+          type="button"
+          aria-label={t("nextWeek")}
+          onClick={() => navigateToDate(addDays(weekAnchor, 7))}
+          className="btn btn--ghost border border-neutral-200 bg-white"
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
             <path d="M9 18l6-6-6-6" />
           </svg>
         </button>
-        <button className="btn btn--tertiary text-[12px]">{t("today")}</button>
+        <button
+          type="button"
+          onClick={() => navigateToDate(null)}
+          className="btn btn--tertiary text-[12px]"
+        >
+          {t("today")}
+        </button>
 
         {/* View tabs */}
         <div className="ml-3 inline-flex rounded-md border border-neutral-100 bg-neutral-50 p-1 text-[12px]">
@@ -231,6 +297,7 @@ export function SchedulePage({ week }: Props) {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[260px_1fr_360px]">
         <Sidebar
           anchor={new Date(week.days[0]!)}
+          events={week.events}
           statusFilter={statusFilter}
           onToggleStatus={(s) =>
             setStatusFilter((prev) => {
@@ -240,6 +307,19 @@ export function SchedulePage({ week }: Props) {
               return n;
             })
           }
+          employeeFilter={employeeFilter}
+          onToggleEmployee={(id) =>
+            setEmployeeFilter((prev) => {
+              const n = new Set(prev);
+              if (n.has(id)) n.delete(id);
+              else n.add(id);
+              return n;
+            })
+          }
+          onSelectAllEmployees={() =>
+            setEmployeeFilter(new Set(allEmployeeIds))
+          }
+          onPickDate={navigateToDate}
         />
 
         <CalendarGrid
@@ -328,16 +408,39 @@ function ServicePill({
 
 function Sidebar({
   anchor,
+  events,
   statusFilter,
   onToggleStatus,
+  employeeFilter,
+  onToggleEmployee,
+  onSelectAllEmployees,
+  onPickDate,
 }: {
   anchor: Date;
+  events: ShiftEvent[];
   statusFilter: Set<ShiftEvent["status"]>;
   onToggleStatus: (s: ShiftEvent["status"]) => void;
+  employeeFilter: Set<string>;
+  onToggleEmployee: (id: string) => void;
+  onSelectAllEmployees: () => void;
+  onPickDate: (date: Date | null) => void;
 }) {
   const t = useTranslations("schedule.sidebar");
-  const monthStart = startOfMonth(anchor);
-  const monthEnd = endOfMonth(anchor);
+
+  // The mini-calendar's visible month is local state — paging it back/forward
+  // shouldn't auto-jump the calendar grid. The grid only moves when the user
+  // clicks an actual day cell.
+  const [viewMonth, setViewMonth] = useState<Date>(() => startOfMonth(anchor));
+
+  // If the parent anchor changes (toolbar prev/next/today), keep the
+  // mini-calendar in the same month as the visible week unless the user
+  // has paged it manually since the last anchor change.
+  useEffect(() => {
+    setViewMonth(startOfMonth(anchor));
+  }, [anchor]);
+
+  const monthStart = viewMonth;
+  const monthEnd = endOfMonth(viewMonth);
   const offset = (getDay(monthStart) + 6) % 7;
   const cells: (Date | null)[] = [];
   for (let i = 0; i < offset; i++) cells.push(null);
@@ -346,25 +449,75 @@ function Sidebar({
   }
   while (cells.length % 7 !== 0) cells.push(null);
 
-  const teams = [
-    { label: "Team 01 · Kern", count: 12, color: "secondary-500", on: true },
-    { label: "Team 02 · Springer", count: 8, color: "primary-500", on: true },
-    { label: "Team 03 · Specialists", count: 5, color: "warning-500", on: true },
-    { label: "Team 04 · Night", count: 3, color: "error-500", on: false },
-    { label: t("subcontractor"), count: 4, color: "neutral-400", on: false },
-  ];
+  // Real per-status counts derived from the visible week's events.
+  const statusCounts = useMemo(() => {
+    const c = {
+      completed: 0,
+      scheduled: 0,
+      in_progress: 0,
+      no_show: 0,
+      cancelled: 0,
+    } as Record<ShiftEvent["status"], number>;
+    for (const e of events) c[e.status] = (c[e.status] ?? 0) + 1;
+    return c;
+  }, [events]);
+
+  // Real per-employee aggregation — one row per distinct staff member who
+  // has at least one shift in this week. Replaces the previously hard-coded
+  // "Team 01 · Kern (12)" mocks.
+  const employees = useMemo(() => {
+    const map = new Map<
+      string,
+      { id: string; initials: string; tone: string; count: number }
+    >();
+    for (const e of events) {
+      for (const m of e.team) {
+        const existing = map.get(m.id);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          map.set(m.id, {
+            id: m.id,
+            initials: m.initials,
+            tone: m.tone,
+            count: 1,
+          });
+        }
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.count - a.count);
+  }, [events]);
+
+  // Tone class for the small dot next to each employee row. Maps to
+  // existing Tailwind tokens used elsewhere in the page.
+  const toneClass: Record<string, string> = {
+    primary: "bg-primary-500",
+    secondary: "bg-secondary-500",
+    accent: "bg-accent-600",
+    warning: "bg-warning-500",
+  };
 
   return (
     <aside className="flex flex-col gap-4">
       {/* Mini calendar */}
       <section className="rounded-lg border border-neutral-100 bg-white p-4">
         <header className="mb-3 flex items-center justify-between text-[12px] font-semibold text-neutral-700">
-          {format(anchor, "MMMM yyyy")}
+          {format(viewMonth, "MMMM yyyy")}
           <div className="flex gap-1">
-            <button className="grid h-6 w-6 place-items-center rounded text-neutral-500 hover:bg-neutral-50">
+            <button
+              type="button"
+              aria-label={t("prevMonth")}
+              onClick={() => setViewMonth((m) => subMonths(m, 1))}
+              className="grid h-6 w-6 place-items-center rounded text-neutral-500 hover:bg-neutral-50"
+            >
               ‹
             </button>
-            <button className="grid h-6 w-6 place-items-center rounded text-neutral-500 hover:bg-neutral-50">
+            <button
+              type="button"
+              aria-label={t("nextMonth")}
+              onClick={() => setViewMonth((m) => addMonths(m, 1))}
+              className="grid h-6 w-6 place-items-center rounded text-neutral-500 hover:bg-neutral-50"
+            >
               ›
             </button>
           </div>
@@ -382,6 +535,7 @@ function Sidebar({
               <button
                 key={i}
                 type="button"
+                onClick={() => onPickDate(d)}
                 className={cn(
                   "grid h-7 w-7 place-items-center rounded text-[11px] transition",
                   d.toDateString() === anchor.toDateString()
@@ -396,29 +550,60 @@ function Sidebar({
         </div>
       </section>
 
-      {/* Team filters */}
+      {/* Employee filters — derived from week.events.team[] so the list
+           reflects who is actually scheduled this week, not a static
+           "Team 01 · Kern" mock. */}
       <section className="rounded-lg border border-neutral-100 bg-white p-4">
         <header className="mb-3 flex items-center justify-between">
-          <h4 className="text-[13px] font-semibold text-neutral-800">{t("team")}</h4>
-          <span className="text-[11px] text-primary-600">{t("teamAll")}</span>
+          <h4 className="text-[13px] font-semibold text-neutral-800">
+            {t("team")}
+          </h4>
+          <button
+            type="button"
+            onClick={onSelectAllEmployees}
+            className="text-[11px] text-primary-600 hover:underline"
+          >
+            {t("teamAll")}
+          </button>
         </header>
-        <div className="flex flex-col gap-2">
-          {teams.map((tm) => (
-            <label
-              key={tm.label}
-              className="flex cursor-pointer items-center gap-2.5 text-[12px]"
-            >
-              <input
-                type="checkbox"
-                defaultChecked={tm.on}
-                className="h-3.5 w-3.5 rounded border-neutral-300 accent-primary-500"
-              />
-              <span className={cn("h-2 w-2 flex-shrink-0 rounded-full", `bg-${tm.color}`)} />
-              <span className="flex-1 truncate text-neutral-700">{tm.label}</span>
-              <span className="text-[11px] text-neutral-400">{tm.count}</span>
-            </label>
-          ))}
-        </div>
+        {employees.length === 0 ? (
+          <div className="rounded-md border border-dashed border-neutral-200 px-3 py-4 text-center text-[11px] text-neutral-500">
+            {t("teamEmpty")}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {employees.map((em) => {
+              const checked = employeeFilter.has(em.id);
+              return (
+                <label
+                  key={em.id}
+                  className="flex cursor-pointer items-center gap-2.5 text-[12px]"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => onToggleEmployee(em.id)}
+                    className="h-3.5 w-3.5 rounded border-neutral-300 accent-primary-500"
+                  />
+                  <span
+                    className={cn(
+                      "grid h-5 w-5 flex-shrink-0 place-items-center rounded-full text-[9px] font-bold text-white",
+                      toneClass[em.tone] ?? "bg-neutral-400",
+                    )}
+                  >
+                    {em.initials}
+                  </span>
+                  <span className="flex-1 truncate text-neutral-700">
+                    {em.id.slice(0, 8)}
+                  </span>
+                  <span className="text-[11px] text-neutral-400">
+                    {em.count}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* Status filters */}
@@ -431,28 +616,28 @@ function Sidebar({
           <StatusRow
             color="bg-success-500"
             label={t("completed")}
-            count={18}
+            count={statusCounts.completed}
             active={statusFilter.has("completed")}
             onToggle={() => onToggleStatus("completed")}
           />
           <StatusRow
             color="bg-secondary-500"
             label={t("scheduled")}
-            count={15}
+            count={statusCounts.scheduled}
             active={statusFilter.has("scheduled")}
             onToggle={() => onToggleStatus("scheduled")}
           />
           <StatusRow
             color="bg-warning-500"
             label={t("running")}
-            count={3}
+            count={statusCounts.in_progress}
             active={statusFilter.has("in_progress")}
             onToggle={() => onToggleStatus("in_progress")}
           />
           <StatusRow
             color="bg-error-500"
             label={t("missedOverdue")}
-            count={1}
+            count={statusCounts.no_show}
             active={statusFilter.has("no_show")}
             onToggle={() => onToggleStatus("no_show")}
           />
@@ -784,10 +969,11 @@ function DetailPanel({
           {t("panel.scheduledTag")}
         </span>
         <button
-          aria-label="close"
+          type="button"
+          aria-label={t("panel.close")}
           className="grid h-7 w-7 place-items-center rounded-md text-neutral-400 hover:bg-neutral-50"
         >
-          ✕
+          <span aria-hidden>✕</span>
         </button>
       </header>
 
@@ -884,3 +1070,113 @@ function DetailRow({
 }
 
 void addDays;
+
+/**
+ * Export menu — wires the previously-orphaned Export button to the existing
+ * `/api/schedule/pdf` and `/api/schedule/ical` endpoints.
+ *
+ *  • PDF download triggers a new tab (browser handles the streamed response).
+ *  • iCal subscription mints (or reuses) an opaque token via
+ *    `ensureCalendarTokenAction`, then copies the feed URL to the clipboard
+ *    so the user can paste it into Apple/Google/Outlook calendar.
+ */
+function ExportMenu({ anchorDate }: { anchorDate: string | null }) {
+  const t = useTranslations("schedule");
+  const [open, setOpen] = useState(false);
+  const [, start] = useTransition();
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  function downloadPdf() {
+    setOpen(false);
+    const url = anchorDate
+      ? `/api/schedule/pdf?date=${anchorDate}`
+      : "/api/schedule/pdf";
+    // Use a hidden anchor instead of window.open() so popup blockers don't
+    // eat the download.
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  function copyIcalLink() {
+    setOpen(false);
+    start(async () => {
+      const r = await ensureCalendarTokenAction();
+      if (!r.ok) {
+        toast.error(t("actions.exportFailed"));
+        return;
+      }
+      const url = `${window.location.origin}/api/schedule/ical?token=${encodeURIComponent(r.data.token)}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success(t("actions.exportIcalCopied"));
+      } catch {
+        // Clipboard blocked (Safari private mode, insecure context, etc.).
+        // Fall back to a prompt so the user can copy manually.
+        window.prompt(t("actions.exportIcal"), url);
+      }
+    });
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((s) => !s)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="btn btn--tertiary"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 10l-5 5-5-5M12 15V3" />
+        </svg>
+        {t("actions.export")}
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 top-11 z-30 w-64 overflow-hidden rounded-md border border-neutral-100 bg-white py-1 shadow-lg"
+        >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={downloadPdf}
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13px] text-neutral-700 transition hover:bg-neutral-50"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5 text-neutral-500">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+              <path d="M14 2v6h6" />
+            </svg>
+            {t("actions.exportPdf")}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={copyIcalLink}
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13px] text-neutral-700 transition hover:bg-neutral-50"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5 text-neutral-500">
+              <rect x={3} y={5} width={18} height={16} rx={2} />
+              <path d="M3 9h18M8 3v4M16 3v4" />
+            </svg>
+            {t("actions.exportIcal")}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

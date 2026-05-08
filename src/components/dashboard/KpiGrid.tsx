@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils/cn";
-import { formatEUR } from "@/lib/utils/format";
+import { useFormat } from "@/lib/utils/i18n-format";
 import type { KpiSet } from "@/lib/api/dashboard.types";
 
 type Tone = "green" | "blue" | "orange" | "red";
@@ -129,6 +129,8 @@ const docIcon = (
 
 export function KpiGrid({ kpis }: { kpis: KpiSet }) {
   const t = useTranslations("dashboard");
+  const f = useFormat();
+  const formatEUR = (cents: number) => f.currencyCents(cents);
   const today = t("today");
 
   return (

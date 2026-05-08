@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
-import type { TeamLoad } from "@/lib/api/dashboard.types";
+import type { TeamLoad, TeamLoadRole } from "@/lib/api/dashboard.types";
 
 const toneClass: Record<TeamLoad["tone"], string> = {
   primary: "bg-primary-500",
@@ -14,8 +14,13 @@ const toneClass: Record<TeamLoad["tone"], string> = {
 
 export function TeamUtilization({ team }: { team: TeamLoad[] }) {
   const t = useTranslations("dashboard.team");
+  // Mirrors the employees-list chip vocabulary so the dashboard label
+  // ("Projektleitung" / "Reinigungskraft") matches /employees rather
+  // than diverging into "Team Lead" / "Field Staff" hardcoded text.
+  const tRole = useTranslations("employees.role");
   const tDash = useTranslations("dashboard");
   const active = team.length;
+  const roleLabel = (role: TeamLoadRole) => tRole(role);
 
   return (
     <section className="rounded-lg border border-neutral-100 bg-white">
@@ -41,7 +46,7 @@ export function TeamUtilization({ team }: { team: TeamLoad[] }) {
             {t("empty")}
           </div>
         )}
-        {team.map((m, idx) => (
+        {team.map((m) => (
           <div
             key={m.id}
             className="flex items-center gap-3 border-b border-neutral-100 py-2.5 last:border-b-0"
@@ -59,7 +64,7 @@ export function TeamUtilization({ team }: { team: TeamLoad[] }) {
                 {m.name}
               </div>
               <div className="text-[11px] text-neutral-500">
-                {idx === 0 ? t("roleLead") : t("roleField")}
+                {roleLabel(m.role)} · {m.hours} / {m.target} h
               </div>
             </div>
             <div className="hidden h-1.5 max-w-[160px] flex-1 overflow-hidden rounded-full bg-neutral-100 sm:block">

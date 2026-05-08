@@ -1,9 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { format } from "date-fns";
 import { cn } from "@/lib/utils/cn";
 import { useSignedUrl } from "@/hooks/chat/useSignedUrl";
+import { useFormat } from "@/lib/utils/i18n-format";
 import type { Channel, ChatAttachment } from "@/types/chat";
 
 export type Member = {
@@ -43,6 +43,7 @@ export function ChannelInfoPanel({
   onClose,
 }: Props) {
   const t = useTranslations("chat.info");
+  const f = useFormat();
 
   return (
     <aside className="flex h-full w-[280px] flex-col border-l border-neutral-100 bg-white">
@@ -121,7 +122,7 @@ export function ChannelInfoPanel({
                 >
                   <div className="line-clamp-2 text-neutral-800">{p.body}</div>
                   <div className="mt-1 text-[10px] text-neutral-500">
-                    📌 {p.pinned_by_name ?? "—"} · {format(new Date(p.pinned_at), "d. MMM yyyy")}
+                    📌 {p.pinned_by_name ?? "—"} · {f.dayMonth(p.pinned_at)}
                   </div>
                 </li>
               ))}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { formatEUR } from "@/lib/utils/format";
+import { useFormat } from "@/lib/utils/i18n-format";
 import type { ReportsKpis } from "@/lib/api/reports";
 
 type Props = { kpis: ReportsKpis };
@@ -9,6 +9,8 @@ type Props = { kpis: ReportsKpis };
 /** 4-card KPI strip with mini-charts. */
 export function ReportKpis({ kpis }: Props) {
   const t = useTranslations("reports.kpi");
+  const f = useFormat();
+  const formatEUR = (cents: number) => f.currencyCents(cents);
 
   return (
     <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -33,7 +35,7 @@ export function ReportKpis({ kpis }: Props) {
       {/* Hours */}
       <KpiCard
         label={t("hours")}
-        value={kpis.hours.toLocaleString("de-DE")}
+        value={f.number(kpis.hours)}
         unit={t("hoursUnit")}
         delta={`+${kpis.hoursDeltaPct.toFixed(1)}%`}
         deltaTone="up"
@@ -54,8 +56,8 @@ export function ReportKpis({ kpis }: Props) {
       {/* Completed shifts */}
       <KpiCard
         label={t("shifts")}
-        value={kpis.shiftsCompleted.toLocaleString("de-DE")}
-        unit={`/ ${kpis.shiftsTotal.toLocaleString("de-DE")}`}
+        value={f.number(kpis.shiftsCompleted)}
+        unit={`/ ${f.number(kpis.shiftsTotal)}`}
         delta={`${kpis.shiftsCompletionPct.toFixed(1)}%`}
         deltaTone="up"
         deltaSub={t("shiftsSub", {

@@ -1,5 +1,9 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  type AppLocale,
+  formatDayMonth,
+} from "@/lib/utils/i18n-format";
 
 export type AlltagshilfeMonthlySummary = {
   totalHours: number;
@@ -44,6 +48,7 @@ const HOURLY_RATE_CENTS = 1720; // €17.20
 export async function loadAlltagshilfeMonthly(
   year: number,
   month: number, // 0–11
+  locale: AppLocale = "de",
 ): Promise<AlltagshilfeMonthlyReport> {
   const supabase = await createSupabaseServerClient();
   const monthStart = new Date(year, month, 1);
@@ -181,13 +186,10 @@ export async function loadAlltagshilfeMonthly(
         id,
         name: e.name,
         qualifications: ["Pflegehelfer:in"],
-        period: `${e.firstVisit.toLocaleDateString("de-DE", {
-          day: "2-digit",
-          month: "short",
-        })} – ${e.lastVisit.toLocaleDateString("de-DE", {
-          day: "2-digit",
-          month: "short",
-        })}`,
+        period: `${formatDayMonth(e.firstVisit, locale)} – ${formatDayMonth(
+          e.lastVisit,
+          locale,
+        )}`,
         schedule: "—",
         visits: e.visits,
         hours: e.hours,

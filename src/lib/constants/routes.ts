@@ -37,6 +37,7 @@ export const routes = {
   notifications: "/notifications" as Route,
   onboard: "/onboard" as Route,
   onboardSuccess: "/onboard/success" as Route,
+  setup2fa: "/setup-2fa" as Route,
 } as const;
 
 /** Public routes (no auth required). */

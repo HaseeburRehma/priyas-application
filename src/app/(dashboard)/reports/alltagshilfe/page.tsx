@@ -1,10 +1,14 @@
 import type { Metadata, Route } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { loadAlltagshilfeMonthly, type AlltagshilfeRow } from "@/lib/api/alltagshilfe";
 import { requirePermission, PermissionError } from "@/lib/rbac/permissions";
-import { formatEUR } from "@/lib/utils/format";
+import {
+  asAppLocale,
+  formatCurrencyCents,
+  formatDateTime,
+} from "@/lib/utils/i18n-format";
 import { routes } from "@/lib/constants/routes";
 
 export const metadata: Metadata = { title: "Alltagshilfe — Monatsbericht" };
@@ -31,11 +35,13 @@ export default async function Page({
   }
 
   const t = await getTranslations("alltagshilfeReport");
+  const locale = asAppLocale(await getLocale());
+  const formatEUR = (cents: number) => formatCurrencyCents(cents, locale);
   const sp = await searchParams;
   const now = new Date();
   const year = Number(sp.year ?? now.getFullYear());
   const month = Number(sp.month ?? now.getMonth());
-  const report = await loadAlltagshilfeMonthly(year, month);
+  const report = await loadAlltagshilfeMonthly(year, month, locale);
 
   const monthNames = [
     "Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
@@ -88,14 +94,7 @@ export default async function Page({
               {t("createdAt")}
             </div>
             <div className="font-mono text-[12px] text-neutral-700">
-              {new Date().toLocaleString("de-DE", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-                timeZone: "Europe/Berlin",
-              })}
+              {formatDateTime(new Date(), locale)}
               {" · MEZ"}
             </div>
           </div>

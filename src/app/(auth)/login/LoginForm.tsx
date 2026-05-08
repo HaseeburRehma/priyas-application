@@ -13,6 +13,8 @@ import { loginSchema, type LoginInput } from "@/lib/validators/auth";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { env } from "@/lib/constants/env";
 import { routes } from "@/lib/constants/routes";
+import { loginAction } from "@/app/actions/auth";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 
 /**
  * Right-hand form panel for the login screen.
@@ -53,27 +55,28 @@ export function LoginForm() {
 
   async function onSubmit(values: LoginInput) {
     startTransition(async () => {
-      const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.signInWithPassword({
+      // Sign in via the server action so we get rate-limiting (LIMITS.login:
+      // 10 attempts / 5 min per email) and avoid exposing the auth endpoint
+      // directly to credential-stuffing from the browser.
+      const result = await loginAction({
         email: values.email,
         password: values.password,
+        rememberMe: values.rememberMe,
       });
-      if (error) {
-        toast.error(t("errorInvalid"));
+      if (!result.ok) {
+        // Backend returns either a translation key ("auth.errorInvalid") or
+        // a pre-formatted German message (rate-limit notice). Tell them apart
+        // by the leading "auth." prefix.
+        if (result.error.startsWith("auth.")) {
+          toast.error(t(result.error.replace(/^auth\./, "") as never));
+        } else {
+          toast.error(result.error);
+        }
         return;
       }
-      // Check if user has TOTP factors requiring AAL2 escalation.
-      const { data: aal } =
-        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-      if (aal?.nextLevel === "aal2" && aal.currentLevel === "aal1") {
-        const { data: factors } = await supabase.auth.mfa.listFactors();
-        const verified = (factors?.totp ?? []).find(
-          (f) => f.status === "verified",
-        );
-        if (verified) {
-          setMfa({ factorId: verified.id });
-          return;
-        }
+      if (result.data.needsMfa && result.data.factorId) {
+        setMfa({ factorId: result.data.factorId });
+        return;
       }
       router.replace(next);
       router.refresh();
@@ -127,37 +130,11 @@ export function LoginForm() {
         >
           {t("createAccount")}
         </Link>
-        <button
-          type="button"
-          className="flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-[12px] font-medium text-neutral-700 transition hover:border-primary-500"
-        >
-          <svg
-            aria-hidden
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-3.5 w-3.5"
-          >
-            <circle cx={12} cy={12} r={10} />
-            <path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" />
-          </svg>
-          Deutsch
-          <svg
-            aria-hidden
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-3 w-3"
-          >
-            <path d="M6 9l6 6 6-6" />
-          </svg>
-        </button>
+        {/* Real, working locale picker (writes the `locale` cookie that
+            next-intl reads server-side and refreshes the page). */}
+        <span className="rounded-full border border-neutral-200 bg-white">
+          <LanguageSwitcher />
+        </span>
       </div>
 
       {/* Form body */}
@@ -444,9 +421,9 @@ export function LoginForm() {
           </div>
 
           <div className="mt-7 border-t border-neutral-100 pt-5 text-center text-[13px] text-neutral-500">
-            Having trouble signing in?{" "}
+            {t("troubleSigning")}{" "}
             <a href="#" className="font-medium text-primary-600 hover:underline">
-              Contact your administrator
+              {t("contactAdmin")}
             </a>
           </div>
         </form>
@@ -457,16 +434,16 @@ export function LoginForm() {
       <div className="flex items-center justify-between border-t border-neutral-100 px-12 py-6 text-[11px] text-neutral-400">
         <div className="flex gap-[18px]">
           <a className="hover:text-neutral-600" href="#">
-            Datenschutz policy
+            {t("footerPrivacy")}
           </a>
           <a className="hover:text-neutral-600" href="#">
-            AGB of service
+            {t("footerTerms")}
           </a>
           <a className="hover:text-neutral-600" href="#">
-            Impressum
+            {t("footerImprint")}
           </a>
         </div>
-        <div>v1.0 · secure connection</div>
+        <div>v1.0 · {t("secureConnection")}</div>
       </div>
     </section>
   );

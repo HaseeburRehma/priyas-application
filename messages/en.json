@@ -72,7 +72,19 @@
     "mfaCodeLabel": "Verification code",
     "mfaVerify": "Verify and sign in",
     "mfaCancel": "Use a different account",
-    "mfaWrongCode": "That code didn't work. Try again."
+    "mfaWrongCode": "That code didn't work. Try again.",
+    "brandSubtitle": "Operations platform",
+    "brandFooterPrivacy": "Privacy",
+    "brandFooterTerms": "Terms",
+    "brandFooterSupport": "Support",
+    "brandCopyright": "© 2026 Priya’s Reinigungsservice",
+    "footerPrivacy": "Privacy policy",
+    "footerTerms": "Terms of service",
+    "footerImprint": "Imprint",
+    "secureConnection": "secure connection",
+    "troubleSigning": "Having trouble signing in?",
+    "contactAdmin": "Contact your administrator",
+    "languageLabel": "Language"
   },
   "nav": {
     "workspace": "Workspace",
@@ -142,7 +154,20 @@
     "activity": {
       "title": "Recent activity",
       "subtitle": "Latest events in the system",
-      "empty": "No activity yet."
+      "empty": "No activity yet.",
+      "table": {
+        "clients": "Clients",
+        "properties": "Properties",
+        "employees": "Employees",
+        "shifts": "Schedule",
+        "invoices": "Invoices",
+        "time_entries": "Time tracking",
+        "training_modules": "Training",
+        "training_assignments": "Training assignments",
+        "vacation_requests": "Vacation requests",
+        "damage_reports": "Damage reports",
+        "client_signatures": "Signatures"
+      }
     },
     "team": {
       "title": "Team utilization",
@@ -162,6 +187,25 @@
       "generateInvoiceSub": "Lexware sync",
       "exportReport": "Export report",
       "exportReportSub": "PDF / iCal"
+    },
+    "mine": {
+      "title": "My profile — Hello {name}",
+      "subtitle": "Hours, vacation and mandatory training at a glance.",
+      "downloadHours": "Hours (CSV)",
+      "hoursWeek": "Hours this week",
+      "hoursMonth": "Hours this month",
+      "vacation": "Vacation days left",
+      "mandatory": "Mandatory training",
+      "ofTarget": "Target: {target} h",
+      "daysLeft": "remaining",
+      "mandatoryClear": "All done",
+      "mandatoryOpen": "still open",
+      "hoursBarLabel": "Weekly progress",
+      "trainingPending": "{n} mandatory module(s) outstanding — please complete.",
+      "andMore": "and {n} more",
+      "openTraining": "Open training",
+      "upcomingTitle": "Upcoming shifts",
+      "openSchedule": "Open schedule"
     }
   },
   "clients": {
@@ -218,7 +262,8 @@
     "actions": {
       "import": "Import",
       "export": "Export",
-      "new": "New client"
+      "new": "New client",
+      "importComingSoon": "CSV import coming soon."
     },
     "summary": {
       "total": "Total clients",
@@ -287,6 +332,7 @@
       "contactsTitle": "Contact persons",
       "contactsSubtitle": "{count} people · primary and billing contacts",
       "contactsAdd": "Add",
+      "contactsAddComingSoon": "Contacts are managed in the section below.",
       "contactPrimary": "Primary contact",
       "primary": "PRIMARY",
       "scopeTitle": "Scope of services",
@@ -318,6 +364,7 @@
       "notesTitle": "Internal notes",
       "notesSubtitle": "Visible to management + project managers",
       "notesAdd": "Note",
+      "notesAddComingSoon": "Note editing coming soon.",
       "notesEmpty": "No internal notes recorded.",
       "openChat": "Open chat",
       "openSchedule": "Open schedule",
@@ -555,7 +602,8 @@
       "deleteConfirm": "Delete this photo?",
       "deleted": "Photo removed.",
       "emptyTitle": "No photos yet.",
-      "emptyBody": "Upload via the button top right."
+      "emptyBody": "Upload via the button top right.",
+      "limitReached": "Limit is 20 photos per property — {dropped} were dropped."
     }
   },
   "schedule": {
@@ -566,7 +614,11 @@
     "actions": {
       "export": "Export",
       "newAssignment": "New assignment",
-      "planShift": "Plan shift"
+      "planShift": "Plan shift",
+      "exportPdf": "Download as PDF",
+      "exportIcal": "Subscribe in calendar (iCal)",
+      "exportIcalCopied": "iCal link copied.",
+      "exportFailed": "Export failed."
     },
     "tabs": {
       "today": "Today",
@@ -595,7 +647,10 @@
       "missedOverdue": "Missed / overdue",
       "completed": "Done",
       "scheduled": "Scheduled",
-      "running": "Running"
+      "running": "Running",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "teamEmpty": "No staffed shifts in this week."
     },
     "panel": {
       "scheduledTag": "Scheduled",
@@ -609,7 +664,8 @@
       "lead": "LEAD",
       "fieldStaff": "Field staff",
       "teamLead": "Team lead",
-      "notes": "NOTES"
+      "notes": "NOTES",
+      "close": "Close"
     },
     "empty": "No shifts in this period.",
     "dialog": {
@@ -632,7 +688,9 @@
       "saveSuccess": "Shift planned.",
       "loadingOptions": "Loading options…",
       "endAfterStart": "End must be after start."
-    }
+    },
+    "prevWeek": "Previous week",
+    "nextWeek": "Next week"
   },
   "employees": {
     "breadcrumbDashboard": "Overview",
@@ -642,18 +700,20 @@
     "actions": {
       "import": "Import CSV",
       "export": "Export",
-      "invite": "Invite employee"
+      "invite": "Invite employee",
+      "importComingSoon": "CSV import coming soon."
     },
     "summary": {
       "total": "Total employees",
       "totalDelta": "▲ {count} this month",
       "totalNone": "No new this month",
       "active": "Active today",
-      "activeSub": "on schedule",
-      "leave": "On vacation",
-      "leaveSub": "through next week",
+      "activeSub": "On schedule",
+      "leave": "On leave",
+      "leaveSub": "Through next week",
       "onboarding": "Pending onboarding",
-      "onboardingSub": "Selin Yıldız · day 2"
+      "onboardingSub": "Mandatory training pending",
+      "onboardingNonePending": "All mandatory training complete."
     },
     "toolbar": {
       "searchPlaceholder": "Search by name, role, or team…",
@@ -692,7 +752,8 @@
       "showing": "Showing {from}–{to} of {total}",
       "actionMessage": "Message",
       "actionSchedule": "Schedule",
-      "actionMore": "More"
+      "actionMore": "More",
+      "metaSince": "since {year}"
     },
     "detail": {
       "breadcrumbDashboard": "Overview",
@@ -729,7 +790,9 @@
       "infoTeam": "Team",
       "infoStatus": "Status",
       "infoWeeklyHours": "Weekly hours",
-      "infoLanguage": "Language"
+      "infoLanguage": "Language",
+      "assignTraining": "Assign training",
+      "downloadHours": "Hours report (CSV)"
     },
     "form": {
       "createTitle": "Invite employee",
@@ -747,10 +810,12 @@
       "saveError": "Save failed."
     },
     "dialog": {
-      "createSubtitle": "Record profile and working time.",
+      "createSubtitle": "Capture profile data and working hours.",
       "createSuccess": "Employee added.",
       "saving": "Saving…",
-      "saveSuccess": "Changes saved."
+      "saveSuccess": "Changes saved.",
+      "createWithInvite": "Employee created — invitation email sent.",
+      "createNoInvite": "Employee created, invitation email failed ({reason})."
     }
   },
   "reports": {
@@ -838,12 +903,22 @@
     "breadcrumbCurrent": "Invoices",
     "title": "Invoices",
     "subtitle": "All invoices with status filter and Lexware sync.",
-    "actions": { "import": "Import", "export": "Export", "new": "New invoice" },
+    "actions": {
+      "import": "Import",
+      "export": "Export",
+      "new": "New invoice",
+      "importComingSoon": "CSV import coming soon.",
+      "newComingSoon": "Manual create coming soon — invoices are generated from shifts."
+    },
     "summary": {
-      "total": "Total", "totalSub": "{count} invoices",
-      "paid": "Paid", "paidSub": "{count} invoices",
-      "open": "Open", "openSub": "{count} outstanding",
-      "overdue": "Overdue", "overdueSub": "{count} overdue"
+      "total": "Total",
+      "totalSub": "{count} invoices",
+      "paid": "Paid",
+      "paidSub": "{count} invoices",
+      "open": "Open",
+      "openSub": "{count} outstanding",
+      "overdue": "Overdue",
+      "overdueSub": "{count} overdue"
     },
     "toolbar": {
       "searchPlaceholder": "Invoice number or client…",
@@ -855,16 +930,27 @@
       "filterOverdue": "Overdue"
     },
     "table": {
-      "number": "Invoice", "client": "Client", "issued": "Issued", "due": "Due",
-      "amount": "Amount", "status": "Status", "lexware": "Lexware",
-      "actions": "Actions", "view": "View", "more": "More",
-      "synced": "Sync.", "notSynced": "—",
+      "number": "Invoice",
+      "client": "Client",
+      "issued": "Issued",
+      "due": "Due",
+      "amount": "Amount",
+      "status": "Status",
+      "lexware": "Lexware",
+      "actions": "Actions",
+      "view": "View",
+      "more": "More",
+      "synced": "Sync.",
+      "notSynced": "—",
       "empty": "No invoices match your search.",
       "showing": "Showing {from}–{to} of {total}"
     },
     "status": {
-      "draft": "Draft", "sent": "Sent", "paid": "Paid",
-      "overdue": "Overdue", "cancelled": "Cancelled"
+      "draft": "Draft",
+      "sent": "Sent",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "cancelled": "Cancelled"
     },
     "side": {
       "cashTitle": "Cash forecast · 30 days",
@@ -876,10 +962,16 @@
     },
     "detail": {
       "breadcrumbInvoices": "Invoices",
-      "issuedOn": "Issued on", "dueOn": "Due on", "paidOn": "Paid on",
+      "issuedOn": "Issued on",
+      "dueOn": "Due on",
+      "paidOn": "Paid on",
       "items": "Line items",
-      "qty": "Qty", "rate": "Rate", "lineTotal": "Total",
-      "subtotal": "Subtotal", "tax": "VAT {rate}%", "total": "Total",
+      "qty": "Qty",
+      "rate": "Rate",
+      "lineTotal": "Total",
+      "subtotal": "Subtotal",
+      "tax": "VAT {rate}%",
+      "total": "Total",
       "actionMarkSent": "Mark as sent",
       "actionMarkPaid": "Mark as paid",
       "actionLexware": "Lexware sync",
@@ -914,13 +1006,19 @@
       "credits": "Credits"
     },
     "table": {
-      "date": "Date", "ref": "Reference", "type": "Type",
-      "description": "Description", "debit": "Debit", "credit": "Credit",
+      "date": "Date",
+      "ref": "Reference",
+      "type": "Type",
+      "description": "Description",
+      "debit": "Debit",
+      "credit": "Credit",
       "balance": "Balance",
       "empty": "No entries in this filter."
     },
     "type": {
-      "invoice": "Invoice", "payment": "Payment", "credit": "Credit"
+      "invoice": "Invoice",
+      "payment": "Payment",
+      "credit": "Credit"
     },
     "side": {
       "agingTitle": "Aging buckets",
@@ -946,7 +1044,8 @@
     "breadcrumbCurrent": "Settings",
     "title": "Settings",
     "subtitle": "Workspace, team, tax, integrations and localization.",
-    "save": "Save", "saved": "Saved",
+    "save": "Save",
+    "saved": "Saved",
     "saveError": "Save failed.",
     "nav": {
       "company": "Company profile",
@@ -1076,7 +1175,10 @@
     "breadcrumbCurrent": "Notifications",
     "title": "Notifications",
     "subtitle": "All system events, reminders and schedule changes.",
-    "actions": { "markAllRead": "Mark all read", "settings": "Settings" },
+    "actions": {
+      "markAllRead": "Mark all read",
+      "settings": "Settings"
+    },
     "tabs": {
       "all": "All",
       "unread": "Unread",
@@ -1099,7 +1201,11 @@
     "open": "Open",
     "empty": "No notifications in this filter.",
     "timeAgo": "{time} ago",
-    "channels": { "in_app": "In-app", "email": "Email", "whatsapp": "WhatsApp" }
+    "channels": {
+      "in_app": "In-app",
+      "email": "Email",
+      "whatsapp": "WhatsApp"
+    }
   },
   "vacation": {
     "breadcrumbDashboard": "Overview",
@@ -1247,7 +1353,8 @@
       "all": "All",
       "open": "Open",
       "resolved": "Resolved"
-    }
+    },
+    "limitReached": "Limit is 20 photos per report — {dropped} were dropped."
   },
   "onboarding": {
     "kioskTag": "New client onboarding",
@@ -1259,7 +1366,8 @@
       "client": "Details",
       "address": "Address",
       "service": "Service",
-      "review": "Sign"
+      "review": "Sign",
+      "photos": "Photos"
     },
     "type": {
       "title": "What kind of client?",
@@ -1346,6 +1454,16 @@
       "another": "Onboard another client",
       "toClients": "Go to clients list",
       "toast": "Client onboarded."
+    },
+    "photos": {
+      "title": "Photo documentation",
+      "subtitle": "Capture the property's current state during the first visit.",
+      "optional": "Optional · {n} / {max} photos attached.",
+      "takePhoto": "Take photo",
+      "fromLibrary": "From library",
+      "removePhoto": "Remove photo",
+      "limitReached": "Limit is 20 photos per property — {dropped} were dropped.",
+      "someFailed": "{n} photo(s) failed to upload."
     }
   },
   "training": {
@@ -1391,7 +1509,16 @@
       "visibility": "When 0 selected, the module stays visible to everyone (shared). When ≥1, only those {n} see it.",
       "cancel": "Cancel",
       "save": "Save assignments",
-      "saved": "Assignments updated."
+      "saved": "Assignments updated.",
+      "savedWithNotify": "Saved · {n} employee(s) notified.",
+      "skippedNoProfile": "{n} without app account — saved, but not notified.",
+      "noEmployees": "No employees in this org.",
+      "noProfileBadge": "No account",
+      "noProfileTooltip": "This employee has no app login yet and won't receive an in-app notification.",
+      "statusBadge": {
+        "on_leave": "On leave",
+        "inactive": "Inactive"
+      }
     },
     "editor": {
       "newTitle": "New training module",
@@ -1406,7 +1533,12 @@
       "cancel": "Cancel",
       "save": "Save",
       "saved": "Saved."
-    }
+    },
+    "completeWithSignatureTitle": "Complete mandatory module",
+    "completeWithSignatureBody": "Sign below to confirm you completed this mandatory training module.",
+    "signatureRequired": "Please sign before completing.",
+    "completeAndSign": "Sign & complete",
+    "completedWithSignature": "Completed and signed."
   },
   "alltagshilfeReport": {
     "breadcrumbDashboard": "Overview",

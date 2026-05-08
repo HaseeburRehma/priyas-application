@@ -1,6 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { loadReports, type ReportRange } from "@/lib/api/reports";
+import { loadAlltagshilfeMonthly } from "@/lib/api/alltagshilfe";
 import { requirePermission, PermissionError } from "@/lib/rbac/permissions";
+import {
+  renderReportsPdf,
+  type OpenInvoiceRow,
+  type ReportType,
+} from "@/lib/pdf/reports-pdf";
+import { renderAlltagshilfePdf } from "@/lib/pdf/alltagshilfe-pdf";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { asAppLocale } from "@/lib/utils/i18n-format";
+import { getLocale } from "next-intl/server";
 
 const VALID_RANGES: ReportRange[] = ["30d", "Q", "YTD", "12mo"];
 const VALID_TYPES = [
@@ -12,6 +22,18 @@ const VALID_TYPES = [
   "open-invoices",
   "satisfaction",
 ] as const;
+
+// Types we render via the generic Reports PDF renderer. Alltagshilfe
+// has its own dedicated renderer because its data shape (per-client
+// staff tables) doesn't fit ReportsData.
+const REPORTS_PDF_TYPES: ReportType[] = [
+  "summary",
+  "monthly-revenue",
+  "hours",
+  "completion",
+  "satisfaction",
+  "open-invoices",
+];
 
 /**
  * GET /api/reports/export?type=summary&range=YTD&format=csv|pdf
@@ -48,7 +70,7 @@ export async function GET(request: NextRequest) {
 
   // Minimal CSV builder. Real PDF rendering is the next iteration.
   let body = "";
-  let filename = `priya-report-${type}-${range}.csv`;
+  const filename = `priya-report-${type}-${range}.csv`;
 
   switch (type) {
     case "monthly-revenue":
@@ -93,15 +115,109 @@ export async function GET(request: NextRequest) {
   }
 
   if (format === "pdf") {
-    // Stub — return CSV for now but with a friendly note.
-    body = `Note: PDF export coming next. CSV below.\n\n${body}`;
-    filename = filename.replace(".csv", ".txt");
-    return new NextResponse(body, {
-      headers: {
-        "content-type": "text/plain; charset=utf-8",
-        "content-disposition": `attachment; filename="${filename}"`,
-      },
-    });
+    // Resolve org name once — used by both renderers.
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    let orgName = "Priya's Reinigungsservice";
+    if (user) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: profile } = await ((supabase.from("profiles") as any))
+        .select("org_id")
+        .eq("id", user.id)
+        .maybeSingle();
+      const orgId = (profile as { org_id: string | null } | null)?.org_id;
+      if (orgId) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: org } = await ((supabase.from("organizations") as any))
+          .select("name")
+          .eq("id", orgId)
+          .maybeSingle();
+        const n = (org as { name: string | null } | null)?.name;
+        if (n) orgName = n;
+      }
+    }
+
+    // 1) Alltagshilfe gets its own renderer + dataset.
+    if (type === "alltagshilfe") {
+      const now = new Date();
+      const locale = asAppLocale(await getLocale());
+      const report = await loadAlltagshilfeMonthly(
+        now.getFullYear(),
+        now.getMonth(),
+        locale,
+      );
+      const bytes = await renderAlltagshilfePdf(report, { name: orgName });
+      const pdfFilename = filename.replace(".csv", ".pdf");
+      return new NextResponse(bytes as unknown as BodyInit, {
+        headers: {
+          "content-type": "application/pdf",
+          "content-disposition": `attachment; filename="${pdfFilename}"`,
+          "cache-control": "no-store",
+        },
+      });
+    }
+
+    // 2) Open-invoices needs the actual list of unpaid invoices.
+    let openInvoicesExtra: OpenInvoiceRow[] | undefined;
+    if (type === "open-invoices") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: invoiceRows } = await ((supabase.from("invoices") as any))
+        .select(
+          `invoice_number, status, issue_date, due_date, total_cents,
+           client:clients ( display_name )`,
+        )
+        .is("deleted_at", null)
+        .in("status", ["sent", "overdue"])
+        .order("due_date", { ascending: true, nullsFirst: false });
+      type Row = {
+        invoice_number: string;
+        status: "sent" | "overdue";
+        issue_date: string;
+        due_date: string | null;
+        total_cents: number;
+        client: { display_name: string } | null;
+      };
+      const today = new Date();
+      openInvoicesExtra = ((invoiceRows ?? []) as Row[]).map((r) => {
+        const due = r.due_date ? new Date(r.due_date) : null;
+        const days_overdue = due
+          ? Math.floor(
+              (today.getTime() - due.getTime()) / 86_400_000,
+            )
+          : null;
+        return {
+          invoice_number: r.invoice_number,
+          client_name: r.client?.display_name ?? "—",
+          status: r.status,
+          issue_date: r.issue_date,
+          due_date: r.due_date,
+          total_cents: Number(r.total_cents ?? 0),
+          days_overdue,
+        };
+      });
+    }
+
+    // 3) Everything else (incl. satisfaction) goes through the generic renderer.
+    if ((REPORTS_PDF_TYPES as ReadonlyArray<string>).includes(type)) {
+      const bytes = await renderReportsPdf(
+        type as ReportType,
+        data,
+        { name: orgName },
+        { openInvoices: openInvoicesExtra },
+      );
+      const pdfFilename = filename.replace(".csv", ".pdf");
+      return new NextResponse(bytes as unknown as BodyInit, {
+        headers: {
+          "content-type": "application/pdf",
+          "content-disposition": `attachment; filename="${pdfFilename}"`,
+          "cache-control": "no-store",
+        },
+      });
+    }
+    // Unrecognised PDF type — fall through to CSV with a heads-up.
+    body = `# PDF for "${type}" is not yet available; CSV below.\n\n${body}`;
   }
 
   return new NextResponse(body, {

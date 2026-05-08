@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import type { RevenueMonth } from "@/lib/api/reports";
-import { formatEUR } from "@/lib/utils/format";
+import { useFormat } from "@/lib/utils/i18n-format";
 
 const W = 720;
 const H = 240;
@@ -12,6 +12,8 @@ type Props = { months: RevenueMonth[] };
 
 export function RevenueChart({ months }: Props) {
   const t = useTranslations("reports.revenueChart");
+  const f = useFormat();
+  const formatEUR = (cents: number) => f.currencyCents(cents);
 
   // Find max + best + average for the metadata footer.
   const maxValue = Math.max(

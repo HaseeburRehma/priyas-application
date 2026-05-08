@@ -12,6 +12,7 @@ import { registerSchema, type RegisterInput } from "@/lib/validators/auth";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { env } from "@/lib/constants/env";
 import { routes } from "@/lib/constants/routes";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 
 /**
  * Self-serve registration. Creates an auth user with metadata that the
@@ -104,7 +105,7 @@ export function RegisterForm() {
 
   return (
     <section className="relative flex flex-col bg-white">
-      {/* Top: link back to sign-in */}
+      {/* Top: link back to sign-in + language picker */}
       <div className="flex items-center justify-end gap-3 px-12 pt-8 text-[12px] text-neutral-500">
         <span>{t("haveAccount")}</span>
         <Link
@@ -113,6 +114,9 @@ export function RegisterForm() {
         >
           {t("signInLink")}
         </Link>
+        <span className="rounded-full border border-neutral-200 bg-white">
+          <LanguageSwitcher />
+        </span>
       </div>
 
       <div className="grid flex-1 place-items-center px-12 py-6">
@@ -365,11 +369,17 @@ export function RegisterForm() {
       {/* Foot */}
       <div className="flex items-center justify-between border-t border-neutral-100 px-12 py-6 text-[11px] text-neutral-400">
         <div className="flex gap-[18px]">
-          <a className="hover:text-neutral-600" href="#">Datenschutz policy</a>
-          <a className="hover:text-neutral-600" href="#">AGB of service</a>
-          <a className="hover:text-neutral-600" href="#">Impressum</a>
+          <a className="hover:text-neutral-600" href="#">
+            {t("footerPrivacy")}
+          </a>
+          <a className="hover:text-neutral-600" href="#">
+            {t("footerTerms")}
+          </a>
+          <a className="hover:text-neutral-600" href="#">
+            {t("footerImprint")}
+          </a>
         </div>
-        <div>v1.0 · secure connection</div>
+        <div>v1.0 · {t("secureConnection")}</div>
       </div>
     </section>
   );

@@ -28,7 +28,7 @@ type Props = {
  */
 export function ChatThread({ channel, currentUserId }: Props) {
   const locale = useLocale() as keyof typeof localeMap;
-  const { messages, loading, error, append } = useMessages(channel.id);
+  const { messages, loading, error, append, replace } = useMessages(channel.id);
   const { send, error: sendError } = useSendMessage();
   const markAsRead = useMarkChannelRead();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -82,17 +82,23 @@ export function ChatThread({ channel, currentUserId }: Props) {
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
         </Link>
+        {/*
+          Direct-message avatar — green-on-white initials of the *other*
+          participant, matching the rest of the app's avatar style.
+          Channels keep the icon-style square chip; private channels
+          get a lock glyph.
+        */}
         <span
           className={
             channel.is_direct
-              ? "grid h-9 w-9 flex-shrink-0 place-items-center rounded-full bg-secondary-100 text-[12px] font-semibold text-secondary-700"
+              ? "grid h-9 w-9 flex-shrink-0 place-items-center rounded-full bg-primary-500 text-[12px] font-bold text-white"
               : channel.is_private
                 ? "grid h-9 w-9 flex-shrink-0 place-items-center rounded-md bg-warning-50 text-[14px] font-bold text-warning-700"
                 : "grid h-9 w-9 flex-shrink-0 place-items-center rounded-md bg-primary-50 text-[14px] font-bold text-primary-700"
           }
         >
           {channel.is_direct
-            ? channel.name.slice(0, 2).toUpperCase()
+            ? dmInitials(channel.name)
             : channel.is_private
               ? "🔒"
               : "#"}
@@ -212,12 +218,44 @@ export function ChatThread({ channel, currentUserId }: Props) {
             channelId: channel.id,
             body,
             attachments,
+            // Render the optimistic placeholder immediately so the user
+            // sees their message land without waiting for the round-trip…
             onOptimistic: append,
+            // …then swap it for the persisted row once the insert
+            // resolves. This is what stops the "I sent one, see two"
+            // duplication that the realtime INSERT used to cause.
+            onPersisted: (tempId, real) => {
+              void replace(tempId, real);
+            },
           });
         }}
       />
     </section>
   );
+}
+
+/**
+ * Pull initials out of a DM channel name. Backend formats those as
+ * "Alice Müller ↔ Bob Schmidt" — split on the arrow, take both
+ * participants, then prefer the *other* participant's initials when we
+ * can identify ourselves. Falls back to first two letters of the full
+ * name (which is what the previous code did).
+ */
+function dmInitials(name: string): string {
+  if (!name) return "?";
+  // Split on the directional arrows the chat-channels factory uses.
+  const parts = name.split(/\s*[↔–—-]\s*/).filter(Boolean);
+  // Pick the longest part as the "other" person heuristically — both
+  // halves are present, so the longer one is unlikely to be empty.
+  const target = parts.length > 0 ? parts[parts.length - 1] : name;
+  const initials = (target ?? name)
+    .split(/\s+/)
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  return initials || name.slice(0, 2).toUpperCase();
 }
 
 function HeaderIconButton({

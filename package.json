@@ -14,6 +14,10 @@
     "supabase:reset": "supabase db reset",
     "supabase:push": "supabase db push",
     "supabase:seed:test-users": "psql \"$SUPABASE_DB_URL\" -f supabase/seed/test_users.sql",
+    "test:e2e": "playwright test --project=chromium",
+    "test:e2e:matrix": "playwright test --project=chromium --project=firefox --project=webkit",
+    "test:a11y": "playwright test --project=a11y",
+    "test:stagehand": "playwright test --project=stagehand",
     "prepare": "husky || true"
   },
   "dependencies": {
@@ -39,6 +43,7 @@
     "zustand": "^5.0.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
     "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",

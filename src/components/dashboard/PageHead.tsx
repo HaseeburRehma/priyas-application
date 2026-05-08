@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { routes } from "@/lib/constants/routes";
+import { asAppLocale, bcp47Of } from "@/lib/utils/i18n-format";
 
 type Props = {
   greetingName: string;
 };
 
-const localeToBcp = (l: string) =>
-  l === "ta" ? "ta-IN" : l === "en" ? "en-GB" : "de-DE";
+// Route the legacy locale-to-BCP47 helper through the canonical map so
+// every surface in the app uses the same set of tags.
+const localeToBcp = (l: string) => bcp47Of(asAppLocale(l));
 
 function germanGreetingKey(d: Date): "morning" | "afternoon" | "evening" {
   const h = d.getHours();

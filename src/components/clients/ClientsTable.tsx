@@ -3,10 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
-import { format } from "date-fns";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
+import { useFormat } from "@/lib/utils/i18n-format";
 import type { ClientRow } from "@/lib/api/clients.types";
 
 type Props = {
@@ -43,6 +43,7 @@ export function ClientsTable({
   onPageChange,
 }: Props) {
   const t = useTranslations("clients.table");
+  const f = useFormat();
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   function toggle(id: string) {
@@ -232,9 +233,7 @@ export function ClientsTable({
                     </td>
                     <td className="px-5 py-3.5 align-middle">
                       <span className="font-mono text-[12px] text-neutral-600">
-                        {r.contract_start
-                          ? format(new Date(r.contract_start), "yyyy-MM-dd")
-                          : "—"}
+                        {f.date(r.contract_start)}
                       </span>
                     </td>
                     <td className="px-5 py-3.5 align-middle">

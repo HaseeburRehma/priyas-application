@@ -79,7 +79,17 @@ export function InviteEmployeeDialog({ open, onClose }: Props) {
         toast.error(result.error || t("saveError"));
         return;
       }
-      toast.success(tDialog("createSuccess"));
+      // Surface the invite-email outcome explicitly. The employees row
+      // is always created; the magic-link email is best-effort.
+      if (result.data.inviteStatus === "sent") {
+        toast.success(tDialog("createWithInvite"));
+      } else if (result.data.inviteStatus === "failed") {
+        toast.message(
+          tDialog("createNoInvite", { reason: result.data.inviteError ?? "" }),
+        );
+      } else {
+        toast.success(tDialog("createSuccess"));
+      }
       onClose();
       router.refresh();
     });

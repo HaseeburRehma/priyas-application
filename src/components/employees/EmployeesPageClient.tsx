@@ -67,18 +67,31 @@ export function EmployeesPageClient({ summary, canCreate }: Props) {
           <p className="text-[13px] text-neutral-500">{t("subtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          <button className="btn btn--ghost border border-neutral-200 bg-white">
+          {/* Import CSV is parked behind a tooltip until the importer
+              ships; Export goes through /api/employees?format=csv (see
+              that route handler). */}
+          <button
+            type="button"
+            disabled
+            title={t("actions.importComingSoon")}
+            className="btn btn--ghost border border-neutral-200 bg-white opacity-50"
+          >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5-5 5 5M12 5v12" />
             </svg>
             {t("actions.import")}
           </button>
-          <button className="btn btn--tertiary">
+          <a
+            href="/api/employees?format=csv"
+            target="_blank"
+            rel="noopener"
+            className="btn btn--tertiary"
+          >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 10l-5 5-5-5M12 15V3" />
             </svg>
             {t("actions.export")}
-          </button>
+          </a>
           {canCreate && (
             <button
               type="button"
@@ -122,7 +135,13 @@ export function EmployeesPageClient({ summary, canCreate }: Props) {
         <SummaryCard
           label={tSummary("onboarding")}
           value={summary.pendingOnboarding}
-          sub={tSummary("onboardingSub")}
+          // Show the real first-pending employee when we have one;
+          // fall back to "no mandatory training pending" copy when 0.
+          sub={
+            summary.pendingOnboarding > 0
+              ? (summary.pendingOnboardingPreview ?? tSummary("onboardingSub"))
+              : tSummary("onboardingNonePending")
+          }
           tone="up"
         />
       </div>
@@ -294,7 +313,7 @@ function Row({ row }: { row: EmployeeRow }) {
     accent: "bg-accent-600",
     warning: "bg-warning-500",
   };
-  const teamSwClass: Record<EmployeeRow["team_tone"], string> = {
+  const teamSwClass: Record<NonNullable<EmployeeRow["team_tone"]>, string> = {
     primary: "bg-primary-500",
     secondary: "bg-secondary-500",
     warning: "bg-warning-500",
@@ -304,6 +323,17 @@ function Row({ row }: { row: EmployeeRow }) {
     field: "bg-secondary-50 text-secondary-700",
     trainee: "bg-warning-50 text-warning-700",
   };
+
+  // Build a localised "DE · EN · Projektleitung seit 2026" string
+  // client-side using the same translation table that powers the
+  // role chip. Replaces the previous server-built English fragment.
+  const langs = row.languages.map((l) => l.toUpperCase()).join(" · ");
+  const roleWord = tRole(row.role_chip);
+  const metaParts = [langs, roleWord];
+  if (row.hire_year !== null) {
+    metaParts.push(tTable("metaSince", { year: row.hire_year }));
+  }
+  const meta = metaParts.filter(Boolean).join(" · ");
 
   const pct = Math.min(
     150,
@@ -339,7 +369,7 @@ function Row({ row }: { row: EmployeeRow }) {
               )}
             </span>
             <span className="mt-0.5 block truncate text-[11px] text-neutral-500">
-              {row.meta}
+              {meta}
             </span>
           </span>
         </Link>
@@ -355,10 +385,14 @@ function Row({ row }: { row: EmployeeRow }) {
         </span>
       </td>
       <td className="px-5 py-3.5 align-middle">
-        <span className="inline-flex items-center gap-1.5 text-[12px] text-neutral-700">
-          <span className={cn("h-2 w-2 rounded-full", teamSwClass[row.team_tone])} />
-          {row.team_label}
-        </span>
+        {row.team_label && row.team_tone ? (
+          <span className="inline-flex items-center gap-1.5 text-[12px] text-neutral-700">
+            <span className={cn("h-2 w-2 rounded-full", teamSwClass[row.team_tone])} />
+            {row.team_label}
+          </span>
+        ) : (
+          <span className="text-[12px] text-neutral-400">—</span>
+        )}
       </td>
       <td className="px-5 py-3.5 align-middle">
         <div className="flex items-center justify-between gap-2">

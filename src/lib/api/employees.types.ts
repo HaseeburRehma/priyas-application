@@ -9,10 +9,18 @@ export type EmployeeRow = {
   phone: string | null;
   initials: string;
   tone: "primary" | "secondary" | "accent" | "warning";
-  meta: string; // "DE · EN · Reinigungskraft since 2023"
+  /**
+   * Year extracted from hire_date — let the client build a localised
+   * "Projektleitung seit 2026" / "Project Lead since 2026" / Tamil
+   * string. Avoids leaking English fragments through a translated UI.
+   */
+  hire_year: number | null;
+  /** Single-letter language codes the employee speaks. */
+  languages: ReadonlyArray<"de" | "en" | "ta">;
   role_chip: EmployeeRoleChip;
-  team_label: string;
-  team_tone: "primary" | "secondary" | "warning";
+  /** Real team label when assigned, null otherwise. UI shows "—". */
+  team_label: string | null;
+  team_tone: "primary" | "secondary" | "warning" | null;
   hours_this_week: number;
   weekly_target: number;
   status: EmployeeStatus | "overtime";
@@ -27,6 +35,8 @@ export type EmployeesSummary = {
   activeToday: number;
   onLeave: number;
   pendingOnboarding: number;
+  /** First pending employee — used as the dashboard card subtitle. */
+  pendingOnboardingPreview?: string | null;
   newThisMonth: number;
 };
 
@@ -56,7 +66,7 @@ export type EmployeeDetail = {
   hire_date: string | null;
   status: EmployeeStatus;
   role_chip: EmployeeRoleChip;
-  team_label: string;
+  team_label: string | null;
   hourly_rate_eur: number | null;
   weekly_hours: number;
   // Aggregates

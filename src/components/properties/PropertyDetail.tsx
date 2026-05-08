@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { format } from "date-fns";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
+import { useFormat } from "@/lib/utils/i18n-format";
 import type { PropertyDetail as Detail } from "@/lib/api/properties.types";
 import { PropertyDetailActions } from "./PropertyDetailActions";
 
@@ -18,6 +18,14 @@ export function PropertyDetail({
   canDelete: boolean;
 }) {
   const t = useTranslations("properties.detail");
+  const f = useFormat();
+
+  // Spec §4.1 / §4.2: flag "new" records visually for the first 30 days.
+  // Previously this badge was hard-coded on, which made every property look
+  // permanently "new". Match the same window as ClientDetail.tsx.
+  const NEW_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+  const isNew =
+    Date.now() - new Date(detail.created_at).getTime() < NEW_WINDOW_MS;
 
   return (
     <>
@@ -48,9 +56,11 @@ export function PropertyDetail({
               <h1 className="truncate text-[24px] font-bold text-secondary-500">
                 {detail.name}
               </h1>
-              <span className="rounded-full bg-primary-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.04em] text-white">
-                {t("newBadge")}
-              </span>
+              {isNew && (
+                <span className="rounded-full bg-primary-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.04em] text-white">
+                  {t("newBadge")}
+                </span>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[12px] text-neutral-500">
               <span className="inline-flex items-center gap-1.5">
@@ -77,7 +87,7 @@ export function PropertyDetail({
             <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
               <Stat
                 label={t("statFloor")}
-                value={detail.size_sqm ? `${detail.size_sqm.toLocaleString("de-DE")} m²` : "—"}
+                value={detail.size_sqm ? `${f.number(detail.size_sqm)} m²` : "—"}
               />
               <Stat label={t("statRooms")} value={detail.rooms ?? "—"} />
               <Stat
@@ -90,7 +100,7 @@ export function PropertyDetail({
                 label={t("statContractEnd")}
                 value={
                   detail.contract_end
-                    ? format(new Date(detail.contract_end), "MMM yyyy")
+                    ? f.pattern(detail.contract_end, "MMM yyyy")
                     : "—"
                 }
                 accent={detail.contract_end ? "warn" : undefined}
@@ -333,6 +343,7 @@ function TeamCard({ team }: { team: Detail["team"] }) {
 
 function KeyInfoCard({ detail }: { detail: Detail }) {
   const t = useTranslations("properties.detail");
+  const f = useFormat();
   return (
     <section className="rounded-lg border border-neutral-100 bg-white">
       <header className="border-b border-neutral-100 p-5">
@@ -367,7 +378,7 @@ function KeyInfoCard({ detail }: { detail: Detail }) {
         )}
         <Row
           label={t("createdAt")}
-          value={format(new Date(detail.created_at), "yyyy-MM-dd")}
+          value={f.date(detail.created_at)}
           mono
         />
       </dl>

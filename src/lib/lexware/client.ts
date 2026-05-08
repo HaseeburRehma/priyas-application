@@ -1,20 +1,6 @@
 import "server-only";
 
-/**
- * Minimal Lexware Office REST client.
- *
- * Spec §4.7 says we sync clients + invoices via Lexware's REST API. Their
- * docs are at https://developers.lexware.io/. This module is a thin wrapper
- * around fetch so we can swap providers later (Datev, sevDesk, …) without
- * touching the action layer.
- *
- * Configuration via env:
- *   LEXWARE_BASE_URL          (e.g. https://api.lexware.io)
- *   LEXWARE_API_KEY           (Bearer token)
- *
- * If the env is missing, calls return `null` — the action layer treats
- * that as "Lexware not configured" and surfaces a friendly toast.
- */
+
 
 export type LexwareConfig = {
   baseUrl: string;
@@ -104,22 +90,22 @@ export async function lexwareUpsertContact(
     version: 0,
     roles: { customer: {} },
     ...(client.customer_type === "residential" ||
-    client.customer_type === "alltagshilfe"
+      client.customer_type === "alltagshilfe"
       ? {
-          person: {
-            firstName: (client.contact_name ?? "").split(" ")[0] ?? "",
-            lastName:
-              (client.contact_name ?? client.display_name)
-                .split(" ")
-                .slice(-1)[0] ?? client.display_name,
-          },
-        }
+        person: {
+          firstName: (client.contact_name ?? "").split(" ")[0] ?? "",
+          lastName:
+            (client.contact_name ?? client.display_name)
+              .split(" ")
+              .slice(-1)[0] ?? client.display_name,
+        },
+      }
       : {
-          company: {
-            name: client.display_name,
-            ...(client.tax_id ? { vatRegistrationId: client.tax_id } : {}),
-          },
-        }),
+        company: {
+          name: client.display_name,
+          ...(client.tax_id ? { vatRegistrationId: client.tax_id } : {}),
+        },
+      }),
     ...(client.email
       ? { emailAddresses: { business: [client.email] } }
       : {}),
@@ -180,9 +166,9 @@ export async function lexwareCreateInvoice(
     taxConditions: { taxType: "net" },
     paymentConditions: args.dueDate
       ? {
-          paymentTerm: { duration: 14 },
-          paymentTermLabel: "14 days",
-        }
+        paymentTerm: { duration: 14 },
+        paymentTermLabel: "14 days",
+      }
       : undefined,
     introduction: args.notes ?? "",
     remark: `Internal: ${args.invoiceNumber}`,

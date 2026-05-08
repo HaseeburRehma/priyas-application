@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
 import { useUiStore } from "@/stores/useUiStore";
+import type { SidebarCounts } from "@/lib/api/sidebar";
 
 type NavItem = {
   label: string;
@@ -25,7 +26,17 @@ type Props = {
    *  `routeKey` are always shown; items with one are hidden when not
    *  present in this list. */
   allowedRoutes?: string[];
+  /** Live counts piped down from DashboardLayout. Anything null is
+   *  rendered without a badge (per spec: "show real-time updates only,
+   *  no default placeholder numbers"). */
+  counts?: SidebarCounts;
 };
+
+/** Format a numeric count for the badge. 999+ caps the display. */
+function fmt(n: number | null | undefined): string | undefined {
+  if (n == null || n <= 0) return undefined;
+  return n > 999 ? "999+" : String(n);
+}
 
 const Icon = ({ children }: { children: React.ReactNode }) => (
   <svg
@@ -129,7 +140,7 @@ const icons = {
  *  - mobile <768px: hidden by default; slides in as a drawer via the
  *    hamburger button in the topbar.
  */
-export function Sidebar({ allowedRoutes }: Props = {}) {
+export function Sidebar({ allowedRoutes, counts }: Props = {}) {
   const t = useTranslations("nav");
   const pathname = usePathname();
   const mobileNavOpen = useUiStore((s) => s.mobileNavOpen);
@@ -161,10 +172,10 @@ export function Sidebar({ allowedRoutes }: Props = {}) {
       title: t("workspace"),
       items: [
         { label: t("overview"), href: routes.dashboard, icon: icons.overview, routeKey: "dashboard" },
-        { label: t("clients"), href: routes.clients, icon: icons.clients, badge: "10", routeKey: "clients" },
-        { label: t("properties"), href: routes.properties, icon: icons.properties, badge: "112", routeKey: "properties" },
+        { label: t("clients"), href: routes.clients, icon: icons.clients, badge: fmt(counts?.clients), routeKey: "clients" },
+        { label: t("properties"), href: routes.properties, icon: icons.properties, badge: fmt(counts?.properties), routeKey: "properties" },
         { label: t("schedule"), href: routes.schedule, icon: icons.schedule, routeKey: "schedule" },
-        { label: t("employees"), href: routes.employees, icon: icons.employees, badge: "32", routeKey: "employees" },
+        { label: t("employees"), href: routes.employees, icon: icons.employees, badge: fmt(counts?.employees), routeKey: "employees" },
         { label: t("training"), href: routes.training, icon: icons.training, routeKey: "training" },
         { label: t("reports"), href: routes.reports, icon: icons.reports, routeKey: "reports" },
       ],
@@ -179,8 +190,8 @@ export function Sidebar({ allowedRoutes }: Props = {}) {
     {
       title: t("communication"),
       items: [
-        { label: t("teamChat"), href: routes.chat, icon: icons.chat, badge: "3", routeKey: "chat" },
-        { label: t("notifications"), href: routes.notifications, icon: icons.bell, badge: "12", routeKey: "notifications" },
+        { label: t("teamChat"), href: routes.chat, icon: icons.chat, badge: fmt(counts?.unreadChat), routeKey: "chat" },
+        { label: t("notifications"), href: routes.notifications, icon: icons.bell, badge: fmt(counts?.unreadNotifications), routeKey: "notifications" },
       ],
     },
     {

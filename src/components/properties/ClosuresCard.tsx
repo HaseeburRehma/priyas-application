@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { format } from "date-fns";
 import { cn } from "@/lib/utils/cn";
+import { useFormat } from "@/lib/utils/i18n-format";
 import {
   deletePropertyClosureAction,
   upsertPropertyClosureAction,
@@ -56,6 +56,7 @@ const REASON_STYLE: Record<Reason, string> = {
 export function ClosuresCard({ propertyId, closures, canEdit }: Props) {
   const t = useTranslations("properties.closures");
   const router = useRouter();
+  const f = useFormat();
   const [pending, start] = useTransition();
   const [editor, setEditor] = useState<Draft | null>(null);
 
@@ -139,9 +140,9 @@ export function ClosuresCard({ propertyId, closures, canEdit }: Props) {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-mono text-[13px] text-neutral-800">
-                      {format(new Date(c.start_date), "yyyy-MM-dd")}
+                      {f.date(c.start_date)}
                       {c.start_date !== c.end_date && (
-                        <> → {format(new Date(c.end_date), "yyyy-MM-dd")}</>
+                        <> → {f.date(c.end_date)}</>
                       )}
                     </span>
                     <span

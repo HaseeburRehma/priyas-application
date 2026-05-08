@@ -11,6 +11,13 @@ type SendArgs = {
   attachments?: ChatAttachment[];
   /** Called with the optimistic message before it's persisted. */
   onOptimistic?: (m: Message) => void;
+  /**
+   * Called once the insert resolves with the persisted row. The caller
+   * is expected to swap the row whose id === `tempId` for `real`.
+   * Without this the optimistic stays in state and the realtime
+   * arrival adds a second copy → user sees their message twice.
+   */
+  onPersisted?: (tempId: string, real: Message) => void;
 };
 
 /**
@@ -25,7 +32,13 @@ export function useSendMessage() {
   const [error, setError] = useState<string | null>(null);
 
   const send = useCallback(
-    async ({ channelId, body, attachments, onOptimistic }: SendArgs) => {
+    async ({
+      channelId,
+      body,
+      attachments,
+      onOptimistic,
+      onPersisted,
+    }: SendArgs) => {
       setError(null);
       const trimmed = body.trim();
       const atts = attachments ?? [];
@@ -86,9 +99,16 @@ export function useSendMessage() {
         return null;
       }
 
+      // Swap the optimistic placeholder for the persisted row so the
+      // subsequent realtime INSERT finds it by id and dedupes
+      // correctly. Without this we'd see the message render twice
+      // (temp- placeholder + realtime arrival with a different id).
+      const persisted = data as Message;
+      onPersisted?.(tempId, persisted);
+
       // Bust the channel list cache so unread/last-message refresh on next load.
       qc.invalidateQueries({ queryKey: ["chat", "channels"] });
-      return data as Message;
+      return persisted;
     },
     [supabase, qc],
   );

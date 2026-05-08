@@ -30,7 +30,17 @@ export function ClientsPageHead() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <button type="button" className="btn btn--ghost border border-neutral-200 bg-white">
+          {/*
+            Import CSV is parked behind a disabled-with-tooltip until
+            we ship the importer. Showing a working button that does
+            nothing is worse than showing a clearly-disabled one.
+          */}
+          <button
+            type="button"
+            disabled
+            title={t("actions.importComingSoon")}
+            className="btn btn--ghost border border-neutral-200 bg-white opacity-50"
+          >
             <svg
               aria-hidden
               viewBox="0 0 24 24"
@@ -45,7 +55,12 @@ export function ClientsPageHead() {
             </svg>
             {t("actions.import")}
           </button>
-          <button type="button" className="btn btn--tertiary">
+          <a
+            href="/api/clients?format=csv"
+            target="_blank"
+            rel="noopener"
+            className="btn btn--tertiary"
+          >
             <svg
               aria-hidden
               viewBox="0 0 24 24"
@@ -59,7 +74,7 @@ export function ClientsPageHead() {
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 10l-5 5-5-5M12 15V3" />
             </svg>
             {t("actions.export")}
-          </button>
+          </a>
           <Link href={routes.clientNew} className="btn btn--primary">
             <svg
               aria-hidden

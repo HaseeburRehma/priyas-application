@@ -1,0 +1,75 @@
+# =============================================================================
+# Daily Postgres backup — see scripts/backup-db.sh for what it actually does.
+#
+# Schedule: 02:30 UTC every day. Adjust if you have a quieter window.
+#
+# Required GitHub secrets:
+#   DATABASE_URL              — Supabase connection string with sslmode=require.
+#                                Use the *direct* connection (port 5432), NOT
+#                                pgbouncer — pg_dump needs streaming replication
+#                                features that pooled connections don't support.
+#   BACKUP_PASSPHRASE         — random ≥32 chars, store separately from DATABASE_URL.
+#   BACKUP_S3_BUCKET          — name of the destination bucket.
+#   BACKUP_S3_PREFIX          — optional, e.g. "prod/".
+#   AWS_ACCESS_KEY_ID         — S3 access key.
+#   AWS_SECRET_ACCESS_KEY     — S3 secret.
+#   AWS_DEFAULT_REGION        — e.g. eu-central-1.
+#   AWS_ENDPOINT_URL          — optional, only set for non-AWS S3 (Hetzner,
+#                                Backblaze, R2, etc.).
+#
+# Manual trigger:
+#   GitHub UI → Actions → "DB backup" → "Run workflow".
+# =============================================================================
+name: DB backup
+
+on:
+  schedule:
+    - cron: "30 2 * * *" # 02:30 UTC daily
+  workflow_dispatch:
+
+concurrency:
+  group: db-backup
+  # Don't run two backups in parallel — they'd race for the same S3 keys
+  # (timestamp-distinct in practice but cleanup-of-old-objects could
+  # interfere with each other).
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install postgresql-client matching Supabase
+        # Supabase runs Postgres 15. Match the major to avoid pg_dump
+        # version-mismatch errors.
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client-15 gnupg awscli
+
+      - name: Run backup
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          BACKUP_S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+          BACKUP_S3_PREFIX: ${{ secrets.BACKUP_S3_PREFIX }}
+          BACKUP_RETENTION_DAYS: "30"
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
+          PG_DUMP_BIN: /usr/lib/postgresql/15/bin/pg_dump
+        run: ./scripts/backup-db.sh
+
+      - name: Notify on failure (Slack webhook, optional)
+        if: failure() && env.SLACK_BACKUP_WEBHOOK != ''
+        env:
+          SLACK_BACKUP_WEBHOOK: ${{ secrets.SLACK_BACKUP_WEBHOOK }}
+        run: |
+          curl -X POST -H 'content-type: application/json' \
+            --data '{"text":":rotating_light: DB backup failed — check the workflow run."}' \
+            "$SLACK_BACKUP_WEBHOOK"

@@ -35,12 +35,12 @@ export type ReactionAggregate = {
  * URLs lazily for display.
  */
 export type ChatAttachment = {
-  kind: "image" | "audio" | "file";
+  kind: "image" | "audio" | "video" | "file";
   path: string;
   name: string;
   mime: string;
   size: number;
-  /** For audio attachments — duration in seconds, when known. */
+  /** For audio + video attachments — duration in seconds, when known. */
   duration?: number;
 };
 

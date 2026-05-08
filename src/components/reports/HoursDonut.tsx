@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import type { HoursByService } from "@/lib/api/reports";
-import { formatEUR } from "@/lib/utils/format";
+import { useFormat } from "@/lib/utils/i18n-format";
 
 const PALETTE = ["#72A94F", "#16587C", "#A8CC87", "#F4A261"];
 
@@ -22,6 +22,8 @@ export function HoursDonut({
   averageRateEur,
 }: Props) {
   const t = useTranslations("reports.donut");
+  const f = useFormat();
+  const formatEUR = (cents: number) => f.currencyCents(cents);
 
   // Build SVG arc paths.
   const radius = 64;
@@ -77,7 +79,7 @@ export function HoursDonut({
             <div className="absolute inset-0 grid place-items-center text-center">
               <div>
                 <div className="text-[20px] font-bold text-secondary-500">
-                  {totalHours.toLocaleString("de-DE")}
+                  {f.number(totalHours)}
                 </div>
                 <div className="text-[10px] font-semibold uppercase tracking-[0.05em] text-neutral-500">
                   {t("totalHours")}
@@ -105,7 +107,7 @@ export function HoursDonut({
                 </span>
                 <span className="flex-shrink-0">
                   <span className="font-semibold text-neutral-800">
-                    {Math.round(s.hours).toLocaleString("de-DE")}h
+                    {f.number(Math.round(s.hours))}h
                   </span>
                   <span className="ml-1 text-neutral-500">
                     {s.pct.toFixed(0)}%

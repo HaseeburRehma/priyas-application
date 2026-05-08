@@ -20,5 +20,11 @@ export type UpsertTrainingModuleInput = z.infer<
 export const trainingProgressSchema = z.object({
   module_id: z.string().uuid(),
   state: z.enum(["start", "complete", "reset"]),
+  // Optional: when state === "complete" on a mandatory module, the
+  // SignaturePad's SVG payload (raw <svg>...</svg> markup). The action
+  // uploads it to the employee-docs bucket and stores the path on
+  // employee_training_progress.signature_path. Capped at 64 KB which is
+  // ~10x the size of a typical pen-stroke SVG.
+  signature_svg: z.string().min(50).max(64_000).optional(),
 });
 export type TrainingProgressInput = z.infer<typeof trainingProgressSchema>;

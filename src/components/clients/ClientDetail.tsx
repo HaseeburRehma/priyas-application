@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { format, differenceInMonths } from "date-fns";
+import { differenceInMonths } from "date-fns";
 import type { ClientDetail as Detail } from "@/lib/api/clients.types";
-import { formatEUR } from "@/lib/utils/format";
+import { useFormat } from "@/lib/utils/i18n-format";
 import { routes } from "@/lib/constants/routes";
 import { ClientDetailActions } from "./ClientDetailActions";
 
@@ -19,6 +19,8 @@ type Props = {
 export function ClientDetail({ detail, canUpdate, canArchive }: Props) {
   const t = useTranslations("clients.detail");
   const tStatus = useTranslations("clients.status");
+  const f = useFormat();
+  const formatEUR = (cents: number) => f.currencyCents(cents);
 
   const initials = detail.display_name
     .split(/\s+/)
@@ -103,7 +105,7 @@ export function ClientDetail({ detail, canUpdate, canArchive }: Props) {
               </Meta>
               <Meta icon={iconClock}>
                 {t("clientSince", {
-                  date: format(new Date(detail.created_at), "dd. MMM yyyy"),
+                  date: f.dateLong(detail.created_at),
                 })}
               </Meta>
             </div>
@@ -239,7 +241,13 @@ function ContactsCard({ detail, canUpdate }: { detail: Detail; canUpdate: boolea
           </div>
         </div>
         {canUpdate && (
-          <button className="btn btn--tertiary">
+          <button
+            type="button"
+            className="btn btn--tertiary cursor-not-allowed opacity-60"
+            disabled
+            aria-disabled="true"
+            title={t("contactsAddComingSoon")}
+          >
             <svg
               aria-hidden
               viewBox="0 0 24 24"
@@ -376,6 +384,7 @@ function KeyInformationCard({
   canUpdate: boolean;
 }) {
   const t = useTranslations("clients.detail");
+  const f = useFormat();
   return (
     <section className="rounded-lg border border-neutral-100 bg-white">
       <header className="flex items-center justify-between border-b border-neutral-100 p-5">
@@ -423,11 +432,7 @@ function KeyInformationCard({
         <Row label={t("vatNumber")} value={detail.tax_id ?? "—"} mono />
         <Row
           label={t("contractStart")}
-          value={
-            detail.contract?.start_date
-              ? format(new Date(detail.contract.start_date), "yyyy-MM-dd")
-              : "—"
-          }
+          value={f.date(detail.contract?.start_date)}
           mono
         />
         <Row
@@ -524,7 +529,13 @@ function NotesCard({
           </div>
         </div>
         {canUpdate && (
-          <button className="btn btn--tertiary">
+          <button
+            type="button"
+            className="btn btn--tertiary cursor-not-allowed opacity-60"
+            disabled
+            aria-disabled="true"
+            title={t("notesAddComingSoon")}
+          >
             <svg
               aria-hidden
               viewBox="0 0 24 24"

@@ -4,11 +4,10 @@ import { useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
-import { formatEUR } from "@/lib/utils/format";
+import { useFormat } from "@/lib/utils/i18n-format";
 import {
   lexwareSyncAction,
   markInvoicePaidAction,
@@ -39,6 +38,8 @@ export function InvoiceDetail({
 }: Props) {
   const t = useTranslations("invoices.detail");
   const tStatus = useTranslations("invoices.status");
+  const f = useFormat();
+  const formatEUR = (cents: number) => f.currencyCents(cents);
   const router = useRouter();
   const [pending, start] = useTransition();
 
@@ -90,16 +91,16 @@ export function InvoiceDetail({
               {tStatus(detail.status)}
             </span>
             <span>
-              {t("issuedOn")}: {format(new Date(detail.issue_date), "yyyy-MM-dd")}
+              {t("issuedOn")}: {f.date(detail.issue_date)}
             </span>
             {detail.due_date && (
               <span>
-                {t("dueOn")}: {format(new Date(detail.due_date), "yyyy-MM-dd")}
+                {t("dueOn")}: {f.date(detail.due_date)}
               </span>
             )}
             {detail.paid_at && (
               <span className="text-success-700">
-                {t("paidOn")}: {format(new Date(detail.paid_at), "yyyy-MM-dd")}
+                {t("paidOn")}: {f.date(detail.paid_at)}
               </span>
             )}
           </div>

@@ -53,6 +53,24 @@ export function EmployeeDetailActions({ initial, canUpdate, canArchive }: Props)
     });
   }
 
+  /**
+   * Download this employee's monthly working-time CSV. Hits
+   * /api/reports/working-time which the manager-only canReachRoute
+   * guard already protects. Default month = current; managers can
+   * adjust via URL if they want a historical period.
+   */
+  function downloadWorkingTime() {
+    const month = new Date().toISOString().slice(0, 7); // YYYY-MM
+    const url = `/api/reports/working-time?month=${month}&employee=${initial.id}`;
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
   return (
     <>
       <div className="ml-auto flex flex-shrink-0 items-center gap-2">
@@ -75,6 +93,30 @@ export function EmployeeDetailActions({ initial, canUpdate, canArchive }: Props)
             <path d="M3 9h18M8 3v4M16 3v4" />
           </svg>
         </Link>
+        {canUpdate && (
+          <Link
+            href={routes.training}
+            className="grid h-9 w-9 place-items-center rounded-md border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
+            title={t("assignTraining")}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+              <path d="M6 12v5c3 3 9 3 12 0v-5" />
+            </svg>
+          </Link>
+        )}
+        {canUpdate && (
+          <button
+            type="button"
+            onClick={downloadWorkingTime}
+            className="grid h-9 w-9 place-items-center rounded-md border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
+            title={t("downloadHours")}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+          </button>
+        )}
         {canUpdate && (
           <button
             type="button"
@@ -235,7 +277,7 @@ function EditDialog({
             onClick={onClose}
             className="grid h-8 w-8 place-items-center rounded-md text-neutral-400 transition hover:bg-neutral-50"
           >
-            ✕
+            <span aria-hidden>✕</span>
           </button>
         </header>
 

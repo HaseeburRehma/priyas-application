@@ -10,6 +10,11 @@ import {
   deletePropertyPhotoAction,
   recordPropertyPhotoAction,
 } from "@/app/actions/property-photos";
+import {
+  compressImage,
+  enforcePhotoCap,
+  MAX_PHOTOS_PER_ASSIGNMENT,
+} from "@/lib/utils/image";
 
 type Photo = {
   id: string;
@@ -49,9 +54,26 @@ export function PropertyPhotosCard({
 
   async function onFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
+    // Spec §4.5 — enforce the 20-photo cap. Drop overflow with a toast
+    // rather than silently uploading and surprising the user later.
+    const incoming = Array.from(files);
+    const { kept, dropped } = enforcePhotoCap(
+      photos,
+      incoming,
+      MAX_PHOTOS_PER_ASSIGNMENT,
+    );
+    if (dropped > 0) {
+      toast.error(t("limitReached", { dropped }));
+    }
+    if (kept.length === 0) return;
+
     setUploading(true);
     try {
-      for (const file of Array.from(files)) {
+      for (const original of kept) {
+        // Compress on-device before the upload. compressImage no-ops on
+        // small files / non-images and falls back to the original on any
+        // error, so this is safe to apply unconditionally.
+        const file = await compressImage(original);
         const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
         const path = `${orgId}/${propertyId}/${Date.now()}-${Math.random()
           .toString(16)

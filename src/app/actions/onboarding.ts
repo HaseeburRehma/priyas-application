@@ -54,7 +54,13 @@ async function audit(
  */
 export async function onboardClientAction(
   raw: unknown,
-): Promise<ActionResult<{ client_id: string }>> {
+): Promise<
+  ActionResult<{
+    client_id: string;
+    property_id: string | null;
+    org_id: string;
+  }>
+> {
   try {
     await requirePermission("client.create");
   } catch (err) {
@@ -178,6 +184,52 @@ export async function onboardClientAction(
     signed_by: sig.signed_by_name,
   });
 
+  // Spec §4.10 — automatic team notification on tablet onboarding.
+  // Mirrors createClientAction's notifyNewClient(): fan out an in-app +
+  // push notification to every admin/dispatcher in the org. Best-effort —
+  // failures are swallowed so the onboarding flow always returns success
+  // once the DB rows are in place.
+  await notifyNewClientFromOnboarding(orgId, clientId, c.display_name).catch(
+    () => {},
+  );
+
   revalidatePath(routes.clients);
-  return { ok: true, data: { client_id: clientId } };
+  return {
+    ok: true,
+    data: {
+      client_id: clientId,
+      property_id: propertyId,
+      org_id: orgId,
+    },
+  };
+}
+
+async function notifyNewClientFromOnboarding(
+  orgId: string,
+  clientId: string,
+  clientName: string,
+) {
+  const supabase = await createSupabaseServerClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await ((supabase.from("profiles") as any))
+    .select("id")
+    .eq("org_id", orgId)
+    .in("role", ["admin", "dispatcher"]);
+  const recipients = ((data ?? []) as Array<{ id: string }>).map((p) => p.id);
+  if (recipients.length === 0) return;
+
+  const { emitNotification } = await import("@/lib/notifications/emit");
+  await Promise.all(
+    recipients.map((user_id) =>
+      emitNotification({
+        user_id,
+        org_id: orgId,
+        category: "new_client",
+        title: `Neuer Kunde (Tablet-Onboarding): ${clientName}`,
+        body: "Wurde gerade vor Ort angelegt.",
+        link_url: `/clients/${clientId}`,
+        push: true,
+      }),
+    ),
+  );
 }

@@ -5,6 +5,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAllowedRoutes } from "@/lib/rbac/permissions";
 import { routes } from "@/lib/constants/routes";
+import { loadSidebarCounts } from "@/lib/api/sidebar";
 
 /** Translate the DB enum to the user-facing role names from the spec. */
 function roleLabel(role: string): string {
@@ -48,6 +49,17 @@ export default async function DashboardLayout({
     .maybeSingle();
   const profile = profileRaw as { full_name: string; role: string } | null;
 
+  // Spec §6.2 — hard-block admin/dispatcher accounts that haven't enrolled
+  // a TOTP factor yet. They get bounced to /setup-2fa, which hosts the
+  // SecuritySection enrolment UI on a clean shell. Field staff are exempt.
+  if (profile?.role === "admin" || profile?.role === "dispatcher") {
+    const { data: factors } = await supabase.auth.mfa.listFactors();
+    const verified = (factors?.totp ?? []).find(
+      (f) => f.status === "verified",
+    );
+    if (!verified) redirect(routes.setup2fa);
+  }
+
   const fullName = profile?.full_name ?? user.email ?? "User";
   const role = profile?.role ?? "—";
   const initials = fullName
@@ -62,9 +74,15 @@ export default async function DashboardLayout({
   const allowedRoutes = await getAllowedRoutes();
   const allowed = Array.from(allowedRoutes);
 
+  // Live counts for the sidebar badges. Fetched per-render — the layout
+  // is dynamic anyway because of the auth lookup, so this is "real-time"
+  // in the sense of "fresh on every navigation". Counts that are 0
+  // come back as null and the Sidebar omits the badge entirely.
+  const sidebarCounts = await loadSidebarCounts();
+
   return (
     <div className="min-h-screen bg-tertiary-200">
-      <Sidebar allowedRoutes={allowed} />
+      <Sidebar allowedRoutes={allowed} counts={sidebarCounts} />
 
       {/*
         Content column. Margin-left tracks sidebar width:

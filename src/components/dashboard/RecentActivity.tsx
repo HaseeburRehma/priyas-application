@@ -1,14 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
-import { de as deLocale, enUS as enLocale, ta as taLocale } from "date-fns/locale";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
+import { useFormat } from "@/lib/utils/i18n-format";
 import type { ActivityEntry } from "@/lib/api/dashboard.types";
-
-const localeMap = { de: deLocale, en: enLocale, ta: taLocale } as const;
 
 const kindStyles: Record<
   ActivityEntry["kind"],
@@ -55,8 +52,9 @@ const kindStyles: Record<
 
 export function RecentActivity({ items }: { items: ActivityEntry[] }) {
   const t = useTranslations("dashboard.activity");
+  const tTable = useTranslations("dashboard.activity.table");
   const tDash = useTranslations("dashboard");
-  const locale = useLocale() as keyof typeof localeMap;
+  const f = useFormat();
 
   return (
     <section className="rounded-lg border border-neutral-100 bg-white">
@@ -84,10 +82,13 @@ export function RecentActivity({ items }: { items: ActivityEntry[] }) {
 
         {items.map((a) => {
           const k = kindStyles[a.kind];
-          const ago = formatDistanceToNow(new Date(a.createdAt), {
-            addSuffix: true,
-            locale: localeMap[locale],
-          });
+          const ago = f.relative(a.createdAt);
+          // Pull a translated label for the underlying table; fall back
+          // to the raw table_name when there's no key (e.g. a future
+          // table we haven't translated yet). The activity feed used
+          // to render a hard-coded German "via WebApp" — replaced with
+          // translated table label + actor name (when available).
+          const tableLabel = safeTranslate(tTable, a.table) ?? a.table;
           return (
             <div
               key={a.id}
@@ -107,7 +108,8 @@ export function RecentActivity({ items }: { items: ActivityEntry[] }) {
                   <span dangerouslySetInnerHTML={{ __html: enrich(a.body) }} />
                 </p>
                 <div className="mt-0.5 text-[11px] text-neutral-400">
-                  {ago} · {a.meta}
+                  {ago} · {tableLabel}
+                  {a.actorName ? ` · ${a.actorName}` : ""}
                 </div>
               </div>
             </div>
@@ -120,4 +122,22 @@ export function RecentActivity({ items }: { items: ActivityEntry[] }) {
 
 function enrich(text: string): string {
   return text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+}
+
+/**
+ * Try a translation key; return null when the key resolves to itself
+ * (next-intl's signal that no message exists for this locale). Lets the
+ * caller fall back to a sensible default instead of rendering the raw
+ * key.
+ */
+function safeTranslate(
+  t: (key: string) => string,
+  key: string,
+): string | null {
+  try {
+    const v = t(key);
+    return v === key ? null : v;
+  } catch {
+    return null;
+  }
 }

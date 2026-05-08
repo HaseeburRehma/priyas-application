@@ -26,6 +26,23 @@ export type TrainingAssignment = {
   assigned_at: string;
 };
 
+/**
+ * Roster row shown in the AssignmentEditor picker. We carry the
+ * employee's `status` and `profile_id` so the manager UI can:
+ *   • Show a "on leave" / "inactive" chip — they're still assignable
+ *     (e.g. for a returning-from-leave checklist) but the manager
+ *     should know.
+ *   • Show a "no app account" hint when profile_id is null — that
+ *     employee can't receive in-app notifications, so the assignment
+ *     gets recorded but they won't be auto-pinged.
+ */
+export type AssignableEmployee = {
+  id: string;
+  full_name: string;
+  status: "active" | "on_leave" | "inactive";
+  has_profile: boolean;
+};
+
 export type TrainingHubData = {
   myEmployeeId: string | null;
   canManage: boolean;
@@ -38,9 +55,10 @@ export type TrainingHubData = {
    */
   assignmentsByModule: Record<string, Record<string, TrainingAssignment>>;
   /**
-   * For managers: the org's employee roster (id + name) for the picker.
+   * For managers: the org's employee roster for the picker. Includes
+   * status + profile-link metadata so the UI can render context chips.
    */
-  employees: Array<{ id: string; full_name: string }>;
+  employees: AssignableEmployee[];
 };
 
 export async function loadTrainingHub(): Promise<TrainingHubData> {
@@ -120,16 +138,35 @@ export async function loadTrainingHub(): Promise<TrainingHubData> {
   }
 
   // Manager-only: roster for the assignment picker.
-  let employees: Array<{ id: string; full_name: string }> = [];
+  //
+  // Important: do NOT filter by status='active'. An employee on leave
+  // can still be pre-assigned a module to complete on return, and an
+  // explicit-inactive employee may need to acknowledge a final
+  // training step before offboarding. The UI surfaces status as a chip
+  // so the manager can see context without it silently hiding rows.
+  //
+  // Soft-deleted rows ARE excluded — those represent employees who
+  // have been removed from the system entirely.
+  let employees: AssignableEmployee[] = [];
   if (canManage) {
     const { data: empRows } = await supabase
       .from("employees")
-      .select("id, full_name")
+      .select("id, full_name, status, profile_id")
       .is("deleted_at", null)
-      .eq("status", "active")
+      .order("status", { ascending: true }) // active first
       .order("full_name", { ascending: true });
-    employees =
-      (empRows ?? []) as unknown as Array<{ id: string; full_name: string }>;
+    type EmployeeRow = {
+      id: string;
+      full_name: string;
+      status: "active" | "on_leave" | "inactive";
+      profile_id: string | null;
+    };
+    employees = ((empRows ?? []) as unknown as EmployeeRow[]).map((r) => ({
+      id: r.id,
+      full_name: r.full_name,
+      status: r.status ?? "active",
+      has_profile: !!r.profile_id,
+    }));
   }
 
   return {

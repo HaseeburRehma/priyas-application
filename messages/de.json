@@ -59,20 +59,32 @@
     "errorInvalid": "E-Mail oder Passwort ist falsch.",
     "errorGeneric": "Anmeldung fehlgeschlagen. Bitte erneut versuchen.",
     "heroEyebrow": "Willkommen zurück",
-    "heroTitle": "Run your entire cleaning operation in one place.",
-    "heroBody": "Scheduling, time tracking, property records, invoicing — everything your team needs, from field to office.",
-    "feature1Title": "Real-time transparency",
-    "feature1Body": "See every shift, property and employee at a glance.",
-    "feature2Title": "GPS-verified check-in",
-    "feature2Body": "Accurate time tracking from the job site itself.",
-    "feature3Title": "Automated invoicing",
-    "feature3Body": "Direct Lexware sync — paperwork takes care of itself.",
+    "heroTitle": "Den gesamten Reinigungsbetrieb an einem Ort steuern.",
+    "heroBody": "Einsatzplanung, Zeiterfassung, Objektakten, Rechnungsstellung — alles, was dein Team braucht, vom Außendienst bis ins Büro.",
+    "feature1Title": "Echtzeit-Transparenz",
+    "feature1Body": "Jede Schicht, jedes Objekt und jede:r Mitarbeiter:in auf einen Blick.",
+    "feature2Title": "GPS-bestätigtes Einchecken",
+    "feature2Body": "Genaue Zeiterfassung direkt am Einsatzort.",
+    "feature3Title": "Automatisierte Rechnungsstellung",
+    "feature3Body": "Direkte Lexware-Synchronisation — der Papierkram erledigt sich von selbst.",
     "mfaTitle": "Zwei-Faktor-Bestätigung",
     "mfaSub": "Gib den 6-stelligen Code aus deiner Authentifikator-App ein, um fortzufahren.",
     "mfaCodeLabel": "Bestätigungscode",
     "mfaVerify": "Bestätigen und anmelden",
     "mfaCancel": "Anderes Konto verwenden",
-    "mfaWrongCode": "Der Code war nicht korrekt. Bitte versuche es erneut."
+    "mfaWrongCode": "Der Code war nicht korrekt. Bitte versuche es erneut.",
+    "brandSubtitle": "Betriebsplattform",
+    "brandFooterPrivacy": "Datenschutz",
+    "brandFooterTerms": "AGB",
+    "brandFooterSupport": "Support",
+    "brandCopyright": "© 2026 Priya’s Reinigungsservice",
+    "footerPrivacy": "Datenschutzerklärung",
+    "footerTerms": "Nutzungsbedingungen",
+    "footerImprint": "Impressum",
+    "secureConnection": "sichere Verbindung",
+    "troubleSigning": "Probleme beim Anmelden?",
+    "contactAdmin": "Wende dich an deine:n Administrator:in",
+    "languageLabel": "Sprache"
   },
   "nav": {
     "workspace": "Arbeitsbereich",
@@ -142,7 +154,20 @@
     "activity": {
       "title": "Letzte Aktivitäten",
       "subtitle": "Letzte Ereignisse im System",
-      "empty": "Noch keine Aktivitäten erfasst."
+      "empty": "Noch keine Aktivitäten erfasst.",
+      "table": {
+        "clients": "Kunden",
+        "properties": "Objekte",
+        "employees": "Mitarbeiter",
+        "shifts": "Einsatzplan",
+        "invoices": "Rechnungen",
+        "time_entries": "Zeiterfassung",
+        "training_modules": "Schulungen",
+        "training_assignments": "Schulungs-Zuweisungen",
+        "vacation_requests": "Urlaubsanträge",
+        "damage_reports": "Schadensmeldungen",
+        "client_signatures": "Unterschriften"
+      }
     },
     "team": {
       "title": "Team-Auslastung",
@@ -162,6 +187,25 @@
       "generateInvoiceSub": "Lexware-Synchronisierung",
       "exportReport": "Bericht exportieren",
       "exportReportSub": "PDF / iCal"
+    },
+    "mine": {
+      "title": "Mein Profil — Hallo, {name}",
+      "subtitle": "Stunden, Urlaub und Pflichtschulungen auf einen Blick.",
+      "downloadHours": "Stunden (CSV)",
+      "hoursWeek": "Stunden diese Woche",
+      "hoursMonth": "Stunden im Monat",
+      "vacation": "Urlaubstage frei",
+      "mandatory": "Pflichtschulungen",
+      "ofTarget": "Ziel: {target} h",
+      "daysLeft": "verbleibend",
+      "mandatoryClear": "Alle erledigt",
+      "mandatoryOpen": "noch offen",
+      "hoursBarLabel": "Wochenfortschritt",
+      "trainingPending": "{n} Pflichtmodul(e) offen — bitte abschließen.",
+      "andMore": "und {n} weitere",
+      "openTraining": "Schulungen öffnen",
+      "upcomingTitle": "Kommende Schichten",
+      "openSchedule": "Einsatzplan öffnen"
     }
   },
   "clients": {
@@ -218,7 +262,8 @@
     "actions": {
       "import": "Importieren",
       "export": "Exportieren",
-      "new": "Neuer Kunde"
+      "new": "Neuer Kunde",
+      "importComingSoon": "Import per CSV kommt in Kürze."
     },
     "summary": {
       "total": "Kunden insgesamt",
@@ -286,7 +331,8 @@
       "tabHistory": "Verlauf",
       "contactsTitle": "Contact persons",
       "contactsSubtitle": "{count} Personen · primary and billing contacts",
-      "contactsAdd": "Add",
+      "contactsAdd": "Hinzufügen",
+      "contactsAddComingSoon": "Kontakte werden im Bereich darunter verwaltet.",
       "contactPrimary": "Primary Contact",
       "primary": "PRIMARY",
       "scopeTitle": "Scope of services",
@@ -317,7 +363,8 @@
       "invoiceCurrency": "Invoice currency",
       "notesTitle": "Internal notes",
       "notesSubtitle": "Sichtbar für Geschäftsleitung + Projektleiter",
-      "notesAdd": "Note",
+      "notesAdd": "Notiz",
+      "notesAddComingSoon": "Notizbearbeitung folgt in Kürze.",
       "notesEmpty": "Keine internen Notizen erfasst.",
       "openChat": "Chat öffnen",
       "openSchedule": "Einsatzplan öffnen",
@@ -555,7 +602,8 @@
       "deleteConfirm": "Dieses Foto wirklich löschen?",
       "deleted": "Foto entfernt.",
       "emptyTitle": "Noch keine Fotos.",
-      "emptyBody": "Lade Fotos über den Button oben rechts hoch."
+      "emptyBody": "Lade Fotos über den Button oben rechts hoch.",
+      "limitReached": "Höchstens 20 Fotos pro Objekt — {dropped} wurde(n) verworfen."
     }
   },
   "schedule": {
@@ -565,8 +613,12 @@
     "subtitle": "Alle Field-Aufträge über Teams, Kunden und Objekte hinweg.",
     "actions": {
       "export": "Export",
-      "newAssignment": "New assignment",
-      "planShift": "Schicht planen"
+      "newAssignment": "Neuer Einsatz",
+      "planShift": "Schicht planen",
+      "exportPdf": "Als PDF herunterladen",
+      "exportIcal": "Kalender abonnieren (iCal)",
+      "exportIcalCopied": "iCal-Link kopiert.",
+      "exportFailed": "Export fehlgeschlagen."
     },
     "tabs": {
       "today": "Heute",
@@ -595,7 +647,10 @@
       "missedOverdue": "Missed / overdue",
       "completed": "Erledigt",
       "scheduled": "Geplant",
-      "running": "Läuft"
+      "running": "Läuft",
+      "prevMonth": "Vorheriger Monat",
+      "nextMonth": "Nächster Monat",
+      "teamEmpty": "In dieser Woche sind keine Schichten besetzt."
     },
     "panel": {
       "scheduledTag": "Geplant",
@@ -609,7 +664,8 @@
       "lead": "LEAD",
       "fieldStaff": "Field staff",
       "teamLead": "Team lead",
-      "notes": "NOTIZEN"
+      "notes": "NOTIZEN",
+      "close": "Schließen"
     },
     "empty": "Keine Schichten in diesem Zeitraum.",
     "dialog": {
@@ -632,38 +688,42 @@
       "saveSuccess": "Schicht wurde geplant.",
       "loadingOptions": "Auswahl wird geladen…",
       "endAfterStart": "Ende muss nach dem Start liegen."
-    }
+    },
+    "prevWeek": "Vorherige Woche",
+    "nextWeek": "Nächste Woche"
   },
   "employees": {
     "breadcrumbDashboard": "Übersicht",
     "breadcrumbEmployees": "Mitarbeiter",
     "title": "Mitarbeiter",
-    "subtitle": "All team members. Manage roles, teams, working time and availability.",
+    "subtitle": "Alle Teammitglieder. Rollen, Teams, Arbeitszeit und Verfügbarkeit verwalten.",
     "actions": {
-      "import": "Import CSV",
-      "export": "Export",
-      "invite": "Invite employee"
+      "import": "CSV importieren",
+      "export": "Exportieren",
+      "invite": "Mitarbeiter einladen",
+      "importComingSoon": "Import per CSV kommt in Kürze."
     },
     "summary": {
       "total": "Mitarbeitende insgesamt",
-      "totalDelta": "▲ {count} this month",
+      "totalDelta": "▲ {count} in diesem Monat",
       "totalNone": "Keine Neuzugänge in diesem Monat",
       "active": "Heute aktiv",
-      "activeSub": "on schedule",
-      "leave": "Im Urlaub / vacation",
-      "leaveSub": "through next week",
-      "onboarding": "Pending onboarding",
-      "onboardingSub": "Selin Yıldız · day 2"
+      "activeSub": "Im Einsatzplan",
+      "leave": "Im Urlaub",
+      "leaveSub": "Bis nächste Woche",
+      "onboarding": "Onboarding offen",
+      "onboardingSub": "Pflichtschulungen ausstehend",
+      "onboardingNonePending": "Alle Pflichtschulungen abgeschlossen."
     },
     "toolbar": {
-      "searchPlaceholder": "Search by name, role, or team…",
+      "searchPlaceholder": "Nach Name, Rolle oder Team suchen…",
       "filterRole": "Rolle",
       "filterTeam": "Team",
       "filterStatus": "Status",
       "filterLanguage": "Sprache",
-      "filterMore": "Mehr filters",
-      "viewList": "List",
-      "viewGrid": "Grid"
+      "filterMore": "Weitere Filter",
+      "viewList": "Liste",
+      "viewGrid": "Raster"
     },
     "role": {
       "pm": "Projektleitung",
@@ -674,10 +734,10 @@
       "active": "Aktiv",
       "on_leave": "Im Urlaub",
       "inactive": "Inaktiv",
-      "overtime": "Overtime"
+      "overtime": "Überstunden"
     },
     "table": {
-      "employee": "Employee",
+      "employee": "Mitarbeiter",
       "role": "Rolle",
       "team": "Team",
       "hoursWeek": "Stunden diese Woche",
@@ -686,13 +746,14 @@
       "actions": "Aktionen",
       "ofTarget": "/ {target}h",
       "daysAvailable": "Tage verfügbar",
-      "prorated": "prorated",
-      "medCert": "MED-CERT",
+      "prorated": "anteilig",
+      "medCert": "ÄRZTL.-ATTEST",
       "empty": "Keine Mitarbeiter entsprechen der Suche.",
       "showing": "Zeige {from}–{to} von {total}",
       "actionMessage": "Nachricht",
       "actionSchedule": "Einsatzplan",
-      "actionMore": "Mehr"
+      "actionMore": "Mehr",
+      "metaSince": "seit {year}"
     },
     "detail": {
       "breadcrumbDashboard": "Übersicht",
@@ -723,13 +784,15 @@
       "vacationUsed": "{used} / {total} Tage genutzt",
       "vacationRemaining": "{count} Tage verfügbar",
       "infoTitle": "Stammdaten",
-      "infoEmployeeId": "Employee ID",
+      "infoEmployeeId": "Mitarbeiter-ID",
       "infoEmail": "E-Mail",
       "infoPhone": "Telefon",
       "infoTeam": "Team",
       "infoStatus": "Status",
       "infoWeeklyHours": "Wochenstunden",
-      "infoLanguage": "Sprache"
+      "infoLanguage": "Sprache",
+      "assignTraining": "Schulung zuweisen",
+      "downloadHours": "Stundenliste (CSV)"
     },
     "form": {
       "createTitle": "Mitarbeiter einladen",
@@ -750,7 +813,9 @@
       "createSubtitle": "Stammdaten und Arbeitszeit erfassen.",
       "createSuccess": "Mitarbeiter angelegt.",
       "saving": "Wird gespeichert…",
-      "saveSuccess": "Änderungen gespeichert."
+      "saveSuccess": "Änderungen gespeichert.",
+      "createWithInvite": "Mitarbeiter angelegt — Einladung per E-Mail versendet.",
+      "createNoInvite": "Mitarbeiter angelegt, Einladung konnte nicht versendet werden ({reason})."
     }
   },
   "reports": {
@@ -841,7 +906,9 @@
     "actions": {
       "import": "Import",
       "export": "Export",
-      "new": "Neue Rechnung"
+      "new": "Neue Rechnung",
+      "importComingSoon": "Import per CSV kommt in Kürze.",
+      "newComingSoon": "Manuelles Erstellen folgt — Rechnungen werden aus Schichten generiert."
     },
     "summary": {
       "total": "Gesamt",
@@ -1286,7 +1353,8 @@
       "all": "Alle",
       "open": "Offen",
       "resolved": "Erledigt"
-    }
+    },
+    "limitReached": "Höchstens 20 Fotos pro Bericht — {dropped} wurde(n) verworfen."
   },
   "onboarding": {
     "kioskTag": "Neukunden-Onboarding",
@@ -1298,7 +1366,8 @@
       "client": "Daten",
       "address": "Adresse",
       "service": "Service",
-      "review": "Signatur"
+      "review": "Signatur",
+      "photos": "Fotos"
     },
     "type": {
       "title": "Welche Art von Kunde?",
@@ -1385,6 +1454,16 @@
       "another": "Weiteren Kunden aufnehmen",
       "toClients": "Zur Kundenliste",
       "toast": "Kunde aufgenommen."
+    },
+    "photos": {
+      "title": "Fotodokumentation",
+      "subtitle": "Erfasse den Ist-Zustand des Objekts beim Erstbesuch.",
+      "optional": "Optional · {n} / {max} Fotos hinzugefügt.",
+      "takePhoto": "Foto aufnehmen",
+      "fromLibrary": "Aus der Galerie",
+      "removePhoto": "Foto entfernen",
+      "limitReached": "Maximal 20 Fotos pro Objekt — {dropped} wurde(n) verworfen.",
+      "someFailed": "{n} Foto(s) konnten nicht hochgeladen werden."
     }
   },
   "training": {
@@ -1430,7 +1509,16 @@
       "visibility": "0 ausgewählt = sichtbar für alle (geteilt). ≥1 ausgewählt = nur diese {n} sehen das Modul.",
       "cancel": "Abbrechen",
       "save": "Zuweisungen speichern",
-      "saved": "Zuweisungen aktualisiert."
+      "saved": "Zuweisungen aktualisiert.",
+      "savedWithNotify": "Gespeichert · {n} Mitarbeiter:in benachrichtigt.",
+      "skippedNoProfile": "{n} ohne App-Konto — gespeichert, aber nicht benachrichtigt.",
+      "noEmployees": "Keine Mitarbeiter:innen vorhanden.",
+      "noProfileBadge": "Kein Konto",
+      "noProfileTooltip": "Diese:r Mitarbeiter:in hat noch keinen App-Login und erhält keine In-App-Benachrichtigung.",
+      "statusBadge": {
+        "on_leave": "Im Urlaub",
+        "inactive": "Inaktiv"
+      }
     },
     "editor": {
       "newTitle": "Neues Schulungsmodul",
@@ -1445,7 +1533,12 @@
       "cancel": "Abbrechen",
       "save": "Speichern",
       "saved": "Gespeichert."
-    }
+    },
+    "completeWithSignatureTitle": "Pflichtmodul abschließen",
+    "completeWithSignatureBody": "Bestätige mit deiner Unterschrift, dass du dieses Pflichtmodul vollständig durchgearbeitet hast.",
+    "signatureRequired": "Bitte unterschreibe vor dem Abschließen.",
+    "completeAndSign": "Unterschreiben & abschließen",
+    "completedWithSignature": "Abgeschlossen und signiert."
   },
   "alltagshilfeReport": {
     "breadcrumbDashboard": "Übersicht",

@@ -4,8 +4,8 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { format } from "date-fns";
 import { cn } from "@/lib/utils/cn";
+import { useFormat } from "@/lib/utils/i18n-format";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   createDamageReportAction,
@@ -14,6 +14,11 @@ import {
 } from "@/app/actions/damage";
 import { routes } from "@/lib/constants/routes";
 import type { DamageReport } from "@/lib/api/damage";
+import {
+  compressImage,
+  enforcePhotoCap,
+  MAX_PHOTOS_PER_ASSIGNMENT,
+} from "@/lib/utils/image";
 
 type Props = {
   propertyId: string;
@@ -48,6 +53,7 @@ export function DamageReportsCard({
 }: Props) {
   const t = useTranslations("damage");
   const router = useRouter();
+  const f = useFormat();
   const supabase = createSupabaseBrowserClient();
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
@@ -75,10 +81,27 @@ export function DamageReportsCard({
 
   async function uploadPhotos(files: FileList | null) {
     if (!files || files.length === 0) return;
+    // Spec §4.5 — 20-photo cap per damage report. Apply against the
+    // photos already attached to this in-progress report.
+    const incoming = Array.from(files);
+    const { kept, dropped } = enforcePhotoCap(
+      form.photo_paths,
+      incoming,
+      MAX_PHOTOS_PER_ASSIGNMENT,
+    );
+    if (dropped > 0) {
+      toast.error(t("limitReached", { dropped }));
+    }
+    if (kept.length === 0) {
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
+
     setUploading(true);
     try {
       const newPaths: string[] = [];
-      for (const file of Array.from(files)) {
+      for (const original of kept) {
+        const file = await compressImage(original);
         const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
         const path = `${orgId}/${propertyId}/damage/${Date.now()}-${Math.random()
           .toString(16)
@@ -238,9 +261,7 @@ export function DamageReportsCard({
                       {r.description}
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-neutral-500">
-                      <span>
-                        {format(new Date(r.created_at), "yyyy-MM-dd HH:mm")}
-                      </span>
+                      <span>{f.dateTime(r.created_at)}</span>
                       {r.employee_name && <span>· {r.employee_name}</span>}
                     </div>
                     {r.photo_paths.length > 0 && (

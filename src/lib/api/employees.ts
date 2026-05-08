@@ -27,12 +27,11 @@ export type {
 } from "./employees.types";
 
 const TONES = ["primary", "secondary", "accent", "warning"] as const;
-const TEAM_TONES = ["secondary", "primary", "warning"] as const;
-const TEAM_LABELS = [
-  "Team 01 · Core",
-  "Team 02 · Floating",
-  "Team 03 · Specialists",
-];
+
+// NOTE: TEAM_TONES + TEAM_LABELS removed in 2026-05; the schema doesn't
+// model real teams yet, and shipping fake "Team 01 · Core" labels was
+// confusing the operations team. team_label / team_tone now come back
+// as null and the UI shows a "—" placeholder.
 
 const initialsOf = (n: string | null | undefined) =>
   (n ?? "—")
@@ -43,10 +42,26 @@ const initialsOf = (n: string | null | undefined) =>
     .join("")
     .toUpperCase();
 
-function inferRoleChip(idx: number): EmployeeRoleChip {
-  // Until we model roles per-employee in DB, derive from index for the demo.
-  if (idx === 0 || idx % 9 === 5) return "pm";
-  if (idx % 7 === 6) return "trainee";
+/**
+ * Map a `profiles.role` value (admin/dispatcher/employee) to the
+ * Employees-page chip vocabulary (pm/field/trainee).
+ *
+ *   admin       → pm (project lead / management)
+ *   dispatcher  → pm
+ *   employee    → field
+ *   (no profile) → field (default)
+ *
+ * "trainee" is currently a placeholder UI category — we'll map there
+ * if-and-when the data model adds an explicit "trainee" role or
+ * "in_training" status. For now, employees with at least one
+ * outstanding mandatory module surface as trainees instead.
+ */
+function chipFromProfileRole(
+  profileRole: "admin" | "dispatcher" | "employee" | null,
+  hasOutstandingMandatory: boolean,
+): EmployeeRoleChip {
+  if (profileRole === "admin" || profileRole === "dispatcher") return "pm";
+  if (hasOutstandingMandatory) return "trainee";
   return "field";
 }
 
@@ -92,13 +107,131 @@ export async function loadEmployeesSummary(): Promise<EmployeesSummary> {
     ),
   );
 
+  // "Pending onboarding" — spec §4.9 — employees who haven't yet
+  // completed every mandatory training module that applies to them.
+  // We compute this by finding active employees with at least one
+  // mandatory module that isn't marked complete in
+  // employee_training_progress.
+  const pendingOnboarding = await countEmployeesPendingOnboarding(supabase);
+
   return {
     total: totalRes.count ?? 0,
     activeToday: activeIds.size,
     onLeave: leaveRes.count ?? 0,
-    pendingOnboarding: 1, // placeholder until onboarding state lands
+    pendingOnboarding: pendingOnboarding.count,
+    pendingOnboardingPreview: pendingOnboarding.preview,
     newThisMonth: monthRes.count ?? 0,
   };
+}
+
+/**
+ * Count employees with outstanding mandatory training. Returns the
+ * total count and a small preview (first name + days-since-hire) for
+ * the dashboard card. Skips employees with no `hire_date` set so the
+ * "day N" hint doesn't fall back to confusing values.
+ */
+async function countEmployeesPendingOnboarding(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+): Promise<{ count: number; preview: string | null }> {
+  // 1) Mandatory modules.
+  const { data: modulesRows } = await supabase
+    .from("training_modules")
+    .select("id")
+    .eq("is_mandatory", true)
+    .is("deleted_at", null);
+  const mandatoryIds = ((modulesRows ?? []) as Array<{ id: string }>).map(
+    (m) => m.id,
+  );
+  if (mandatoryIds.length === 0) {
+    return { count: 0, preview: null };
+  }
+
+  // 2) Active employees.
+  const { data: employees } = await supabase
+    .from("employees")
+    .select("id, full_name, hire_date")
+    .is("deleted_at", null)
+    .eq("status", "active");
+  type Emp = {
+    id: string;
+    full_name: string;
+    hire_date: string | null;
+  };
+  const empList = (employees ?? []) as Emp[];
+  if (empList.length === 0) return { count: 0, preview: null };
+
+  // 3) Completed-progress rows for these employees and these modules.
+  const empIds = empList.map((e) => e.id);
+  const { data: progress } = await supabase
+    .from("employee_training_progress")
+    .select("employee_id, module_id, completed_at")
+    .in("employee_id", empIds)
+    .in("module_id", mandatoryIds);
+  const completedSet = new Set(
+    ((progress ?? []) as Array<{
+      employee_id: string;
+      module_id: string;
+      completed_at: string | null;
+    }>)
+      .filter((p) => p.completed_at)
+      .map((p) => `${p.employee_id}|${p.module_id}`),
+  );
+
+  // 4) Optional: training_assignments narrows which modules apply to
+  //    which employees. Modules without any assignments are "shared"
+  //    (apply to everyone); modules with assignments only apply to
+  //    listed employees.
+  const { data: assignments } = await supabase
+    .from("training_assignments")
+    .select("module_id, employee_id")
+    .in("module_id", mandatoryIds);
+  type Assign = { module_id: string; employee_id: string };
+  const assignmentList = (assignments ?? []) as Assign[];
+  const hasAnyAssignment = new Set(assignmentList.map((a) => a.module_id));
+  const assignedToByModule = new Map<string, Set<string>>();
+  for (const a of assignmentList) {
+    let s = assignedToByModule.get(a.module_id);
+    if (!s) {
+      s = new Set();
+      assignedToByModule.set(a.module_id, s);
+    }
+    s.add(a.employee_id);
+  }
+
+  // 5) Bucket employees by whether anything mandatory remains.
+  const pending: Emp[] = [];
+  for (const e of empList) {
+    for (const moduleId of mandatoryIds) {
+      const applies =
+        !hasAnyAssignment.has(moduleId) ||
+        assignedToByModule.get(moduleId)?.has(e.id);
+      if (!applies) continue;
+      if (!completedSet.has(`${e.id}|${moduleId}`)) {
+        pending.push(e);
+        break; // one outstanding module is enough to count this person
+      }
+    }
+  }
+
+  // Preview = first pending employee. "day N" = days since hire.
+  let preview: string | null = null;
+  const first = pending[0];
+  if (first) {
+    if (first.hire_date) {
+      const days = Math.max(
+        1,
+        Math.round(
+          (Date.now() - new Date(first.hire_date).getTime()) / 86_400_000,
+        ),
+      );
+      preview = `${first.full_name} · day ${days}`;
+    } else {
+      preview = first.full_name;
+    }
+  }
+
+  return { count: pending.length, preview };
 }
 
 /* ============================================================================
@@ -121,7 +254,8 @@ export async function loadEmployeesList(
   let query = supabase
     .from("employees")
     .select(
-      "id, full_name, email, phone, hire_date, status, weekly_hours, hourly_rate_eur",
+      `id, full_name, email, phone, hire_date, status, weekly_hours, hourly_rate_eur,
+       profile:profiles ( id, role )`,
       { count: "exact" },
     )
     .is("deleted_at", null);
@@ -153,8 +287,12 @@ export async function loadEmployeesList(
     status: EmployeeStatus;
     weekly_hours: number | null;
     hourly_rate_eur: number | null;
+    profile: {
+      id: string;
+      role: "admin" | "dispatcher" | "employee" | null;
+    } | null;
   };
-  const dbRows = (data ?? []) as DbRow[];
+  const dbRows = (data ?? []) as unknown as DbRow[];
 
   // Hours this week from shifts.
   const ids = dbRows.map((r) => r.id);
@@ -185,13 +323,27 @@ export async function loadEmployeesList(
     }
   }
 
+  // Compute "has outstanding mandatory training" per employee — drives
+  // the "trainee" chip without requiring an explicit DB column.
+  const trainingPending = await computeOutstandingMandatoryByEmployee(
+    supabase,
+    ids,
+  );
+
   const rows: EmployeeRow[] = dbRows
     .map((r, idx): EmployeeRow => {
       const target = r.weekly_hours ?? 40;
       const hours = Math.round(weeklyHoursByEmp.get(r.id) ?? 0);
       const overtime = hours > target;
-      const role = inferRoleChip(idx);
-      const teamIdx = idx % 3;
+      const profileRole = r.profile?.role ?? null;
+      const roleChip = chipFromProfileRole(
+        profileRole,
+        trainingPending.has(r.id),
+      );
+      // Languages: until we model an explicit per-employee language
+      // pref, list both DE and EN as the system defaults. When a
+      // profile has `locale` set we surface that as the primary.
+      const languages: Array<"de" | "en" | "ta"> = ["de", "en"];
       return {
         id: r.id,
         full_name: r.full_name,
@@ -199,24 +351,98 @@ export async function loadEmployeesList(
         phone: r.phone,
         initials: initialsOf(r.full_name),
         tone: TONES[idx % TONES.length] ?? "primary",
-        meta: r.hire_date
-          ? `DE · EN · ${role === "pm" ? "Projektleitung" : role === "trainee" ? "Trainee" : "Reinigungskraft"} since ${new Date(r.hire_date).getFullYear()}`
-          : "DE · EN",
-        role_chip: role,
-        team_label: TEAM_LABELS[teamIdx] ?? "Team",
-        team_tone: TEAM_TONES[teamIdx] ?? "secondary",
+        hire_year: r.hire_date
+          ? new Date(r.hire_date).getFullYear()
+          : null,
+        languages,
+        role_chip: roleChip,
+        // No real "teams" table yet — surface as null so the UI can
+        // show a "—" placeholder rather than fake "Team 01 · Core".
+        team_label: null,
+        team_tone: null,
         hours_this_week: hours,
         weekly_target: target,
         status: overtime ? "overtime" : (r.status as EmployeeStatus),
         vacation_used: 0,
         vacation_total: 30,
         vacation_label: `${30 - 0} / 30`,
-        med_cert: idx === 3,
+        med_cert: false,
       };
     })
     .filter((r) => role === "all" || r.role_chip === role);
 
   return { rows, total: count ?? 0 };
+}
+
+/**
+ * For a given list of employee_ids, returns the set of those who have
+ * at least one outstanding mandatory training module. Mirrors the
+ * logic in src/lib/training/lock.ts but vectorised so the Employees
+ * list query stays a constant number of round-trips regardless of
+ * page size.
+ */
+async function computeOutstandingMandatoryByEmployee(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  employeeIds: string[],
+): Promise<Set<string>> {
+  if (employeeIds.length === 0) return new Set();
+  const { data: modules } = await supabase
+    .from("training_modules")
+    .select("id")
+    .eq("is_mandatory", true)
+    .is("deleted_at", null);
+  const mandatoryIds = ((modules ?? []) as Array<{ id: string }>).map(
+    (m) => m.id,
+  );
+  if (mandatoryIds.length === 0) return new Set();
+
+  const { data: assignments } = await supabase
+    .from("training_assignments")
+    .select("module_id, employee_id")
+    .in("module_id", mandatoryIds);
+  type Assign = { module_id: string; employee_id: string };
+  const assignList = (assignments ?? []) as Assign[];
+  const hasAnyAssignment = new Set(assignList.map((a) => a.module_id));
+  const assignedToByModule = new Map<string, Set<string>>();
+  for (const a of assignList) {
+    let s = assignedToByModule.get(a.module_id);
+    if (!s) {
+      s = new Set();
+      assignedToByModule.set(a.module_id, s);
+    }
+    s.add(a.employee_id);
+  }
+
+  const { data: progress } = await supabase
+    .from("employee_training_progress")
+    .select("employee_id, module_id, completed_at")
+    .in("employee_id", employeeIds)
+    .in("module_id", mandatoryIds);
+  const completedSet = new Set(
+    ((progress ?? []) as Array<{
+      employee_id: string;
+      module_id: string;
+      completed_at: string | null;
+    }>)
+      .filter((p) => p.completed_at)
+      .map((p) => `${p.employee_id}|${p.module_id}`),
+  );
+
+  const pending = new Set<string>();
+  for (const empId of employeeIds) {
+    for (const moduleId of mandatoryIds) {
+      const applies =
+        !hasAnyAssignment.has(moduleId) ||
+        assignedToByModule.get(moduleId)?.has(empId);
+      if (!applies) continue;
+      if (!completedSet.has(`${empId}|${moduleId}`)) {
+        pending.add(empId);
+        break;
+      }
+    }
+  }
+  return pending;
 }
 
 /* ============================================================================
@@ -227,7 +453,8 @@ export async function loadEmployeeDetail(id: string): Promise<EmployeeDetail | n
   const { data } = await supabase
     .from("employees")
     .select(
-      "id, full_name, email, phone, hire_date, status, weekly_hours, hourly_rate_eur",
+      `id, full_name, email, phone, hire_date, status, weekly_hours, hourly_rate_eur,
+       profile:profiles ( id, role )`,
     )
     .eq("id", id)
     .is("deleted_at", null)
@@ -241,9 +468,20 @@ export async function loadEmployeeDetail(id: string): Promise<EmployeeDetail | n
     status: EmployeeStatus;
     weekly_hours: number | null;
     hourly_rate_eur: number | null;
+    profile: {
+      id: string;
+      role: "admin" | "dispatcher" | "employee" | null;
+    } | null;
   };
-  const r = data as Row | null;
+  const r = data as unknown as Row | null;
   if (!r) return null;
+
+  // Has the employee got any outstanding mandatory training? Drives
+  // the same role-chip categorisation the list uses.
+  const detailPending = await computeOutstandingMandatoryByEmployee(
+    supabase,
+    [r.id],
+  );
 
   const ws = startOfWeek(new Date(), { weekStartsOn: 1 });
   const we = endOfWeek(new Date(), { weekStartsOn: 1 });
@@ -353,8 +591,12 @@ export async function loadEmployeeDetail(id: string): Promise<EmployeeDetail | n
     tone: "primary",
     hire_date: r.hire_date,
     status: r.status,
-    role_chip: inferRoleChip(0),
-    team_label: TEAM_LABELS[0] ?? "Team",
+    role_chip: chipFromProfileRole(
+      r.profile?.role ?? null,
+      detailPending.has(r.id),
+    ),
+    // No real teams modeled yet — UI shows "—" when null.
+    team_label: null,
     hourly_rate_eur: r.hourly_rate_eur,
     weekly_hours: r.weekly_hours ?? 40,
     hours_this_week: hoursThisWeek,

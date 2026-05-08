@@ -66,14 +66,13 @@ export function MessageBubble({
     ? (ROLE_STYLE[message.sender_role] ?? null)
     : null;
   const roleLabel = message.sender_role_label ?? role?.label;
-  const senderName = message.sender?.full_name ?? "—";
-  const initials = senderName
-    .split(" ")
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  // The optimistic placeholder (rendered before the insert resolves)
+  // doesn't yet carry the joined sender row, so `message.sender` is
+  // null. Fall back to "Du" / "Ich" for own messages so the avatar
+  // never collapses to "—" / "?".
+  const senderName =
+    message.sender?.full_name ?? (isOwn ? "Du" : null) ?? null;
+  const initials = computeInitials(senderName);
 
   const attachments = message.attachments ?? [];
   const hasBody = !!message.body && message.body.length > 0;
@@ -90,14 +89,17 @@ export function MessageBubble({
         className={cn(
           "grid h-8 w-8 flex-shrink-0 place-items-center rounded-full text-[11px] font-bold",
           showHeader
-            ? isOwn
+            ? // Own messages keep solid green; others get a green-tinted
+              // circle so avatars are visually unified across the app
+              // and it's still obvious who sent which bubble.
+              isOwn
               ? "bg-primary-500 text-white"
-              : "bg-secondary-100 text-secondary-700"
+              : "bg-primary-100 text-primary-700"
             : "invisible",
         )}
         aria-hidden={!showHeader}
       >
-        {initials || "?"}
+        {initials}
       </span>
 
       <div className={cn("flex max-w-[78%] flex-col gap-1.5", isOwn && "items-end")}>
@@ -108,7 +110,9 @@ export function MessageBubble({
               isOwn ? "flex-row-reverse" : "flex-row",
             )}
           >
-            <span className="font-semibold text-neutral-800">{senderName}</span>
+            <span className="font-semibold text-neutral-800">
+              {senderName ?? "—"}
+            </span>
             {roleLabel && (
               <span
                 className={cn(
@@ -272,6 +276,31 @@ function AttachmentView({
     );
   }
 
+  if (attachment.kind === "video") {
+    return (
+      <div
+        className={cn(
+          "overflow-hidden rounded-lg border bg-black",
+          isOwn ? "border-primary-300" : "border-neutral-200",
+        )}
+      >
+        {url ? (
+          <video
+            src={url}
+            controls
+            preload="metadata"
+            playsInline
+            className="block max-h-[280px] max-w-[320px]"
+          />
+        ) : (
+          <div className="grid h-32 w-48 place-items-center text-[11px] text-neutral-300">
+            …
+          </div>
+        )}
+      </div>
+    );
+  }
+
   // Generic file fallback.
   return (
     <a
@@ -310,4 +339,22 @@ function formatBytes(b: number): string {
   if (b < 1024) return `${b} B`;
   if (b < 1024 * 1024) return `${(b / 1024).toFixed(0)} KB`;
   return `${(b / 1024 / 1024).toFixed(1)} MB`;
+}
+
+/**
+ * Build a 1–2 char initials string for the avatar circle. Treats
+ * Latin + Cyrillic + Tamil scripts as letters; punctuation, dashes
+ * and emoji never end up in the avatar (the previous implementation
+ * happily rendered "—" when the sender name was missing).
+ */
+function computeInitials(name: string | null | undefined): string {
+  if (!name) return "?";
+  const parts = name
+    .split(/\s+/)
+    .map((w) => w.replace(/^[^\p{L}]+/u, "")) // strip leading punctuation
+    .filter((w) => /^\p{L}/u.test(w));
+  if (parts.length === 0) return "?";
+  const first = parts[0]!;
+  const last = parts.length > 1 ? parts[parts.length - 1] : null;
+  return ((first[0] ?? "") + (last ? (last[0] ?? "") : "")).toUpperCase() || "?";
 }
