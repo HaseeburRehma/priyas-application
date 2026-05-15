@@ -27,8 +27,14 @@ function safeEqual(a: string, b: string): boolean {
  * the assigned field staff. Idempotent — once a notification with the
  * tag `missed_checkout:<shift_id>` exists, we skip.
  *
- * Schedule it via Vercel Cron, GitHub Actions, or any other minute-grade
- * cron — every 15 minutes is plenty.
+ * Cadence:
+ *   - Pro/Enterprise on Vercel: every 15 min (`*​/15 * * * *`) is ideal —
+ *     staff get pinged within the same shift the miss occurred in.
+ *   - Hobby on Vercel (current `vercel.json`): once a day (`30 23 * * *`)
+ *     since Hobby only permits daily crons; misses surface as an
+ *     end-of-day digest.
+ *   - GitHub Actions: free + supports any cadence; switch the trigger
+ *     there for sub-daily granularity without upgrading Vercel.
  */
 export const dynamic = "force-dynamic";
 
