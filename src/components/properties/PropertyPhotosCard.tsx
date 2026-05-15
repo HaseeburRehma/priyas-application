@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -181,12 +182,20 @@ export function PropertyPhotosCard({
                 className="group relative overflow-hidden rounded-md border border-neutral-100 bg-neutral-50"
               >
                 {p.signedUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={p.signedUrl}
-                    alt={p.caption ?? ""}
-                    className="h-32 w-full object-cover"
-                  />
+                  // `fill` so the parent <figure> controls the box and
+                  // we keep the existing object-cover aspect. `unoptimized`
+                  // because Supabase signed URLs are short-lived and don't
+                  // benefit from the Next image CDN cache.
+                  <div className="relative h-32 w-full">
+                    <Image
+                      src={p.signedUrl}
+                      alt={p.caption ?? ""}
+                      fill
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      unoptimized
+                      className="object-cover"
+                    />
+                  </div>
                 ) : (
                   <div className="grid h-32 place-items-center text-[10px] text-neutral-400">
                     —

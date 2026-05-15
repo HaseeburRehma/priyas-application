@@ -15,6 +15,8 @@ type Props = {
 
 export function ClientsToolbar({ q, onQ, type, onType, view, onView }: Props) {
   const t = useTranslations("clients.toolbar");
+  const tCommon = useTranslations("common");
+  const comingSoonTitle = tCommon("comingSoon");
 
   return (
     <div className="flex flex-wrap items-center gap-3 border-b border-neutral-100 px-5 py-4">
@@ -41,11 +43,21 @@ export function ClientsToolbar({ q, onQ, type, onType, view, onView }: Props) {
         />
       </div>
 
-      <FilterChip label={t("filterStatus")} active count={2} />
+      {/* Status filter has no real `clients.status` column today —
+          render it disabled with the coming-soon tooltip so we don't
+          mislead the user with a fake "2"-count badge. */}
+      <FilterChip
+        label={t("filterStatus")}
+        disabledTitle={comingSoonTitle}
+      />
       <TypeChip type={type} onChange={onType} />
-      <FilterChip label={t("filterContract")} />
+      <FilterChip
+        label={t("filterContract")}
+        disabledTitle={comingSoonTitle}
+      />
       <FilterChip
         label={t("filterMore")}
+        disabledTitle={comingSoonTitle}
         leadingIcon={
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
@@ -84,22 +96,30 @@ function FilterChip({
   count,
   leadingIcon,
   onClick,
+  disabledTitle,
 }: {
   label: string;
   active?: boolean;
   count?: number;
   leadingIcon?: React.ReactNode;
   onClick?: () => void;
+  /** When set, renders the chip disabled with this tooltip. */
+  disabledTitle?: string;
 }) {
+  const disabled = !!disabledTitle;
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      aria-disabled={disabled ? "true" : undefined}
+      title={disabled ? disabledTitle : undefined}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-[12px] font-medium transition",
         active
           ? "border-primary-500 bg-tertiary-200 text-primary-700"
           : "border-neutral-200 bg-white text-neutral-700 hover:border-primary-500 hover:text-primary-600",
+        disabled && "cursor-not-allowed opacity-50 hover:border-neutral-200 hover:text-neutral-700",
       )}
     >
       {leadingIcon && <span className="[&_svg]:h-3 [&_svg]:w-3">{leadingIcon}</span>}

@@ -16,7 +16,15 @@ const baseClient = {
     .max(200)
     .optional()
     .or(z.literal("")),
-  phone: z.string().max(40).optional().or(z.literal("")),
+  // Restrict to digits + standard phone punctuation. Prevents control
+  // characters (newlines / tabs) from sneaking into the field, which the
+  // PDF and CSV exports used to break on.
+  phone: z
+    .string()
+    .max(40)
+    .regex(/^[\d\s+\-().]+$/, "Ungültige Telefonnummer")
+    .optional()
+    .or(z.literal("")),
   tax_id: z.string().max(40).optional().or(z.literal("")),
   notes: z.string().max(4000).optional().or(z.literal("")),
 };

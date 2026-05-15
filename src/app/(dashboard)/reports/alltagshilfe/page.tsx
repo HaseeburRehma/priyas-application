@@ -8,6 +8,7 @@ import {
   asAppLocale,
   formatCurrencyCents,
   formatDateTime,
+  formatPattern,
 } from "@/lib/utils/i18n-format";
 import { routes } from "@/lib/constants/routes";
 
@@ -43,11 +44,25 @@ export default async function Page({
   const month = Number(sp.month ?? now.getMonth());
   const report = await loadAlltagshilfeMonthly(year, month, locale);
 
-  const monthNames = [
-    "Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
-    "Jul", "Aug", "Sep", "Okt", "Nov", "Dez",
-  ];
-  const monthLabel = `${monthNames[month]} ${year}`;
+  // Locale-aware short month name via date-fns ("MMM"). The date itself
+  // is anchored to the 1st so the year/month decode is deterministic
+  // regardless of the current day (avoids Feb-29 → Mar-01 surprises).
+  const monthShort = (m: number, y: number = year): string =>
+    formatPattern(new Date(y, m, 1), "MMM", locale);
+  const monthLabel = `${monthShort(month)} ${year}`;
+
+  // Europe/Berlin alternates between CET (MEZ) and CEST (MESZ). Use
+  // Intl.DateTimeFormat's `timeZoneName: 'short'` rendered in German so
+  // the abbreviation matches what German users expect — for EN/TA we
+  // still want the German civil-time abbreviation since the report
+  // covers a German service area.
+  const tzAbbrev = (() => {
+    const parts = new Intl.DateTimeFormat("de-DE", {
+      timeZone: "Europe/Berlin",
+      timeZoneName: "short",
+    }).formatToParts(new Date());
+    return parts.find((p) => p.type === "timeZoneName")?.value ?? "MEZ";
+  })();
 
   return (
     <>
@@ -95,7 +110,7 @@ export default async function Page({
             </div>
             <div className="font-mono text-[12px] text-neutral-700">
               {formatDateTime(new Date(), locale)}
-              {" · MEZ"}
+              {` · ${tzAbbrev}`}
             </div>
           </div>
         </div>
@@ -140,25 +155,41 @@ export default async function Page({
                       : "text-neutral-600 hover:bg-neutral-50"
                   }`}
                 >
-                  {monthNames[d.getMonth()]}
+                  {monthShort(d.getMonth(), d.getFullYear())}
                 </Link>
               );
             })}
           </div>
         </div>
-        <button className="btn btn--ghost border border-neutral-200 bg-white">
+        <a
+          href="/api/reports/export?type=alltagshilfe&format=pdf"
+          target="_blank"
+          rel="noreferrer"
+          className="btn btn--ghost border border-neutral-200 bg-white"
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 10l-5 5-5-5M12 15V3" />
           </svg>
           {t("exportPdf")}
-        </button>
-        <button className="btn btn--ghost border border-neutral-200 bg-white">
+        </a>
+        <a
+          href="/api/reports/export?type=alltagshilfe&format=csv"
+          target="_blank"
+          rel="noreferrer"
+          className="btn btn--ghost border border-neutral-200 bg-white"
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 10l-5 5-5-5M12 15V3" />
           </svg>
           {t("exportCsv")}
-        </button>
-        <button className="btn btn--danger ml-auto">
+        </a>
+        <button
+          type="button"
+          className="btn btn--danger ml-auto cursor-not-allowed opacity-60"
+          disabled
+          aria-disabled="true"
+          title={t("sendComingSoon")}
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
             <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
           </svg>

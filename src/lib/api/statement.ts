@@ -58,7 +58,10 @@ export async function loadStatement(
     )
     .eq("client_id", clientId)
     .is("deleted_at", null)
-    .order("issue_date", { ascending: false });
+    .order("issue_date", { ascending: false })
+    // Defensive cap — a single client should never legitimately have
+    // more than a few hundred invoices in their lifetime.
+    .limit(500);
 
   type InvRow = {
     id: string;

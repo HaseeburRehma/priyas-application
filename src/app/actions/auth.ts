@@ -1,7 +1,8 @@
 "use server";
 
+import { headers } from "next/headers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { consumeAsync, LIMITS } from "@/lib/rate-limit/limiter";
+import { consumeAsync } from "@/lib/rate-limit/limiter";
 import { loginSchema } from "@/lib/validators/auth";
 
 type LoginResult =
@@ -33,12 +34,39 @@ export async function loginAction(raw: unknown): Promise<LoginResult> {
   }
   const { email, password } = parsed.data;
 
-  // Per-account rate limit. We key by lowercased email so casing variants
-  // don't bypass the bucket.
-  const key = `login:${email.trim().toLowerCase()}`;
-  const limit = await consumeAsync(key, LIMITS.login);
-  if (!limit.ok) {
-    const sec = Math.ceil(limit.retryAfterMs / 1000);
+  // Two-tier rate limit.
+  //  • Tier A (tight): per (email, IP). Stops a single attacker from
+  //    burning attempts against one account from one network. Was 10/5min
+  //    per email before — that let a throttled attacker DoS real users by
+  //    spamming the right email with garbage. Keying on (email|IP) means
+  //    real users on a different IP are unaffected by attacker noise.
+  //  • Tier B (broader): per email only, looser cap as defence-in-depth
+  //    against distributed credential stuffing across many IPs.
+  //
+  // x-forwarded-for is set by the platform load balancer (Vercel / proxy).
+  // The first hop is the real client; we fall back to "unknown" so the
+  // bucket still applies when the header is absent (e.g. local dev).
+  const emailKey = email.trim().toLowerCase();
+  const xff = (await headers()).get("x-forwarded-for");
+  const ip = xff?.split(",")[0]?.trim() ?? "unknown";
+
+  const pairLimit = await consumeAsync(`login:${emailKey}|${ip}`, {
+    max: 5,
+    windowMs: 60_000,
+  });
+  if (!pairLimit.ok) {
+    const sec = Math.ceil(pairLimit.retryAfterMs / 1000);
+    return {
+      ok: false,
+      error: `Zu viele Login-Versuche. Bitte in ${sec}s erneut versuchen.`,
+    };
+  }
+  const emailLimit = await consumeAsync(`login:${emailKey}`, {
+    max: 15,
+    windowMs: 60_000,
+  });
+  if (!emailLimit.ok) {
+    const sec = Math.ceil(emailLimit.retryAfterMs / 1000);
     return {
       ok: false,
       error: `Zu viele Login-Versuche. Bitte in ${sec}s erneut versuchen.`,

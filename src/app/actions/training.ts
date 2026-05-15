@@ -374,15 +374,49 @@ export async function updateTrainingProgressAction(
     patch.started_at = now;
     patch.completed_at = null;
   } else if (input.state === "complete") {
-    patch.started_at = now;
-    patch.completed_at = now;
-
     // Spec §4.9 — mandatory-module completion requires a digital
     // signature. Stored inline as image/svg+xml markup in
     // employee_training_progress.signature_svg (added in migration 000025).
-    // The UI gate enforces "must sign" for is_mandatory modules; the
-    // server stays permissive for non-mandatory modules so people can
-    // mark optional reading material done with one click.
+    // The UI also gates this, but a malicious/buggy client could call
+    // the action directly with no signature — so the server must verify
+    // the module's `is_mandatory` flag itself and reject when missing.
+    // Non-mandatory modules stay permissive (one-click "done" still works).
+    const { data: moduleRow, error: moduleErr } = await ((
+      supabase.from("training_modules") as unknown as {
+        select: (cols: string) => {
+          eq: (col: string, val: string) => {
+            maybeSingle: () => Promise<{
+              data: { is_mandatory: boolean | null } | null;
+              error: { message: string } | null;
+            }>;
+          };
+        };
+      }
+    ))
+      .select("is_mandatory")
+      .eq("id", input.module_id)
+      .maybeSingle();
+    if (moduleErr) return { ok: false, error: moduleErr.message };
+    const isMandatory =
+      (moduleRow as { is_mandatory: boolean | null } | null)?.is_mandatory ===
+      true;
+
+    if (isMandatory) {
+      const sig = input.signature_svg;
+      if (typeof sig !== "string" || sig.trim().length === 0) {
+        return { ok: false, error: "training.errors.signatureRequired" };
+      }
+      // Defensive: DB has a CHECK at 64000, but fail fast before the
+      // round-trip so we surface a translated error instead of a
+      // postgres constraint violation.
+      if (sig.length > 65000) {
+        return { ok: false, error: "training.errors.signatureTooLarge" };
+      }
+    }
+
+    patch.started_at = now;
+    patch.completed_at = now;
+
     if (input.signature_svg) {
       patch.signature_svg = input.signature_svg;
     }

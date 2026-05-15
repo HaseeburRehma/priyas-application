@@ -1,12 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { routes } from "@/lib/constants/routes";
+import { ImportDialog } from "@/components/shared/ImportDialog";
 
 /** Top of /clients: breadcrumb + title + Import / Export / New client. */
 export function ClientsPageHead() {
   const t = useTranslations("clients");
+  const [importOpen, setImportOpen] = useState(false);
 
   return (
     <div className="mb-6">
@@ -30,16 +33,10 @@ export function ClientsPageHead() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {/*
-            Import CSV is parked behind a disabled-with-tooltip until
-            we ship the importer. Showing a working button that does
-            nothing is worse than showing a clearly-disabled one.
-          */}
           <button
             type="button"
-            disabled
-            title={t("actions.importComingSoon")}
-            className="btn btn--ghost border border-neutral-200 bg-white opacity-50"
+            onClick={() => setImportOpen(true)}
+            className="btn btn--ghost border border-neutral-200 bg-white"
           >
             <svg
               aria-hidden
@@ -55,6 +52,13 @@ export function ClientsPageHead() {
             </svg>
             {t("actions.import")}
           </button>
+          <ImportDialog
+            open={importOpen}
+            onClose={() => setImportOpen(false)}
+            endpoint="/api/clients/import"
+            templateUrl="/api/clients/import"
+            moduleName="clients"
+          />
           <a
             href="/api/clients?format=csv"
             target="_blank"

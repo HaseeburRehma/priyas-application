@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       return new NextResponse(csv, {
         headers: {
           "content-type": "text/csv; charset=utf-8",
-          "content-disposition": `attachment; filename="invoices-${today}.csv"`,
+          "content-disposition": `attachment; filename="priya-invoices-${today}.csv"`,
           "cache-control": "no-store",
         },
       });
@@ -83,6 +83,12 @@ export async function GET(request: NextRequest) {
 }
 
 function csvEscape(s: string): string {
-  if (!/[",\n]/.test(s)) return s;
-  return `"${s.replace(/"/g, '""')}"`;
+  // SECURITY: defuse Excel / Google Sheets formula injection by
+  // prefixing leading =, +, -, @, \t, \r with a single quote.
+  let out = s;
+  if (out.length > 0 && /^[=+\-@\t\r]/.test(out)) {
+    out = `'${out}`;
+  }
+  if (!/[",\n]/.test(out)) return out;
+  return `"${out.replace(/"/g, '""')}"`;
 }

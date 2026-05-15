@@ -73,11 +73,25 @@ export async function markInvoicePaidAction(
     };
   }
   const supabase = await createSupabaseServerClient();
+  // Idempotent: a double-click used to overwrite `paid_at` on every call.
+  // Filtering on status="sent" makes the second call a no-op — the update
+  // touches zero rows and we return a clear "already paid" message instead
+  // of silently re-stamping. `.select("id")` is required so we can count
+  // the affected rows (Supabase doesn't expose `.count` on updates by default).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await ((supabase.from("invoices") as any))
+  const { data: updated, error } = await ((supabase.from("invoices") as any))
     .update({ status: "paid", paid_at: new Date().toISOString() })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("status", "sent")
+    .select("id");
   if (error) return { ok: false, error: error.message };
+  const rows = Array.isArray(updated) ? updated.length : 0;
+  if (rows === 0) {
+    return {
+      ok: false,
+      error: "Rechnung wurde bereits als bezahlt markiert.",
+    };
+  }
   await audit("mark_paid", id, "Rechnung als bezahlt markiert.");
   revalidatePath(routes.invoices);
   revalidatePath(routes.invoice(id));

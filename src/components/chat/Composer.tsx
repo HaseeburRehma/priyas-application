@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   useEffect,
   useRef,
@@ -359,11 +360,15 @@ function PendingChip({
   if (attachment.kind === "image" && attachment.previewUrl) {
     return (
       <div className="relative h-16 w-16 overflow-hidden rounded-md border border-neutral-200">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        {/* `previewUrl` is a blob: URL from URL.createObjectURL — the
+            optimizer can't read it, so unoptimized is required. */}
+        <Image
           src={attachment.previewUrl}
           alt={attachment.name}
-          className="h-full w-full object-cover"
+          fill
+          sizes="64px"
+          unoptimized
+          className="object-cover"
         />
         <RemoveButton onRemove={onRemove} />
       </div>

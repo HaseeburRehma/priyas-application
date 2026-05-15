@@ -18,7 +18,9 @@ export function PropertyDetail({
   canDelete: boolean;
 }) {
   const t = useTranslations("properties.detail");
+  const tCommon = useTranslations("common");
   const f = useFormat();
+  const comingSoonTitle = tCommon("comingSoon");
 
   // Spec §4.1 / §4.2: flag "new" records visually for the first 30 days.
   // Previously this badge was hard-coded on, which made every property look
@@ -120,11 +122,26 @@ export function PropertyDetail({
       <section className="mb-5 rounded-lg border border-neutral-100 bg-white">
         <div className="flex flex-wrap gap-1 overflow-x-auto border-b border-neutral-100 px-2 py-1.5 text-[13px]">
           <Tab active>{t("tabOverview")}</Tab>
-          <Tab count={detail.area_count}>{t("tabAreas")}</Tab>
-          <Tab>{t("tabSchedule")}</Tab>
-          <Tab count={detail.assignment_count}>{t("tabAssignments")}</Tab>
-          <Tab count={detail.document_count}>{t("tabDocuments")}</Tab>
-          <Tab>{t("tabHistory")}</Tab>
+          <Tab
+            count={detail.area_count ?? undefined}
+            disabledTitle={comingSoonTitle}
+          >
+            {t("tabAreas")}
+          </Tab>
+          <Tab disabledTitle={comingSoonTitle}>{t("tabSchedule")}</Tab>
+          <Tab
+            count={detail.assignment_count}
+            disabledTitle={comingSoonTitle}
+          >
+            {t("tabAssignments")}
+          </Tab>
+          <Tab
+            count={detail.document_count ?? undefined}
+            disabledTitle={comingSoonTitle}
+          >
+            {t("tabDocuments")}
+          </Tab>
+          <Tab disabledTitle={comingSoonTitle}>{t("tabHistory")}</Tab>
         </div>
       </section>
 
@@ -175,16 +192,25 @@ function Tab({
   active,
   count,
   children,
+  disabledTitle,
 }: {
   active?: boolean;
   count?: number;
   children: React.ReactNode;
+  disabledTitle?: string;
 }) {
+  const disabled = !active && !!disabledTitle;
   return (
-    <span
+    <button
+      type="button"
+      disabled={disabled}
+      aria-disabled={disabled ? "true" : undefined}
+      tabIndex={disabled ? -1 : undefined}
+      title={disabled ? disabledTitle : undefined}
       className={cn(
         "relative inline-flex items-center gap-2 rounded-md px-3 py-2",
         active ? "text-primary-700" : "text-neutral-600",
+        disabled && "cursor-not-allowed opacity-50",
       )}
     >
       {children}
@@ -196,24 +222,32 @@ function Tab({
       {active && (
         <span className="absolute inset-x-2 -bottom-[7px] h-0.5 rounded-full bg-primary-500" />
       )}
-    </span>
+    </button>
   );
 }
 
 function AreasCard({ areas }: { areas: Detail["areas"] }) {
   const t = useTranslations("properties.detail");
+  // `areas === null` means the schema doesn't yet expose property_areas;
+  // render an empty placeholder so we don't pretend we have data.
+  const rows = areas ?? [];
   return (
     <section className="rounded-lg border border-neutral-100 bg-white">
       <header className="flex items-center justify-between border-b border-neutral-100 p-5">
         <h3 className="text-[15px] font-semibold text-neutral-800">
           {t("areasTitle")}
         </h3>
-        <Link href="#" className="text-[12px] font-medium text-primary-600 hover:text-primary-700">
-          {t("areasViewAll", { count: areas.length })}
-        </Link>
+        {areas !== null && (
+          <Link href="#" className="text-[12px] font-medium text-primary-600 hover:text-primary-700">
+            {t("areasViewAll", { count: rows.length })}
+          </Link>
+        )}
       </header>
       <div className="px-5 py-2">
-        {areas.map((a, idx) => (
+        {rows.length === 0 && (
+          <div className="py-6 text-center text-[13px] text-neutral-500">—</div>
+        )}
+        {rows.map((a, idx) => (
           <div
             key={a.id}
             className={cn(

@@ -1,31 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
 import { useEmployees } from "@/hooks/employees/useEmployees";
+import { useTableSelection } from "@/hooks/useTableSelection";
 import type {
   EmployeeRoleChip,
   EmployeeRow,
   EmployeeStatus,
   EmployeesSummary,
 } from "@/lib/api/employees.types";
+import { ImportDialog } from "@/components/shared/ImportDialog";
 import { InviteEmployeeDialog } from "./InviteEmployeeDialog";
+import { BulkActionBar, type BulkAction } from "@/components/shared/BulkActionBar";
+import {
+  bulkArchiveEmployeesAction,
+  bulkInviteEmployeesAction,
+} from "@/app/actions/employees";
 
 const PAGE_SIZE = 25;
 
-type Props = { summary: EmployeesSummary; canCreate: boolean };
+type Props = {
+  summary: EmployeesSummary;
+  canCreate: boolean;
+  canArchive: boolean;
+};
 
-export function EmployeesPageClient({ summary, canCreate }: Props) {
+export function EmployeesPageClient({
+  summary,
+  canCreate,
+  canArchive,
+}: Props) {
   const t = useTranslations("employees");
   const tToolbar = useTranslations("employees.toolbar");
   const tSummary = useTranslations("employees.summary");
   const tTable = useTranslations("employees.table");
   const tRole = useTranslations("employees.role");
   const tStatus = useTranslations("employees.status");
+  const tCommon = useTranslations("common");
+  const tBulk = useTranslations("bulk");
+  const comingSoonTitle = tCommon("comingSoon");
+  const router = useRouter();
 
   const [q, setQ] = useState("");
   const [role, setRole] = useState<EmployeeRoleChip | "all">("all");
@@ -33,6 +54,8 @@ export function EmployeesPageClient({ summary, canCreate }: Props) {
   const [view, setView] = useState<"list" | "grid">("list");
   const [page, setPage] = useState(1);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [pending, start] = useTransition();
 
   const { data, isLoading, isFetching } = useEmployees({
     q,
@@ -47,6 +70,128 @@ export function EmployeesPageClient({ summary, canCreate }: Props) {
   const rows = data?.rows ?? [];
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const { selectedIds, isAllSelected, toggleOne, toggleAll, clear } =
+    useTableSelection(rows);
+  const partialSelected =
+    !isAllSelected && rows.some((r) => selectedIds.has(r.id));
+  const selectedCount = selectedIds.size;
+
+  function exportSelected() {
+    const ids = Array.from(selectedIds).join(",");
+    const url = `/api/employees?format=csv&ids=${encodeURIComponent(ids)}`;
+    window.open(url, "_blank", "noopener");
+  }
+
+  function archiveSelected() {
+    const count = selectedCount;
+    if (count === 0) return;
+    if (!confirm(tBulk("bulkArchiveConfirm", { count }))) return;
+    start(async () => {
+      const ids = Array.from(selectedIds);
+      const r = await bulkArchiveEmployeesAction(ids);
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      if (r.data.failed === 0) {
+        toast.success(tBulk("actionSuccess", { count: r.data.ok }));
+      } else {
+        toast.success(
+          tBulk("actionPartial", { ok: r.data.ok, failed: r.data.failed }),
+        );
+      }
+      clear();
+      router.refresh();
+    });
+  }
+
+  function inviteSelected() {
+    const count = selectedCount;
+    if (count === 0) return;
+    if (!confirm(tBulk("bulkInviteConfirm", { count }))) return;
+    start(async () => {
+      const ids = Array.from(selectedIds);
+      const r = await bulkInviteEmployeesAction(ids);
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      if (r.data.failed === 0) {
+        toast.success(tBulk("actionSuccess", { count: r.data.ok }));
+      } else {
+        toast.success(
+          tBulk("actionPartial", { ok: r.data.ok, failed: r.data.failed }),
+        );
+      }
+      clear();
+      router.refresh();
+    });
+  }
+
+  const bulkActions: BulkAction[] = [];
+  bulkActions.push({
+    key: "export",
+    label: tBulk("bulkExport"),
+    onClick: exportSelected,
+    icon: (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-3.5 w-3.5"
+      >
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 10l-5 5-5-5M12 15V3" />
+      </svg>
+    ),
+  });
+  if (canCreate) {
+    bulkActions.push({
+      key: "invite",
+      label: tBulk("bulkInvite"),
+      onClick: inviteSelected,
+      disabled: pending,
+      icon: (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-3.5 w-3.5"
+        >
+          <path d="M4 4h16v16H4z" />
+          <path d="M22 6l-10 7L2 6" />
+        </svg>
+      ),
+    });
+  }
+  if (canArchive) {
+    bulkActions.push({
+      key: "archive",
+      label: tBulk("bulkArchive"),
+      onClick: archiveSelected,
+      tone: "danger",
+      disabled: pending,
+      icon: (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-3.5 w-3.5"
+        >
+          <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+        </svg>
+      ),
+    });
+  }
 
   return (
     <>
@@ -67,14 +212,11 @@ export function EmployeesPageClient({ summary, canCreate }: Props) {
           <p className="text-[13px] text-neutral-500">{t("subtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Import CSV is parked behind a tooltip until the importer
-              ships; Export goes through /api/employees?format=csv (see
-              that route handler). */}
+          {/* Export goes through /api/employees?format=csv. */}
           <button
             type="button"
-            disabled
-            title={t("actions.importComingSoon")}
-            className="btn btn--ghost border border-neutral-200 bg-white opacity-50"
+            onClick={() => setImportOpen(true)}
+            className="btn btn--ghost border border-neutral-200 bg-white"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5-5 5 5M12 5v12" />
@@ -108,6 +250,13 @@ export function EmployeesPageClient({ summary, canCreate }: Props) {
       </div>
 
       <InviteEmployeeDialog open={inviteOpen} onClose={() => setInviteOpen(false)} />
+      <ImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        endpoint="/api/employees/import"
+        templateUrl="/api/employees/import"
+        moduleName="employees"
+      />
 
       {/* Summary */}
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -180,7 +329,10 @@ export function EmployeesPageClient({ summary, canCreate }: Props) {
               setPage(1);
             }}
           />
-          <FilterChip label={tToolbar("filterTeam")} />
+          <FilterChip
+            label={tToolbar("filterTeam")}
+            disabledTitle={comingSoonTitle}
+          />
           <FilterChip
             label={status === "all" ? tToolbar("filterStatus") : tStatus(status as never)}
             active={status !== "all"}
@@ -195,8 +347,14 @@ export function EmployeesPageClient({ summary, canCreate }: Props) {
               setPage(1);
             }}
           />
-          <FilterChip label={tToolbar("filterLanguage")} />
-          <FilterChip label={tToolbar("filterMore")} />
+          <FilterChip
+            label={tToolbar("filterLanguage")}
+            disabledTitle={comingSoonTitle}
+          />
+          <FilterChip
+            label={tToolbar("filterMore")}
+            disabledTitle={comingSoonTitle}
+          />
           <div className="flex-1" />
           <div className="inline-flex rounded-md border border-neutral-100 bg-neutral-50 p-1 text-[12px]">
             <Seg active={view === "list"} onClick={() => setView("list")}>
@@ -225,7 +383,18 @@ export function EmployeesPageClient({ summary, canCreate }: Props) {
             <table className="w-full border-collapse text-[13px]">
               <thead>
                 <tr>
-                  <Th width={42} />
+                  <Th width={42}>
+                    <input
+                      type="checkbox"
+                      aria-label={tBulk("selectAll")}
+                      checked={isAllSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = partialSelected;
+                      }}
+                      onChange={toggleAll}
+                      className="h-4 w-4 cursor-pointer accent-primary-500"
+                    />
+                  </Th>
                   <Th>{tTable("employee")}</Th>
                   <Th>{tTable("role")}</Th>
                   <Th>{tTable("team")}</Th>
@@ -253,7 +422,14 @@ export function EmployeesPageClient({ summary, canCreate }: Props) {
                 )}
                 {!isLoading &&
                   !isFetching &&
-                  rows.map((r) => <Row key={r.id} row={r} />)}
+                  rows.map((r) => (
+                    <Row
+                      key={r.id}
+                      row={r}
+                      isSelected={selectedIds.has(r.id)}
+                      onToggle={toggleOne}
+                    />
+                  ))}
               </tbody>
             </table>
           </div>
@@ -298,14 +474,29 @@ export function EmployeesPageClient({ summary, canCreate }: Props) {
           </div>
         </div>
       </div>
+
+      <BulkActionBar
+        count={selectedCount}
+        actions={bulkActions}
+        onClear={clear}
+      />
     </>
   );
 }
 
-function Row({ row }: { row: EmployeeRow }) {
+function Row({
+  row,
+  isSelected,
+  onToggle,
+}: {
+  row: EmployeeRow;
+  isSelected: boolean;
+  onToggle: (id: string) => void;
+}) {
   const tTable = useTranslations("employees.table");
   const tRole = useTranslations("employees.role");
   const tStatus = useTranslations("employees.status");
+  const tBulk = useTranslations("bulk");
 
   const toneClass: Record<EmployeeRow["tone"], string> = {
     primary: "bg-primary-500",
@@ -342,9 +533,20 @@ function Row({ row }: { row: EmployeeRow }) {
   const overtime = row.status === "overtime";
 
   return (
-    <tr className="border-b border-neutral-100 transition last:border-b-0 hover:bg-tertiary-200">
+    <tr
+      className={cn(
+        "border-b border-neutral-100 transition last:border-b-0 hover:bg-tertiary-200",
+        isSelected && "bg-primary-50",
+      )}
+    >
       <td className="px-5 py-3.5 align-middle">
-        <span className="grid h-4 w-4 place-items-center rounded-[3px] border-[1.5px] border-neutral-300 bg-white" />
+        <input
+          type="checkbox"
+          aria-label={`${tBulk("selectAll")}: ${row.full_name}`}
+          checked={isSelected}
+          onChange={() => onToggle(row.id)}
+          className="h-4 w-4 cursor-pointer accent-primary-500"
+        />
       </td>
       <td className="px-5 py-3.5 align-middle">
         <Link
@@ -515,21 +717,28 @@ function FilterChip({
   active = false,
   count,
   onClick,
+  disabledTitle,
 }: {
   label: string;
   active?: boolean;
   count?: number;
   onClick?: () => void;
+  disabledTitle?: string;
 }) {
+  const disabled = !!disabledTitle;
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      aria-disabled={disabled ? "true" : undefined}
+      title={disabled ? disabledTitle : undefined}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-[12px] font-medium transition",
         active
           ? "border-primary-500 bg-tertiary-200 text-primary-700"
           : "border-neutral-200 bg-white text-neutral-700 hover:border-primary-500 hover:text-primary-600",
+        disabled && "cursor-not-allowed opacity-50 hover:border-neutral-200 hover:text-neutral-700",
       )}
     >
       {label}

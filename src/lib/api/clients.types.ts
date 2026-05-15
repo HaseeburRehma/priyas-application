@@ -27,13 +27,31 @@ export type ClientsSummary = {
   newThisMonth: number;
 };
 
+/**
+ * Sortable columns wired through to the DB query. `properties` is a
+ * client-side aggregate (count from the `properties` table) so we can't
+ * push it down as an `.order()` clause yet — the table only exposes the
+ * DB-backed columns.
+ */
+export type ClientsSortField = "name" | "contract_start";
+
 export type ClientsListParams = {
   q?: string;
   type?: ClientCustomerType | "all";
   page?: number;
   pageSize?: number;
-  sort?: "name" | "properties" | "contract_start";
+  sort?: ClientsSortField;
   direction?: "asc" | "desc";
+  /**
+   * When `false` (default), archived clients are hidden from the list.
+   * Set to `true` to include archived rows (e.g. on an "Archive" tab).
+   */
+  archived?: boolean;
+  /**
+   * Restrict the result set to these IDs. Used for bulk-export CSVs
+   * that should only contain the user's current selection.
+   */
+  ids?: ReadonlyArray<string>;
 };
 
 export type ClientsListResult = {

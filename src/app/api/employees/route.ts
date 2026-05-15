@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { loadEmployeesList } from "@/lib/api/employees";
 import type {
   EmployeeRoleChip,
+  EmployeesSortField,
   EmployeeStatus,
 } from "@/lib/api/employees.types";
 
@@ -17,6 +18,7 @@ const STATUSES: ReadonlyArray<EmployeeStatus | "all"> = [
   "on_leave",
   "inactive",
 ];
+const VALID_SORTS: ReadonlyArray<EmployeesSortField> = ["name", "status"];
 
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
@@ -25,7 +27,12 @@ export async function GET(request: NextRequest) {
   const statusRaw = url.searchParams.get("status") ?? "all";
   const page = Number(url.searchParams.get("page") ?? "1");
   const pageSize = Number(url.searchParams.get("pageSize") ?? "25");
-  const sort = (url.searchParams.get("sort") as "name" | "hours" | "status") ?? "name";
+  const sortRaw = url.searchParams.get("sort") ?? "name";
+  const sort: EmployeesSortField = VALID_SORTS.includes(
+    sortRaw as EmployeesSortField,
+  )
+    ? (sortRaw as EmployeesSortField)
+    : "name";
   const direction = (url.searchParams.get("direction") as "asc" | "desc") ?? "asc";
 
   const role = ROLES.includes(roleRaw as EmployeeRoleChip | "all")
@@ -35,6 +42,17 @@ export async function GET(request: NextRequest) {
     ? (statusRaw as EmployeeStatus | "all")
     : "all";
   const format = url.searchParams.get("format");
+
+  // Bulk-export selection support: `?ids=uuid1,uuid2,...` restricts
+  // the result set. Applies to both the JSON list and the CSV export.
+  const idsRaw = url.searchParams.get("ids");
+  const ids =
+    idsRaw && idsRaw.trim().length > 0
+      ? idsRaw
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : undefined;
 
   try {
     if (format === "csv") {
@@ -46,6 +64,7 @@ export async function GET(request: NextRequest) {
         pageSize: 5000,
         sort,
         direction,
+        ids,
       });
       const headers = [
         "name",
@@ -78,7 +97,7 @@ export async function GET(request: NextRequest) {
       return new NextResponse(csv, {
         headers: {
           "content-type": "text/csv; charset=utf-8",
-          "content-disposition": `attachment; filename="employees-${today}.csv"`,
+          "content-disposition": `attachment; filename="priya-employees-${today}.csv"`,
           "cache-control": "no-store",
         },
       });
@@ -92,6 +111,7 @@ export async function GET(request: NextRequest) {
       pageSize,
       sort,
       direction,
+      ids,
     });
     return NextResponse.json(result);
   } catch (err) {
@@ -103,6 +123,12 @@ export async function GET(request: NextRequest) {
 }
 
 function csvEscape(s: string): string {
-  if (!/[",\n]/.test(s)) return s;
-  return `"${s.replace(/"/g, '""')}"`;
+  // SECURITY: defuse Excel / Google Sheets formula injection by
+  // prefixing leading =, +, -, @, \t, \r with a single quote.
+  let out = s;
+  if (out.length > 0 && /^[=+\-@\t\r]/.test(out)) {
+    out = `'${out}`;
+  }
+  if (!/[",\n]/.test(out)) return out;
+  return `"${out.replace(/"/g, '""')}"`;
 }

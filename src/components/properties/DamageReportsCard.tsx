@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -275,13 +276,15 @@ export function DamageReportsCard({
                               href={url}
                               target="_blank"
                               rel="noreferrer noopener"
-                              className="block h-[72px] w-[72px] overflow-hidden rounded-md border border-neutral-200"
+                              className="relative block h-[72px] w-[72px] overflow-hidden rounded-md border border-neutral-200"
                             >
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
+                              <Image
                                 src={url}
                                 alt=""
-                                className="h-full w-full object-cover"
+                                fill
+                                sizes="72px"
+                                unoptimized
+                                className="object-cover"
                               />
                             </a>
                           );

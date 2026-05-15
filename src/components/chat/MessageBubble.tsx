@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useTransition } from "react";
 import { format } from "date-fns";
 import { de as deLocale, enUS as enLocale, ta as taLocale } from "date-fns/locale";
@@ -242,12 +243,21 @@ function AttachmentView({
         )}
       >
         {url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={url}
-            alt={attachment.name}
-            className="block h-full w-full object-cover"
-          />
+          // Attachments are arbitrary user uploads with unknown intrinsic
+          // dimensions — use `fill` over the sized anchor parent and
+          // `unoptimized` so signed URLs stream straight from Supabase
+          // rather than through the Next image optimizer (which would
+          // ignore the signature anyway).
+          <div className="relative h-full w-full">
+            <Image
+              src={url}
+              alt={attachment.name}
+              fill
+              sizes="240px"
+              unoptimized
+              className="object-cover"
+            />
+          </div>
         ) : (
           <div className="grid h-32 w-32 place-items-center bg-neutral-100 text-[11px] text-neutral-500">
             …

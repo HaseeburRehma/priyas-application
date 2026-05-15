@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -830,12 +831,20 @@ function StepPhotos({
               key={`${f.name}-${i}`}
               className="group relative overflow-hidden rounded-md border border-neutral-200 bg-neutral-50"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={previews[i] ?? ""}
-                alt=""
-                className="h-32 w-full object-cover"
-              />
+              {previews[i] ? (
+                <div className="relative h-32 w-full">
+                  <Image
+                    src={previews[i] ?? ""}
+                    alt=""
+                    fill
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    unoptimized
+                    className="object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="h-32 w-full bg-neutral-100" />
+              )}
               <button
                 type="button"
                 aria-label={t("removePhoto")}

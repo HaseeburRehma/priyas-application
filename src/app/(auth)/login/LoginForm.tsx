@@ -13,6 +13,7 @@ import { loginSchema, type LoginInput } from "@/lib/validators/auth";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { env } from "@/lib/constants/env";
 import { routes } from "@/lib/constants/routes";
+import { safeNext } from "@/lib/utils/safe-next";
 import { loginAction } from "@/app/actions/auth";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 
@@ -32,9 +33,12 @@ export function LoginForm() {
   const t = useTranslations("auth");
   const router = useRouter();
   const search = useSearchParams();
-  // `next` arrives as an arbitrary string from the URL, so we explicitly
-  // narrow it through Next's `Route` brand for typed-routes compatibility.
-  const next = (search.get("next") ?? routes.dashboard) as Route;
+  // SECURITY: `next` is attacker-controlled (URL param). Without safeNext
+  // a value like `//evil.com/x` would be honoured by router.replace and
+  // OAuth redirectTo, sending the user to the attacker's host. safeNext
+  // enforces "single absolute path on this origin or fall back to
+  // /dashboard".
+  const next = safeNext(search.get("next"), routes.dashboard) as Route;
   const [showPw, setShowPw] = useState(false);
   const [submitting, startTransition] = useTransition();
   const [mfa, setMfa] = useState<{ factorId: string } | null>(null);

@@ -795,7 +795,9 @@ function renderOpenInvoices(
   if (rows.length === 0) {
     drawText(
       page,
-      "Keine offenen Rechnungen — alles bezahlt. 🎉",
+      // Helvetica WinAnsi can't encode emojis (pdf-lib throws on 🎉).
+      // U+2022 (bullet) is in WinAnsi-1252 (0x95) so it renders safely.
+      "Keine offenen Rechnungen — alles bezahlt. •",
       MARGIN,
       y,
       helv,

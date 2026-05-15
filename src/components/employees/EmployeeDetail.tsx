@@ -23,14 +23,18 @@ export function EmployeeDetail({
   detail,
   canUpdate,
   canArchive,
+  currentUserId,
 }: {
   detail: Detail;
   canUpdate: boolean;
   canArchive: boolean;
+  currentUserId: string | null;
 }) {
   const t = useTranslations("employees.detail");
   const tRole = useTranslations("employees.role");
+  const tCommon = useTranslations("common");
   const f = useFormat();
+  const comingSoonTitle = tCommon("comingSoon");
 
   return (
     <>
@@ -74,7 +78,7 @@ export function EmployeeDetail({
             <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[12px] text-neutral-500">
               {detail.email && <span>✉ {detail.email}</span>}
               {detail.phone && <span>☎ {detail.phone}</span>}
-              <span>· {detail.team_label}</span>
+              {detail.team_label && <span>· {detail.team_label}</span>}
               {detail.hire_date && (
                 <span>
                   · {t("statHireDate")}: {f.date(detail.hire_date)}
@@ -110,9 +114,12 @@ export function EmployeeDetail({
               weekly_hours: detail.weekly_hours,
               hourly_rate_eur: detail.hourly_rate_eur,
               status: detail.status,
+              auth_role: detail.auth_role,
+              profile_id: detail.profile_id,
             }}
             canUpdate={canUpdate}
             canArchive={canArchive}
+            currentUserId={currentUserId}
           />
         </div>
       </section>
@@ -121,10 +128,12 @@ export function EmployeeDetail({
       <section className="mb-5 rounded-lg border border-neutral-100 bg-white">
         <div className="flex flex-wrap gap-1 overflow-x-auto border-b border-neutral-100 px-2 py-1.5 text-[13px]">
           <Tab active>{t("tabOverview")}</Tab>
-          <Tab count={detail.shifts_total}>{t("tabShifts")}</Tab>
-          <Tab>{t("tabHours")}</Tab>
-          <Tab>{t("tabDocuments")}</Tab>
-          <Tab>{t("tabHistory")}</Tab>
+          <Tab count={detail.shifts_total} disabledTitle={comingSoonTitle}>
+            {t("tabShifts")}
+          </Tab>
+          <Tab disabledTitle={comingSoonTitle}>{t("tabHours")}</Tab>
+          <Tab disabledTitle={comingSoonTitle}>{t("tabDocuments")}</Tab>
+          <Tab disabledTitle={comingSoonTitle}>{t("tabHistory")}</Tab>
         </div>
       </section>
 
@@ -173,16 +182,25 @@ function Tab({
   active,
   count,
   children,
+  disabledTitle,
 }: {
   active?: boolean;
   count?: number;
   children: React.ReactNode;
+  disabledTitle?: string;
 }) {
+  const disabled = !active && !!disabledTitle;
   return (
-    <span
+    <button
+      type="button"
+      disabled={disabled}
+      aria-disabled={disabled ? "true" : undefined}
+      tabIndex={disabled ? -1 : undefined}
+      title={disabled ? disabledTitle : undefined}
       className={cn(
         "relative inline-flex items-center gap-2 rounded-md px-3 py-2",
         active ? "text-primary-700" : "text-neutral-600",
+        disabled && "cursor-not-allowed opacity-50",
       )}
     >
       {children}
@@ -194,7 +212,7 @@ function Tab({
       {active && (
         <span className="absolute inset-x-2 -bottom-[7px] h-0.5 rounded-full bg-primary-500" />
       )}
-    </span>
+    </button>
   );
 }
 
@@ -337,7 +355,7 @@ function ProfileCard({ detail }: { detail: Detail }) {
         />
         <Row label={t("infoEmail")} value={detail.email ?? "—"} />
         <Row label={t("infoPhone")} value={detail.phone ?? "—"} />
-        <Row label={t("infoTeam")} value={detail.team_label} />
+        <Row label={t("infoTeam")} value={detail.team_label ?? "—"} />
         <Row label={t("infoStatus")} value={detail.status} />
         <Row label={t("infoWeeklyHours")} value={`${detail.weekly_hours}h`} />
         <Row label={t("infoLanguage")} value="DE · EN" />

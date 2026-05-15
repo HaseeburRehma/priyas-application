@@ -275,6 +275,21 @@ function Item({ item }: { item: NotificationItem }) {
   );
 }
 
+// SECURITY: notification bodies can contain user-supplied strings
+// (property names, client names, etc.). HTML-escape the input BEFORE we
+// apply the `**bold**` -> <b> transform; otherwise something like
+// `<img src=x onerror=alert(1)>` would execute when injected into the
+// page via dangerouslySetInnerHTML below.
+const ESC: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+};
+const escapeHtml = (s: string): string =>
+  s.replace(/[&<>"']/g, (c) => ESC[c] ?? c);
+
 function enrich(text: string): string {
-  return text.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+  return escapeHtml(text).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
 }

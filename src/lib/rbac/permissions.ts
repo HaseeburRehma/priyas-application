@@ -202,6 +202,11 @@ export type RouteKey =
   | "employee"
   | "invoices"
   | "invoice"
+  | "invoiceNew"
+  | "invoiceEdit"
+  | "assignments"
+  | "assignment"
+  | "assignmentNew"
   | "reports"
   | "alltagshilfeReport"
   | "settings"
@@ -235,6 +240,11 @@ export const ROUTE_ACCESS: Record<RouteKey, Role[]> = {
   employee: MANAGER_ROLES,
   invoices: MANAGER_ROLES,
   invoice: MANAGER_ROLES,
+  invoiceNew: MANAGER_ROLES,
+  invoiceEdit: MANAGER_ROLES,
+  assignments: MANAGER_ROLES,
+  assignment: MANAGER_ROLES,
+  assignmentNew: MANAGER_ROLES,
   reports: MANAGER_ROLES,
   alltagshilfeReport: MANAGER_ROLES,
   settings: MANAGER_ROLES,

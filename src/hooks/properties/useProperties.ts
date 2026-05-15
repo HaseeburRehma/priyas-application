@@ -3,6 +3,7 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import type {
   PropertiesListResult,
+  PropertiesSortField,
   PropertyKind,
   PropertyStatus,
 } from "@/lib/api/properties.types";
@@ -13,7 +14,7 @@ export type PropertiesQueryParams = {
   status: PropertyStatus | "all";
   page: number;
   pageSize: number;
-  sort: "name" | "assignments" | "client";
+  sort: PropertiesSortField;
   direction: "asc" | "desc";
 };
 

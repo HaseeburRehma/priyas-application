@@ -186,6 +186,17 @@ export async function updateClientAction(
   const input = parsed.data;
   const supabase = await createSupabaseServerClient();
 
+  // Capture the pre-update snapshot so the audit row carries a real
+  // `before` diff. Without this the audit log loses half the change
+  // history (only the new values land in `after`).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: beforeRow } = await ((supabase.from("clients") as any))
+    .select(
+      "display_name, contact_name, email, phone, tax_id, notes, customer_type, insurance_provider, insurance_number, care_level",
+    )
+    .eq("id", input.id)
+    .maybeSingle();
+
   const updateRow: Record<string, unknown> = {
     display_name: input.display_name,
     contact_name: input.contact_name || null,
@@ -206,9 +217,10 @@ export async function updateClientAction(
     .eq("id", input.id);
   if (error) return { ok: false, error: error.message };
 
-  await audit("update", "clients", input.id, null, {
+  await audit("update", "clients", input.id, beforeRow ?? null, {
     message: `Kunde <strong>${input.display_name}</strong> aktualisiert.`,
     meta: "via WebApp",
+    ...updateRow,
   });
 
   revalidatePath(routes.client(input.id));
@@ -232,14 +244,20 @@ export async function archiveClientAction(
   }
   const supabase = await createSupabaseServerClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: beforeRow } = await ((supabase.from("clients") as any))
+    .select("display_name, archived")
+    .eq("id", id)
+    .maybeSingle();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await ((supabase.from("clients") as any))
     .update({ archived: true })
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
 
-  await audit("archive", "clients", id, null, {
+  await audit("archive", "clients", id, beforeRow ?? null, {
     message: "Kunde archiviert.",
     meta: "via WebApp",
+    archived: true,
   });
 
   revalidatePath(routes.clients);
@@ -255,4 +273,73 @@ export async function createClientAndRedirect(
   const result = await createClientAction(raw);
   if (!result.ok) throw new Error(result.error);
   redirect(routes.client(result.data.id));
+}
+
+/* ============================================================================
+ * Bulk actions.
+ * ========================================================================== */
+
+export type BulkActionSummary = {
+  ok: true;
+  data: {
+    ok: number;
+    failed: number;
+    errors: Array<{ id: string; error: string }>;
+  };
+};
+
+/**
+ * Bulk archive clients. Mirrors `archiveClientAction` per row,
+ * requires `client.archive`.
+ */
+export async function bulkArchiveClientsAction(
+  ids: string[],
+): Promise<BulkActionSummary | { ok: false; error: string }> {
+  try {
+    await requirePermission("client.archive");
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof PermissionError ? err.message : "Forbidden",
+    };
+  }
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return { ok: true, data: { ok: 0, failed: 0, errors: [] } };
+  }
+  const unique = Array.from(new Set(ids.filter((s) => typeof s === "string")));
+  if (unique.length > 500) {
+    return { ok: false, error: "Too many items selected (max 500)." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const errors: Array<{ id: string; error: string }> = [];
+  let success = 0;
+
+  for (const id of unique) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: beforeRow } = await ((supabase.from("clients") as any))
+      .select("display_name, archived")
+      .eq("id", id)
+      .maybeSingle();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await ((supabase.from("clients") as any))
+      .update({ archived: true })
+      .eq("id", id);
+    if (error) {
+      errors.push({ id, error: error.message });
+      continue;
+    }
+    await audit("archive", "clients", id, beforeRow ?? null, {
+      message: "Kunde archiviert (Bulk-Aktion).",
+      meta: "via WebApp",
+      archived: true,
+    });
+    success += 1;
+  }
+
+  revalidatePath(routes.clients);
+  return {
+    ok: true,
+    data: { ok: success, failed: errors.length, errors },
+  };
 }

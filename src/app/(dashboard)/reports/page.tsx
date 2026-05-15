@@ -1,13 +1,19 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { loadReports, type ReportRange } from "@/lib/api/reports";
-import { requirePermission, PermissionError } from "@/lib/rbac/permissions";
+import {
+  requirePermission,
+  PermissionError,
+  getCurrentRole,
+} from "@/lib/rbac/permissions";
 import { routes } from "@/lib/constants/routes";
 import { ReportsPageHead } from "@/components/reports/ReportsPageHead";
 import { ReportKpis } from "@/components/reports/ReportKpis";
 import { RevenueChart } from "@/components/reports/RevenueChart";
 import { HoursDonut } from "@/components/reports/HoursDonut";
 import { ReportLibrary } from "@/components/reports/ReportLibrary";
+import { LexwareMonthlyPanel } from "@/components/reports/LexwareMonthlyPanel";
+import { loadLastMonthlyRun } from "@/app/actions/lexware-monthly-invoices";
 
 export const metadata: Metadata = { title: "Berichte" };
 export const dynamic = "force-dynamic";
@@ -34,6 +40,9 @@ export default async function Page({
     ? (sp.range as ReportRange)
     : "YTD";
   const data = await loadReports(range);
+  const { role } = await getCurrentRole();
+  const isAdmin = role === "admin";
+  const lastRun = isAdmin ? await loadLastMonthlyRun() : null;
 
   return (
     <>
@@ -53,6 +62,7 @@ export default async function Page({
           averageRateEur={data.averageRate}
         />
       </div>
+      {isAdmin && <LexwareMonthlyPanel lastRun={lastRun} />}
       <ReportLibrary />
     </>
   );

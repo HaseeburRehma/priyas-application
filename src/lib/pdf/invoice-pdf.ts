@@ -1,6 +1,7 @@
 import "server-only";
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import type { InvoiceDetail } from "@/lib/api/invoices.types";
+import { renderAlltagshilfeInvoicePdf } from "./invoice-ah-pdf";
 
 const PAGE_W = 595; // A4 portrait, 72dpi
 const PAGE_H = 842;
@@ -29,9 +30,25 @@ type Org = {
 
 /**
  * Renders an invoice as a single-page A4 PDF and returns the bytes.
+ *
+ * Dispatches by `invoice_kind`:
+ *   - "alltagshilfe" → insurance-format template (no VAT, budget tracker,
+ *      service code, care recipient block) in alltagshilfe-pdf.ts.
+ *   - default       → standard German Rechnung (this file).
+ *
  * Pure pdf-lib so it works in any runtime (Node + Edge).
  */
 export async function renderInvoicePdf(
+  invoice: InvoiceDetail,
+  org: Org,
+): Promise<Uint8Array> {
+  if (invoice.invoice_kind === "alltagshilfe") {
+    return renderAlltagshilfeInvoicePdf(invoice, org);
+  }
+  return renderRegularInvoicePdf(invoice, org);
+}
+
+async function renderRegularInvoicePdf(
   invoice: InvoiceDetail,
   org: Org,
 ): Promise<Uint8Array> {

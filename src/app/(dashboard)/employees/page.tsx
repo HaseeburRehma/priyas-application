@@ -8,9 +8,16 @@ export const dynamic = "force-dynamic";
 
 export default async function Page() {
   await requireRoute("employees");
-  const [summary, canCreate] = await Promise.all([
+  const [summary, canCreate, canArchive] = await Promise.all([
     loadEmployeesSummary(),
     can("employee.create"),
+    can("employee.archive"),
   ]);
-  return <EmployeesPageClient summary={summary} canCreate={canCreate} />;
+  return (
+    <EmployeesPageClient
+      summary={summary}
+      canCreate={canCreate}
+      canArchive={canArchive}
+    />
+  );
 }

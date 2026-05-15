@@ -1,7 +1,9 @@
 import "server-only";
 import { startOfMonth, endOfMonth, addDays } from "date-fns";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { sanitizeQ } from "@/lib/utils/postgrest-sanitize";
 import type {
+  AlltagshilfeBudget,
   InvoiceDetail,
   InvoiceLineItem,
   InvoiceRow,
@@ -14,11 +16,16 @@ import type {
 export type {
   InvoiceDetail,
   InvoiceLineItem,
+  InvoicePayment,
   InvoiceRow,
   InvoiceStatus,
+  InvoiceKind,
+  InvoiceEmailStatus,
+  ExportTarget,
   InvoicesListParams,
   InvoicesListResult,
   InvoicesSummary,
+  AlltagshilfeBudget,
 } from "./invoices.types";
 
 export async function loadInvoicesSummary(): Promise<InvoicesSummary> {
@@ -106,16 +113,20 @@ export async function loadInvoicesList(
   let query = supabase
     .from("invoices")
     .select(
-      `id, invoice_number, status, issue_date, due_date, total_cents, paid_at,
-       lexware_id, client_id,
+      `id, invoice_number, status, invoice_kind, issue_date, due_date, total_cents,
+       paid_amount_cents, paid_at, lexware_id, email_status, client_id,
        client:clients ( id, display_name )`,
       { count: "exact" },
     )
     .is("deleted_at", null);
 
   if (q) {
-    const safe = q.replace(/[%_]/g, "");
-    query = query.or(`invoice_number.ilike.%${safe}%`);
+    // sanitizeQ defends against PostgREST `.or()` filter injection — see
+    // src/lib/utils/postgrest-sanitize.ts.
+    const safe = sanitizeQ(q);
+    if (safe) {
+      query = query.or(`invoice_number.ilike.%${safe}%`);
+    }
   }
   if (status !== "all") query = query.eq("status", status);
 
@@ -132,11 +143,15 @@ export async function loadInvoicesList(
     id: string;
     invoice_number: string;
     status: InvoiceStatus;
+    invoice_kind: "regular" | "alltagshilfe";
     issue_date: string;
     due_date: string | null;
     total_cents: number | null;
+    paid_amount_cents: number | null;
     paid_at: string | null;
     lexware_id: string | null;
+    email_status:
+      | "pending" | "queued" | "sent" | "delivered" | "bounced" | "failed";
     client_id: string;
     client: { id: string; display_name: string } | null;
   };
@@ -149,17 +164,23 @@ export async function loadInvoicesList(
             (today.getTime() - new Date(r.due_date).getTime()) / 86_400_000,
           )
         : null;
+    const total = Number(r.total_cents ?? 0);
+    const paid = Number(r.paid_amount_cents ?? 0);
     return {
       id: r.id,
       invoice_number: r.invoice_number,
       client_id: r.client_id,
       client_name: r.client?.display_name ?? "—",
       status: r.status,
+      invoice_kind: r.invoice_kind,
       issue_date: r.issue_date,
       due_date: r.due_date,
-      total_cents: Number(r.total_cents ?? 0),
+      total_cents: total,
+      paid_amount_cents: paid,
+      outstanding_cents: Math.max(0, total - paid),
       paid_at: r.paid_at,
       lexware_id: r.lexware_id,
+      email_status: r.email_status,
       days_overdue,
     };
   });
@@ -171,9 +192,13 @@ export async function loadInvoiceDetail(id: string): Promise<InvoiceDetail | nul
   const { data } = await supabase
     .from("invoices")
     .select(
-      `id, invoice_number, status, issue_date, due_date, paid_at, notes,
-       pdf_path, lexware_id, subtotal_cents, tax_cents, total_cents,
-       client:clients ( id, display_name, email, phone, tax_id )`,
+      `id, invoice_number, status, invoice_kind, issue_date, due_date, paid_at, notes,
+       pdf_path, lexware_id, subtotal_cents, tax_cents, total_cents, paid_amount_cents,
+       period_start, period_end, email_status, email_sent_at, export_target,
+       client:clients (
+         id, display_name, customer_type, email, billing_email, phone, tax_id,
+         insurance_provider, insurance_number, service_code
+       )`,
     )
     .eq("id", id)
     .is("deleted_at", null)
@@ -183,6 +208,7 @@ export async function loadInvoiceDetail(id: string): Promise<InvoiceDetail | nul
     id: string;
     invoice_number: string;
     status: InvoiceStatus;
+    invoice_kind: "regular" | "alltagshilfe";
     issue_date: string;
     due_date: string | null;
     paid_at: string | null;
@@ -192,12 +218,24 @@ export async function loadInvoiceDetail(id: string): Promise<InvoiceDetail | nul
     subtotal_cents: number | null;
     tax_cents: number | null;
     total_cents: number | null;
+    paid_amount_cents: number | null;
+    period_start: string | null;
+    period_end: string | null;
+    email_status:
+      | "pending" | "queued" | "sent" | "delivered" | "bounced" | "failed";
+    email_sent_at: string | null;
+    export_target: "internal" | "lexware";
     client: {
       id: string;
       display_name: string;
+      customer_type: "residential" | "commercial" | "alltagshilfe";
       email: string | null;
+      billing_email: string | null;
       phone: string | null;
       tax_id: string | null;
+      insurance_provider: string | null;
+      insurance_number: string | null;
+      service_code: string | null;
     } | null;
   };
   const r = data as Row | null;
@@ -218,20 +256,100 @@ export async function loadInvoiceDetail(id: string): Promise<InvoiceDetail | nul
     tax_rate: Number(i.tax_rate),
   }));
 
+  const { data: payRows } = await supabase
+    .from("invoice_payments")
+    .select("id, amount_cents, paid_at, method, reference, notes")
+    .eq("invoice_id", id)
+    .order("paid_at", { ascending: false });
+
+  type DbPay = {
+    id: string;
+    amount_cents: number;
+    paid_at: string;
+    method: string | null;
+    reference: string | null;
+    notes: string | null;
+  };
+  const payments = ((payRows ?? []) as DbPay[]).map((p) => ({
+    id: p.id,
+    amount_cents: Number(p.amount_cents),
+    paid_at: p.paid_at,
+    method: p.method,
+    reference: p.reference,
+    notes: p.notes,
+  }));
+
   return {
     id: r.id,
     invoice_number: r.invoice_number,
     status: r.status,
+    invoice_kind: r.invoice_kind,
     issue_date: r.issue_date,
     due_date: r.due_date,
     paid_at: r.paid_at,
+    period_start: r.period_start,
+    period_end: r.period_end,
     notes: r.notes,
     pdf_path: r.pdf_path,
     lexware_id: r.lexware_id,
     subtotal_cents: Number(r.subtotal_cents ?? 0),
     tax_cents: Number(r.tax_cents ?? 0),
     total_cents: Number(r.total_cents ?? 0),
+    paid_amount_cents: Number(r.paid_amount_cents ?? 0),
+    email_status: r.email_status,
+    email_sent_at: r.email_sent_at,
+    export_target: r.export_target,
     client: r.client,
     items,
+    payments,
+  };
+}
+
+/**
+ * Load the Alltagshilfe annual-budget row for a client + year, computing
+ * derived fields like `remaining_cents` and `usage_percent`.
+ */
+export async function loadAlltagshilfeBudget(
+  clientId: string,
+  year: number = new Date().getFullYear(),
+): Promise<AlltagshilfeBudget | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("alltagshilfe_budgets")
+    .select(
+      "client_id, year, budget_cents, used_cents, reserved_cents, alerted_80, alerted_90, alerted_100",
+    )
+    .eq("client_id", clientId)
+    .eq("year", year)
+    .maybeSingle();
+  const row = data as
+    | {
+        client_id: string;
+        year: number;
+        budget_cents: number;
+        used_cents: number;
+        reserved_cents: number;
+        alerted_80: boolean;
+        alerted_90: boolean;
+        alerted_100: boolean;
+      }
+    | null;
+  if (!row) return null;
+  const used = Number(row.used_cents);
+  const reserved = Number(row.reserved_cents);
+  const budget = Number(row.budget_cents);
+  const remaining = Math.max(0, budget - used - reserved);
+  const usage = budget > 0 ? Math.min(100, Math.round(((used + reserved) / budget) * 100)) : 0;
+  return {
+    client_id: row.client_id,
+    year: row.year,
+    budget_cents: budget,
+    used_cents: used,
+    reserved_cents: reserved,
+    remaining_cents: remaining,
+    usage_percent: usage,
+    alerted_80: row.alerted_80,
+    alerted_90: row.alerted_90,
+    alerted_100: row.alerted_100,
   };
 }

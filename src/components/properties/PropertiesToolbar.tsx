@@ -28,6 +28,8 @@ export function PropertiesToolbar({
   const t = useTranslations("properties.toolbar");
   const tKind = useTranslations("properties.kind");
   const tStatus = useTranslations("properties.status");
+  const tCommon = useTranslations("common");
+  const comingSoonTitle = tCommon("comingSoon");
 
   const nextKind = (k: PropertyKind | "all"): PropertyKind | "all" => {
     const order: (PropertyKind | "all")[] = [
@@ -82,14 +84,14 @@ export function PropertiesToolbar({
         count={kind !== "all" ? 1 : undefined}
         onClick={() => onKind(nextKind(kind))}
       />
-      <Chip label={t("filterClient")} />
+      <Chip label={t("filterClient")} disabledTitle={comingSoonTitle} />
       <Chip
         label={status === "all" ? t("filterStatus") : tStatus(status)}
         active={status !== "all"}
         onClick={() => onStatus(nextStatus(status))}
       />
-      <Chip label={t("filterTeam")} />
-      <Chip label={t("filterMore")} />
+      <Chip label={t("filterTeam")} disabledTitle={comingSoonTitle} />
+      <Chip label={t("filterMore")} disabledTitle={comingSoonTitle} />
 
       <div className="flex-1" />
 
@@ -121,21 +123,28 @@ function Chip({
   active = false,
   count,
   onClick,
+  disabledTitle,
 }: {
   label: string;
   active?: boolean;
   count?: number;
   onClick?: () => void;
+  disabledTitle?: string;
 }) {
+  const disabled = !!disabledTitle;
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      aria-disabled={disabled ? "true" : undefined}
+      title={disabled ? disabledTitle : undefined}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-[12px] font-medium transition",
         active
           ? "border-primary-500 bg-tertiary-200 text-primary-700"
           : "border-neutral-200 bg-white text-neutral-700 hover:border-primary-500 hover:text-primary-600",
+        disabled && "cursor-not-allowed opacity-50 hover:border-neutral-200 hover:text-neutral-700",
       )}
     >
       {label}

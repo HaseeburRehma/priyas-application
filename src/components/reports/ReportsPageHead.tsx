@@ -21,6 +21,14 @@ export function ReportsPageHead({ range, rangeStart, rangeEnd }: Props) {
   const router = useRouter();
 
   const updatedAt = format(new Date(), "HH:mm");
+  // Locale-aware Berlin timezone short name (MEZ in winter, MESZ in summer).
+  const tzAbbrev = (() => {
+    const parts = new Intl.DateTimeFormat("de-DE", {
+      timeZone: "Europe/Berlin",
+      timeZoneName: "short",
+    }).formatToParts(new Date());
+    return parts.find((p) => p.type === "timeZoneName")?.value ?? "MEZ";
+  })();
 
   return (
     <>
@@ -48,7 +56,7 @@ export function ReportsPageHead({ range, rangeStart, rangeEnd }: Props) {
             <span className="text-neutral-600">
               {t("lastUpdate")}{" "}
               <span className="font-semibold text-neutral-800">
-                {updatedAt} MEZ
+                {updatedAt} {tzAbbrev}
               </span>
             </span>
           </p>

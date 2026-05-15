@@ -13,7 +13,20 @@ export async function GET(request: Request) {
   }
   const url = new URL(request.url);
   const dateParam = url.searchParams.get("date");
-  const anchor = dateParam ? new Date(dateParam) : new Date();
+  // Validate the date param before it flows into loadScheduleWeek —
+  // `new Date("anything-garbage")` happily returns an Invalid Date object
+  // that crashes deep inside the SQL date range builder with a confusing
+  // error. 400 here gives the client a clear hint.
+  let anchor: Date;
+  if (dateParam) {
+    const d = new Date(dateParam);
+    if (Number.isNaN(d.getTime())) {
+      return NextResponse.json({ error: "invalid_date" }, { status: 400 });
+    }
+    anchor = d;
+  } else {
+    anchor = new Date();
+  }
   const week = await loadScheduleWeek(anchor);
   const bytes = await renderSchedulePdf(week);
 

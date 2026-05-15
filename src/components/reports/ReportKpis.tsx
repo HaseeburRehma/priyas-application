@@ -6,11 +6,36 @@ import type { ReportsKpis } from "@/lib/api/reports";
 
 type Props = { kpis: ReportsKpis };
 
+/** Format a delta % with the correct sign and pick a tone.
+ *  - positive  → "+x.x%"  · tone "up"   (green)
+ *  - zero      → "0%"      · tone "flat" (neutral)
+ *  - negative  → "-x.x%"   · tone "down" (red)
+ *  Previously we unconditionally prefixed "+" which produced "+-3.2%"
+ *  for negatives. toFixed() already emits the minus sign for us. */
+function formatDeltaPct(pct: number): {
+  label: string;
+  tone: "up" | "flat" | "down";
+} {
+  if (!Number.isFinite(pct) || pct === 0) {
+    return { label: "0%", tone: "flat" };
+  }
+  const rounded = Number(pct.toFixed(1));
+  if (rounded === 0) {
+    return { label: "0%", tone: "flat" };
+  }
+  if (rounded > 0) {
+    return { label: `+${rounded.toFixed(1)}%`, tone: "up" };
+  }
+  return { label: `${rounded.toFixed(1)}%`, tone: "down" };
+}
+
 /** 4-card KPI strip with mini-charts. */
 export function ReportKpis({ kpis }: Props) {
   const t = useTranslations("reports.kpi");
   const f = useFormat();
   const formatEUR = (cents: number) => f.currencyCents(cents);
+  const revenueDelta = formatDeltaPct(kpis.revenueDeltaPct);
+  const hoursDelta = formatDeltaPct(kpis.hoursDeltaPct);
 
   return (
     <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -19,8 +44,8 @@ export function ReportKpis({ kpis }: Props) {
         label={t("revenue")}
         value={formatEUR(kpis.revenueCents)}
         unit={t("netVat")}
-        delta={`+${kpis.revenueDeltaPct.toFixed(1)}%`}
-        deltaTone="up"
+        delta={revenueDelta.label}
+        deltaTone={revenueDelta.tone}
         deltaSub={t("revenueSub")}
         accent="primary"
         chart={<AreaSpark data={kpis.revenueSpark} color="#72A94F" />}
@@ -37,8 +62,8 @@ export function ReportKpis({ kpis }: Props) {
         label={t("hours")}
         value={f.number(kpis.hours)}
         unit={t("hoursUnit")}
-        delta={`+${kpis.hoursDeltaPct.toFixed(1)}%`}
-        deltaTone="up"
+        delta={hoursDelta.label}
+        deltaTone={hoursDelta.tone}
         deltaSub={t("hoursSub", {
           count: kpis.activeStaff,
           avg: kpis.hoursPerWeekAvg.toFixed(1),

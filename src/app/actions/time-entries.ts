@@ -151,44 +151,52 @@ export async function checkInAction(
     }
   }
 
-  // Idempotent: re-punching the same kind returns the existing row.
+  // Idempotent insert via upsert + onConflict. Two concurrent clicks used
+  // to race the "does it already exist?" check vs the INSERT; we now lean
+  // on the unique index (shift_id, employee_id, kind) so the DB rejects
+  // the dup. `ignoreDuplicates: true` makes Supabase return no rows on a
+  // hit, so we re-select afterwards to grab the existing id.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: existing } = await ((supabase.from("time_entries") as any))
-    .select("id")
-    .eq("shift_id", input.shift_id)
-    .eq("employee_id", employeeId)
-    .eq("kind", input.kind)
-    .maybeSingle();
-  if (existing) {
-    return {
-      ok: true,
-      data: {
-        id: (existing as { id: string }).id,
+  const { data: upserted, error } = await ((supabase.from("time_entries") as any))
+    .upsert(
+      {
+        org_id: orgId,
+        shift_id: input.shift_id,
+        employee_id: employeeId,
+        property_id: shift.property_id,
+        kind: input.kind,
+        occurred_at: new Date().toISOString(),
+        latitude: input.latitude,
+        longitude: input.longitude,
+        accuracy_m: input.accuracy_m ?? null,
         distance_m: distance,
-        warned,
+        manual: false,
+        created_by: user?.id ?? null,
       },
-    };
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await ((supabase.from("time_entries") as any))
-    .insert({
-      org_id: orgId,
-      shift_id: input.shift_id,
-      employee_id: employeeId,
-      property_id: shift.property_id,
-      kind: input.kind,
-      occurred_at: new Date().toISOString(),
-      latitude: input.latitude,
-      longitude: input.longitude,
-      accuracy_m: input.accuracy_m ?? null,
-      distance_m: distance,
-      manual: false,
-      created_by: user?.id ?? null,
-    })
-    .select("id")
-    .single();
+      { onConflict: "shift_id,employee_id,kind", ignoreDuplicates: true },
+    )
+    .select("id");
   if (error) return { ok: false, error: error.message };
+  let resolvedId: string | null =
+    Array.isArray(upserted) && upserted.length > 0
+      ? (upserted[0] as { id: string }).id
+      : null;
+  if (!resolvedId) {
+    // Conflict path: the row already existed. Fetch it so the caller still
+    // gets a usable id.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existing } = await ((supabase.from("time_entries") as any))
+      .select("id")
+      .eq("shift_id", input.shift_id)
+      .eq("employee_id", employeeId)
+      .eq("kind", input.kind)
+      .maybeSingle();
+    resolvedId = (existing as { id: string } | null)?.id ?? null;
+  }
+  if (!resolvedId) {
+    return { ok: false, error: "Time entry creation failed" };
+  }
+  const data = { id: resolvedId };
 
   // Mark the shift as in-progress on first check-in.
   if (input.kind === "check_in") {

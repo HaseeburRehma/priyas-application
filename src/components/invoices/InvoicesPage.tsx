@@ -98,21 +98,12 @@ export function InvoicesPage({ summary, canCreate }: Props) {
             {t("actions.export")}
           </a>
           {canCreate && (
-            // Invoices are created from time entries via the Lexware
-            // sync flow on each invoice's detail page (or, soon, the
-            // monthly cron). There's no manual "new invoice" form
-            // yet — disable the button rather than ship a dead link.
-            <button
-              type="button"
-              disabled
-              title={t("actions.newComingSoon")}
-              className="btn btn--primary opacity-50"
-            >
+            <Link href={routes.invoiceNew} className="btn btn--primary">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
                 <path d="M12 5v14M5 12h14" />
               </svg>
               {t("actions.new")}
-            </button>
+            </Link>
           )}
         </div>
       </div>

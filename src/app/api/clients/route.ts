@@ -1,5 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { loadClientsList, type ClientCustomerType } from "@/lib/api/clients";
+import type { ClientsSortField } from "@/lib/api/clients.types";
+
+const VALID_SORTS: ReadonlyArray<ClientsSortField> = ["name", "contract_start"];
 
 /**
  * GET /api/clients?q=&type=&page=&pageSize=&sort=&direction=
@@ -11,10 +14,12 @@ export async function GET(request: NextRequest) {
   const typeRaw = url.searchParams.get("type") ?? "all";
   const page = Number(url.searchParams.get("page") ?? "1");
   const pageSize = Number(url.searchParams.get("pageSize") ?? "25");
-  const sort = (url.searchParams.get("sort") ?? "name") as
-    | "name"
-    | "properties"
-    | "contract_start";
+  const sortRaw = url.searchParams.get("sort") ?? "name";
+  const sort: ClientsSortField = VALID_SORTS.includes(
+    sortRaw as ClientsSortField,
+  )
+    ? (sortRaw as ClientsSortField)
+    : "name";
   const direction = (url.searchParams.get("direction") ?? "asc") as
     | "asc"
     | "desc";
@@ -31,6 +36,17 @@ export async function GET(request: NextRequest) {
 
   const format = url.searchParams.get("format");
 
+  // Bulk-export selection support: `?ids=uuid1,uuid2,...` restricts
+  // the result set. Applies to both the JSON list and the CSV export.
+  const idsRaw = url.searchParams.get("ids");
+  const ids =
+    idsRaw && idsRaw.trim().length > 0
+      ? idsRaw
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : undefined;
+
   try {
     // CSV export: ignore pagination, return *all* matching clients in
     // one document. The Export button on /clients calls this endpoint
@@ -43,6 +59,7 @@ export async function GET(request: NextRequest) {
         pageSize: 5000, // generous cap; the list is rarely larger
         sort,
         direction,
+        ids,
       });
       const headers = [
         "name",
@@ -71,7 +88,7 @@ export async function GET(request: NextRequest) {
       return new NextResponse(csv, {
         headers: {
           "content-type": "text/csv; charset=utf-8",
-          "content-disposition": `attachment; filename="clients-${today}.csv"`,
+          "content-disposition": `attachment; filename="priya-clients-${today}.csv"`,
           "cache-control": "no-store",
         },
       });
@@ -84,6 +101,7 @@ export async function GET(request: NextRequest) {
       pageSize,
       sort,
       direction,
+      ids,
     });
     return NextResponse.json(result);
   } catch (err) {
@@ -95,6 +113,16 @@ export async function GET(request: NextRequest) {
 }
 
 function csvEscape(s: string): string {
-  if (!/[",\n]/.test(s)) return s;
-  return `"${s.replace(/"/g, '""')}"`;
+  // SECURITY: when an exported cell starts with =, +, -, @, \t or \r,
+  // Excel / Google Sheets interpret it as a formula on import — which
+  // lets an attacker who can write to e.g. a client name run code on
+  // any analyst's machine that opens the CSV. Prefix with a single
+  // quote to neutralise the formula before applying the standard
+  // quoting rules.
+  let out = s;
+  if (out.length > 0 && /^[=+\-@\t\r]/.test(out)) {
+    out = `'${out}`;
+  }
+  if (!/[",\n]/.test(out)) return out;
+  return `"${out.replace(/"/g, '""')}"`;
 }

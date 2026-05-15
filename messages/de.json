@@ -7,6 +7,7 @@
     "delete": "Löschen",
     "edit": "Bearbeiten",
     "view": "Ansehen",
+    "open": "Öffnen",
     "more": "Mehr",
     "loading": "Wird geladen…",
     "search": "Suchen",
@@ -15,7 +16,8 @@
     "import": "Importieren",
     "ok": "OK",
     "yes": "Ja",
-    "no": "Nein"
+    "no": "Nein",
+    "comingSoon": "Bald verfügbar"
   },
   "topbar": {
     "searchPlaceholder": "Kunden, Objekte, Rechnungen suchen…",
@@ -166,7 +168,13 @@
         "training_assignments": "Schulungs-Zuweisungen",
         "vacation_requests": "Urlaubsanträge",
         "damage_reports": "Schadensmeldungen",
-        "client_signatures": "Unterschriften"
+        "client_signatures": "Unterschriften",
+        "profiles": "Profil",
+        "property_photos": "Objektfotos",
+        "settings": "Einstellungen",
+        "assignments": "Aufträge",
+        "assignment_staff": "Auftrags-Personal",
+        "invoice_payments": "Zahlungen"
       }
     },
     "team": {
@@ -254,6 +262,14 @@
       "save": "Kunde anlegen",
       "saveError": "Speichern fehlgeschlagen.",
       "back": "Zurück"
+    },
+    "edit": {
+      "title": "Kunde bearbeiten",
+      "subtitle": "Kundendaten aktualisieren",
+      "save": "Änderungen speichern",
+      "saveSuccess": "Kunde aktualisiert.",
+      "back": "Zurück zur Kundenansicht",
+      "cancel": "Abbrechen"
     },
     "title": "Kunden",
     "subtitle": "Alle Kundenkonten, Verträge und Objekte verwalten.",
@@ -355,6 +371,10 @@
       "clientId": "Client ID",
       "legalForm": "Recht form",
       "vatNumber": "VAT number",
+      "insuranceProvider": "Pflegekasse",
+      "insuranceNumber": "Versicherungsnummer",
+      "careLevel": "Pflegegrad",
+      "careLevelN": "Pflegegrad {level}",
       "contractStart": "Contract start",
       "contractDuration": "Contract duration",
       "noticePeriod": "Notice period",
@@ -618,7 +638,31 @@
       "exportPdf": "Als PDF herunterladen",
       "exportIcal": "Kalender abonnieren (iCal)",
       "exportIcalCopied": "iCal-Link kopiert.",
-      "exportFailed": "Export fehlgeschlagen."
+      "exportFailed": "Export fehlgeschlagen.",
+      "reassign": "Neu zuweisen",
+      "reschedule": "Verschieben",
+      "complete": "Als erledigt markieren",
+      "cancel": "Schicht absagen",
+      "delete": "Löschen",
+      "confirmCancel": "Diese Schicht absagen? Der Eintrag bleibt für die Revision sichtbar.",
+      "confirmComplete": "Diese Schicht als erledigt markieren?",
+      "confirmDelete": "Diese Schicht endgültig löschen? Die Aktion kann nicht rückgängig gemacht werden.",
+      "reassignTitle": "Schicht neu zuweisen",
+      "rescheduleTitle": "Schicht verschieben",
+      "selectEmployee": "Mitarbeiter auswählen"
+    },
+    "toast": {
+      "moved": "Schicht verschoben.",
+      "reassigned": "Schicht neu zugewiesen.",
+      "reassignError": "Neuzuweisung fehlgeschlagen.",
+      "rescheduled": "Schicht verschoben.",
+      "rescheduleError": "Verschieben fehlgeschlagen.",
+      "completed": "Schicht als erledigt markiert.",
+      "completeError": "Konnte nicht als erledigt markiert werden.",
+      "cancelled": "Schicht abgesagt.",
+      "cancelError": "Schicht konnte nicht abgesagt werden.",
+      "deleted": "Schicht gelöscht.",
+      "deleteError": "Schicht konnte nicht gelöscht werden."
     },
     "tabs": {
       "today": "Heute",
@@ -690,7 +734,31 @@
       "endAfterStart": "Ende muss nach dem Start liegen."
     },
     "prevWeek": "Vorherige Woche",
-    "nextWeek": "Nächste Woche"
+    "nextWeek": "Nächste Woche",
+    "day": {
+      "empty": "Keine Schichten am {date}.",
+      "prevDay": "Vorheriger Tag",
+      "nextDay": "Nächster Tag"
+    },
+    "month": {
+      "more": "+{count} weitere"
+    },
+    "list": {
+      "title": "Alle Schichten",
+      "count": "{count} Schichten",
+      "onlyMine": "Nur meine Schichten",
+      "colDate": "Datum",
+      "colTime": "Zeit",
+      "colProperty": "Objekt",
+      "colEmployee": "Mitarbeiter",
+      "colStatus": "Status",
+      "sortByDate": "Nach Datum sortieren",
+      "empty": "Keine Schichten passen zu den aktiven Filtern.",
+      "pageOf": "Seite {page} von {total}",
+      "prevPage": "Zurück",
+      "nextPage": "Weiter",
+      "statusCancelled": "Abgesagt"
+    }
   },
   "employees": {
     "breadcrumbDashboard": "Übersicht",
@@ -728,7 +796,17 @@
     "role": {
       "pm": "Projektleitung",
       "field": "Reinigungskraft",
-      "trainee": "Trainee"
+      "trainee": "Trainee",
+      "change": "Rolle ändern",
+      "changeTitle": "Rolle ändern",
+      "changeConfirm": "Neue Rolle für {name} wählen. Die Änderung wirkt sofort.",
+      "changeSelf": "Du kannst deine eigene Rolle nicht ändern. Bitte einen weiteren Administrator anfragen.",
+      "changeSuccess": "Rolle aktualisiert."
+    },
+    "authRole": {
+      "admin": "Administrator",
+      "dispatcher": "Disponent",
+      "employee": "Mitarbeiter"
     },
     "status": {
       "active": "Aktiv",
@@ -805,6 +883,7 @@
       "weeklyHours": "Wochenstunden",
       "hourlyRate": "Stundensatz (€)",
       "status": "Status",
+      "role": "Rolle",
       "save": "Speichern",
       "cancel": "Abbrechen",
       "saveError": "Speichern fehlgeschlagen."
@@ -873,6 +952,7 @@
       "title": "Berichts-Bibliothek",
       "subtitle": "{count} Standardberichte · auf Anforderung erstellen oder wiederkehrend planen",
       "createCustom": "Eigenen Bericht erstellen",
+      "createCustomComingSoon": "In Kürze verfügbar",
       "items": {
         "monthlyRevenue": "Monatsumsatz",
         "monthlyRevenueSub": "Pro Kunde, Objekt und Team",
@@ -1169,6 +1249,21 @@
       "currency": "Währung",
       "dateFormat": "Datumsformat"
     }
+  },
+  "lexware": {
+    "title": "Monatliche Lexware-Rechnungen",
+    "subtitle": "Monatsrechnungen aus abgeschlossenen Schichten erzeugen und an Lexware Office übertragen.",
+    "lastRun": "Letzter Lauf",
+    "never": "Noch nie ausgeführt",
+    "previewButton": "Monat prüfen",
+    "generateButton": "Jetzt erzeugen",
+    "dryRunResults": "Vorschau-Zusammenfassung",
+    "clientsToInvoice": "Zu fakturierende Kunden",
+    "totalAmount": "Gesamtbetrag",
+    "alreadyInvoiced": "Bereits fakturiert",
+    "errors": "Fehler",
+    "cancelButton": "Abbrechen",
+    "confirmGenerate": "Erzeugen"
   },
   "notifications": {
     "breadcrumbDashboard": "Übersicht",
@@ -1538,7 +1633,11 @@
     "completeWithSignatureBody": "Bestätige mit deiner Unterschrift, dass du dieses Pflichtmodul vollständig durchgearbeitet hast.",
     "signatureRequired": "Bitte unterschreibe vor dem Abschließen.",
     "completeAndSign": "Unterschreiben & abschließen",
-    "completedWithSignature": "Abgeschlossen und signiert."
+    "completedWithSignature": "Abgeschlossen und signiert.",
+    "errors": {
+      "signatureRequired": "Für den Abschluss dieses Pflichtmoduls ist eine Unterschrift erforderlich.",
+      "signatureTooLarge": "Unterschrift ist zu groß. Bitte versuche es mit einer einfacheren Unterschrift erneut."
+    }
   },
   "alltagshilfeReport": {
     "breadcrumbDashboard": "Übersicht",
@@ -1556,6 +1655,7 @@
     "exportPdf": "PDF exportieren",
     "exportCsv": "CSV exportieren",
     "sendToManagement": "An Geschäftsleitung senden",
+    "sendComingSoon": "In Kürze verfügbar",
     "kpiHoursTotal": "PFLEGESTUNDEN GESAMT",
     "vsPrevious": "ggü. Vormonat",
     "kpiClients": "BETREUTE KUNDEN",
@@ -1575,5 +1675,234 @@
     "colRate": "Satz",
     "colAmount": "Betrag",
     "emptyMonth": "Keine Alltagshilfe-Schichten in {month}."
+  },
+  "import": {
+    "title": "{module} per CSV importieren",
+    "subtitle": "Lade eine CSV-Datei hoch. Wir prüfen jede Zeile, bevor wir importieren.",
+    "chooseFile": "Datei auswählen",
+    "dropHere": "CSV-Datei hierher ziehen",
+    "or": "oder",
+    "template": "Vorlage herunterladen",
+    "maxSize": "max. 5 MB",
+    "preview": "Vorschau",
+    "totalRows": "Zeilen gesamt",
+    "validRows": "Gültige Zeilen",
+    "errorRows": "Fehlerhafte Zeilen",
+    "insertedRows": "Importiert",
+    "skippedRows": "Übersprungen",
+    "commit": "{count} Zeilen importieren",
+    "committing": "Wird importiert…",
+    "importingN": "{count} Zeilen werden importiert…",
+    "pleaseWait": "Bitte das Fenster nicht schließen.",
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "back": "Zurück",
+    "success": "{inserted} importiert, {skipped} übersprungen.",
+    "errors": {
+      "head": "Validierungsfehler",
+      "row": "Zeile",
+      "column": "Spalte",
+      "message": "Meldung",
+      "none": "Keine Fehler gefunden.",
+      "onlyToggle": "Nur Fehler",
+      "more": "… und {more} weitere Fehler.",
+      "tooLarge": "Datei zu groß (max. 5 MB).",
+      "notCsv": "Bitte eine CSV-Datei auswählen."
+    }
+  },
+  "bulk": {
+    "selected": "{count} ausgewählt",
+    "clearSelection": "Auswahl aufheben",
+    "bulkExport": "Exportieren",
+    "bulkArchive": "Archivieren",
+    "bulkArchiveConfirm": "{count} Einträge archivieren?",
+    "bulkAssign": "Kunden zuweisen",
+    "bulkAssignTitle": "Ausgewählte Objekte einem Kunden zuweisen",
+    "bulkInvite": "Einladung senden",
+    "bulkInviteConfirm": "Einladung an {count} Mitarbeiter senden?",
+    "actionSuccess": "{count} aktualisiert",
+    "actionPartial": "{ok} erfolgreich, {failed} fehlgeschlagen",
+    "selectAll": "Alle auswählen",
+    "deselect": "Abwählen"
+  },
+  "apiKeys": {
+    "title": "API-Schlüssel",
+    "subtitle": "Schlüssel für Integrationen ausstellen, um Daten über die öffentliche REST-API zu lesen oder zu schreiben.",
+    "settingsLink": "Einstellungen",
+    "createButton": "API-Schlüssel erstellen",
+    "createDialogTitle": "Neuen API-Schlüssel erstellen",
+    "createDialogSubtitle": "Name und Berechtigungen wählen. Der Schlüssel wird einmalig angezeigt — bitte sicher kopieren.",
+    "createdTitle": "API-Schlüssel erstellt",
+    "secretShownOnce": "Schlüssel jetzt kopieren. Wir speichern nur einen Hash — nach Schließen dieses Dialogs kann der Schlüssel nicht mehr angezeigt werden.",
+    "fieldName": "Name",
+    "fieldNamePlaceholder": "z. B. Lexware-Sync",
+    "fieldScopes": "Berechtigungen",
+    "fieldExpires": "Läuft ab (optional)",
+    "create": "Schlüssel erstellen",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "done": "Fertig",
+    "revoke": "Widerrufen",
+    "revokeConfirm": "Diesen API-Schlüssel widerrufen? Integrationen mit diesem Schlüssel funktionieren ab sofort nicht mehr.",
+    "revoked": "Schlüssel widerrufen",
+    "lastUsed": "Zuletzt verwendet",
+    "never": "Nie",
+    "colName": "Name",
+    "colPrefix": "Präfix",
+    "colStatus": "Status",
+    "colCreated": "Erstellt",
+    "emptyState": "Noch keine API-Schlüssel. Erstellen Sie einen, um einer Integration Zugriff auf diese Organisation zu gewähren.",
+    "status": {
+      "active": "Aktiv",
+      "revoked": "Widerrufen",
+      "expired": "Abgelaufen"
+    }
+  },
+  "offline": {
+    "title": "Sie sind offline",
+    "body": "Wir können das Netzwerk derzeit nicht erreichen. Ihre Arbeit ist sicher — alle Änderungen werden automatisch synchronisiert, sobald Sie wieder online sind.",
+    "retry": "Erneut versuchen",
+    "indicator": "Offline",
+    "availableTitle": "Offline verfügbar",
+    "availableBody": "Lesen Sie zwischengespeicherte Kunden, Objekte, Schichten und Dashboard-Daten.",
+    "queuedTitle": "Zur Synchronisation in der Warteschlange",
+    "queuedBody": "Erstellen oder Bearbeiten von Einträgen — Ihre Änderungen werden gespeichert und übertragen, sobald Sie wieder verbunden sind."
+  },
+  "outbox": {
+    "title": "Ausstehende Änderungen",
+    "pendingCount": "{count} ausstehend",
+    "pendingAria": "{count} Änderungen warten auf Synchronisation",
+    "retryNow": "Jetzt erneut versuchen",
+    "emptyState": "Keine Einträge in der Warteschlange."
+  },
+  "assignments": {
+    "title": "Aufträge",
+    "subtitle": "Objekt × Kunde × geplante Stunden × Stundensatz mit Personalverteilung.",
+    "new": "Neuer Auftrag",
+    "activeHeading": "Aktive Aufträge ({count})",
+    "archivedHeading": "Archiviert ({count})",
+    "empty": "Keine Aufträge.",
+    "columns": {
+      "client": "Kunde",
+      "property": "Objekt",
+      "hours": "Stunden",
+      "rate": "Stundensatz",
+      "total": "Summe",
+      "staff": "Mitarbeiter"
+    },
+    "frequency": {
+      "weekly": "wöch.",
+      "biweekly": "14-tägig",
+      "monthly": "monatl."
+    },
+    "staffMissing": "Personal fehlt",
+    "staffDistributed": "{hours}h verteilt",
+    "detail": {
+      "plannedHours": "Geplante Stunden",
+      "hourlyRate": "Stundensatz",
+      "periodTotal": "Periode-Summe",
+      "variance30d": "Variance (30 Tage)",
+      "varianceMore": "Mehr",
+      "varianceLess": "Weniger",
+      "staffTitle": "Personalverteilung (letzte 30 Tage)",
+      "planned": "Geplant",
+      "actual": "Erfasst",
+      "value": "Wert",
+      "total": "Gesamt",
+      "noStaff": "Noch keine Mitarbeiter zugeordnet."
+    }
+  },
+  "alltagshilfeBudget": {
+    "title": "Entlastungsbetrag {year}",
+    "subtitle": "§ 45b SGB XI · Jahresbudget",
+    "consumed": "{pct}% verbraucht",
+    "stats": {
+      "used": "Verbraucht",
+      "reserved": "Reserviert",
+      "reservedSub": "offene Rechnungen",
+      "remaining": "Verbleibend"
+    },
+    "estimate": "≈ {hoursUsed}h von {hoursPerYear}h verbraucht (€35/h Basiskalkulation)",
+    "alert80": "⚠ 80% Schwelle erreicht.",
+    "alert90": "⚠ 90% Schwelle erreicht.",
+    "alert100": "⛔ Jahresbudget ausgeschöpft. Weitere Abrechnungen sind nicht erstattungsfähig."
+  },
+  "invoiceNew": {
+    "title": "Neue Rechnung",
+    "subtitle": "Wähle einen Kunden und einen Abrechnungszeitraum. Das System sammelt alle freigegebenen Zeiterfassungen in diesem Zeitraum und schlägt einen Rechnungsentwurf vor.",
+    "stepClient": "1. Kunde",
+    "stepPeriod": "2. Zeitraum",
+    "stepPreview": "3. Vorschau",
+    "clientSearch": "Kundensuche…",
+    "noClients": "Keine Kunden gefunden.",
+    "from": "Von",
+    "to": "Bis",
+    "groupBy": "Gruppierung",
+    "groupByPropertyEmployee": "Pro Objekt × Mitarbeiter (Standard)",
+    "groupByProperty": "Pro Objekt",
+    "groupByShift": "Pro Schicht",
+    "client": "Kunde",
+    "type": "Typ",
+    "period": "Zeitraum",
+    "generate": "Entwurf erzeugen",
+    "generating": "Erstelle Entwurf…",
+    "validationClient": "Bitte einen Kunden auswählen.",
+    "validationPeriod": "Der Zeitraum ist ungültig.",
+    "successCreated": "Entwurf {invoiceNumber} erstellt.",
+    "customerType": {
+      "residential": "Regulär",
+      "commercial": "Gewerblich",
+      "alltagshilfe": "Alltagshilfe"
+    }
+  },
+  "invoiceDraft": {
+    "draftHeading": "Entwurf · {invoiceNumber}",
+    "regularLabel": "Reguläre Rechnung (19 % USt)",
+    "alltagshilfeLabel": "Alltagshilfe (steuerfrei § 4 Nr. 16 UStG)",
+    "items": "Positionen",
+    "addItem": "+ Position",
+    "removeItem": "Position entfernen",
+    "description": "Beschreibung",
+    "quantity": "Menge",
+    "unitPrice": "Einzelpreis",
+    "vat": "% MwSt",
+    "lineTotal": "Summe",
+    "noItems": "Noch keine Positionen.",
+    "subtotal": "Zwischensumme",
+    "tax": "USt",
+    "total": "Gesamt",
+    "dueDate": "Fälligkeitsdatum",
+    "notes": "Notizen / Zahlungsbedingungen",
+    "sendEmail": "E-Mail an Kunde versenden ({email})",
+    "noEmailHint": "keine E-Mail hinterlegt",
+    "exportTarget": "Sofort an externes System ({target}) übertragen",
+    "discard": "Verwerfen",
+    "save": "Speichern",
+    "issue": "Rechnung ausstellen",
+    "discardConfirm": "Entwurf wirklich verwerfen?",
+    "saved": "Gespeichert.",
+    "issued": "Rechnung ausgestellt.",
+    "discarded": "Verworfen."
+  },
+  "invoiceAging": {
+    "title": "Forderungen",
+    "subtitle": "Übersicht offener und bezahlter Rechnungen",
+    "allInvoices": "Alle Rechnungen →",
+    "tiles": {
+      "collectedThisMonth": "Diesen Monat eingenommen",
+      "open": "Offen",
+      "overdue": "Überfällig",
+      "forecast30d": "Forecast 30 Tage",
+      "invoicesCount": "{count} Rechnungen"
+    },
+    "agingTitle": "Altersstruktur",
+    "buckets": {
+      "current": "Aktuell",
+      "0_30": "1–30",
+      "30_60": "31–60",
+      "60_90": "61–90",
+      "90_plus": "90+"
+    },
+    "bucketCount": "{count} Rechn."
   }
 }

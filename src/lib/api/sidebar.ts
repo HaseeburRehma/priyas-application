@@ -98,12 +98,38 @@ async function countUnreadChatMessages(
   // Pull message timestamps for these channels in one round-trip. We only
   // need created_at + channel_id + the author so we can exclude the
   // current user's own messages from "unread".
+  //
+  // Defensive caps:
+  //   • Use the oldest `last_read_at` (or 30 days ago, whichever is more
+  //     recent) as a date floor. Once a channel has been read everything
+  //     before that read is irrelevant; without a floor a channel
+  //     untouched for a year drags in years of history.
+  //   • `.limit(5000)` so a single overactive channel can't OOM the
+  //     lambda. The badge caps at "999+" anyway.
   const channelIds = list.map((m) => m.channel_id);
+  const THIRTY_DAYS_AGO = new Date(
+    Date.now() - 30 * 24 * 60 * 60 * 1000,
+  ).toISOString();
+  // Pick the oldest non-null last_read; if any channel has never been
+  // read, fall back to the 30-day floor.
+  let dateFloor = THIRTY_DAYS_AGO;
+  const reads = list
+    .map((m) => m.last_read_at)
+    .filter((s): s is string => !!s);
+  const hasUnreadChannel = list.some((m) => !m.last_read_at);
+  if (!hasUnreadChannel && reads.length > 0) {
+    const oldest = reads.reduce((a, b) => (a < b ? a : b));
+    // Use whichever is older — last_read or 30-day floor — so we can
+    // still tell whether the channel has anything newer.
+    dateFloor = oldest < THIRTY_DAYS_AGO ? oldest : THIRTY_DAYS_AGO;
+  }
   const { data: messages } = await supabase
     .from("chat_messages")
     .select("channel_id, user_id, created_at")
     .in("channel_id", channelIds)
-    .is("deleted_at", null);
+    .is("deleted_at", null)
+    .gt("created_at", dateFloor)
+    .limit(5000);
 
   type Msg = {
     channel_id: string;

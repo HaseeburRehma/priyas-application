@@ -1,7 +1,20 @@
+import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/constants/env";
 import { sendPushToProfile } from "@/lib/push/send";
+
+/**
+ * Constant-time string comparison — protects the CRON_SECRET check
+ * against timing-side-channel guessing. Plain `===` short-circuits on
+ * the first mismatching byte.
+ */
+function safeEqual(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a);
+  const bBuf = Buffer.from(b);
+  if (aBuf.length !== bBuf.length) return false;
+  return crypto.timingSafeEqual(aBuf, bBuf);
+}
 
 /**
  * Missed-checkout sweep.
@@ -27,7 +40,7 @@ export async function POST(request: Request) {
   if (!expected) {
     return NextResponse.json({ error: "cron not configured" }, { status: 503 });
   }
-  if (auth !== `Bearer ${expected}`) {
+  if (!safeEqual(auth, `Bearer ${expected}`)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

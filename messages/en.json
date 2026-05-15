@@ -7,6 +7,7 @@
     "delete": "Delete",
     "edit": "Edit",
     "view": "View",
+    "open": "Open",
     "more": "More",
     "loading": "Loading…",
     "search": "Search",
@@ -15,7 +16,8 @@
     "import": "Import",
     "ok": "OK",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "comingSoon": "Coming soon"
   },
   "topbar": {
     "searchPlaceholder": "Search clients, properties, invoices…",
@@ -166,7 +168,13 @@
         "training_assignments": "Training assignments",
         "vacation_requests": "Vacation requests",
         "damage_reports": "Damage reports",
-        "client_signatures": "Signatures"
+        "client_signatures": "Signatures",
+        "profiles": "Profile",
+        "property_photos": "Property photos",
+        "settings": "Settings",
+        "assignments": "Assignments",
+        "assignment_staff": "Assignment staff",
+        "invoice_payments": "Payments"
       }
     },
     "team": {
@@ -254,6 +262,14 @@
       "save": "Create client",
       "saveError": "Save failed.",
       "back": "Back"
+    },
+    "edit": {
+      "title": "Edit client",
+      "subtitle": "Update client details",
+      "save": "Save changes",
+      "saveSuccess": "Client updated.",
+      "back": "Back to client",
+      "cancel": "Cancel"
     },
     "title": "Clients",
     "subtitle": "Manage all client accounts, contracts and properties.",
@@ -355,6 +371,10 @@
       "clientId": "Client ID",
       "legalForm": "Legal form",
       "vatNumber": "VAT number",
+      "insuranceProvider": "Health insurer",
+      "insuranceNumber": "Insurance number",
+      "careLevel": "Care level",
+      "careLevelN": "Care level {level}",
       "contractStart": "Contract start",
       "contractDuration": "Contract duration",
       "noticePeriod": "Notice period",
@@ -618,7 +638,31 @@
       "exportPdf": "Download as PDF",
       "exportIcal": "Subscribe in calendar (iCal)",
       "exportIcalCopied": "iCal link copied.",
-      "exportFailed": "Export failed."
+      "exportFailed": "Export failed.",
+      "reassign": "Reassign",
+      "reschedule": "Reschedule",
+      "complete": "Mark completed",
+      "cancel": "Cancel shift",
+      "delete": "Delete",
+      "confirmCancel": "Cancel this shift? The row stays visible for audit.",
+      "confirmComplete": "Mark this shift as completed?",
+      "confirmDelete": "Delete this shift permanently? This cannot be undone.",
+      "reassignTitle": "Reassign shift",
+      "rescheduleTitle": "Reschedule shift",
+      "selectEmployee": "Select employee"
+    },
+    "toast": {
+      "moved": "Shift moved.",
+      "reassigned": "Shift reassigned.",
+      "reassignError": "Reassign failed.",
+      "rescheduled": "Shift rescheduled.",
+      "rescheduleError": "Reschedule failed.",
+      "completed": "Shift marked completed.",
+      "completeError": "Could not mark completed.",
+      "cancelled": "Shift cancelled.",
+      "cancelError": "Could not cancel shift.",
+      "deleted": "Shift deleted.",
+      "deleteError": "Could not delete shift."
     },
     "tabs": {
       "today": "Today",
@@ -690,7 +734,31 @@
       "endAfterStart": "End must be after start."
     },
     "prevWeek": "Previous week",
-    "nextWeek": "Next week"
+    "nextWeek": "Next week",
+    "day": {
+      "empty": "No shifts on {date}.",
+      "prevDay": "Previous day",
+      "nextDay": "Next day"
+    },
+    "month": {
+      "more": "+{count} more"
+    },
+    "list": {
+      "title": "All shifts",
+      "count": "{count} shifts",
+      "onlyMine": "My shifts only",
+      "colDate": "Date",
+      "colTime": "Time",
+      "colProperty": "Property",
+      "colEmployee": "Employee",
+      "colStatus": "Status",
+      "sortByDate": "Sort by date",
+      "empty": "No shifts match the current filters.",
+      "pageOf": "Page {page} of {total}",
+      "prevPage": "Previous",
+      "nextPage": "Next",
+      "statusCancelled": "Cancelled"
+    }
   },
   "employees": {
     "breadcrumbDashboard": "Overview",
@@ -728,7 +796,17 @@
     "role": {
       "pm": "Project Manager",
       "field": "Field staff",
-      "trainee": "Trainee"
+      "trainee": "Trainee",
+      "change": "Change role",
+      "changeTitle": "Change role",
+      "changeConfirm": "Choose a new role for {name}. The change applies immediately.",
+      "changeSelf": "You cannot change your own role. Ask another administrator.",
+      "changeSuccess": "Role updated."
+    },
+    "authRole": {
+      "admin": "Administrator",
+      "dispatcher": "Dispatcher",
+      "employee": "Employee"
     },
     "status": {
       "active": "Active",
@@ -805,6 +883,7 @@
       "weeklyHours": "Weekly hours",
       "hourlyRate": "Hourly rate (€)",
       "status": "Status",
+      "role": "Role",
       "save": "Save",
       "cancel": "Cancel",
       "saveError": "Save failed."
@@ -873,6 +952,7 @@
       "title": "Report library",
       "subtitle": "{count} standard reports · run on demand or schedule recurring",
       "createCustom": "Create custom report",
+      "createCustomComingSoon": "Coming soon",
       "items": {
         "monthlyRevenue": "Monthly revenue",
         "monthlyRevenueSub": "Per client, property and team",
@@ -1169,6 +1249,21 @@
       "currency": "Currency",
       "dateFormat": "Date format"
     }
+  },
+  "lexware": {
+    "title": "Monthly Lexware billing",
+    "subtitle": "Generate monthly invoices from completed shifts and push them to Lexware Office.",
+    "lastRun": "Last run",
+    "never": "Never run",
+    "previewButton": "Preview month",
+    "generateButton": "Generate now",
+    "dryRunResults": "Dry-run summary",
+    "clientsToInvoice": "Clients to invoice",
+    "totalAmount": "Total amount",
+    "alreadyInvoiced": "Already invoiced",
+    "errors": "Errors",
+    "cancelButton": "Cancel",
+    "confirmGenerate": "Generate"
   },
   "notifications": {
     "breadcrumbDashboard": "Overview",
@@ -1538,7 +1633,11 @@
     "completeWithSignatureBody": "Sign below to confirm you completed this mandatory training module.",
     "signatureRequired": "Please sign before completing.",
     "completeAndSign": "Sign & complete",
-    "completedWithSignature": "Completed and signed."
+    "completedWithSignature": "Completed and signed.",
+    "errors": {
+      "signatureRequired": "A signature is required to complete this mandatory module.",
+      "signatureTooLarge": "Signature is too large. Please try again with a simpler signature."
+    }
   },
   "alltagshilfeReport": {
     "breadcrumbDashboard": "Overview",
@@ -1556,6 +1655,7 @@
     "exportPdf": "Export PDF",
     "exportCsv": "Export CSV",
     "sendToManagement": "Send to management",
+    "sendComingSoon": "Coming soon",
     "kpiHoursTotal": "TOTAL CARE HOURS",
     "vsPrevious": "vs. previous month",
     "kpiClients": "CLIENTS SERVED",
@@ -1575,5 +1675,234 @@
     "colRate": "Rate",
     "colAmount": "Amount",
     "emptyMonth": "No Alltagshilfe shifts in {month}."
+  },
+  "import": {
+    "title": "Import {module} from CSV",
+    "subtitle": "Upload a CSV file. We validate every row before importing.",
+    "chooseFile": "Choose file",
+    "dropHere": "Drop a CSV file here",
+    "or": "or",
+    "template": "Download template",
+    "maxSize": "max 5 MB",
+    "preview": "Preview",
+    "totalRows": "Total rows",
+    "validRows": "Valid rows",
+    "errorRows": "Error rows",
+    "insertedRows": "Imported",
+    "skippedRows": "Skipped",
+    "commit": "Import {count} rows",
+    "committing": "Importing…",
+    "importingN": "Importing {count} rows…",
+    "pleaseWait": "Please keep this window open.",
+    "cancel": "Cancel",
+    "close": "Close",
+    "back": "Back",
+    "success": "{inserted} imported, {skipped} skipped.",
+    "errors": {
+      "head": "Validation errors",
+      "row": "Row",
+      "column": "Column",
+      "message": "Message",
+      "none": "No errors found.",
+      "onlyToggle": "Errors only",
+      "more": "… and {more} more errors.",
+      "tooLarge": "File too large (max 5 MB).",
+      "notCsv": "Please select a CSV file."
+    }
+  },
+  "bulk": {
+    "selected": "{count} selected",
+    "clearSelection": "Clear selection",
+    "bulkExport": "Export",
+    "bulkArchive": "Archive",
+    "bulkArchiveConfirm": "Archive {count} items?",
+    "bulkAssign": "Assign to client",
+    "bulkAssignTitle": "Assign selected properties to client",
+    "bulkInvite": "Send invite",
+    "bulkInviteConfirm": "Send invite to {count} employees?",
+    "actionSuccess": "{count} updated",
+    "actionPartial": "{ok} succeeded, {failed} failed",
+    "selectAll": "Select all",
+    "deselect": "Deselect"
+  },
+  "apiKeys": {
+    "title": "API Keys",
+    "subtitle": "Issue keys for integrations to read or write data through the public REST API.",
+    "settingsLink": "Settings",
+    "createButton": "Create API key",
+    "createDialogTitle": "Create new API key",
+    "createDialogSubtitle": "Choose a name and scopes. The key is shown once on the next screen — copy it somewhere safe.",
+    "createdTitle": "API key created",
+    "secretShownOnce": "Copy this key now. We hash and discard the value on our side — once you close this dialog it cannot be shown again.",
+    "fieldName": "Name",
+    "fieldNamePlaceholder": "e.g. Lexware sync",
+    "fieldScopes": "Scopes",
+    "fieldExpires": "Expires (optional)",
+    "create": "Create key",
+    "copy": "Copy",
+    "copied": "Copied",
+    "done": "Done",
+    "revoke": "Revoke",
+    "revokeConfirm": "Revoke this API key? Integrations using it will stop working immediately.",
+    "revoked": "Key revoked",
+    "lastUsed": "Last used",
+    "never": "Never",
+    "colName": "Name",
+    "colPrefix": "Prefix",
+    "colStatus": "Status",
+    "colCreated": "Created",
+    "emptyState": "No API keys yet. Create one to let an integration access this organisation.",
+    "status": {
+      "active": "Active",
+      "revoked": "Revoked",
+      "expired": "Expired"
+    }
+  },
+  "offline": {
+    "title": "You're offline",
+    "body": "We can't reach the network right now. Your work is safe — anything you change while offline will sync automatically when you're back online.",
+    "retry": "Retry",
+    "indicator": "Offline",
+    "availableTitle": "Available offline",
+    "availableBody": "Reading recent clients, properties, shifts, and cached dashboard data.",
+    "queuedTitle": "Queued for sync",
+    "queuedBody": "Creating or editing records — your changes are queued and will replay when you reconnect."
+  },
+  "outbox": {
+    "title": "Pending mutations",
+    "pendingCount": "{count} pending",
+    "pendingAria": "{count} mutations pending sync",
+    "retryNow": "Retry now",
+    "emptyState": "Nothing queued."
+  },
+  "assignments": {
+    "title": "Assignments",
+    "subtitle": "Property × client × planned hours × hourly rate with staff allocation.",
+    "new": "New assignment",
+    "activeHeading": "Active assignments ({count})",
+    "archivedHeading": "Archived ({count})",
+    "empty": "No assignments.",
+    "columns": {
+      "client": "Client",
+      "property": "Property",
+      "hours": "Hours",
+      "rate": "Rate",
+      "total": "Total",
+      "staff": "Staff"
+    },
+    "frequency": {
+      "weekly": "wkly",
+      "biweekly": "bi-wk",
+      "monthly": "monthly"
+    },
+    "staffMissing": "Staff missing",
+    "staffDistributed": "{hours}h allocated",
+    "detail": {
+      "plannedHours": "Planned hours",
+      "hourlyRate": "Hourly rate",
+      "periodTotal": "Period total",
+      "variance30d": "Variance (30 days)",
+      "varianceMore": "More",
+      "varianceLess": "Less",
+      "staffTitle": "Staff allocation (last 30 days)",
+      "planned": "Planned",
+      "actual": "Actual",
+      "value": "Value",
+      "total": "Total",
+      "noStaff": "No staff assigned yet."
+    }
+  },
+  "alltagshilfeBudget": {
+    "title": "Entlastungsbetrag {year}",
+    "subtitle": "§ 45b SGB XI · annual budget",
+    "consumed": "{pct}% used",
+    "stats": {
+      "used": "Used",
+      "reserved": "Reserved",
+      "reservedSub": "open invoices",
+      "remaining": "Remaining"
+    },
+    "estimate": "≈ {hoursUsed}h of {hoursPerYear}h used (€35/h base rate)",
+    "alert80": "⚠ 80% threshold reached.",
+    "alert90": "⚠ 90% threshold reached.",
+    "alert100": "⛔ Annual budget depleted. Further charges are not reimbursable."
+  },
+  "invoiceNew": {
+    "title": "New invoice",
+    "subtitle": "Pick a client and a billing period. The system aggregates all approved time entries in that range into a draft invoice.",
+    "stepClient": "1. Client",
+    "stepPeriod": "2. Period",
+    "stepPreview": "3. Preview",
+    "clientSearch": "Search clients…",
+    "noClients": "No clients found.",
+    "from": "From",
+    "to": "To",
+    "groupBy": "Group by",
+    "groupByPropertyEmployee": "Property × employee (default)",
+    "groupByProperty": "Property",
+    "groupByShift": "Shift",
+    "client": "Client",
+    "type": "Type",
+    "period": "Period",
+    "generate": "Generate draft",
+    "generating": "Generating draft…",
+    "validationClient": "Please select a client.",
+    "validationPeriod": "Invalid period.",
+    "successCreated": "Draft {invoiceNumber} created.",
+    "customerType": {
+      "residential": "Regular",
+      "commercial": "Commercial",
+      "alltagshilfe": "Alltagshilfe"
+    }
+  },
+  "invoiceDraft": {
+    "draftHeading": "Draft · {invoiceNumber}",
+    "regularLabel": "Regular invoice (19 % VAT)",
+    "alltagshilfeLabel": "Alltagshilfe (VAT-exempt § 4 No. 16 UStG)",
+    "items": "Items",
+    "addItem": "+ Item",
+    "removeItem": "Remove item",
+    "description": "Description",
+    "quantity": "Qty",
+    "unitPrice": "Unit price",
+    "vat": "% VAT",
+    "lineTotal": "Total",
+    "noItems": "No items yet.",
+    "subtotal": "Subtotal",
+    "tax": "VAT",
+    "total": "Total",
+    "dueDate": "Due date",
+    "notes": "Notes / payment terms",
+    "sendEmail": "Email invoice to client ({email})",
+    "noEmailHint": "no email on file",
+    "exportTarget": "Push to external system ({target}) immediately",
+    "discard": "Discard",
+    "save": "Save",
+    "issue": "Issue invoice",
+    "discardConfirm": "Really discard draft?",
+    "saved": "Saved.",
+    "issued": "Invoice issued.",
+    "discarded": "Discarded."
+  },
+  "invoiceAging": {
+    "title": "Receivables",
+    "subtitle": "Open and paid invoices",
+    "allInvoices": "All invoices →",
+    "tiles": {
+      "collectedThisMonth": "Collected this month",
+      "open": "Open",
+      "overdue": "Overdue",
+      "forecast30d": "Forecast 30 days",
+      "invoicesCount": "{count} invoices"
+    },
+    "agingTitle": "Aging",
+    "buckets": {
+      "current": "Current",
+      "0_30": "1–30",
+      "30_60": "31–60",
+      "60_90": "61–90",
+      "90_plus": "90+"
+    },
+    "bucketCount": "{count} inv."
   }
 }

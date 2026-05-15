@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { loadEmployeeDetail } from "@/lib/api/employees";
-import { can, requireRoute } from "@/lib/rbac/permissions";
+import { can, getCurrentRole, requireRoute } from "@/lib/rbac/permissions";
 import { EmployeeDetail } from "@/components/employees/EmployeeDetail";
 
 export const metadata: Metadata = { title: "Mitarbeiterdetails" };
@@ -18,15 +18,17 @@ export default async function Page({
   const { id } = await params;
   const detail = await loadEmployeeDetail(id);
   if (!detail) notFound();
-  const [canUpdate, canArchive] = await Promise.all([
+  const [canUpdate, canArchive, current] = await Promise.all([
     can("employee.update"),
     can("employee.archive"),
+    getCurrentRole(),
   ]);
   return (
     <EmployeeDetail
       detail={detail}
       canUpdate={canUpdate}
       canArchive={canArchive}
+      currentUserId={current.userId}
     />
   );
 }

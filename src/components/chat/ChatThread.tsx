@@ -40,9 +40,18 @@ export function ChatThread({ channel, currentUserId }: Props) {
     el.scrollTop = el.scrollHeight;
   }, [messages.length]);
 
-  // Mark as read on mount + on new messages
+  // Mark as read on mount + on new messages. We debounce 500 ms so a
+  // burst of incoming messages on a busy channel doesn't hammer the
+  // server with one POST per message — the trailing call covers the last
+  // message in the burst. Cleanup cancels any pending timeout when the
+  // channel switches (no stale read for the previous channel).
   useEffect(() => {
-    void markAsRead(channel.id);
+    const timeoutId = setTimeout(() => {
+      void markAsRead(channel.id);
+    }, 500);
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, [channel.id, messages.length, markAsRead]);
 
   // Group messages by day for the day separators.

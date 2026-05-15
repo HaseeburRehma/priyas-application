@@ -6,6 +6,7 @@ import { routes } from "@/lib/constants/routes";
 import { useUiStore } from "@/stores/useUiStore";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { UserMenu } from "./UserMenu";
+import { OutboxIndicator } from "@/components/pwa/OutboxIndicator";
 
 type Props = {
   user: {
@@ -77,6 +78,9 @@ export function Topbar({ user }: Props) {
 
       {/* RIGHT cluster */}
       <div className="flex items-center gap-1 md:gap-1.5">
+        {/* Outbox: only renders when count > 0 */}
+        <OutboxIndicator />
+
         {/* Help */}
         <Link
           href={routes.settings}

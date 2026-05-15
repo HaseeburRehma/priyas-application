@@ -1,8 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Noto_Sans_Tamil } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { Providers } from "@/components/shared/Providers";
+import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
+import { OfflineIndicator } from "@/components/pwa/OfflineIndicator";
 import "./globals.css";
 
 const inter = Inter({
@@ -29,6 +31,26 @@ export const metadata: Metadata = {
   description:
     "Operations platform for Priya's Reinigungsservice — scheduling, time tracking, properties, invoices.",
   robots: { index: false, follow: false }, // private app
+  manifest: "/manifest.webmanifest",
+  applicationName: "Priya's Reinigungsservice",
+  appleWebApp: {
+    capable: true,
+    title: "Priya's",
+    statusBarStyle: "default",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.svg", type: "image/svg+xml", sizes: "192x192" },
+      { url: "/icons/icon-512.svg", type: "image/svg+xml", sizes: "512x512" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.svg", sizes: "180x180" }],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0F766E",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default async function RootLayout({
@@ -39,9 +61,21 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} className={`${inter.variable} ${notoTamil.variable}`}>
+      {/*
+        Next 14's Metadata API emits <link rel="manifest">,
+        <meta name="theme-color">, <link rel="apple-touch-icon"> etc.
+        from the `metadata` and `viewport` exports above. The extra
+        <meta name="mobile-web-app-capable"> tag isn't covered by the
+        Metadata API, so it's added explicitly here.
+      */}
+      <head>
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>{children}</Providers>
+          <ServiceWorkerRegister />
+          <OfflineIndicator />
         </NextIntlClientProvider>
       </body>
     </html>

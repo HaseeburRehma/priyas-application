@@ -68,6 +68,76 @@ export async function GET(request: NextRequest) {
 
   const data = await loadReports(range);
 
+  // CSV-escape per RFC 4180: wrap in quotes if the value contains a
+  // comma, quote, CR or LF; double any embedded quotes.
+  //
+  // SECURITY: also defuse Excel / Google Sheets formula injection — if a
+  // cell starts with =, +, -, @, \t or \r the spreadsheet evaluates it
+  // as a formula. We prefix such cells with a single quote so they
+  // render as plain text.
+  const csvEscape = (s: string): string => {
+    let out = s;
+    if (out.length > 0 && /^[=+\-@\t\r]/.test(out)) {
+      out = `'${out}`;
+    }
+    if (/[",\r\n]/.test(out)) {
+      return `"${out.replace(/"/g, '""')}"`;
+    }
+    return out;
+  };
+
+  // Open-invoices fetch is shared between the CSV and PDF branches —
+  // computed lazily on demand so the other report types don't pay the
+  // round-trip cost.
+  type OpenInvoiceFetched = {
+    invoice_number: string;
+    status: "sent" | "overdue";
+    issue_date: string;
+    due_date: string | null;
+    total_cents: number;
+    client_name: string;
+    days_overdue: number | null;
+  };
+  let openInvoicesCache: OpenInvoiceFetched[] | undefined;
+  const loadOpenInvoices = async (): Promise<OpenInvoiceFetched[]> => {
+    if (openInvoicesCache) return openInvoicesCache;
+    const supabase = await createSupabaseServerClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: invoiceRows } = await ((supabase.from("invoices") as any))
+      .select(
+        `invoice_number, status, issue_date, due_date, total_cents,
+         client:clients ( display_name )`,
+      )
+      .is("deleted_at", null)
+      .in("status", ["sent", "overdue"])
+      .order("due_date", { ascending: true, nullsFirst: false });
+    type Row = {
+      invoice_number: string;
+      status: "sent" | "overdue";
+      issue_date: string;
+      due_date: string | null;
+      total_cents: number;
+      client: { display_name: string } | null;
+    };
+    const today = new Date();
+    openInvoicesCache = ((invoiceRows ?? []) as Row[]).map((r) => {
+      const due = r.due_date ? new Date(r.due_date) : null;
+      const days_overdue = due
+        ? Math.floor((today.getTime() - due.getTime()) / 86_400_000)
+        : null;
+      return {
+        invoice_number: r.invoice_number,
+        status: r.status,
+        issue_date: r.issue_date,
+        due_date: r.due_date,
+        total_cents: Number(r.total_cents ?? 0),
+        client_name: r.client?.display_name ?? "—",
+        days_overdue,
+      };
+    });
+    return openInvoicesCache;
+  };
+
   // Minimal CSV builder. Real PDF rendering is the next iteration.
   let body = "";
   const filename = `priya-report-${type}-${range}.csv`;
@@ -93,6 +163,60 @@ export async function GET(request: NextRequest) {
     case "completion":
       body = `metric,value\ncompleted,${data.kpis.shiftsCompleted}\ntotal,${data.kpis.shiftsTotal}\ncompletion_pct,${data.kpis.shiftsCompletionPct.toFixed(2)}\nredistributed,${data.kpis.shiftsRedistributed}`;
       break;
+    case "satisfaction":
+      body =
+        `metric,value\n` +
+        `satisfaction_avg,${data.kpis.satisfactionAvg.toFixed(2)}\n` +
+        `satisfaction_reviews,${data.kpis.satisfactionReviews}\n` +
+        `satisfaction_nps,${data.kpis.satisfactionNps}`;
+      break;
+    case "open-invoices": {
+      const invoices = await loadOpenInvoices();
+      body =
+        "invoice_number,client,status,issue_date,due_date,total_eur,days_overdue\n" +
+        invoices
+          .map((r) =>
+            [
+              csvEscape(r.invoice_number),
+              csvEscape(r.client_name),
+              r.status,
+              r.issue_date ?? "",
+              r.due_date ?? "",
+              (r.total_cents / 100).toFixed(2),
+              r.days_overdue ?? "",
+            ].join(","),
+          )
+          .join("\n");
+      break;
+    }
+    case "alltagshilfe": {
+      const now = new Date();
+      const locale = asAppLocale(await getLocale());
+      const report = await loadAlltagshilfeMonthly(
+        now.getFullYear(),
+        now.getMonth(),
+        locale,
+      );
+      const lines: string[] = [
+        "client,insurance_provider,care_level,employee,hours_total,amount_eur",
+      ];
+      for (const row of report.rows) {
+        for (const member of row.staff) {
+          lines.push(
+            [
+              csvEscape(row.client.name),
+              csvEscape(row.client.insurance),
+              "", // care_level not surfaced on AlltagshilfeRow.client
+              csvEscape(member.name),
+              member.hours.toFixed(2),
+              (member.amountCents / 100).toFixed(2),
+            ].join(","),
+          );
+        }
+      }
+      body = lines.join("\n");
+      break;
+    }
     case "summary":
     default:
       body =
@@ -160,43 +284,21 @@ export async function GET(request: NextRequest) {
     }
 
     // 2) Open-invoices needs the actual list of unpaid invoices.
+    //    Reuses the same fetch the CSV branch uses (deduplicated via
+    //    loadOpenInvoices() — the cache means at most one DB round-trip
+    //    even though both branches reference the data).
     let openInvoicesExtra: OpenInvoiceRow[] | undefined;
     if (type === "open-invoices") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: invoiceRows } = await ((supabase.from("invoices") as any))
-        .select(
-          `invoice_number, status, issue_date, due_date, total_cents,
-           client:clients ( display_name )`,
-        )
-        .is("deleted_at", null)
-        .in("status", ["sent", "overdue"])
-        .order("due_date", { ascending: true, nullsFirst: false });
-      type Row = {
-        invoice_number: string;
-        status: "sent" | "overdue";
-        issue_date: string;
-        due_date: string | null;
-        total_cents: number;
-        client: { display_name: string } | null;
-      };
-      const today = new Date();
-      openInvoicesExtra = ((invoiceRows ?? []) as Row[]).map((r) => {
-        const due = r.due_date ? new Date(r.due_date) : null;
-        const days_overdue = due
-          ? Math.floor(
-              (today.getTime() - due.getTime()) / 86_400_000,
-            )
-          : null;
-        return {
-          invoice_number: r.invoice_number,
-          client_name: r.client?.display_name ?? "—",
-          status: r.status,
-          issue_date: r.issue_date,
-          due_date: r.due_date,
-          total_cents: Number(r.total_cents ?? 0),
-          days_overdue,
-        };
-      });
+      const invoices = await loadOpenInvoices();
+      openInvoicesExtra = invoices.map((r) => ({
+        invoice_number: r.invoice_number,
+        client_name: r.client_name,
+        status: r.status,
+        issue_date: r.issue_date,
+        due_date: r.due_date,
+        total_cents: r.total_cents,
+        days_overdue: r.days_overdue,
+      }));
     }
 
     // 3) Everything else (incl. satisfaction) goes through the generic renderer.

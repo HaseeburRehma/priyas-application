@@ -13,6 +13,29 @@ import { routes } from "@/lib/constants/routes";
 type ActionResult<T = void> =
   | { ok: true; data: T }
   | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+/**
+ * Translate the Postgres exclusion constraint violation (SQLSTATE 23P01,
+ * raised by the `shifts_no_employee_overlap` constraint added in migration
+ * 000033) into the same `conflict` shape as the JS-side `detectShiftConflicts`
+ * check, so the UI behaves identically whether the JS or DB caught the race.
+ * Returns null when the error wasn't an overlap so the caller can re-raise.
+ */
+function translateOverlapError(
+  err: { code?: string; message?: string } | null,
+):
+  | { ok: false; error: string; fieldErrors?: Record<string, string[]> }
+  | null {
+  if (!err) return null;
+  if (err.code === "23P01" || /shifts_no_employee_overlap/i.test(err.message ?? "")) {
+    return {
+      ok: false,
+      error: "Mitarbeiter ist in diesem Zeitraum bereits eingeplant.",
+      fieldErrors: { employee_id: ["doppelte Buchung"] },
+    };
+  }
+  return null;
+}
+
 
 /**
  * Detect any conflict that should block a shift from being saved:
@@ -198,7 +221,11 @@ export async function createShiftAction(
     })
     .select("id")
     .single();
-  if (error) return { ok: false, error: error.message };
+  if (error) {
+    const overlap = translateOverlapError(error);
+    if (overlap) return overlap;
+    return { ok: false, error: error.message };
+  }
 
   const newId = (data as { id: string }).id;
   await audit(
@@ -270,7 +297,11 @@ export async function updateShiftAction(
       notes: input.notes || null,
     })
     .eq("id", input.id);
-  if (error) return { ok: false, error: error.message };
+  if (error) {
+    const overlap = translateOverlapError(error);
+    if (overlap) return overlap;
+    return { ok: false, error: error.message };
+  }
   await audit("update", input.id, "Schicht aktualisiert.");
   revalidatePath(routes.schedule);
   return { ok: true, data: { id: input.id } };
@@ -295,7 +326,148 @@ export async function deleteShiftAction(
     .update({ deleted_at: new Date().toISOString(), status: "cancelled" })
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
+  await audit("delete", id, "Schicht gelöscht.");
+  revalidatePath(routes.schedule);
+  return { ok: true, data: { id } };
+}
+
+/**
+ * Patch only the employee on an existing shift. Lighter than
+ * updateShiftAction (no property/time required) and used by the detail-panel
+ * "Reassign" button. We still run the full conflict-detection net (training
+ * lock, double-booking, vacation, closure) against the new assignee.
+ */
+export async function reassignShiftAction(input: {
+  id: string;
+  employee_id: string | null;
+}): Promise<ActionResult<{ id: string }>> {
+  try {
+    await requirePermission("shift.update");
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof PermissionError ? err.message : "Forbidden",
+    };
+  }
+  if (!input.id || typeof input.id !== "string") {
+    return { ok: false, error: "Validation failed" };
+  }
+  const supabase = await createSupabaseServerClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: existing, error: loadErr } = await ((supabase.from("shifts") as any))
+    .select("id, property_id, starts_at, ends_at, status")
+    .eq("id", input.id)
+    .maybeSingle();
+  if (loadErr || !existing) {
+    return { ok: false, error: loadErr?.message ?? "Schicht nicht gefunden." };
+  }
+  const row = existing as {
+    id: string;
+    property_id: string;
+    starts_at: string;
+    ends_at: string;
+    status: string;
+  };
+
+  if (input.employee_id) {
+    const outstanding = await getOutstandingMandatoryModules(
+      supabase,
+      input.employee_id,
+    );
+    if (outstanding.length > 0) {
+      return {
+        ok: false,
+        error:
+          "Mitarbeiter hat Pflichtschulungen offen: " +
+          outstanding.map((m) => m.title).join(", "),
+        fieldErrors: { employee_id: ["Pflichtschulung offen"] },
+      };
+    }
+  }
+
+  const conflict = await detectShiftConflicts(
+    supabase,
+    row.property_id,
+    input.employee_id,
+    row.starts_at,
+    row.ends_at,
+    row.id,
+  );
+  if (conflict) return conflict;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await ((supabase.from("shifts") as any))
+    .update({ employee_id: input.employee_id ?? null })
+    .eq("id", input.id);
+  if (error) {
+    const overlap = translateOverlapError(error);
+    if (overlap) return overlap;
+    return { ok: false, error: error.message };
+  }
+  await audit("update", input.id, "Schicht neu zugewiesen.");
+  revalidatePath(routes.schedule);
+  return { ok: true, data: { id: input.id } };
+}
+
+/**
+ * Flip status="completed" on a shift. The completion semantics live in
+ * `updateShiftAction` (which requires the full payload); this thin wrapper
+ * exists so the detail-panel button doesn't have to re-send the whole
+ * shift just to mark it done.
+ */
+export async function completeShiftAction(
+  id: string,
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    await requirePermission("shift.update");
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof PermissionError ? err.message : "Forbidden",
+    };
+  }
+  if (!id || typeof id !== "string") {
+    return { ok: false, error: "Validation failed" };
+  }
+  const supabase = await createSupabaseServerClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await ((supabase.from("shifts") as any))
+    .update({ status: "completed" })
+    .eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  await audit("update", id, "Schicht abgeschlossen.");
+  revalidatePath(routes.schedule);
+  revalidatePath(routes.dashboard);
+  return { ok: true, data: { id } };
+}
+
+/**
+ * Flip status="cancelled" without setting `deleted_at`. Cancellation keeps
+ * the row visible (and auditable) — distinct from `deleteShiftAction`'s
+ * soft-delete which hides it.
+ */
+export async function cancelShiftAction(
+  id: string,
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    await requirePermission("shift.update");
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof PermissionError ? err.message : "Forbidden",
+    };
+  }
+  if (!id || typeof id !== "string") {
+    return { ok: false, error: "Validation failed" };
+  }
+  const supabase = await createSupabaseServerClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await ((supabase.from("shifts") as any))
+    .update({ status: "cancelled" })
+    .eq("id", id);
+  if (error) return { ok: false, error: error.message };
   await audit("cancel", id, "Schicht abgesagt.");
   revalidatePath(routes.schedule);
+  revalidatePath(routes.dashboard);
   return { ok: true, data: { id } };
 }

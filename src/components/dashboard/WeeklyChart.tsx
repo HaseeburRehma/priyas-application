@@ -27,8 +27,13 @@ export function WeeklyChart({ data }: { data: WeeklyChartData }) {
   const niceMax = niceCeil(max);
   const tickStep = niceMax / 3;
 
+  // Guard against an empty `data.days` array — without it the division by
+  // length would yield NaN and the SVG paths/bars would silently render
+  // off-canvas. We clamp to 1 so the chart still draws axes / labels even
+  // when there's literally nothing to plot.
+  const dayCount = Math.max(1, data.days.length);
   const xFor = (idx: number) =>
-    X_LEFT + 30 + idx * ((CHART_W - X_LEFT - 60) / data.days.length);
+    X_LEFT + 30 + idx * ((CHART_W - X_LEFT - 60) / dayCount);
   const heightFor = (v: number) =>
     Math.round(((CHART_BOTTOM - CHART_TOP) * v) / niceMax);
 

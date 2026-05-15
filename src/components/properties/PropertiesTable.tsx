@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
 import type {
+  PropertiesSortField,
   PropertyKind,
   PropertyRow,
   PropertyStatus,
@@ -18,13 +18,18 @@ type Props = {
   total: number;
   page: number;
   pageSize: number;
-  sort: "name" | "assignments" | "client";
+  sort: PropertiesSortField;
   direction: "asc" | "desc";
   onSortChange: (
-    sort: "name" | "assignments" | "client",
+    sort: PropertiesSortField,
     dir: "asc" | "desc",
   ) => void;
   onPageChange: (page: number) => void;
+  /** Selection plumbing — owned by the page client. */
+  selectedIds: Set<string>;
+  isAllSelected: boolean;
+  onToggleOne: (id: string) => void;
+  onToggleAll: () => void;
 };
 
 const kindToTone: Record<PropertyKind, { thumb: string; chip: string }> = {
@@ -90,27 +95,18 @@ export function PropertiesTable({
   direction,
   onSortChange,
   onPageChange,
+  selectedIds,
+  isAllSelected,
+  onToggleOne,
+  onToggleAll,
 }: Props) {
   const t = useTranslations("properties.table");
   const tKind = useTranslations("properties.kind");
   const tStatus = useTranslations("properties.status");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const tBulk = useTranslations("bulk");
 
-  function toggle(id: string) {
-    setSelected((prev) => {
-      const n = new Set(prev);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
-      return n;
-    });
-  }
-
-  const allSelected = rows.length > 0 && rows.every((r) => selected.has(r.id));
-  const partial = !allSelected && rows.some((r) => selected.has(r.id));
-
-  function toggleAll() {
-    setSelected(allSelected ? new Set() : new Set(rows.map((r) => r.id)));
-  }
+  const allSelected = isAllSelected;
+  const partial = !allSelected && rows.some((r) => selectedIds.has(r.id));
 
   function clickSort(col: typeof sort) {
     if (sort === col) onSortChange(col, direction === "asc" ? "desc" : "asc");
@@ -126,24 +122,16 @@ export function PropertiesTable({
           <thead>
             <tr>
               <Th width={42}>
-                <button
-                  type="button"
-                  onClick={toggleAll}
-                  className={cn(
-                    "grid h-4 w-4 place-items-center rounded-[3px] border-[1.5px] bg-white",
-                    allSelected || partial
-                      ? "border-primary-500 bg-primary-500"
-                      : "border-neutral-300",
-                  )}
-                  aria-label="select all"
-                >
-                  {allSelected && (
-                    <span className="block h-1 w-2 -translate-y-px translate-x-px rotate-[-45deg] border-b-2 border-l-2 border-white" />
-                  )}
-                  {partial && !allSelected && (
-                    <span className="block h-0.5 w-2 bg-white" />
-                  )}
-                </button>
+                <input
+                  type="checkbox"
+                  aria-label={tBulk("selectAll")}
+                  checked={allSelected}
+                  ref={(el) => {
+                    if (el) el.indeterminate = partial;
+                  }}
+                  onChange={onToggleAll}
+                  className="h-4 w-4 cursor-pointer accent-primary-500"
+                />
               </Th>
               <Th
                 sortable
@@ -162,14 +150,11 @@ export function PropertiesTable({
               >
                 {t("client")}
               </Th>
-              <Th
-                sortable
-                active={sort === "assignments"}
-                direction={direction}
-                onClick={() => clickSort("assignments")}
-              >
-                {t("assignments")}
-              </Th>
+              {/* `assignments` is computed client-side (last 7 days of
+                  shifts) so it's not a sortable DB column today. Keep the
+                  header non-clickable until a real materialised count
+                  lands. */}
+              <Th>{t("assignments")}</Th>
               <Th>{t("status")}</Th>
               <Th>{t("teamLead")}</Th>
               <Th>{t("actions")}</Th>
@@ -193,7 +178,7 @@ export function PropertiesTable({
             )}
             {!loading &&
               rows.map((r, idx) => {
-                const isSel = selected.has(r.id);
+                const isSel = selectedIds.has(r.id);
                 const tone = kindToTone[r.kind];
                 return (
                   <tr
@@ -204,21 +189,13 @@ export function PropertiesTable({
                     )}
                   >
                     <td className="px-5 py-3.5 align-middle">
-                      <button
-                        type="button"
-                        aria-label="select"
-                        onClick={() => toggle(r.id)}
-                        className={cn(
-                          "grid h-4 w-4 place-items-center rounded-[3px] border-[1.5px] bg-white",
-                          isSel
-                            ? "border-primary-500 bg-primary-500"
-                            : "border-neutral-300",
-                        )}
-                      >
-                        {isSel && (
-                          <span className="block h-1 w-2 -translate-y-px translate-x-px rotate-[-45deg] border-b-2 border-l-2 border-white" />
-                        )}
-                      </button>
+                      <input
+                        type="checkbox"
+                        aria-label={`${tBulk("selectAll")}: ${r.name}`}
+                        checked={isSel}
+                        onChange={() => onToggleOne(r.id)}
+                        className="h-4 w-4 cursor-pointer accent-primary-500"
+                      />
                     </td>
                     <td className="px-5 py-3.5 align-middle">
                       <Link

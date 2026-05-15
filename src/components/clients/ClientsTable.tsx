@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
 import { useFormat } from "@/lib/utils/i18n-format";
-import type { ClientRow } from "@/lib/api/clients.types";
+import type { ClientRow, ClientsSortField } from "@/lib/api/clients.types";
 
 type Props = {
   rows: ClientRow[];
@@ -15,13 +14,15 @@ type Props = {
   total: number;
   page: number;
   pageSize: number;
-  sort: "name" | "properties" | "contract_start";
+  sort: ClientsSortField;
   direction: "asc" | "desc";
-  onSortChange: (
-    sort: "name" | "properties" | "contract_start",
-    dir: "asc" | "desc",
-  ) => void;
+  onSortChange: (sort: ClientsSortField, dir: "asc" | "desc") => void;
   onPageChange: (page: number) => void;
+  /** Selection plumbing — owned by the page client. */
+  selectedIds: Set<string>;
+  isAllSelected: boolean;
+  onToggleOne: (id: string) => void;
+  onToggleAll: () => void;
 };
 
 const TONES = ["primary", "secondary", "accent"] as const;
@@ -30,6 +31,25 @@ const toneClass: Record<(typeof TONES)[number], string> = {
   secondary: "bg-secondary-500",
   accent: "bg-accent-600",
 };
+
+/**
+ * Build a 1–2 char initials string for the avatar circle. Treats
+ * Latin + Cyrillic + Tamil scripts as letters; punctuation, dashes
+ * and emoji never end up in the avatar. Duplicates the same helper
+ * used in `MessageBubble.tsx` (kept private over there) so this
+ * module stays self-contained.
+ */
+function computeInitials(name: string | null | undefined): string {
+  if (!name) return "?";
+  const parts = name
+    .split(/\s+/)
+    .map((w) => w.replace(/^[^\p{L}]+/u, "")) // strip leading punctuation
+    .filter((w) => /^\p{L}/u.test(w));
+  if (parts.length === 0) return "?";
+  const first = parts[0]!;
+  const last = parts.length > 1 ? parts[parts.length - 1] : null;
+  return ((first[0] ?? "") + (last ? (last[0] ?? "") : "")).toUpperCase() || "?";
+}
 
 export function ClientsTable({
   rows,
@@ -41,30 +61,17 @@ export function ClientsTable({
   direction,
   onSortChange,
   onPageChange,
+  selectedIds,
+  isAllSelected,
+  onToggleOne,
+  onToggleAll,
 }: Props) {
   const t = useTranslations("clients.table");
+  const tBulk = useTranslations("bulk");
   const f = useFormat();
-  const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  function toggle(id: string) {
-    setSelected((prev) => {
-      const n = new Set(prev);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
-      return n;
-    });
-  }
-
-  const allSelected = rows.length > 0 && rows.every((r) => selected.has(r.id));
-  const partial = !allSelected && rows.some((r) => selected.has(r.id));
-
-  function toggleAll() {
-    if (allSelected) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(rows.map((r) => r.id)));
-    }
-  }
+  const allSelected = isAllSelected;
+  const partial = !allSelected && rows.some((r) => selectedIds.has(r.id));
 
   function clickSort(col: typeof sort) {
     if (sort === col) {
@@ -83,24 +90,16 @@ export function ClientsTable({
           <thead>
             <tr>
               <Th width={42}>
-                <button
-                  type="button"
-                  aria-label={t("selectAll")}
-                  onClick={toggleAll}
-                  className={cn(
-                    "grid h-4 w-4 place-items-center rounded-[3px] border-[1.5px] bg-white",
-                    allSelected || partial
-                      ? "border-primary-500 bg-primary-500"
-                      : "border-neutral-300",
-                  )}
-                >
-                  {allSelected && (
-                    <span className="block h-1 w-2 -translate-y-px translate-x-px rotate-[-45deg] border-b-2 border-l-2 border-white" />
-                  )}
-                  {partial && !allSelected && (
-                    <span className="block h-0.5 w-2 bg-white" />
-                  )}
-                </button>
+                <input
+                  type="checkbox"
+                  aria-label={tBulk("selectAll")}
+                  checked={allSelected}
+                  ref={(el) => {
+                    if (el) el.indeterminate = partial;
+                  }}
+                  onChange={onToggleAll}
+                  className="h-4 w-4 cursor-pointer accent-primary-500"
+                />
               </Th>
               <Th
                 sortable
@@ -111,14 +110,11 @@ export function ClientsTable({
                 {t("client")}
               </Th>
               <Th>{t("type")}</Th>
-              <Th
-                sortable
-                active={sort === "properties"}
-                direction={direction}
-                onClick={() => clickSort("properties")}
-              >
-                {t("properties")}
-              </Th>
+              {/* `properties` count is a JS-side aggregate (one extra
+                  round-trip in the loader), so we can't push it to the
+                  database as an `.order()` clause yet. Keep the header
+                  non-clickable until that lands. */}
+              <Th>{t("properties")}</Th>
               <Th>{t("status")}</Th>
               <Th
                 sortable
@@ -152,9 +148,13 @@ export function ClientsTable({
 
             {!loading &&
               rows.map((r, idx) => {
-                const isSel = selected.has(r.id);
+                const isSel = selectedIds.has(r.id);
                 const tone = TONES[idx % TONES.length] ?? "primary";
-                const initials = `C${idx + 1 + (page - 1) * pageSize}`;
+                // Real initials from `display_name`; falls back to "?"
+                // when the name parses to no letter-like character.
+                // Replaces the previous positional `C1/C2…` rendering
+                // which looked like a database row index to users.
+                const initials = computeInitials(r.display_name);
                 return (
                   <tr
                     key={r.id}
@@ -164,21 +164,13 @@ export function ClientsTable({
                     )}
                   >
                     <td className="px-5 py-3.5 align-middle">
-                      <button
-                        type="button"
+                      <input
+                        type="checkbox"
                         aria-label={`${t("selectRow")}: ${r.display_name}`}
-                        onClick={() => toggle(r.id)}
-                        className={cn(
-                          "grid h-4 w-4 place-items-center rounded-[3px] border-[1.5px] bg-white",
-                          isSel
-                            ? "border-primary-500 bg-primary-500"
-                            : "border-neutral-300",
-                        )}
-                      >
-                        {isSel && (
-                          <span className="block h-1 w-2 -translate-y-px translate-x-px rotate-[-45deg] border-b-2 border-l-2 border-white" />
-                        )}
-                      </button>
+                        checked={isSel}
+                        onChange={() => onToggleOne(r.id)}
+                        className="h-4 w-4 cursor-pointer accent-primary-500"
+                      />
                     </td>
                     <td className="px-5 py-3.5 align-middle">
                       <Link

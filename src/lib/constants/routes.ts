@@ -29,7 +29,12 @@ export const routes = {
   employees: "/employees" as Route,
   employee: (id: string) => `/employees/${id}` as Route,
   invoices: "/invoices" as Route,
+  invoiceNew: "/invoices/new" as Route,
   invoice: (id: string) => `/invoices/${id}` as Route,
+  invoiceEdit: (id: string) => `/invoices/${id}/edit` as Route,
+  assignments: "/assignments" as Route,
+  assignment: (id: string) => `/assignments/${id}` as Route,
+  assignmentNew: "/assignments/new" as Route,
   reports: "/reports" as Route,
   alltagshilfeReport: "/reports/alltagshilfe" as Route,
   settings: "/settings" as Route,
@@ -38,6 +43,7 @@ export const routes = {
   onboard: "/onboard" as Route,
   onboardSuccess: "/onboard/success" as Route,
   setup2fa: "/setup-2fa" as Route,
+  offline: "/offline" as Route,
 } as const;
 
 /** Public routes (no auth required). */
@@ -47,4 +53,5 @@ export const publicRoutes: ReadonlyArray<string> = [
   routes.registerCheckEmail,
   routes.forgotPassword,
   routes.resetPassword,
+  routes.offline,
 ];

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { loadClientsSummary } from "@/lib/api/clients";
-import { requireRoute } from "@/lib/rbac/permissions";
+import { can, requireRoute } from "@/lib/rbac/permissions";
 import { ClientsPageHead } from "@/components/clients/ClientsPageHead";
 import { ClientsSummaryStrip } from "@/components/clients/ClientsSummary";
 import { ClientsPageClient } from "@/components/clients/ClientsPageClient";
@@ -21,12 +21,15 @@ export const dynamic = "force-dynamic";
  */
 export default async function ClientsPage() {
   await requireRoute("clients");
-  const summary = await loadClientsSummary();
+  const [summary, canArchive] = await Promise.all([
+    loadClientsSummary(),
+    can("client.archive"),
+  ]);
   return (
     <>
       <ClientsPageHead />
       <ClientsSummaryStrip summary={summary} />
-      <ClientsPageClient />
+      <ClientsPageClient canArchive={canArchive} />
     </>
   );
 }

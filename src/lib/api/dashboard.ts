@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCurrentRole } from "@/lib/rbac/permissions";
 import {
   startOfDay,
   endOfDay,
@@ -64,6 +65,13 @@ function pctDelta(curr: number, prev: number): number {
  */
 export async function loadDashboardData(): Promise<DashboardData> {
   const supabase = await createSupabaseServerClient();
+
+  // Resolve org_id explicitly so we can pass it as a leading filter on
+  // queries (audit_log especially) where the planner needs help picking
+  // the right index. RLS still enforces the org boundary; this is a
+  // perf hint, not a security control.
+  const { userId: roleUserId, orgId } = await getCurrentRole();
+  void roleUserId;
 
   // Get the signed-in user's first name for the greeting.
   const {
@@ -335,11 +343,15 @@ export async function loadDashboardData(): Promise<DashboardData> {
   // Pull recent audit entries, then resolve actor names in one follow-up
   // query rather than embedding via PostgREST (audit_log doesn't declare
   // a foreign key on user_id, so the embedded join would need a hint).
-  const { data: auditRows } = await supabase
+  // Explicit org_id filter — gives the planner the leading column on
+  // `idx_audit_org_created` instead of relying purely on RLS predicates.
+  let auditQuery = supabase
     .from("audit_log")
     .select("id, action, table_name, record_id, user_id, after, created_at")
     .order("created_at", { ascending: false })
     .limit(8);
+  if (orgId) auditQuery = auditQuery.eq("org_id", orgId);
+  const { data: auditRows } = await auditQuery;
   type AuditRow = {
     id: number;
     action: string;
@@ -422,7 +434,9 @@ export async function loadDashboardData(): Promise<DashboardData> {
     .select("employee_id, starts_at, ends_at")
     .is("deleted_at", null)
     .gte("starts_at", weekStart.toISOString())
-    .lte("starts_at", weekEnd.toISOString());
+    .lte("starts_at", weekEnd.toISOString())
+    // Defensive cap: 1000 shifts/week is ~5× the largest seed scenario.
+    .limit(1000);
 
   const hoursByEmp = new Map<string, number>();
   for (const s of (weekShiftsForLoad ?? []) as Array<{

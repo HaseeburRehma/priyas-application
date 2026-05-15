@@ -20,6 +20,11 @@ export type ShiftEvent = {
   status: ShiftStatus;
   starts_at: string;
   ends_at: string;
+  /**
+   * `employees.id` of the assignee (null when unassigned). Used by the
+   * detail panel to gate the CheckInButton to the shift's own staff.
+   */
+  employee_id: string | null;
   team: { id: string; initials: string; tone: "primary" | "secondary" | "accent" | "warning" }[];
   notes: string | null;
 };

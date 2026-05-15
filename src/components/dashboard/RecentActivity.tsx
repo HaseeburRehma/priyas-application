@@ -120,8 +120,23 @@ export function RecentActivity({ items }: { items: ActivityEntry[] }) {
   );
 }
 
+// SECURITY: activity bodies are built from user-supplied data (record
+// names, etc.). Escape HTML BEFORE we apply the `**bold**` -> <strong>
+// transform so a malicious record name like
+// `<img src=x onerror=alert(1)>` can't execute through the
+// dangerouslySetInnerHTML below.
+const ESC: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+};
+const escapeHtml = (s: string): string =>
+  s.replace(/[&<>"']/g, (c) => ESC[c] ?? c);
+
 function enrich(text: string): string {
-  return text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  return escapeHtml(text).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 }
 
 /**

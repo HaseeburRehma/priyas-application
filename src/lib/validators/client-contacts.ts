@@ -11,7 +11,14 @@ export const upsertClientContactSchema = z.object({
     .max(200)
     .optional()
     .or(z.literal("")),
-  phone: z.string().max(40).optional().or(z.literal("")),
+  // Restrict to digits + standard phone punctuation. Prevents control
+  // characters (newlines / tabs) from sneaking into the field.
+  phone: z
+    .string()
+    .max(40)
+    .regex(/^[\d\s+\-().]+$/, "Ungültige Telefonnummer")
+    .optional()
+    .or(z.literal("")),
   is_primary: z.boolean().default(false),
   notes: z.string().max(2000).optional().or(z.literal("")),
 });

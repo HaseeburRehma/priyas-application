@@ -40,6 +40,13 @@ export type EmployeesSummary = {
   newThisMonth: number;
 };
 
+/**
+ * Sortable columns wired through to the DB query. `hours` is computed
+ * JS-side from `shifts.starts_at`/`ends_at` (no materialised aggregate
+ * yet) so we can't push it down as an `.order()` clause.
+ */
+export type EmployeesSortField = "name" | "status";
+
 export type EmployeesListParams = {
   q?: string;
   role?: EmployeeRoleChip | "all";
@@ -47,8 +54,13 @@ export type EmployeesListParams = {
   status?: EmployeeStatus | "all";
   page?: number;
   pageSize?: number;
-  sort?: "name" | "hours" | "status";
+  sort?: EmployeesSortField;
   direction?: "asc" | "desc";
+  /**
+   * Restrict the result set to these IDs. Used for bulk-export CSVs
+   * that should only contain the user's current selection.
+   */
+  ids?: ReadonlyArray<string>;
 };
 
 export type EmployeesListResult = {
@@ -66,6 +78,15 @@ export type EmployeeDetail = {
   hire_date: string | null;
   status: EmployeeStatus;
   role_chip: EmployeeRoleChip;
+  /**
+   * The auth role from `profiles.role` (or null when the invite hasn't
+   * been accepted yet). Drives the "Change role" UI on the detail
+   * page — distinct from `role_chip`, which is a presentation-only
+   * combination of role + training state.
+   */
+  auth_role: "admin" | "dispatcher" | "employee" | null;
+  /** `employees.profile_id` so the client can guard against self-role-change. */
+  profile_id: string | null;
   team_label: string | null;
   hourly_rate_eur: number | null;
   weekly_hours: number;

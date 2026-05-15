@@ -32,14 +32,28 @@ export type PropertiesSummary = {
   newThisQuarter: number;
 };
 
+/**
+ * Sortable columns wired through to the DB query. `assignments` is computed
+ * client-side (last 7 days of shifts) so we can't push it down as an
+ * `.order()` clause yet — the table only exposes the DB-backed columns.
+ */
+export type PropertiesSortField = "name" | "client";
+
 export type PropertiesListParams = {
   q?: string;
   kind?: PropertyKind | "all";
   status?: PropertyStatus | "all";
   page?: number;
   pageSize?: number;
-  sort?: "name" | "assignments" | "client";
+  sort?: PropertiesSortField;
   direction?: "asc" | "desc";
+  /**
+   * Restrict the result set to these IDs. Used for bulk-export CSVs
+   * that should only contain the user's current selection. When set,
+   * other filters still apply but the universe is constrained to
+   * these rows.
+   */
+  ids?: ReadonlyArray<string>;
 };
 
 export type PropertiesListResult = {
@@ -82,17 +96,26 @@ export type PropertyDetail = {
   client_name: string;
   client_type: string;
   kind: PropertyKind;
-  status: PropertyStatus;
+  // `status` is derived (no DB column yet). Computed from
+  // `deleted_at`, the created_at age and recent shift activity in
+  // `loadPropertyDetail`. We never fabricate "active" — when there is
+  // no signal we leave it null and let the UI render "—".
+  status: PropertyStatus | null;
   rooms: number | null;
   weekly_frequency: number;
   team_size: number;
   contract_end: string | null;
   created_at: string;
-  // Aggregates
+  // Aggregates. `document_count` and `area_count` are null when the
+  // underlying table doesn't exist (no `property_documents` /
+  // `property_areas` in the schema today) so the UI can render "—"
+  // instead of fabricated counts.
   assignment_count: number;
-  document_count: number;
-  area_count: number;
+  document_count: number | null;
+  area_count: number | null;
   // Lists
   team: { id: string; name: string; initials: string; role: string }[];
-  areas: PropertyArea[];
+  // `areas` is null when no `property_areas` table exists in this
+  // deployment. UI must guard against this.
+  areas: PropertyArea[] | null;
 };

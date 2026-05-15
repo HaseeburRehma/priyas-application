@@ -10,7 +10,10 @@ import { routes } from "@/lib/constants/routes";
 import {
   archiveEmployeeAction,
   updateEmployeeAction,
+  updateEmployeeRoleAction,
 } from "@/app/actions/employees";
+
+type AuthRole = "admin" | "dispatcher" | "employee";
 
 type Initial = {
   id: string;
@@ -21,22 +24,42 @@ type Initial = {
   weekly_hours: number;
   hourly_rate_eur: number | null;
   status: "active" | "on_leave" | "inactive";
+  auth_role: AuthRole | null;
+  profile_id: string | null;
 };
 
 type Props = {
   initial: Initial;
   canUpdate: boolean;
   canArchive: boolean;
+  currentUserId: string | null;
 };
 
-export function EmployeeDetailActions({ initial, canUpdate, canArchive }: Props) {
+export function EmployeeDetailActions({
+  initial,
+  canUpdate,
+  canArchive,
+  currentUserId,
+}: Props) {
   const t = useTranslations("employees.detail");
   const tForm = useTranslations("employees.form");
   const tDialog = useTranslations("employees.dialog");
+  const tRole = useTranslations("employees.role");
+  const tAuthRole = useTranslations("employees.authRole");
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
+  const [roleOpen, setRoleOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [pending, start] = useTransition();
+
+  // The role button must be hidden when the current admin/dispatcher
+  // is looking at their *own* profile — the DB trigger
+  // trg_prevent_self_role_escalation would reject the write anyway.
+  const isSelf =
+    currentUserId !== null &&
+    initial.profile_id !== null &&
+    currentUserId === initial.profile_id;
+  const canChangeRole = canUpdate && !isSelf && initial.profile_id !== null;
 
   function archive() {
     if (!confirm(t("deleteConfirm"))) return;
@@ -117,6 +140,29 @@ export function EmployeeDetailActions({ initial, canUpdate, canArchive }: Props)
             </svg>
           </button>
         )}
+        {canChangeRole && (
+          <button
+            type="button"
+            onClick={() => setRoleOpen(true)}
+            className="btn btn--tertiary"
+            title={tRole("change")}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4"
+            >
+              <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
+              <circle cx={9} cy={7} r={4} />
+              <path d="M17 11l2 2 4-4" />
+            </svg>
+            {tRole("change")}
+          </button>
+        )}
         {canUpdate && (
           <button
             type="button"
@@ -172,7 +218,153 @@ export function EmployeeDetailActions({ initial, canUpdate, canArchive }: Props)
           }}
         />
       )}
+
+      {roleOpen && (
+        <RoleDialog
+          employeeId={initial.id}
+          fullName={initial.full_name}
+          currentRole={initial.auth_role}
+          onClose={() => setRoleOpen(false)}
+          tForm={tForm}
+          tDialog={tDialog}
+          tRole={tRole}
+          tAuthRole={tAuthRole}
+          onSaved={() => {
+            setRoleOpen(false);
+            router.refresh();
+          }}
+        />
+      )}
     </>
+  );
+}
+
+function RoleDialog({
+  employeeId,
+  fullName,
+  currentRole,
+  onClose,
+  onSaved,
+  tForm,
+  tDialog,
+  tRole,
+  tAuthRole,
+}: {
+  employeeId: string;
+  fullName: string;
+  currentRole: AuthRole | null;
+  onClose: () => void;
+  onSaved: () => void;
+  tForm: ReturnType<typeof useTranslations>;
+  tDialog: ReturnType<typeof useTranslations>;
+  tRole: ReturnType<typeof useTranslations>;
+  tAuthRole: ReturnType<typeof useTranslations>;
+}) {
+  const [pending, start] = useTransition();
+  const [role, setRole] = useState<AuthRole>(currentRole ?? "employee");
+
+  useEffect(() => {
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = original;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    start(async () => {
+      const r = await updateEmployeeRoleAction({
+        employeeId,
+        role,
+      });
+      if (!r.ok) {
+        // The server returns the sentinel "self-role-change" for both
+        // our pre-check and the trigger's 42501 — surface a friendly
+        // localised message in either case.
+        if (r.error === "self-role-change") {
+          toast.error(tRole("changeSelf"));
+        } else {
+          toast.error(r.error || tForm("saveError"));
+        }
+        return;
+      }
+      toast.success(tRole("changeSuccess"));
+      onSaved();
+    });
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-6"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="flex max-h-[92vh] w-full max-w-[480px] flex-col overflow-hidden rounded-t-xl border border-neutral-100 bg-white shadow-lg sm:rounded-xl">
+        <header className="flex items-start justify-between gap-3 border-b border-neutral-100 px-6 pb-4 pt-5">
+          <div>
+            <h2 className="text-[18px] font-bold text-secondary-500">
+              {tRole("changeTitle")}
+            </h2>
+            <p className="mt-0.5 text-[12px] text-neutral-500">
+              {tRole("changeConfirm", { name: fullName })}
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label={tForm("cancel")}
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-md text-neutral-400 transition hover:bg-neutral-50"
+          >
+            <span aria-hidden>✕</span>
+          </button>
+        </header>
+
+        <form onSubmit={submit} className="flex flex-col" noValidate>
+          <div className="p-6">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[13px] font-medium text-neutral-700">
+                {tForm("role")}
+              </span>
+              <select
+                className="input"
+                value={role}
+                onChange={(e) => setRole(e.target.value as AuthRole)}
+              >
+                <option value="employee">{tAuthRole("employee")}</option>
+                <option value="dispatcher">{tAuthRole("dispatcher")}</option>
+                <option value="admin">{tAuthRole("admin")}</option>
+              </select>
+            </label>
+          </div>
+
+          <footer className="sticky bottom-0 flex items-center justify-end gap-3 border-t border-neutral-100 bg-white px-6 py-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn--ghost border border-neutral-200"
+            >
+              {tForm("cancel")}
+            </button>
+            <button
+              type="submit"
+              disabled={pending}
+              className={cn("btn btn--primary", pending && "opacity-80")}
+            >
+              {pending ? tDialog("saving") : tForm("save")}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
   );
 }
 

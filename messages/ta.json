@@ -7,6 +7,7 @@
     "delete": "நீக்கு",
     "edit": "திருத்து",
     "view": "பார்க்க",
+    "open": "திற",
     "more": "மேலும்",
     "loading": "ஏற்றுகிறது…",
     "search": "தேடல்",
@@ -15,7 +16,8 @@
     "import": "இறக்குமதி",
     "ok": "சரி",
     "yes": "ஆம்",
-    "no": "இல்லை"
+    "no": "இல்லை",
+    "comingSoon": "விரைவில்"
   },
   "topbar": {
     "searchPlaceholder": "வாடிக்கையாளர்கள், சொத்துக்கள், விலைப்பட்டியல்களைத் தேடுங்கள்…",
@@ -166,7 +168,13 @@
         "training_assignments": "பயிற்சி ஒதுக்கீடுகள்",
         "vacation_requests": "விடுமுறை விண்ணப்பங்கள்",
         "damage_reports": "சேதம் அறிக்கைகள்",
-        "client_signatures": "கையெழுத்துக்கள்"
+        "client_signatures": "கையெழுத்துக்கள்",
+        "profiles": "Profile",
+        "property_photos": "Property photos",
+        "settings": "Settings",
+        "assignments": "Assignments",
+        "assignment_staff": "Assignment staff",
+        "invoice_payments": "Payments"
       }
     },
     "team": {
@@ -254,6 +262,14 @@
       "save": "வாடிக்கையாளரை உருவாக்கு",
       "saveError": "சேமிப்பு தோல்வியடைந்தது.",
       "back": "பின்"
+    },
+    "edit": {
+      "title": "வாடிக்கையாளரைத் திருத்து",
+      "subtitle": "வாடிக்கையாளர் விவரங்களை புதுப்பி",
+      "save": "மாற்றங்களை சேமி",
+      "saveSuccess": "வாடிக்கையாளர் புதுப்பிக்கப்பட்டார்.",
+      "back": "வாடிக்கையாளருக்குத் திரும்பு",
+      "cancel": "ரத்து"
     },
     "title": "வாடிக்கையாளர்கள்",
     "subtitle": "அனைத்து வாடிக்கையாளர் கணக்குகள், ஒப்பந்தங்கள் மற்றும் சொத்துக்களை நிர்வகிக்கவும்.",
@@ -355,6 +371,10 @@
       "clientId": "வாடிக்கையாளர் ID",
       "legalForm": "சட்ட வடிவம்",
       "vatNumber": "VAT எண்",
+      "insuranceProvider": "Pflegekasse (சுகாதார காப்பீடு)",
+      "insuranceNumber": "காப்பீட்டு எண்",
+      "careLevel": "Pflegegrad (பராமரிப்பு நிலை)",
+      "careLevelN": "Pflegegrad {level}",
       "contractStart": "ஒப்பந்த தொடக்கம்",
       "contractDuration": "ஒப்பந்த காலம்",
       "noticePeriod": "அறிவிப்பு காலம்",
@@ -618,7 +638,31 @@
       "exportPdf": "PDF ஆக பதிவிறக்கு",
       "exportIcal": "காலெண்டரில் சந்தாதாரராகுக (iCal)",
       "exportIcalCopied": "iCal இணைப்பு நகலெடுக்கப்பட்டது.",
-      "exportFailed": "ஏற்றுமதி தோல்வி."
+      "exportFailed": "ஏற்றுமதி தோல்வி.",
+      "reassign": "மீண்டும் ஒதுக்கு",
+      "reschedule": "மறுஅட்டவணை",
+      "complete": "முடிந்ததாக குறிக்கவும்",
+      "cancel": "பணிமாற்றத்தை ரத்து செய்",
+      "delete": "நீக்கு",
+      "confirmCancel": "இந்த பணிமாற்றத்தை ரத்து செய்யவா? பதிவு தணிக்கைக்காக காண்பிக்கப்படும்.",
+      "confirmComplete": "இந்த பணிமாற்றத்தை முடிந்ததாக குறிக்கவா?",
+      "confirmDelete": "இந்த பணிமாற்றத்தை நிரந்தரமாக நீக்கவா? இதை மீட்டெடுக்க முடியாது.",
+      "reassignTitle": "பணிமாற்றத்தை மீண்டும் ஒதுக்கு",
+      "rescheduleTitle": "பணிமாற்றத்தை மறுஅட்டவணைப்படுத்து",
+      "selectEmployee": "ஊழியரைத் தேர்வு செய்"
+    },
+    "toast": {
+      "moved": "பணிமாற்றம் நகர்த்தப்பட்டது.",
+      "reassigned": "பணிமாற்றம் மீண்டும் ஒதுக்கப்பட்டது.",
+      "reassignError": "மீண்டும் ஒதுக்க முடியவில்லை.",
+      "rescheduled": "பணிமாற்றம் மறுஅட்டவணைப்படுத்தப்பட்டது.",
+      "rescheduleError": "மறுஅட்டவணை தோல்வி.",
+      "completed": "பணிமாற்றம் முடிந்ததாக குறிக்கப்பட்டது.",
+      "completeError": "முடிந்ததாக குறிக்க முடியவில்லை.",
+      "cancelled": "பணிமாற்றம் ரத்து செய்யப்பட்டது.",
+      "cancelError": "பணிமாற்றத்தை ரத்து செய்ய முடியவில்லை.",
+      "deleted": "பணிமாற்றம் நீக்கப்பட்டது.",
+      "deleteError": "பணிமாற்றத்தை நீக்க முடியவில்லை."
     },
     "tabs": {
       "today": "இன்று",
@@ -690,7 +734,31 @@
       "endAfterStart": "முடிவு தொடக்கத்திற்குப் பிறகு இருக்க வேண்டும்."
     },
     "prevWeek": "முந்தைய வாரம்",
-    "nextWeek": "அடுத்த வாரம்"
+    "nextWeek": "அடுத்த வாரம்",
+    "day": {
+      "empty": "{date} அன்று பணிமாற்றங்கள் இல்லை.",
+      "prevDay": "முந்தைய நாள்",
+      "nextDay": "அடுத்த நாள்"
+    },
+    "month": {
+      "more": "+{count} மேலும்"
+    },
+    "list": {
+      "title": "அனைத்து பணிமாற்றங்கள்",
+      "count": "{count} பணிமாற்றங்கள்",
+      "onlyMine": "என் பணிமாற்றங்கள் மட்டும்",
+      "colDate": "தேதி",
+      "colTime": "நேரம்",
+      "colProperty": "சொத்து",
+      "colEmployee": "ஊழியர்",
+      "colStatus": "நிலை",
+      "sortByDate": "தேதியின்படி வரிசைப்படுத்து",
+      "empty": "தற்போதைய வடிகட்டிகளுக்கு பொருந்தும் பணிமாற்றங்கள் இல்லை.",
+      "pageOf": "பக்கம் {page} / {total}",
+      "prevPage": "முந்தைய",
+      "nextPage": "அடுத்த",
+      "statusCancelled": "ரத்து செய்யப்பட்டது"
+    }
   },
   "employees": {
     "breadcrumbDashboard": "மேலோட்டம்",
@@ -728,7 +796,17 @@
     "role": {
       "pm": "திட்ட மேலாளர்",
       "field": "வேலையாள்",
-      "trainee": "பயிற்சியாளர்"
+      "trainee": "பயிற்சியாளர்",
+      "change": "பாத்திரத்தை மாற்று",
+      "changeTitle": "பாத்திரத்தை மாற்று",
+      "changeConfirm": "{name} க்கு புதிய பாத்திரத்தை தேர்வு செய்க. மாற்றம் உடனடியாக நடைமுறைக்கு வரும்.",
+      "changeSelf": "உங்கள் சொந்த பாத்திரத்தை நீங்கள் மாற்ற முடியாது. மற்றொரு நிர்வாகியை அணுகவும்.",
+      "changeSuccess": "பாத்திரம் புதுப்பிக்கப்பட்டது."
+    },
+    "authRole": {
+      "admin": "நிர்வாகி",
+      "dispatcher": "ஒருங்கிணைப்பாளர்",
+      "employee": "ஊழியர்"
     },
     "status": {
       "active": "செயலில்",
@@ -805,6 +883,7 @@
       "weeklyHours": "வாரந்தோறும் மணிநேரங்கள்",
       "hourlyRate": "மணி கட்டணம் (€)",
       "status": "நிலை",
+      "role": "பாத்திரம்",
       "save": "சேமிக்க",
       "cancel": "ரத்து",
       "saveError": "சேமிப்பு தோல்வி."
@@ -873,6 +952,7 @@
       "title": "அறிக்கை நூலகம்",
       "subtitle": "{count} நிலையான அறிக்கைகள் · தேவைக்கேற்ப அல்லது மீண்டும் வரும்படி திட்டமிடவும்",
       "createCustom": "சொந்த அறிக்கை உருவாக்கு",
+      "createCustomComingSoon": "விரைவில் வரும்",
       "items": {
         "monthlyRevenue": "மாதாந்திர வருவாய்",
         "monthlyRevenueSub": "வாடிக்கையாளர், சொத்து மற்றும் குழு வாரியாக",
@@ -1169,6 +1249,21 @@
       "currency": "நாணயம்",
       "dateFormat": "தேதி வடிவம்"
     }
+  },
+  "lexware": {
+    "title": "மாதாந்திர Lexware பில்லிங்",
+    "subtitle": "முடிக்கப்பட்ட பணிநேரங்களிலிருந்து மாதாந்திர விலைப்பட்டியல்களை உருவாக்கி Lexware Office-க்கு அனுப்பவும்.",
+    "lastRun": "கடைசி இயக்கம்",
+    "never": "ஒருபோதும் இல்லை",
+    "previewButton": "மாதத்தை முன்னோட்டம்",
+    "generateButton": "இப்போது உருவாக்கு",
+    "dryRunResults": "முன்னோட்ட சுருக்கம்",
+    "clientsToInvoice": "விலைப்பட்டியல் இடப்பட வேண்டிய வாடிக்கையாளர்கள்",
+    "totalAmount": "மொத்த தொகை",
+    "alreadyInvoiced": "ஏற்கனவே விலைப்பட்டியல் இடப்பட்டது",
+    "errors": "பிழைகள்",
+    "cancelButton": "ரத்து செய்",
+    "confirmGenerate": "உருவாக்கு"
   },
   "notifications": {
     "breadcrumbDashboard": "மேலோட்டம்",
@@ -1538,7 +1633,11 @@
     "completeWithSignatureBody": "இந்த கட்டாய பயிற்சி மாட்யூலை முழுமையாக முடித்ததை உறுதிப்படுத்த கீழே கையெழுத்திடவும்.",
     "signatureRequired": "முடிக்கும் முன் கையெழுத்திடவும்.",
     "completeAndSign": "கையெழுத்திட்டு முடிக்கவும்",
-    "completedWithSignature": "முடிக்கப்பட்டு கையெழுத்திடப்பட்டது."
+    "completedWithSignature": "முடிக்கப்பட்டு கையெழுத்திடப்பட்டது.",
+    "errors": {
+      "signatureRequired": "இந்த கட்டாய மாட்யூலை முடிக்க கையெழுத்து தேவை.",
+      "signatureTooLarge": "கையெழுத்து மிகப் பெரியது. தயவுசெய்து எளிமையான கையெழுத்துடன் மீண்டும் முயற்சிக்கவும்."
+    }
   },
   "alltagshilfeReport": {
     "breadcrumbDashboard": "மேலோட்டம்",
@@ -1556,6 +1655,7 @@
     "exportPdf": "PDF ஏற்றுமதி",
     "exportCsv": "CSV ஏற்றுமதி",
     "sendToManagement": "நிர்வாகத்திற்கு அனுப்பு",
+    "sendComingSoon": "விரைவில் வரும்",
     "kpiHoursTotal": "மொத்த பராமரிப்பு மணிநேரங்கள்",
     "vsPrevious": "முந்தைய மாதத்துடன்",
     "kpiClients": "சேவை பெற்ற வாடிக்கையாளர்கள்",
@@ -1575,5 +1675,234 @@
     "colRate": "கட்டணம்",
     "colAmount": "தொகை",
     "emptyMonth": "{month} இல் Alltagshilfe பணிமாற்றங்கள் இல்லை."
+  },
+  "import": {
+    "title": "{module}-ஐ CSV இலிருந்து இறக்குமதி செய்யவும்",
+    "subtitle": "CSV கோப்பை பதிவேற்றவும். இறக்குமதி செய்வதற்கு முன் ஒவ்வொரு வரிசையையும் சரிபார்க்கிறோம்.",
+    "chooseFile": "கோப்பைத் தேர்வுசெய்க",
+    "dropHere": "CSV கோப்பை இங்கே இடவும்",
+    "or": "அல்லது",
+    "template": "டெம்ப்ளேட்டை பதிவிறக்கவும்",
+    "maxSize": "அதிகபட்சம் 5 MB",
+    "preview": "முன்னோட்டம்",
+    "totalRows": "மொத்த வரிசைகள்",
+    "validRows": "செல்லுபடியான வரிசைகள்",
+    "errorRows": "பிழை வரிசைகள்",
+    "insertedRows": "இறக்குமதி செய்யப்பட்டது",
+    "skippedRows": "தவிர்க்கப்பட்டது",
+    "commit": "{count} வரிசைகளை இறக்குமதி செய்யவும்",
+    "committing": "இறக்குமதி செய்கிறது…",
+    "importingN": "{count} வரிசைகள் இறக்குமதியாகிறது…",
+    "pleaseWait": "இந்த சாளரத்தை மூடாதீர்கள்.",
+    "cancel": "ரத்துசெய்",
+    "close": "மூடு",
+    "back": "பின்செல்",
+    "success": "{inserted} இறக்குமதி, {skipped} தவிர்க்கப்பட்டது.",
+    "errors": {
+      "head": "சரிபார்ப்பு பிழைகள்",
+      "row": "வரிசை",
+      "column": "நெடுவரிசை",
+      "message": "செய்தி",
+      "none": "பிழைகள் இல்லை.",
+      "onlyToggle": "பிழைகள் மட்டும்",
+      "more": "… மேலும் {more} பிழைகள்.",
+      "tooLarge": "கோப்பு மிகப் பெரியது (அதிகபட்சம் 5 MB).",
+      "notCsv": "ஒரு CSV கோப்பைத் தேர்வு செய்யவும்."
+    }
+  },
+  "bulk": {
+    "selected": "{count} தேர்ந்தெடுக்கப்பட்டது",
+    "clearSelection": "தேர்வை அகற்று",
+    "bulkExport": "ஏற்றுமதி",
+    "bulkArchive": "காப்பகப்படுத்து",
+    "bulkArchiveConfirm": "{count} உருப்படிகளை காப்பகப்படுத்தவா?",
+    "bulkAssign": "வாடிக்கையாளருக்கு ஒப்படை",
+    "bulkAssignTitle": "தேர்ந்தெடுக்கப்பட்ட சொத்துக்களை வாடிக்கையாளருக்கு ஒப்படை",
+    "bulkInvite": "அழைப்பு அனுப்பு",
+    "bulkInviteConfirm": "{count} ஊழியர்களுக்கு அழைப்பு அனுப்பவா?",
+    "actionSuccess": "{count} புதுப்பிக்கப்பட்டது",
+    "actionPartial": "{ok} வெற்றி, {failed} தோல்வி",
+    "selectAll": "அனைத்தையும் தேர்ந்தெடு",
+    "deselect": "தேர்வு நீக்கு"
+  },
+  "apiKeys": {
+    "title": "API சாவிகள்",
+    "subtitle": "பொது REST API மூலம் தரவைப் படிக்கவோ எழுதவோ ஒருங்கிணைப்புகளுக்கு சாவிகளை வழங்கவும்.",
+    "settingsLink": "அமைப்புகள்",
+    "createButton": "API சாவி உருவாக்கு",
+    "createDialogTitle": "புதிய API சாவியை உருவாக்கு",
+    "createDialogSubtitle": "ஒரு பெயரையும் அனுமதிகளையும் தேர்வுசெய்யவும். சாவி ஒருமுறை மட்டுமே காட்டப்படும் — பாதுகாப்பான இடத்தில் நகலெடுக்கவும்.",
+    "createdTitle": "API சாவி உருவாக்கப்பட்டது",
+    "secretShownOnce": "இப்போது சாவியை நகலெடுக்கவும். எங்கள் பக்கம் ஹாஷ் மட்டும் சேமிக்கப்படும் — இந்த உரையாடலை மூடிய பிறகு சாவியை மீண்டும் காட்ட முடியாது.",
+    "fieldName": "பெயர்",
+    "fieldNamePlaceholder": "எ.கா. Lexware sync",
+    "fieldScopes": "அனுமதிகள்",
+    "fieldExpires": "காலாவதி (விரும்பினால்)",
+    "create": "சாவியை உருவாக்கு",
+    "copy": "நகலெடு",
+    "copied": "நகலெடுக்கப்பட்டது",
+    "done": "முடிந்தது",
+    "revoke": "ரத்துசெய்",
+    "revokeConfirm": "இந்த API சாவியை ரத்து செய்யவா? இதைப் பயன்படுத்தும் ஒருங்கிணைப்புகள் உடனடியாக செயல்படுவதை நிறுத்தும்.",
+    "revoked": "சாவி ரத்து செய்யப்பட்டது",
+    "lastUsed": "கடைசியாகப் பயன்படுத்தப்பட்டது",
+    "never": "ஒருபோதும் இல்லை",
+    "colName": "பெயர்",
+    "colPrefix": "முன்னொட்டு",
+    "colStatus": "நிலை",
+    "colCreated": "உருவாக்கப்பட்டது",
+    "emptyState": "இதுவரை API சாவிகள் இல்லை. ஒரு ஒருங்கிணைப்புக்கு இந்த நிறுவனத்திற்கான அணுகலை வழங்க ஒன்றை உருவாக்கவும்.",
+    "status": {
+      "active": "செயலில்",
+      "revoked": "ரத்து செய்யப்பட்டது",
+      "expired": "காலாவதியானது"
+    }
+  },
+  "offline": {
+    "title": "நீங்கள் ஆஃப்லைனில் உள்ளீர்கள்",
+    "body": "இப்போது நெட்வொர்க்கை அடைய முடியவில்லை. உங்கள் வேலை பாதுகாப்பானது — ஆஃப்லைனில் செய்யப்பட்ட மாற்றங்கள் மீண்டும் இணைக்கப்படும்போது தானாகவே ஒத்திசைக்கப்படும்.",
+    "retry": "மீண்டும் முயற்சிக்கவும்",
+    "indicator": "ஆஃப்லைன்",
+    "availableTitle": "ஆஃப்லைனில் கிடைக்கும்",
+    "availableBody": "சமீபத்திய வாடிக்கையாளர்கள், சொத்துக்கள், ஷிப்ட்கள் மற்றும் டாஷ்போர்டு தரவை வாசிக்கலாம்.",
+    "queuedTitle": "ஒத்திசைவுக்கு வரிசையில்",
+    "queuedBody": "உருவாக்குதல் அல்லது திருத்துதல் — மாற்றங்கள் வரிசையில் உள்ளன, மீண்டும் இணைக்கும்போது அனுப்பப்படும்."
+  },
+  "outbox": {
+    "title": "நிலுவையில் உள்ள மாற்றங்கள்",
+    "pendingCount": "{count} நிலுவையில்",
+    "pendingAria": "{count} மாற்றங்கள் ஒத்திசைவுக்காக காத்திருக்கின்றன",
+    "retryNow": "இப்போது மீண்டும் முயற்சிக்கவும்",
+    "emptyState": "வரிசையில் எதுவும் இல்லை."
+  },
+  "assignments": {
+    "title": "Assignments",
+    "subtitle": "Property × client × planned hours × hourly rate with staff allocation.",
+    "new": "New assignment",
+    "activeHeading": "Active assignments ({count})",
+    "archivedHeading": "Archived ({count})",
+    "empty": "No assignments.",
+    "columns": {
+      "client": "Client",
+      "property": "Property",
+      "hours": "Hours",
+      "rate": "Rate",
+      "total": "Total",
+      "staff": "Staff"
+    },
+    "frequency": {
+      "weekly": "wkly",
+      "biweekly": "bi-wk",
+      "monthly": "monthly"
+    },
+    "staffMissing": "Staff missing",
+    "staffDistributed": "{hours}h allocated",
+    "detail": {
+      "plannedHours": "Planned hours",
+      "hourlyRate": "Hourly rate",
+      "periodTotal": "Period total",
+      "variance30d": "Variance (30 days)",
+      "varianceMore": "More",
+      "varianceLess": "Less",
+      "staffTitle": "Staff allocation (last 30 days)",
+      "planned": "Planned",
+      "actual": "Actual",
+      "value": "Value",
+      "total": "Total",
+      "noStaff": "No staff assigned yet."
+    }
+  },
+  "alltagshilfeBudget": {
+    "title": "Entlastungsbetrag {year}",
+    "subtitle": "§ 45b SGB XI · annual budget",
+    "consumed": "{pct}% used",
+    "stats": {
+      "used": "Used",
+      "reserved": "Reserved",
+      "reservedSub": "open invoices",
+      "remaining": "Remaining"
+    },
+    "estimate": "≈ {hoursUsed}h of {hoursPerYear}h used (€35/h base rate)",
+    "alert80": "⚠ 80% threshold reached.",
+    "alert90": "⚠ 90% threshold reached.",
+    "alert100": "⛔ Annual budget depleted. Further charges are not reimbursable."
+  },
+  "invoiceNew": {
+    "title": "New invoice",
+    "subtitle": "Pick a client and a billing period. The system aggregates all approved time entries in that range into a draft invoice.",
+    "stepClient": "1. Client",
+    "stepPeriod": "2. Period",
+    "stepPreview": "3. Preview",
+    "clientSearch": "Search clients…",
+    "noClients": "No clients found.",
+    "from": "From",
+    "to": "To",
+    "groupBy": "Group by",
+    "groupByPropertyEmployee": "Property × employee (default)",
+    "groupByProperty": "Property",
+    "groupByShift": "Shift",
+    "client": "Client",
+    "type": "Type",
+    "period": "Period",
+    "generate": "Generate draft",
+    "generating": "Generating draft…",
+    "validationClient": "Please select a client.",
+    "validationPeriod": "Invalid period.",
+    "successCreated": "Draft {invoiceNumber} created.",
+    "customerType": {
+      "residential": "Regular",
+      "commercial": "Commercial",
+      "alltagshilfe": "Alltagshilfe"
+    }
+  },
+  "invoiceDraft": {
+    "draftHeading": "Draft · {invoiceNumber}",
+    "regularLabel": "Regular invoice (19 % VAT)",
+    "alltagshilfeLabel": "Alltagshilfe (VAT-exempt § 4 No. 16 UStG)",
+    "items": "Items",
+    "addItem": "+ Item",
+    "removeItem": "Remove item",
+    "description": "Description",
+    "quantity": "Qty",
+    "unitPrice": "Unit price",
+    "vat": "% VAT",
+    "lineTotal": "Total",
+    "noItems": "No items yet.",
+    "subtotal": "Subtotal",
+    "tax": "VAT",
+    "total": "Total",
+    "dueDate": "Due date",
+    "notes": "Notes / payment terms",
+    "sendEmail": "Email invoice to client ({email})",
+    "noEmailHint": "no email on file",
+    "exportTarget": "Push to external system ({target}) immediately",
+    "discard": "Discard",
+    "save": "Save",
+    "issue": "Issue invoice",
+    "discardConfirm": "Really discard draft?",
+    "saved": "Saved.",
+    "issued": "Invoice issued.",
+    "discarded": "Discarded."
+  },
+  "invoiceAging": {
+    "title": "Receivables",
+    "subtitle": "Open and paid invoices",
+    "allInvoices": "All invoices →",
+    "tiles": {
+      "collectedThisMonth": "Collected this month",
+      "open": "Open",
+      "overdue": "Overdue",
+      "forecast30d": "Forecast 30 days",
+      "invoicesCount": "{count} invoices"
+    },
+    "agingTitle": "Aging",
+    "buckets": {
+      "current": "Current",
+      "0_30": "1–30",
+      "30_60": "31–60",
+      "60_90": "61–90",
+      "90_plus": "90+"
+    },
+    "bucketCount": "{count} inv."
   }
 }

@@ -62,6 +62,7 @@ const ITEMS: Item[] = [
 export function ReportLibrary() {
   const t = useTranslations("reports.library");
   const tItems = useTranslations("reports.library.items");
+  const tCommon = useTranslations("common");
 
   return (
     <section className="mt-6 rounded-lg border border-neutral-100 bg-white">
@@ -74,7 +75,13 @@ export function ReportLibrary() {
             {t("subtitle", { count: ITEMS.length })}
           </div>
         </div>
-        <button type="button" className="btn btn--tertiary">
+        <button
+          type="button"
+          className="btn btn--tertiary cursor-not-allowed opacity-60"
+          disabled
+          aria-disabled="true"
+          title={t("createCustomComingSoon")}
+        >
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -127,7 +134,7 @@ export function ReportLibrary() {
                   >
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
-                  Open
+                  {tCommon("open")}
                 </Link>
               )}
               <a

@@ -56,7 +56,11 @@ export async function loadAlltagshilfeMonthly(
   const prevStart = new Date(year, month - 1, 1);
   const prevEnd = monthStart;
 
-  const [clientsRes, prevHoursRes, currentShiftsRes, employeesRes] = await Promise.all([
+  // Pre-fetch the alltagshilfe client ids first, narrow the (potentially
+  // huge) shifts pull to properties owned by those clients in the next
+  // round-trip. Without this step we'd fetch every shift in the month
+  // and filter client-side — which OOMs the lambda on large orgs.
+  const [clientsRes, prevHoursRes, employeesRes] = await Promise.all([
     supabase
       .from("clients")
       .select("id, display_name, insurance_provider, insurance_number, care_level")
@@ -66,25 +70,49 @@ export async function loadAlltagshilfeMonthly(
       .from("time_entries")
       .select("check_in_at, check_out_at, break_minutes, shift_id")
       .gte("check_in_at", prevStart.toISOString())
-      .lt("check_in_at", prevEnd.toISOString()),
-    supabase
-      .from("shifts")
-      .select(
-        `id, starts_at, ends_at, status,
-         property:properties ( id, name, address_line1, city,
-                               client_id,
-                               client:clients ( id, display_name, customer_type, insurance_provider )
-         ),
-         employee:employees ( id, full_name )`,
-      )
-      .gte("starts_at", monthStart.toISOString())
-      .lt("starts_at", monthEnd.toISOString())
-      .is("deleted_at", null),
+      .lt("check_in_at", prevEnd.toISOString())
+      .limit(10000),
     supabase
       .from("employees")
       .select("id, status")
-      .is("deleted_at", null),
+      .is("deleted_at", null)
+      .limit(5000),
   ]);
+
+  const altClientIds = (
+    (clientsRes.data ?? []) as Array<{ id: string }>
+  ).map((c) => c.id);
+
+  // Resolve properties belonging to those clients so the shifts query
+  // can use a property_id `.in()` filter instead of pulling everything.
+  let altPropIds: string[] = [];
+  if (altClientIds.length > 0) {
+    const { data: propRows } = await supabase
+      .from("properties")
+      .select("id")
+      .in("client_id", altClientIds)
+      .is("deleted_at", null)
+      .limit(5000);
+    altPropIds = ((propRows ?? []) as Array<{ id: string }>).map((p) => p.id);
+  }
+
+  const currentShiftsRes = altPropIds.length === 0
+    ? { data: [] as unknown[] }
+    : await supabase
+        .from("shifts")
+        .select(
+          `id, starts_at, ends_at, status,
+           property:properties ( id, name, address_line1, city,
+                                 client_id,
+                                 client:clients ( id, display_name, customer_type, insurance_provider )
+           ),
+           employee:employees ( id, full_name )`,
+        )
+        .in("property_id", altPropIds)
+        .gte("starts_at", monthStart.toISOString())
+        .lt("starts_at", monthEnd.toISOString())
+        .is("deleted_at", null)
+        .limit(10000);
 
   type ClientRow = {
     id: string;

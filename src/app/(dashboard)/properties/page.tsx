@@ -10,15 +10,17 @@ export const dynamic = "force-dynamic";
 
 export default async function Page() {
   await requireRoute("properties");
-  const [summary, canCreate] = await Promise.all([
+  const [summary, canCreate, canDelete, canUpdate] = await Promise.all([
     loadPropertiesSummary(),
     can("property.create"),
+    can("property.delete"),
+    can("property.update"),
   ]);
   return (
     <>
       <PropertiesPageHead canCreate={canCreate} />
       <PropertiesSummaryStrip summary={summary} />
-      <PropertiesPageClient />
+      <PropertiesPageClient canDelete={canDelete} canUpdate={canUpdate} />
     </>
   );
 }

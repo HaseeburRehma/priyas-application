@@ -9,6 +9,10 @@ import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { TeamUtilization } from "@/components/dashboard/TeamUtilization";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { MySelfPanel } from "@/components/dashboard/MySelfPanel";
+import { InvoiceKpiPanel } from "@/components/dashboard/InvoiceKpiPanel";
+import { loadInvoicesSummary } from "@/lib/api/invoices";
+import { loadAgingReport } from "@/lib/api/invoice-aging";
+import { can } from "@/lib/rbac/permissions";
 
 export const metadata: Metadata = { title: "Übersicht" };
 export const dynamic = "force-dynamic";
@@ -24,10 +28,14 @@ export default async function DashboardPage() {
   //   - org-level dashboard data (KPIs, today's shifts, charts)
   //   - the caller's own self-service data (only present when their
   //     auth profile has a linked employees row).
-  const [data, mySelf] = await Promise.all([
+  const [data, mySelf, canReadInvoices] = await Promise.all([
     loadDashboardData(),
     loadMySelf(),
+    can("invoice.read"),
   ]);
+  const [invoiceSummary, aging] = canReadInvoices
+    ? await Promise.all([loadInvoicesSummary(), loadAgingReport()])
+    : [null, null];
 
   return (
     <>
@@ -50,6 +58,12 @@ export default async function DashboardPage() {
           pendingCount={data.kpis.todayShifts.pendingCheckins}
         />
       </div>
+
+      {invoiceSummary && aging && (
+        <div className="mb-6">
+          <InvoiceKpiPanel summary={invoiceSummary} aging={aging.totals} />
+        </div>
+      )}
 
       {/* Secondary grid: activity feed + (team utilization stacked over
           quick actions). */}

@@ -1,13 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { routes } from "@/lib/constants/routes";
+import { ImportDialog } from "@/components/shared/ImportDialog";
 
 type Props = { canCreate: boolean };
 
 export function PropertiesPageHead({ canCreate }: Props) {
   const t = useTranslations("properties");
+  const tCommon = useTranslations("common");
+  const [importOpen, setImportOpen] = useState(false);
+  const comingSoonTitle = tCommon("comingSoon");
 
   return (
     <div className="mb-6">
@@ -28,7 +33,11 @@ export function PropertiesPageHead({ canCreate }: Props) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <button type="button" className="btn btn--ghost border border-neutral-200 bg-white">
+          <button
+            type="button"
+            onClick={() => setImportOpen(true)}
+            className="btn btn--ghost border border-neutral-200 bg-white"
+          >
             <svg
               aria-hidden
               viewBox="0 0 24 24"
@@ -43,7 +52,20 @@ export function PropertiesPageHead({ canCreate }: Props) {
             </svg>
             {t("actions.import")}
           </button>
-          <button type="button" className="btn btn--tertiary">
+          <ImportDialog
+            open={importOpen}
+            onClose={() => setImportOpen(false)}
+            endpoint="/api/properties/import"
+            templateUrl="/api/properties/import"
+            moduleName="properties"
+          />
+          <button
+            type="button"
+            disabled
+            aria-disabled="true"
+            title={comingSoonTitle}
+            className="btn btn--tertiary cursor-not-allowed opacity-50"
+          >
             <svg
               aria-hidden
               viewBox="0 0 24 24"

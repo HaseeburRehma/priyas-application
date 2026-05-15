@@ -16,6 +16,7 @@ type Props = {
 export function InviteEmployeeDialog({ open, onClose }: Props) {
   const t = useTranslations("employees.form");
   const tDialog = useTranslations("employees.dialog");
+  const tAuthRole = useTranslations("employees.authRole");
   const router = useRouter();
   const [pending, start] = useTransition();
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -27,6 +28,7 @@ export function InviteEmployeeDialog({ open, onClose }: Props) {
     weekly_hours: "40",
     hourly_rate_eur: "",
     status: "active" as "active" | "on_leave" | "inactive",
+    role: "employee" as "admin" | "dispatcher" | "employee",
     notes: "",
   });
 
@@ -66,6 +68,7 @@ export function InviteEmployeeDialog({ open, onClose }: Props) {
         hourly_rate_eur:
           form.hourly_rate_eur === "" ? "" : Number(form.hourly_rate_eur),
         status: form.status,
+        role: form.role,
         notes: form.notes,
       });
       if (!result.ok) {
@@ -186,6 +189,22 @@ export function InviteEmployeeDialog({ open, onClose }: Props) {
                 <option value="active">Active</option>
                 <option value="on_leave">On leave</option>
                 <option value="inactive">Inactive</option>
+              </select>
+            </Field>
+            <Field label={t("role")} error={errors.role}>
+              <select
+                className="input"
+                value={form.role}
+                onChange={(e) =>
+                  update(
+                    "role",
+                    e.target.value as "admin" | "dispatcher" | "employee",
+                  )
+                }
+              >
+                <option value="employee">{tAuthRole("employee")}</option>
+                <option value="dispatcher">{tAuthRole("dispatcher")}</option>
+                <option value="admin">{tAuthRole("admin")}</option>
               </select>
             </Field>
             <Field

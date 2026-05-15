@@ -4,6 +4,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import type {
   ClientCustomerType,
   ClientsListResult,
+  ClientsSortField,
 } from "@/lib/api/clients.types";
 
 export type ClientsQueryParams = {
@@ -11,7 +12,7 @@ export type ClientsQueryParams = {
   type: ClientCustomerType | "all";
   page: number;
   pageSize: number;
-  sort: "name" | "properties" | "contract_start";
+  sort: ClientsSortField;
   direction: "asc" | "desc";
 };
 

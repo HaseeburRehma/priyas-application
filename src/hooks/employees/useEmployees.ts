@@ -4,6 +4,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import type {
   EmployeesListResult,
   EmployeeRoleChip,
+  EmployeesSortField,
   EmployeeStatus,
 } from "@/lib/api/employees.types";
 
@@ -13,7 +14,7 @@ export type EmployeesQueryParams = {
   status: EmployeeStatus | "all";
   page: number;
   pageSize: number;
-  sort: "name" | "hours" | "status";
+  sort: EmployeesSortField;
   direction: "asc" | "desc";
 };
 

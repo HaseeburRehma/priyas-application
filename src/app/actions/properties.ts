@@ -17,6 +17,8 @@ async function audit(
   action: string,
   recordId: string,
   message: string,
+  before: unknown = null,
+  extra: Record<string, unknown> = {},
 ) {
   const supabase = await createSupabaseServerClient();
   const {
@@ -37,7 +39,8 @@ async function audit(
     action,
     table_name: "properties",
     record_id: recordId,
-    after: { message, meta: "via WebApp" },
+    before: before ?? null,
+    after: { message, meta: "via WebApp", ...extra },
   });
 }
 
@@ -126,6 +129,18 @@ export async function updatePropertyAction(
   }
   const input = parsed.data;
   const supabase = await createSupabaseServerClient();
+
+  // Capture pre-update snapshot so the audit row carries a real
+  // `before` diff. Without this the audit log loses half the change
+  // history (only new values land in `after`).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: beforeRow } = await ((supabase.from("properties") as any))
+    .select(
+      "client_id, name, address_line1, address_line2, postal_code, city, country, size_sqm, notes, floor, building_section, access_code, allergies, restricted_areas, safety_regulations",
+    )
+    .eq("id", input.id)
+    .maybeSingle();
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await ((supabase.from("properties") as any))
     .update({
@@ -147,7 +162,12 @@ export async function updatePropertyAction(
     })
     .eq("id", input.id);
   if (error) return { ok: false, error: error.message };
-  await audit("update", input.id, `Objekt <strong>${input.name}</strong> aktualisiert.`);
+  await audit(
+    "update",
+    input.id,
+    `Objekt <strong>${input.name}</strong> aktualisiert.`,
+    beforeRow ?? null,
+  );
   revalidatePath(routes.property(input.id));
   revalidatePath(routes.properties);
   return { ok: true, data: { id: input.id } };
@@ -165,13 +185,158 @@ export async function deletePropertyAction(
     };
   }
   const supabase = await createSupabaseServerClient();
+  // Capture pre-delete snapshot for the audit log.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: beforeRow } = await ((supabase.from("properties") as any))
+    .select("name, address_line1, postal_code, city, deleted_at")
+    .eq("id", id)
+    .maybeSingle();
   // Soft-delete: set deleted_at so RLS hides the row from normal queries.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await ((supabase.from("properties") as any))
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
-  await audit("delete", id, "Objekt entfernt.");
+  await audit("delete", id, "Objekt entfernt.", beforeRow ?? null);
   revalidatePath(routes.properties);
   return { ok: true, data: { id } };
+}
+
+/* ============================================================================
+ * Bulk actions — operate on an array of property IDs.
+ * Each returns a per-row summary so the caller can surface partial success.
+ * ========================================================================== */
+
+export type BulkActionSummary = {
+  ok: true;
+  data: {
+    ok: number;
+    failed: number;
+    /** Stable per-row errors so the UI can highlight rows on retry. */
+    errors: Array<{ id: string; error: string }>;
+  };
+};
+
+/**
+ * Bulk soft-delete (archive) properties. Iterates through the input
+ * list and mirrors `deletePropertyAction` for each. Stops early if
+ * the caller lacks `property.delete` — same permission gate as the
+ * single-item action so the rule is consistent.
+ */
+export async function bulkArchivePropertiesAction(
+  ids: string[],
+): Promise<BulkActionSummary | { ok: false; error: string }> {
+  try {
+    await requirePermission("property.delete");
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof PermissionError ? err.message : "Forbidden",
+    };
+  }
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return { ok: true, data: { ok: 0, failed: 0, errors: [] } };
+  }
+  // De-dupe + guard against absurd payload sizes.
+  const unique = Array.from(new Set(ids.filter((s) => typeof s === "string")));
+  if (unique.length > 500) {
+    return { ok: false, error: "Too many items selected (max 500)." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const errors: Array<{ id: string; error: string }> = [];
+  let success = 0;
+  const nowIso = new Date().toISOString();
+
+  for (const id of unique) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: beforeRow } = await ((supabase.from("properties") as any))
+      .select("name, address_line1, postal_code, city, deleted_at")
+      .eq("id", id)
+      .maybeSingle();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await ((supabase.from("properties") as any))
+      .update({ deleted_at: nowIso })
+      .eq("id", id);
+    if (error) {
+      errors.push({ id, error: error.message });
+      continue;
+    }
+    await audit(
+      "delete",
+      id,
+      "Objekt entfernt (Bulk-Aktion).",
+      beforeRow ?? null,
+    );
+    success += 1;
+  }
+
+  revalidatePath(routes.properties);
+  return {
+    ok: true,
+    data: { ok: success, failed: errors.length, errors },
+  };
+}
+
+/**
+ * Bulk reassign selected properties to a new client. Requires
+ * `property.update`. Each row's `client_id` is overwritten and an
+ * audit entry is logged.
+ */
+export async function bulkAssignPropertiesAction(
+  ids: string[],
+  clientId: string,
+): Promise<BulkActionSummary | { ok: false; error: string }> {
+  try {
+    await requirePermission("property.update");
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof PermissionError ? err.message : "Forbidden",
+    };
+  }
+  if (typeof clientId !== "string" || clientId.length === 0) {
+    return { ok: false, error: "Missing client_id" };
+  }
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return { ok: true, data: { ok: 0, failed: 0, errors: [] } };
+  }
+  const unique = Array.from(new Set(ids.filter((s) => typeof s === "string")));
+  if (unique.length > 500) {
+    return { ok: false, error: "Too many items selected (max 500)." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const errors: Array<{ id: string; error: string }> = [];
+  let success = 0;
+
+  for (const id of unique) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: beforeRow } = await ((supabase.from("properties") as any))
+      .select("name, client_id")
+      .eq("id", id)
+      .maybeSingle();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await ((supabase.from("properties") as any))
+      .update({ client_id: clientId })
+      .eq("id", id);
+    if (error) {
+      errors.push({ id, error: error.message });
+      continue;
+    }
+    await audit(
+      "update",
+      id,
+      `Objekt einem anderen Kunden zugewiesen (Bulk-Aktion).`,
+      beforeRow ?? null,
+      { client_id: clientId },
+    );
+    success += 1;
+  }
+
+  revalidatePath(routes.properties);
+  return {
+    ok: true,
+    data: { ok: success, failed: errors.length, errors },
+  };
 }

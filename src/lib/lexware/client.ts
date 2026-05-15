@@ -31,16 +31,39 @@ async function request<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<T> {
-  const res = await fetch(`${cfg.baseUrl}${path}`, {
-    ...init,
-    headers: {
-      "content-type": "application/json",
-      accept: "application/json",
-      authorization: `Bearer ${cfg.apiKey}`,
-      ...(init.headers ?? {}),
-    },
-    cache: "no-store",
-  });
+  // 15 s timeout. Without this an unresponsive Lexware backend stalls
+  // the server action indefinitely (no app-level limit on action runtime).
+  // AbortSignal.timeout returns a signal that auto-aborts on the deadline.
+  let res: Response;
+  try {
+    res = await fetch(`${cfg.baseUrl}${path}`, {
+      ...init,
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json",
+        authorization: `Bearer ${cfg.apiKey}`,
+        ...(init.headers ?? {}),
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (err) {
+    // The standard surfaces a TimeoutError (DOMException) for the timeout
+    // path on modern Node; older runtimes raise AbortError. Match either
+    // so the caller gets a clearer message than a generic fetch failure.
+    const isAbort =
+      err instanceof Error &&
+      (err.name === "AbortError" ||
+        err.name === "TimeoutError" ||
+        (typeof err.message === "string" && /aborted|timeout/i.test(err.message)));
+    if (isAbort) {
+      throw new LexwareError(
+        `Lexware ${init.method ?? "GET"} ${path} → timeout after 15s`,
+        504,
+      );
+    }
+    throw err;
+  }
   const text = await res.text();
   let parsed: unknown = undefined;
   if (text) {

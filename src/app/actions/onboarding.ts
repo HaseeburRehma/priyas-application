@@ -59,6 +59,9 @@ export async function onboardClientAction(
     client_id: string;
     property_id: string | null;
     org_id: string;
+    /** True when all four inserts succeeded; false when one or more
+     *  optional rows (property / service_scope) silently skipped. */
+    complete: boolean;
   }>
 > {
   try {
@@ -95,6 +98,43 @@ export async function onboardClientAction(
   const orgId = (profile as { org_id: string | null } | null)?.org_id;
   if (!orgId) return { ok: false, error: "Profile not attached to org" };
 
+  // Compensation tracker: rows we've inserted so far. If a later step
+  // fails, we soft-delete (set deleted_at = now()) them in REVERSE order:
+  //   signature → service_scope → property → client
+  // so child rows don't outlive their parents in the audit log. Soft-delete
+  // (vs hard-delete) preserves the audit trail; RLS / list queries filter
+  // `deleted_at is null` so users never see the orphans.
+  const compensations: Array<{ table: string; id: string }> = [];
+  let serviceScopeId: string | null = null;
+  let signatureId: string | null = null;
+
+  // Best-effort compensation. `clients` and `properties` have `deleted_at`,
+  // so they soft-delete cleanly. `service_scopes` and `client_signatures`
+  // don't — for those the soft-delete update fails (no column) and we fall
+  // back to a hard-delete since the row never saw daylight anyway.
+  const softDelete = async (table: string, id: string) => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await ((supabase.from(table) as any))
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await ((supabase.from(table) as any)).delete().eq("id", id);
+      }
+    } catch {
+      // Last-ditch: even compensation failed. We still surface the original
+      // error to the caller so they know the flow didn't finish.
+    }
+  };
+  const rollback = async () => {
+    // Reverse order — children first.
+    for (let i = compensations.length - 1; i >= 0; i--) {
+      const c = compensations[i]!;
+      await softDelete(c.table, c.id);
+    }
+  };
+
   // 1) Create the client row.
   const c = input.client;
   const clientRow: Record<string, unknown> = {
@@ -119,6 +159,7 @@ export async function onboardClientAction(
     .single();
   if (clientErr) return { ok: false, error: clientErr.message };
   const clientId = (clientRowResult as { id: string }).id;
+  compensations.push({ table: "clients", id: clientId });
 
   // 2) Optional: create a primary property.
   let propertyId: string | null = null;
@@ -139,43 +180,68 @@ export async function onboardClientAction(
       .single();
     if (!propErr && propRowResult) {
       propertyId = (propRowResult as { id: string }).id;
+      compensations.push({ table: "properties", id: propertyId });
     }
   }
 
   // 3) Optional: create a service scope row.
   if (input.service_preferences) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await ((supabase.from("service_scopes") as any)).insert({
-      org_id: orgId,
-      client_id: clientId,
-      service_type:
-        c.customer_type === "alltagshilfe"
-          ? "alltagshilfe"
-          : "maintenance_cleaning",
-      frequency: input.service_preferences.frequency,
-      special_notes:
-        input.service_preferences.preferred_day
-          ? `Preferred day: ${input.service_preferences.preferred_day}. ${input.service_preferences.special_notes ?? ""}`.trim()
-          : input.service_preferences.special_notes || null,
-    });
+    const { data: scopeRow, error: scopeErr } = await ((supabase.from("service_scopes") as any))
+      .insert({
+        org_id: orgId,
+        client_id: clientId,
+        service_type:
+          c.customer_type === "alltagshilfe"
+            ? "alltagshilfe"
+            : "maintenance_cleaning",
+        frequency: input.service_preferences.frequency,
+        special_notes:
+          input.service_preferences.preferred_day
+            ? `Preferred day: ${input.service_preferences.preferred_day}. ${input.service_preferences.special_notes ?? ""}`.trim()
+            : input.service_preferences.special_notes || null,
+      })
+      .select("id")
+      .single();
+    if (scopeErr) {
+      await rollback();
+      return {
+        ok: false,
+        error: `Onboarding rolled back: service scope failed (${scopeErr.message})`,
+      };
+    }
+    serviceScopeId = (scopeRow as { id: string } | null)?.id ?? null;
+    if (serviceScopeId) {
+      compensations.push({ table: "service_scopes", id: serviceScopeId });
+    }
   }
 
   // 4) Persist the digital signature.
   const sig = input.signature;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: sigErr } = await ((supabase.from("client_signatures") as any)).insert({
-    org_id: orgId,
-    client_id: clientId,
-    property_id: propertyId,
-    context: "onboarding",
-    signature_svg: sig.signature_svg,
-    signed_by_name: sig.signed_by_name,
-  });
+  const { data: sigRow, error: sigErr } = await ((supabase.from("client_signatures") as any))
+    .insert({
+      org_id: orgId,
+      client_id: clientId,
+      property_id: propertyId,
+      context: "onboarding",
+      signature_svg: sig.signature_svg,
+      signed_by_name: sig.signed_by_name,
+    })
+    .select("id")
+    .single();
   if (sigErr) {
+    // Compensate: roll back client + property + service_scope so we don't
+    // leak rows the UI can never finish.
+    await rollback();
     return {
       ok: false,
-      error: `Client created but signature failed to save: ${sigErr.message}`,
+      error: `Onboarding rolled back: signature failed (${sigErr.message})`,
     };
+  }
+  signatureId = (sigRow as { id: string } | null)?.id ?? null;
+  if (signatureId) {
+    compensations.push({ table: "client_signatures", id: signatureId });
   }
 
   await audit("clients", clientId, `Onboarded ${c.display_name}`, {
@@ -194,12 +260,20 @@ export async function onboardClientAction(
   );
 
   revalidatePath(routes.clients);
+  // `complete` = the signature landed (the only non-optional step that can
+  // still fail). Property is optional by design; if the caller supplied an
+  // address and we have a propertyId, that part is also complete.
+  const complete =
+    signatureId !== null &&
+    (input.address ? propertyId !== null : true) &&
+    (input.service_preferences ? serviceScopeId !== null : true);
   return {
     ok: true,
     data: {
       client_id: clientId,
       property_id: propertyId,
       org_id: orgId,
+      complete,
     },
   };
 }

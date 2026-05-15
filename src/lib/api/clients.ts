@@ -1,5 +1,6 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { sanitizeQ } from "@/lib/utils/postgrest-sanitize";
 import type {
   ClientCustomerType,
   ClientRow,
@@ -95,6 +96,8 @@ export async function loadClientsList(
     pageSize = 25,
     sort = "name",
     direction = "asc",
+    archived = false,
+    ids,
   } = params;
 
   let query = supabase
@@ -105,15 +108,34 @@ export async function loadClientsList(
     )
     .is("deleted_at", null);
 
+  // Bug 2 — Archived clients leak into list view. Hide archived rows by
+  // default; callers can opt in via the `archived` flag.
+  if (!archived) {
+    query = query.eq("archived", false);
+  }
+
+  // Bug 3 — Filters MUST be applied before pagination/range and the
+  // `count: "exact"` so the total reflects the filtered scope and the
+  // returned page matches the user's filtered view.
   if (q) {
     // Use ilike with the trigram fallback (the gin index in the migration).
-    const safe = q.replace(/[%_]/g, "");
-    query = query.or(
-      `display_name.ilike.%${safe}%,email.ilike.%${safe}%,phone.ilike.%${safe}%`,
-    );
+    // sanitizeQ strips PostgREST grammar chars (`,()\`) and LIKE wildcards
+    // (`%_`) so the user-supplied string can't break out of the .or()
+    // clause and inject extra filters (e.g. `,deleted_at.is.not.null`).
+    const safe = sanitizeQ(q);
+    if (safe) {
+      query = query.or(
+        `display_name.ilike.%${safe}%,email.ilike.%${safe}%,phone.ilike.%${safe}%`,
+      );
+    }
   }
   if (type && type !== "all") {
     query = query.eq("customer_type", type);
+  }
+  // `ids` constrains the universe — used by bulk-export to scope the
+  // CSV to the user's current selection.
+  if (ids && ids.length > 0) {
+    query = query.in("id", [...ids]);
   }
 
   const sortCol =
@@ -124,7 +146,8 @@ export async function loadClientsList(
         : "display_name";
   query = query.order(sortCol, { ascending: direction === "asc" });
 
-  // Pagination
+  // Pagination — applied AFTER all filters above so the page is sliced
+  // out of the filtered set, not the full table.
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
   query = query.range(from, to);
@@ -144,14 +167,14 @@ export async function loadClientsList(
   const dbRows = (data ?? []) as DbRow[];
 
   // Property counts per client. Empty list → no follow-up.
-  const ids = dbRows.map((r) => r.id);
+  const rowIds = dbRows.map((r) => r.id);
   const propsByClient = new Map<string, number>();
-  if (ids.length > 0) {
+  if (rowIds.length > 0) {
     const { data: propsRows } = await supabase
       .from("properties")
       .select("client_id")
       .is("deleted_at", null)
-      .in("client_id", ids);
+      .in("client_id", rowIds);
     for (const row of (propsRows ?? []) as Array<{ client_id: string }>) {
       propsByClient.set(
         row.client_id,
@@ -164,12 +187,12 @@ export async function loadClientsList(
   // pill). One round-trip; PostgREST will give us all matching rows.
   const contractByClient = new Map<string, ClientStatus>();
   const contractStartByClient = new Map<string, string>();
-  if (ids.length > 0) {
+  if (rowIds.length > 0) {
     const { data: contracts } = await supabase
       .from("contracts")
       .select("client_id, status, start_date")
       .is("deleted_at", null)
-      .in("client_id", ids)
+      .in("client_id", rowIds)
       .order("start_date", { ascending: false });
     for (const c of (contracts ?? []) as Array<{
       client_id: string;

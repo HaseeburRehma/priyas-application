@@ -63,7 +63,7 @@ export type TrainingHubData = {
 
 export async function loadTrainingHub(): Promise<TrainingHubData> {
   const supabase = await createSupabaseServerClient();
-  const { userId, role } = await getCurrentRole();
+  const { userId, orgId, role } = await getCurrentRole();
   const canManage = role === "admin" || role === "dispatcher";
 
   if (!userId) {
@@ -84,14 +84,20 @@ export async function loadTrainingHub(): Promise<TrainingHubData> {
     .maybeSingle();
   const myEmployeeId = (emp as { id: string } | null)?.id ?? null;
 
-  const { data: rows } = await supabase
+  // Explicit org_id filter — defence-in-depth on top of RLS plus it
+  // gives the planner the leading column. Caps + limit defend against
+  // a stray seed adding thousands of modules.
+  let modulesQuery = supabase
     .from("training_modules")
     .select(
       "id, title, description, video_url, is_mandatory, position, locale, created_at",
     )
     .is("deleted_at", null)
     .order("position", { ascending: true })
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .limit(1000);
+  if (orgId) modulesQuery = modulesQuery.eq("org_id", orgId);
+  const { data: rows } = await modulesQuery;
 
   let modules = ((rows ?? []) as unknown as TrainingModule[]).map((m) => ({
     ...m,
@@ -100,9 +106,12 @@ export async function loadTrainingHub(): Promise<TrainingHubData> {
 
   // Pull all assignments. Managers want them all; employees only need to
   // know which modules apply to them so we can filter the list.
-  const { data: assignmentRows } = await supabase
+  let assignmentsQuery = supabase
     .from("training_assignments")
-    .select("module_id, employee_id, due_date, assigned_at");
+    .select("module_id, employee_id, due_date, assigned_at")
+    .limit(1000);
+  if (orgId) assignmentsQuery = assignmentsQuery.eq("org_id", orgId);
+  const { data: assignmentRows } = await assignmentsQuery;
   const assignments =
     (assignmentRows ?? []) as unknown as TrainingAssignment[];
 

@@ -36,16 +36,31 @@ export async function GET(request: Request) {
 
   const { data: tokenRow } = await supabase
     .from("calendar_tokens")
-    .select("profile_id, org_id")
+    .select("profile_id, org_id, expires_at")
     .eq("token", token)
     .maybeSingle();
   if (!tokenRow) {
     return new NextResponse("invalid token", { status: 401 });
   }
-  const { profile_id, org_id } = tokenRow as {
+  const { profile_id, org_id, expires_at } = tokenRow as {
     profile_id: string;
     org_id: string;
+    expires_at: string | null;
   };
+  // Expiry check. NULL means "legacy token, no expiry stamped" — we honor
+  // it for backwards compatibility but log a warning so we can spot stale
+  // tokens that should be rotated to the new bounded lifetime.
+  if (expires_at !== null) {
+    const exp = new Date(expires_at);
+    if (!Number.isNaN(exp.getTime()) && exp.getTime() < Date.now()) {
+      return new NextResponse("token expired", { status: 401 });
+    }
+  } else {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[ical] legacy token without expires_at used (profile=${profile_id})`,
+    );
+  }
 
   // Touch last_used_at — best effort, don't block the response.
   void supabase

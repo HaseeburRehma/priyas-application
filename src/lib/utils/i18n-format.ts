@@ -184,6 +184,92 @@ export function formatPattern(
 }
 
 /* -------------------------------------------------------------------------
+ * Timezone helpers (Europe/Berlin)
+ * ----------------------------------------------------------------------- */
+
+/**
+ * The app's canonical display timezone. All shifts are stored in UTC in the
+ * database; UI rendering and time-math (drag-and-drop slot mapping etc.)
+ * happen in Europe/Berlin so that DE service workers see consistent local
+ * times regardless of where the browser thinks "local" is.
+ */
+export const APP_TZ = "Europe/Berlin" as const;
+
+/**
+ * Decompose a Date (interpreted as an absolute UTC instant) into its
+ * year/month/day/hour/minute/second components in the given IANA timezone.
+ * Uses `Intl.DateTimeFormat`'s `formatToParts` for the part lookup — this is
+ * an output operation (decomposing a known Date), not parsing of a string
+ * input, so it's safe to use here.
+ */
+export function getZonedParts(
+  date: Date,
+  timeZone: string = APP_TZ,
+): { year: number; month: number; day: number; hour: number; minute: number; second: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const get = (type: Intl.DateTimeFormatPartTypes): number => {
+    const p = parts.find((x) => x.type === type);
+    return p ? Number(p.value) : 0;
+  };
+  // Intl can produce "24" for the hour at midnight in hour12:false mode — normalize.
+  const rawHour = get("hour");
+  return {
+    year: get("year"),
+    month: get("month"),
+    day: get("day"),
+    hour: rawHour === 24 ? 0 : rawHour,
+    minute: get("minute"),
+    second: get("second"),
+  };
+}
+
+/**
+ * Build a UTC `Date` representing the wall-clock moment
+ * `year-month-day hour:minute:second` in the given timezone.
+ *
+ * We don't have `Intl` "reverse" for tz; instead we use the standard offset
+ * trick: form a tentative UTC date with the wall-clock components, measure
+ * how that instant *displays* in the target zone, and correct by the delta.
+ * One correction pass is enough for IANA zones (no zone has DST jumps
+ * larger than the wall-clock can express).
+ */
+export function zonedTimeToUtc(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number = 0,
+  second: number = 0,
+  timeZone: string = APP_TZ,
+): Date {
+  // Tentative: treat the components as if they were UTC.
+  const tentative = Date.UTC(year, month - 1, day, hour, minute, second);
+  const tentativeDate = new Date(tentative);
+  // What does that instant look like in the target zone?
+  const zoned = getZonedParts(tentativeDate, timeZone);
+  const zonedAsUtc = Date.UTC(
+    zoned.year,
+    zoned.month - 1,
+    zoned.day,
+    zoned.hour,
+    zoned.minute,
+    zoned.second,
+  );
+  // The difference is the zone's offset from UTC at that instant.
+  const offsetMs = zonedAsUtc - tentative;
+  return new Date(tentative - offsetMs);
+}
+
+/* -------------------------------------------------------------------------
  * Numbers / currency
  * ----------------------------------------------------------------------- */
 

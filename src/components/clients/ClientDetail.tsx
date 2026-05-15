@@ -19,7 +19,9 @@ type Props = {
 export function ClientDetail({ detail, canUpdate, canArchive }: Props) {
   const t = useTranslations("clients.detail");
   const tStatus = useTranslations("clients.status");
+  const tCommon = useTranslations("common");
   const f = useFormat();
+  const comingSoonTitle = tCommon("comingSoon");
   const formatEUR = (cents: number) => f.currencyCents(cents);
 
   const initials = detail.display_name
@@ -134,11 +136,17 @@ export function ClientDetail({ detail, canUpdate, canArchive }: Props) {
       <section className="mb-5 rounded-lg border border-neutral-100 bg-white">
         <div className="flex flex-wrap gap-1 overflow-x-auto border-b border-neutral-100 px-2 py-1.5 text-[13px]">
           <Tab active>{t("tabOverview")}</Tab>
-          <Tab count={detail.property_count}>{t("tabProperties")}</Tab>
-          <Tab>{t("tabContract")}</Tab>
-          <Tab count={3}>{t("tabInvoices")}</Tab>
-          <Tab count={6}>{t("tabDocuments")}</Tab>
-          <Tab>{t("tabHistory")}</Tab>
+          <Tab count={detail.property_count} disabledTitle={comingSoonTitle}>
+            {t("tabProperties")}
+          </Tab>
+          <Tab disabledTitle={comingSoonTitle}>{t("tabContract")}</Tab>
+          <Tab count={3} disabledTitle={comingSoonTitle}>
+            {t("tabInvoices")}
+          </Tab>
+          <Tab count={6} disabledTitle={comingSoonTitle}>
+            {t("tabDocuments")}
+          </Tab>
+          <Tab disabledTitle={comingSoonTitle}>{t("tabHistory")}</Tab>
         </div>
       </section>
 
@@ -193,16 +201,25 @@ function Tab({
   active,
   count,
   children,
+  disabledTitle,
 }: {
   active?: boolean;
   count?: number;
   children: React.ReactNode;
+  /** When set, renders the tab as disabled with this tooltip. */
+  disabledTitle?: string;
 }) {
+  const disabled = !active && !!disabledTitle;
   return (
-    <span
+    <button
+      type="button"
+      disabled={disabled}
+      aria-disabled={disabled ? "true" : undefined}
+      tabIndex={disabled ? -1 : undefined}
+      title={disabled ? disabledTitle : undefined}
       className={`relative inline-flex items-center gap-2 rounded-md px-3 py-2 ${
         active ? "text-primary-700" : "text-neutral-600"
-      }`}
+      } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
     >
       {children}
       {count !== undefined && count > 0 && (
@@ -213,7 +230,7 @@ function Tab({
       {active && (
         <span className="absolute inset-x-2 -bottom-[7px] h-0.5 rounded-full bg-primary-500" />
       )}
-    </span>
+    </button>
   );
 }
 
@@ -430,6 +447,29 @@ function KeyInformationCard({
         <Row label={t("clientId")} value={`CLT-${detail.id.slice(0, 8).toUpperCase()}`} mono />
         <Row label={t("legalForm")} value={detail.contract?.legal_form ?? "—"} />
         <Row label={t("vatNumber")} value={detail.tax_id ?? "—"} mono />
+        {/* Bug 4 — Alltagshilfe-specific fields are surfaced only when the
+            client is an Alltagshilfe customer. */}
+        {detail.customer_type === "alltagshilfe" && (
+          <>
+            <Row
+              label={t("insuranceProvider")}
+              value={detail.insurance_provider ?? "—"}
+            />
+            <Row
+              label={t("insuranceNumber")}
+              value={detail.insurance_number ?? "—"}
+              mono
+            />
+            <Row
+              label={t("careLevel")}
+              value={
+                detail.care_level
+                  ? t("careLevelN", { level: detail.care_level })
+                  : "—"
+              }
+            />
+          </>
+        )}
         <Row
           label={t("contractStart")}
           value={f.date(detail.contract?.start_date)}

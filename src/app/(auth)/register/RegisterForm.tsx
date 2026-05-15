@@ -53,11 +53,13 @@ export function RegisterForm() {
         email: values.email,
         password: values.password,
         options: {
-          // Picked up by handle_new_user() to create the profiles row.
+          // SECURITY: never send `role` or `org_id` from the client.
+          // handle_new_user() (server-side, security definer) is the sole
+          // authority on which org / role a new signup gets, otherwise
+          // anyone could promote themselves to admin by tampering with
+          // raw_user_meta_data.
           data: {
             full_name: values.fullName,
-            org_id: env.NEXT_PUBLIC_DEFAULT_ORG_ID,
-            role: "employee",
           },
           emailRedirectTo: `${env.NEXT_PUBLIC_APP_URL}/api/auth/callback?next=${encodeURIComponent(
             routes.dashboard,

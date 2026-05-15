@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { routes } from "@/lib/constants/routes";
+import { safeNext } from "@/lib/utils/safe-next";
 
 /**
  * OAuth callback handler. Supabase redirects here after Google/Apple sign-in.
@@ -13,7 +14,10 @@ import { routes } from "@/lib/constants/routes";
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const next = url.searchParams.get("next") ?? routes.dashboard;
+  // SECURITY: `next` is attacker-controlled. safeNext rejects
+  // protocol-relative payloads (`//evil.com/x`) so the redirect can't
+  // be hijacked to land on a third-party host.
+  const next = safeNext(url.searchParams.get("next"), routes.dashboard);
 
   if (code) {
     const supabase = await createSupabaseServerClient();
