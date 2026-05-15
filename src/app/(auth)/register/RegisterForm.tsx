@@ -68,18 +68,38 @@ export function RegisterForm() {
       });
 
       if (error) {
-        if (
-          error.message.toLowerCase().includes("already") ||
-          error.message.toLowerCase().includes("registered")
-        ) {
+        // Log raw error to console so it shows up in Vercel function logs
+        // and the browser console — much faster to diagnose than the
+        // generic toast on its own.
+        // eslint-disable-next-line no-console
+        console.error("[register] supabase signUp failed:", {
+          code: error.code,
+          status: error.status,
+          message: error.message,
+        });
+        const msg = (error.message ?? "").toLowerCase();
+        if (msg.includes("already") || msg.includes("registered")) {
           toast.error(t("errorEmailInUse"));
           return;
         }
-        if (error.message.toLowerCase().includes("password")) {
+        if (msg.includes("password")) {
           toast.error(t("errorWeakPassword"));
           return;
         }
-        toast.error(t("errorGeneric"));
+        if (msg.includes("redirect")) {
+          toast.error(
+            "Redirect-URL nicht zugelassen. Bitte die Vercel-Domain in Supabase → Authentication → URL Configuration eintragen.",
+          );
+          return;
+        }
+        if (msg.includes("fetch") || msg.includes("network")) {
+          toast.error(
+            "Supabase nicht erreichbar. NEXT_PUBLIC_SUPABASE_URL / ANON_KEY prüfen.",
+          );
+          return;
+        }
+        // Last resort: show the actual message instead of a useless generic.
+        toast.error(error.message || t("errorGeneric"));
         return;
       }
 

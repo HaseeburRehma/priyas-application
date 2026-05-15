@@ -8,9 +8,16 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Run on every page request except static assets, image optimisation,
-     * favicon and the auth callback route which has its own logic.
+     * Run on every page request except:
+     *   - Next.js's own static buckets (_next/static, _next/image)
+     *   - favicon
+     *   - image assets (svg/png/jpg/jpeg/gif/webp/ico)
+     *   - PWA artefacts (sw.js, manifest.webmanifest, icons/*) — these
+     *     must be served WITHOUT auth redirects. A redirect on /sw.js
+     *     trips the ServiceWorker spec's "no redirect" rule; a redirect
+     *     on the manifest returns HTML and breaks the JSON parse.
+     *   - Common bot endpoints (robots.txt, sitemap.xml)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sw\\.js|manifest\\.webmanifest|robots\\.txt|sitemap\\.xml|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

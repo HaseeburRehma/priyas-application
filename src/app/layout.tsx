@@ -60,18 +60,29 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className={`${inter.variable} ${notoTamil.variable}`}>
+    <html
+      lang={locale}
+      className={`${inter.variable} ${notoTamil.variable}`}
+      // Tell Chrome's built-in Translate to leave the React-owned tree
+      // alone. Translate rewrites text nodes in-place, which trips React's
+      // diff with "Failed to execute 'removeChild' on 'Node'" the next
+      // time the component re-renders. Our app does its own i18n via
+      // next-intl, so the browser-level translation is undesirable anyway.
+      translate="no"
+    >
       {/*
         Next 14's Metadata API emits <link rel="manifest">,
         <meta name="theme-color">, <link rel="apple-touch-icon"> etc.
         from the `metadata` and `viewport` exports above. The extra
         <meta name="mobile-web-app-capable"> tag isn't covered by the
-        Metadata API, so it's added explicitly here.
+        Metadata API, so it's added explicitly here. The Google "notranslate"
+        meta is a belt-and-braces companion to translate="no" on <html>.
       */}
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="google" content="notranslate" />
       </head>
-      <body>
+      <body className="notranslate">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>{children}</Providers>
           <ServiceWorkerRegister />

@@ -79,6 +79,34 @@ export async function loginAction(raw: unknown): Promise<LoginResult> {
     password,
   });
   if (error) {
+    // Log the underlying Supabase error to Vercel logs so we can see
+    // why login is actually failing (bad creds vs. config vs. network).
+    // The user still sees the friendly translation key — we don't leak
+    // internals to the UI.
+    // eslint-disable-next-line no-console
+    console.error("[loginAction] supabase signIn failed:", {
+      code: error.code,
+      status: error.status,
+      message: error.message,
+    });
+    // Surface configuration errors (not just bad password) so the user
+    // sees something actionable instead of "Invalid credentials" forever.
+    if (
+      error.message?.toLowerCase().includes("fetch") ||
+      error.message?.toLowerCase().includes("network") ||
+      error.status === 0
+    ) {
+      return {
+        ok: false,
+        error: "Supabase nicht erreichbar. Bitte prüfe NEXT_PUBLIC_SUPABASE_URL und Netzwerk.",
+      };
+    }
+    if (error.message?.toLowerCase().includes("email not confirmed")) {
+      return {
+        ok: false,
+        error: "E-Mail-Adresse nicht bestätigt. Bitte Bestätigungslink in der E-Mail anklicken.",
+      };
+    }
     return { ok: false, error: "auth.errorInvalid" };
   }
 
