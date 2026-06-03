@@ -8,6 +8,7 @@ import { routes } from "@/lib/constants/routes";
 import { useFormat } from "@/lib/utils/i18n-format";
 import { useInvoices } from "@/hooks/invoices/useInvoices";
 import type {
+  InvoiceRow,
   InvoicesSummary,
   InvoiceStatus,
 } from "@/lib/api/invoices.types";
@@ -240,13 +241,18 @@ export function InvoicesPage({ summary, canCreate }: Props) {
                       <td className="px-5 py-3.5 align-middle font-mono text-[12px] text-neutral-600">
                         {f.date(r.issue_date)}
                       </td>
-                      <td className="px-5 py-3.5 align-middle font-mono text-[12px] text-neutral-600">
-                        {f.date(r.due_date)}
-                        {r.days_overdue ? (
-                          <span className="ml-2 text-error-700">
-                            +{r.days_overdue}d
-                          </span>
-                        ) : null}
+                      <td className="px-5 py-3.5 align-middle text-[12px]">
+                        {/*
+                          The prototype's DUE column reads as a humanised
+                          relative-time string with semantic colour:
+                            paid → neutral grey
+                            overdue → red, "N days over"
+                            partially paid → amber, with outstanding amount
+                            future-due → amber, "In N days"
+                          The helper below collapses status + due_date +
+                          paid_amount into one display.
+                        */}
+                        <InvoiceDueCell row={r} formatEUR={formatEUR} />
                       </td>
                       <td className="px-5 py-3.5 text-right align-middle font-semibold text-neutral-800">
                         {formatEUR(r.total_cents)}
@@ -263,13 +269,7 @@ export function InvoicesPage({ summary, canCreate }: Props) {
                         </span>
                       </td>
                       <td className="px-5 py-3.5 align-middle">
-                        {r.lexware_id ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-success-50 px-2 py-0.5 text-[10px] font-semibold text-success-700">
-                            ✓ {tTable("synced")}
-                          </span>
-                        ) : (
-                          <span className="text-[12px] text-neutral-400">—</span>
-                        )}
+                        <LexwareSyncChip status={r.lexware_sync_status} />
                       </td>
                       <td className="px-5 py-3.5 align-middle">
                         <div className="flex items-center justify-end gap-1">
@@ -400,4 +400,115 @@ function Th({ children, align = "left" }: { children: React.ReactNode; align?: "
       {children}
     </th>
   );
+}
+
+/**
+ * Compact pill that reflects Lexware push state on a single invoice row.
+ * The colour mapping mirrors the project's status conventions:
+ *   - success (green)  → row successfully synced
+ *   - warning (amber) → push hasn't happened yet
+ *   - error   (red)    → at least one attempt failed
+ *   - neutral (gray)   → invoice isn't eligible for Lexware sync
+ *
+ * Wired off `invoices.lexware_sync_status`, which migration 000040
+ * derives from `lexware_id` + the row's history; no client-side
+ * recompute needed.
+ */
+function LexwareSyncChip({
+  status,
+}: {
+  status: "na" | "pending" | "synced" | "failed";
+}) {
+  const map: Record<
+    "na" | "pending" | "synced" | "failed",
+    { cls: string; label: string; mark: string }
+  > = {
+    synced:  { cls: "bg-success-50 text-success-700", label: "Synchronisiert", mark: "✓" },
+    pending: { cls: "bg-warning-50 text-warning-700", label: "Ausstehend",     mark: "…" },
+    failed:  { cls: "bg-error-50 text-error-700",     label: "Fehlgeschlagen", mark: "!" },
+    na:      { cls: "bg-neutral-100 text-neutral-500", label: "—",              mark: "" },
+  };
+  const c = map[status];
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+        c.cls,
+      )}
+      title={`Lexware: ${c.label}`}
+    >
+      {c.mark && <span aria-hidden>{c.mark}</span>}
+      {c.label}
+    </span>
+  );
+}
+
+/**
+ * Renders the "DUE" column as a coloured relative-time string per the
+ * prototype. Reads `status`, `due_date`, `total_cents`, and
+ * `paid_amount_cents` from the invoice row and picks one of:
+ *
+ *   - paid                  → neutral "Paid"
+ *   - cancelled             → neutral "—"
+ *   - partially-paid (open) → amber "Partially paid · €X outstanding"
+ *   - overdue (status flag) → red    "N days over"
+ *   - sent, due in future   → amber  "In N days"  (red when ≤ 0 too)
+ */
+function InvoiceDueCell({
+  row,
+  formatEUR,
+}: {
+  row: InvoiceRow;
+  formatEUR: (cents: number) => string;
+}) {
+  if (row.status === "paid") {
+    return <span className="text-neutral-500">Paid</span>;
+  }
+  if (row.status === "cancelled") {
+    return <span className="text-neutral-400">—</span>;
+  }
+  const outstanding = row.outstanding_cents ?? row.total_cents;
+  // Partially-paid invoices live in sent/overdue territory but with paid > 0.
+  // (We already returned early for status="paid"/"cancelled", so the
+  //  redundant status comparison TS narrows away is implicit.)
+  if (row.paid_amount_cents > 0 && outstanding > 0) {
+    return (
+      <span className="text-warning-700">
+        Partially paid · {formatEUR(outstanding)} outstanding
+      </span>
+    );
+  }
+  if (row.status === "overdue") {
+    const days = row.days_overdue ?? 0;
+    return (
+      <span className="text-error-700 font-medium">
+        {days} day{days === 1 ? "" : "s"} over
+      </span>
+    );
+  }
+  // Sent and not overdue → "In N days"
+  if (row.due_date) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(row.due_date + "T00:00:00Z");
+    const diffDays = Math.ceil(
+      (due.getTime() - today.getTime()) / (24 * 60 * 60 * 1000),
+    );
+    if (diffDays < 0) {
+      return (
+        <span className="text-error-700 font-medium">
+          {Math.abs(diffDays)} day{Math.abs(diffDays) === 1 ? "" : "s"} over
+        </span>
+      );
+    }
+    if (diffDays === 0) {
+      return <span className="text-warning-700 font-medium">Due today</span>;
+    }
+    return (
+      <span className="text-warning-700">
+        In {diffDays} day{diffDays === 1 ? "" : "s"}
+      </span>
+    );
+  }
+  return <span className="text-neutral-400">—</span>;
 }

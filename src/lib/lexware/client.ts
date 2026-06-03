@@ -201,3 +201,90 @@ export async function lexwareCreateInvoice(
     body: JSON.stringify(body),
   });
 }
+
+/* ===========================================================================
+ * Payment poll: list invoices Lexware considers paid since a cursor.
+ *
+ * Used by the nightly /api/jobs/lexware-payments-sync cron to mirror
+ * Lexware's reconciliation back into our DB. The accountant marks an
+ * invoice paid in Lexware (manually, or by importing a bank statement);
+ * the cron flips our `invoice_payments` + `invoices.status` to match.
+ * ========================================================================= */
+
+export type LexwarePaidVoucher = {
+  /** Lexware's own invoice id — globally unique across all orgs. */
+  voucherId: string;
+  /** Human-readable invoice number (matches what we pushed up). */
+  voucherNumber: string;
+  /** Contact id on Lexware's side; we already cache this on clients. */
+  contactId: string | null;
+  /** Cents (rounded). Lexware returns EUR with 2 decimals. */
+  totalCents: number;
+  /** When Lexware records the payment as cleared. ISO 8601. */
+  paidAt: string;
+  /** Optional, useful for the audit log entry. */
+  paymentMethod: string | null;
+};
+
+/**
+ * Fetch every voucher Lexware marks as fully paid that was paid since
+ * `sinceIso`. The result is paginated; we follow links until exhausted
+ * because the per-page cap is 250 and we want a definitive delta per
+ * run. Most orgs settle <50 invoices/day → one page in practice.
+ */
+export async function lexwareListPaidVouchers(
+  cfg: LexwareConfig,
+  sinceIso: string,
+): Promise<LexwarePaidVoucher[]> {
+  // Lexware Office's voucher list endpoint supports `voucherType=invoice`
+  // and `voucherStatus=paid`. `paidDateFrom` is the server-side filter.
+  // Page size 250 is Lexware's max.
+  const out: LexwarePaidVoucher[] = [];
+  let page = 0;
+  const SIZE = 250;
+  for (;;) {
+    type Page = {
+      content: Array<{
+        id: string;
+        voucherNumber: string;
+        contactId?: string;
+        totalAmount?: { netAmount?: number; grossAmount?: number };
+        paidDate?: string;
+        paymentMethod?: string;
+      }>;
+      last?: boolean;
+    };
+    const qs = new URLSearchParams({
+      voucherType: "invoice",
+      voucherStatus: "paid",
+      paidDateFrom: sinceIso,
+      page: String(page),
+      size: String(SIZE),
+    });
+    const data = await request<Page>(cfg, `/v1/voucherlist?${qs.toString()}`);
+    for (const row of data.content ?? []) {
+      // Skip rows that have neither contact nor a paidDate — they
+      // wouldn't help us reconcile and might be partial drafts.
+      if (!row.paidDate) continue;
+      // Lexware returns EUR amounts as decimals; convert to cents
+      // without floating-point loss.
+      const gross =
+        row.totalAmount?.grossAmount ?? row.totalAmount?.netAmount ?? 0;
+      const cents = Math.round(gross * 100);
+      out.push({
+        voucherId: row.id,
+        voucherNumber: row.voucherNumber ?? "",
+        contactId: row.contactId ?? null,
+        totalCents: cents,
+        paidAt: row.paidDate,
+        paymentMethod: row.paymentMethod ?? null,
+      });
+    }
+    if (data.last !== false) break;
+    page += 1;
+    // Safety cap: if Lexware ever loops (which they shouldn't), don't
+    // run the action forever.
+    if (page > 40) break;
+  }
+  return out;
+}

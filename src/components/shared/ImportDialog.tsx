@@ -198,6 +198,9 @@ export function ImportDialog({
       onClick={(e) => {
         if (e.target === e.currentTarget && stage !== "committing") onClose();
       }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && stage !== "committing") onClose();
+      }}
     >
       <div className="flex max-h-[92vh] w-full max-w-[680px] flex-col overflow-hidden rounded-t-xl border border-neutral-100 bg-white shadow-lg sm:rounded-xl">
         <header className="flex items-start justify-between gap-3 border-b border-neutral-100 px-6 pb-4 pt-5">

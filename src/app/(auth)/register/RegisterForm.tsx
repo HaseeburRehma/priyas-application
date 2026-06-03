@@ -24,6 +24,7 @@ import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
  */
 export function RegisterForm() {
   const t = useTranslations("auth");
+  const tCommon = useTranslations("common");
   const router = useRouter();
   const [showPw, setShowPw] = useState(false);
   const [submitting, startTransition] = useTransition();
@@ -301,13 +302,13 @@ export function RegisterForm() {
               }
             >
               {t("termsAccept")}{" "}
-              <a className="font-medium text-primary-600 hover:underline" href="#">
+              <button type="button" className="font-medium text-primary-600 hover:underline" aria-disabled="true" title={tCommon("comingSoon")}>
                 {t("termsLink")}
-              </a>{" "}
+              </button>{" "}
               {t("and")}{" "}
-              <a className="font-medium text-primary-600 hover:underline" href="#">
+              <button type="button" className="font-medium text-primary-600 hover:underline" aria-disabled="true" title={tCommon("comingSoon")}>
                 {t("privacyLink")}
-              </a>
+              </button>
               .
             </label>
           </div>
@@ -391,15 +392,15 @@ export function RegisterForm() {
       {/* Foot */}
       <div className="flex items-center justify-between border-t border-neutral-100 px-12 py-6 text-[11px] text-neutral-400">
         <div className="flex gap-[18px]">
-          <a className="hover:text-neutral-600" href="#">
+          <button type="button" className="hover:text-neutral-600" aria-disabled="true" title={tCommon("comingSoon")}>
             {t("footerPrivacy")}
-          </a>
-          <a className="hover:text-neutral-600" href="#">
+          </button>
+          <button type="button" className="hover:text-neutral-600" aria-disabled="true" title={tCommon("comingSoon")}>
             {t("footerTerms")}
-          </a>
-          <a className="hover:text-neutral-600" href="#">
+          </button>
+          <button type="button" className="hover:text-neutral-600" aria-disabled="true" title={tCommon("comingSoon")}>
             {t("footerImprint")}
-          </a>
+          </button>
         </div>
         <div>v1.0 · {t("secureConnection")}</div>
       </div>

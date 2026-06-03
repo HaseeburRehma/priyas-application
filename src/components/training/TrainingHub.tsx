@@ -22,12 +22,14 @@ import type {
 } from "@/lib/api/training";
 import { SignaturePad } from "@/components/onboarding/SignaturePad";
 import { useTrainingRealtime } from "@/hooks/training/useTrainingRealtime";
+import { VideoUploadField } from "./VideoUploadField";
 
 type Props = TrainingHubData;
 
 export function TrainingHub({
   myEmployeeId,
   canManage,
+  orgId,
   modules,
   progress,
   assignmentsByModule,
@@ -258,6 +260,7 @@ export function TrainingHub({
       {editor && (
         <ModuleEditor
           initial={editor === "new" ? null : editor}
+          orgId={orgId}
           onClose={() => setEditor(null)}
           onSaved={() => {
             setEditor(null);
@@ -490,10 +493,12 @@ function ModuleView({
 
 function ModuleEditor({
   initial,
+  orgId,
   onClose,
   onSaved,
 }: {
   initial: TrainingModule | null;
+  orgId: string | null;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -530,8 +535,14 @@ function ModuleEditor({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
+      role="presentation" className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
       onClick={() => !pending && onClose()}
+        // Keyboard parity for the backdrop dismiss — useEscapeToClose
+        // handles the document-level Escape; this handler keeps the
+        // div a valid interactive element for screen readers + lint.
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && !pending) onClose();
+        }}
     >
       <div
         className="w-full max-w-[560px] rounded-lg bg-white shadow-xl"
@@ -550,7 +561,7 @@ function ModuleEditor({
             <input
               className="input"
               value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
             />
           </label>
           <label className="flex flex-col gap-1.5">
@@ -563,12 +574,23 @@ function ModuleEditor({
               placeholder="https://…"
               value={form.video_url}
               onChange={(e) =>
-                setForm({ ...form, video_url: e.target.value })
+                setForm((prev) => ({ ...prev, video_url: e.target.value }))
               }
             />
             <span className="text-[11px] text-neutral-500">
               {t("videoUrlHint")}
             </span>
+            {orgId && (
+              // Direct upload to Supabase Storage. On success, writes the
+              // resulting public URL into the URL field above so the existing
+              // upsert path stays unchanged.
+              <div className="mt-2 rounded-md border border-dashed border-neutral-300 bg-neutral-50 p-3">
+                <VideoUploadField
+                  orgId={orgId}
+                  onUploaded={(url) => setForm((prev) => ({ ...prev, video_url: url }))}
+                />
+              </div>
+            )}
           </label>
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] font-medium text-neutral-700">
@@ -579,7 +601,7 @@ function ModuleEditor({
               className="input min-h-[96px]"
               value={form.description}
               onChange={(e) =>
-                setForm({ ...form, description: e.target.value })
+                setForm((prev) => ({ ...prev, description: e.target.value }))
               }
             />
           </label>
@@ -592,7 +614,7 @@ function ModuleEditor({
                 className="input"
                 value={form.locale}
                 onChange={(e) =>
-                  setForm({ ...form, locale: e.target.value })
+                  setForm((prev) => ({ ...prev, locale: e.target.value }))
                 }
               >
                 <option value="de">DE</option>
@@ -609,10 +631,7 @@ function ModuleEditor({
                 className="input"
                 value={form.position}
                 onChange={(e) =>
-                  setForm({
-                    ...form,
-                    position: Number(e.target.value),
-                  })
+                  setForm((prev) => ({ ...prev, position: Number(e.target.value), }))
                 }
               />
             </label>
@@ -621,7 +640,7 @@ function ModuleEditor({
                 type="checkbox"
                 checked={form.is_mandatory}
                 onChange={(e) =>
-                  setForm({ ...form, is_mandatory: e.target.checked })
+                  setForm((prev) => ({ ...prev, is_mandatory: e.target.checked }))
                 }
                 className="h-4 w-4"
               />
@@ -728,8 +747,14 @@ function AssignmentEditor({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
+      role="presentation" className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
       onClick={() => !pending && onClose()}
+        // Keyboard parity for the backdrop dismiss — useEscapeToClose
+        // handles the document-level Escape; this handler keeps the
+        // div a valid interactive element for screen readers + lint.
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && !pending) onClose();
+        }}
     >
       <div
         className="w-full max-w-[560px] rounded-lg bg-white shadow-xl"
@@ -885,7 +910,7 @@ function SignDialog({
       role="dialog"
       aria-modal="true"
       className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
-      onClick={() => !pending && onClose()}
+      onClick={() => !pending && onClose()} onKeyDown={(e) => { if (e.key === "Escape") (e.currentTarget as HTMLElement).click(); }}
     >
       <div
         className="w-full max-w-[560px] rounded-lg bg-white shadow-xl"

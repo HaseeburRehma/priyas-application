@@ -105,7 +105,9 @@
     "notifications": "அறிவிப்புகள்",
     "system": "அமைப்பு",
     "settings": "அமைப்புகள்",
-    "collapseSidebar": "பக்கப்பட்டியை சுருக்கு"
+    "collapseSidebar": "பக்கப்பட்டியை சுருக்கு",
+    "employeeOverview": "Employee overview",
+    "brandSubtitle": "செயல்பாடு"
   },
   "greeting": {
     "morning": "காலை வணக்கம்",
@@ -174,7 +176,8 @@
         "settings": "Settings",
         "assignments": "Assignments",
         "assignment_staff": "Assignment staff",
-        "invoice_payments": "Payments"
+        "invoice_payments": "Payments",
+        "property_keys": "Property keys"
       }
     },
     "team": {
@@ -214,7 +217,16 @@
       "openTraining": "பயிற்சியைத் திறக்கவும்",
       "upcomingTitle": "வரவிருக்கும் ஷிப்ட்கள்",
       "openSchedule": "அட்டவணையைத் திறக்கவும்"
-    }
+    },
+    "overview": "Overview",
+    "exportContains": "This overview contains",
+    "exportKpiTitle": "KPIs & Weekly Chart",
+    "exportKpiSub": "4 key figures + this week's order chart",
+    "exportPlanTitle": "Today's deployment plan",
+    "exportPlanSub": "27 missions · Crew · Status",
+    "exportActivityTitle": "Recent activity",
+    "exportActivitySub": "Audit Log · 7 days",
+    "exportSeeAll": "View all reports"
   },
   "clients": {
     "picker": {
@@ -261,7 +273,152 @@
       "careLevel": "பராமரிப்பு நிலை",
       "save": "வாடிக்கையாளரை உருவாக்கு",
       "saveError": "சேமிப்பு தோல்வியடைந்தது.",
-      "back": "பின்"
+      "back": "பின்",
+      "section": {
+        "person": "Person",
+        "address": "Address",
+        "insurance": "Insurance",
+        "servicePlan": "Service plan",
+        "other": "Other"
+      },
+      "fields": {
+        "vorname": "First name",
+        "name": "Last name",
+        "address": "Address",
+        "addressHint": "Street · ZIP · City",
+        "addressPlaceholder": "e.g. Friedrichstraße 200, 10117 Berlin",
+        "billingAddress": "Billing address",
+        "billingAddressHint": "Only fill in if different",
+        "billingDifferent": "Billing address differs",
+        "billingAddressPlaceholder": "Leave blank if identical to the address above",
+        "plz": "ZIP",
+        "city": "City",
+        "phoneHint": "Used for invoices and appointment confirmations",
+        "dateOfBirth": "Date of birth",
+        "insuranceProvider": "Health insurance",
+        "insurancePrompt": "— please select —",
+        "insuranceNumber": "Insurance number",
+        "insuranceNumberHint": "10-digit health insurance number from the insurance card",
+        "insuranceNumberPlaceholder": "e.g. A123456789",
+        "pflegegrad": "Care level",
+        "pflegegradHint": "Current notification from the long-term care insurance fund",
+        "abtretungserklaerung": "Assignment declaration available",
+        "abtretungserklaerungHint": "Required for direct billing with the health insurance",
+        "abtretungserklaerungYesTitle": "Yes, available",
+        "abtretungserklaerungYesSub": "Direct billing with health insurance possible",
+        "abtretungserklaerungNoTitle": "No, not yet",
+        "abtretungserklaerungNoSub": "Will be added during the initial consultation",
+        "rhythm": "Cleaning rhythm",
+        "estimatedHours": "Estimated effort",
+        "estimatedHoursHint": "Hours per visit",
+        "hoursPerVisitUnit": "hrs / visit",
+        "agreedRate": "Agreed hourly rate",
+        "agreedRateHint": "Net price · 19 % VAT is added automatically",
+        "agreedRatePlaceholder": "e.g. 35.00",
+        "contractStart": "Contract start",
+        "contractDocsSignedQ": "Contract documents already signed?",
+        "contractDocsSignedHint": "If not, the welcome folder will be taken along on the first consultation",
+        "contractDocsSignedYesTitle": "Yes, fully signed",
+        "contractDocsSignedYesSub": "Service can start immediately",
+        "contractDocsSignedNoTitle": "No, at first consultation",
+        "contractDocsSignedNoSub": "Welcome folder will be taken along",
+        "notes": "Other",
+        "notesAlltagshilfeLabel": "Notes, allergies, special needs",
+        "notesPriyaLabel": "Notes, special features, wishes",
+        "notesAlltagshilfePlaceholder": "e.g. limited mobility; diabetic; key with neighbor Mrs. Schmidt; hearing aid required for communication…",
+        "notesPriyaPlaceholder": "e.g. leave the key with the caretaker; allergies to cleaning products; mornings only…",
+        "pflegegradLevels": {
+          "1": "Small amount",
+          "2": "Significant",
+          "3": "Difficult",
+          "4": "Severe",
+          "5": "Severe + hardship case"
+        }
+      },
+      "sectionTitles": {
+        "contact": "Contact details",
+        "contactSub": "Person or company signing the contract",
+        "contactSubAlltagshilfe": "Person in need of care",
+        "careInsurance": "Care & Health Insurance",
+        "careInsuranceSub": "Required for the monthly performance record",
+        "service": "Cleaning service",
+        "serviceAlltagshilfe": "Care service",
+        "serviceSub": "How often and to what extent cleaning takes place",
+        "serviceSubAlltagshilfe": "Frequency and duration of visits",
+        "other": "Other",
+        "otherSub": "Internal note that only your team can see",
+        "otherAlltagshilfe": "Other & medical information"
+      },
+      "important": {
+        "title": "Important:",
+        "abtretungserklaerung": "Without a signed assignment of benefits form, we cannot bill the health insurance company directly for the care services. The client will receive a {welcomePack} containing all necessary documents during their first visit.",
+        "welcomePack": "welcome folder"
+      },
+      "actions": {
+        "back": "Back",
+        "saveDraft": "Save draft",
+        "continueConfirm": "Continue to confirmation",
+        "requiredHint": "Required fields are marked with",
+        "auditedHint": "· All entries are audit-logged",
+        "saving": "Saving…",
+        "saveDraftTitle": "Save as draft"
+      },
+      "stepper": {
+        "step": "Step",
+        "serviceType": "Service type",
+        "masterData": "Master data",
+        "masterDataAlltagshilfe": "Master data & care",
+        "confirmation": "Confirmation"
+      },
+      "banner": {
+        "priyaTitle": "Record master data",
+        "alltagsTitle": "Master data & care information",
+        "priyaTag": "Priya's · Regular cleaning",
+        "alltagsTag": "Everyday assistance · Day care",
+        "priyaSub": "These fields appear on invoices, in the deployment plan, and in the customer portal. Required fields are marked with *.",
+        "alltagsSub": "Health insurance provider, policy number and care level are required for monthly billing. Required fields are marked with *.",
+        "changeServiceType": "Change service type",
+        "headingPriya": "Create new customer",
+        "headingAlltagshilfe": "New care client",
+        "subheadPriya": "Regular cleaning · Automatic billing via Lexware · Step 2 of 3",
+        "subheadAlltagshilfe": "Day care · Manual billing via health insurance · Step 2 of 3"
+      },
+      "summary": {
+        "title": "Summary",
+        "subPriya": "The information will be transferred to the contract and the first invoice upon saving.",
+        "subAlltagshilfe": "The information will be transferred to the care contract and the first monthly report upon saving.",
+        "serviceType": "Service type",
+        "invoice": "Invoice",
+        "invoicePriya": "Automatic · Lexware",
+        "invoiceAlltagshilfe": "Manual · Health insurance",
+        "vat": "VAT",
+        "vatPriya": "19 % standard rate",
+        "vatAlltagshilfe": "exempt § 4 Nr. 16 UStG",
+        "rate": "Hourly rate",
+        "rateNone": "—",
+        "rhythm": "Rhythm",
+        "careInterval": "Care interval",
+        "careLevel": "Care level",
+        "whatHappens": "What happens after saving?",
+        "gdpr": "All data is GDPR compliant. Access is restricted to authorized care staff.",
+        "priyaChecks": [
+          "The customer appears highlighted in green in the customer list.",
+          "Lexware-Sync automatically creates a debtor account.",
+          "The first shift can be created in the deployment plan immediately.",
+          "A welcome email will be sent to {email}."
+        ],
+        "alltagsChecks": [
+          "The care recipient appears marked in red in the customer list.",
+          "Only qualified nursing staff can be assigned.",
+          "Initial consultation: {contractCheck}.",
+          "No Lexware synchronization — manual invoice.",
+          "Care level appears in the monthly report for every assignment."
+        ],
+        "contractCheckSigned": "Contract already signed — start possible immediately",
+        "contractCheckUnsigned": "Welcome folder will be taken along",
+        "priyasShort": "Priya's",
+        "alltagshilfeShort": "Everyday assistance"
+      }
     },
     "edit": {
       "title": "வாடிக்கையாளரைத் திருத்து",
@@ -624,6 +781,39 @@
       "emptyTitle": "இன்னும் படங்கள் இல்லை.",
       "emptyBody": "மேலே உள்ள பொத்தான் மூலம் பதிவேற்று.",
       "limitReached": "ஒரு சொத்துக்கு அதிகபட்சம் 20 புகைப்படங்கள் — {dropped} விடப்பட்டன."
+    },
+    "keys": {
+      "title": "Key management",
+      "subtitle": "Who holds keys or access credentials for this property.",
+      "issueNew": "Issue key",
+      "cancel": "Cancel",
+      "active": "Active ({count})",
+      "history": "History ({count})",
+      "emptyActive": "No keys currently issued.",
+      "employee": "Employee",
+      "keyLabel": "Label",
+      "keyLabelPlaceholder": "e.g. Main door, Locker 12, Alarm code",
+      "notes": "Note",
+      "issuing": "Issuing…",
+      "submit": "Issue",
+      "issueSuccess": "Key registered.",
+      "selectEmployee": "Please select an employee.",
+      "labelRequired": "Please enter a label.",
+      "stillOut": "Still out",
+      "markReturned": "Returned",
+      "delete": "Delete",
+      "returnConfirm": "Mark key as returned?",
+      "returnSuccess": "Marked as returned.",
+      "deleteConfirm": "Really delete? This breaks the audit trail.",
+      "deleteSuccess": "Entry deleted.",
+      "col": {
+        "employee": "Employee",
+        "label": "Key",
+        "issued": "Issued",
+        "returned": "Returned",
+        "notes": "Note",
+        "actions": ""
+      }
     }
   },
   "schedule": {
@@ -894,7 +1084,24 @@
       "saving": "சேமிக்கிறது…",
       "saveSuccess": "மாற்றங்கள் சேமிக்கப்பட்டன.",
       "createWithInvite": "ஊழியர் உருவாக்கப்பட்டார் — அழைப்பு மின்னஞ்சல் அனுப்பப்பட்டது.",
-      "createNoInvite": "ஊழியர் உருவாக்கப்பட்டார், அழைப்பு மின்னஞ்சல் தோல்வி ({reason})."
+      "createNoInvite": "ஊழியர் உருவாக்கப்பட்டார், அழைப்பு மின்னஞ்சல் தோல்வி ({reason}).",
+      "fields": {
+        "vorname": "First name",
+        "name": "Last name",
+        "address": "Address",
+        "plz": "ZIP",
+        "city": "City",
+        "dob": "Date of birth",
+        "nationality": "Nationality",
+        "salaryType": "Salary type",
+        "hourly": "Hourly",
+        "monthly": "Fixed salary",
+        "hourlyRate": "Hourly rate (€)",
+        "monthlySalary": "Monthly salary (€)",
+        "weeklyHours": "Weekly hours (h)",
+        "vacation": "Vacation entitlement (days/year)",
+        "contractStart": "Contract start"
+      }
     }
   },
   "reports": {
@@ -949,8 +1156,8 @@
       "perHour": "/ மணி"
     },
     "library": {
-      "title": "அறிக்கை நூலகம்",
-      "subtitle": "{count} நிலையான அறிக்கைகள் · தேவைக்கேற்ப அல்லது மீண்டும் வரும்படி திட்டமிடவும்",
+      "title": "Report Library",
+      "subtitle": "{count} standard reports · create on demand or schedule recurring reports",
       "createCustom": "சொந்த அறிக்கை உருவாக்கு",
       "createCustomComingSoon": "விரைவில் வரும்",
       "items": {
@@ -974,7 +1181,108 @@
         "satisfactionTag": "PDF",
         "exportPdf": "PDF",
         "exportCsv": "CSV"
+      },
+      "createOwn": "Create your own report",
+      "categories": {
+        "all": "All",
+        "finances": "Finances",
+        "operation": "Operation",
+        "compliance": "Compliance",
+        "planned": "{count} planned",
+        "everydayHelp": "அன்றாட உதவி"
+      },
+      "badges": {
+        "planned": "PLANNED",
+        "new": "NEW",
+        "core": "CORE"
+      },
+      "fields": {
+        "lastRun": "Last execution",
+        "format": "Format",
+        "deploymentPlan": "Deployment plan",
+        "delivery": "Delivery",
+        "rows": "Rows",
+        "customers": "Customers"
+      },
+      "actions": {
+        "createNow": "Create now",
+        "editSchedule": "Edit schedule",
+        "planFor": "Plan for"
+      },
+      "lastRunFormats": {
+        "never": "Never",
+        "today": "Today · {time}",
+        "yesterday": "Yesterday · {time}",
+        "daysAgo": "{n} days ago",
+        "weeksAgo": "{n} weeks ago",
+        "explicit": "{date}"
+      },
+      "deliveryFormats": {
+        "uponRequest": "Upon request",
+        "notSpecified": "Not specified",
+        "management": "மேலாண்மை"
+      },
+      "reports": {
+        "revenuePerCustomer": {
+          "title": "Revenue per customer",
+          "description": "Invoiced & collected amounts per client with YoY comparison and retention signal."
+        },
+        "revenuePerProperty": {
+          "title": "Revenue per property",
+          "description": "Profitability, visits, and hours per property. Underserved or overserved locations are highlighted."
+        },
+        "hoursTimeTracking": {
+          "title": "Hours & Time Tracking",
+          "description": "All employee hours including overtime, breaks, billing rate and supervisor approvals."
+        },
+        "employeePerformance": {
+          "title": "Employee performance",
+          "description": "Ratings, punctuality, completion rate and training status of all {count} employees."
+        },
+        "bankStatementPackage": {
+          "title": "Bank statement package",
+          "description": "Mass generation of account statements per customer · includes all {count} active accounts."
+        },
+        "vatReturn": {
+          "title": "VAT return",
+          "description": "Monthly preparation of the preliminary VAT return: sales, reverse charge and deductible input tax."
+        },
+        "alltagshilfeMonthly": {
+          "title": "அன்றாட உதவி — மாதாந்திர அறிக்கை",
+          "description": "ஒவ்வொரு ஊழியர் அடிப்படையில் பிரிக்கப்பட்ட வாடிக்கையாளருக்கான பராமரிப்பு மணிநேரம். சுகாதார காப்பீட்டு நிறுவனங்களுக்கு கைமுறை விலைப்பட்டியலுக்கு தயார்."
+        }
       }
+    },
+    "schedules": {
+      "title": "Next planned runs",
+      "manageBtn": "Manage schedules",
+      "tonight": "tonight",
+      "weekly": "weekly",
+      "daily": "daily",
+      "monthly": "monthly"
+    },
+    "lastExports": {
+      "title": "Last exports",
+      "filters": {
+        "all": "All",
+        "ready": "Ready",
+        "inProgress": "In Progress",
+        "mine": "Mine"
+      },
+      "thFile": "File",
+      "thCreated": "Created",
+      "thFrom": "From",
+      "thSize": "Size",
+      "thStatus": "Status",
+      "thActions": "Actions",
+      "statusReady": "READY",
+      "statusInProgress": "IN PROGRESS",
+      "statusFailed": "FAILED",
+      "actionDownload": "Download",
+      "actionCancel": "Cancel",
+      "showAll": "Show all",
+      "empty": "No exports yet. Create a report above.",
+      "retention": "Exports are kept for 24 months."
     }
   },
   "invoices": {
@@ -1065,7 +1373,12 @@
       "lexwareNotSynced": "இன்னும் ஒத்திசைக்கப்படவில்லை",
       "syncSuccess": "Lexware ஒத்திசைவு வெற்றிகரமாக",
       "markSentSuccess": "அனுப்பியதாக குறிக்கப்பட்டது",
-      "markPaidSuccess": "செலுத்தியதாக குறிக்கப்பட்டது"
+      "markPaidSuccess": "செலுத்தியதாக குறிக்கப்பட்டது",
+      "reconciliation": {
+        "attempts": "Attempts",
+        "lastAttempt": "Last attempt",
+        "errorPrefix": "Error:"
+      }
     }
   },
   "statement": {
@@ -1410,6 +1723,21 @@
       "nameRequired": "ஒரு பெயரை உள்ளிடவும் (குறைந்தது 2 எழுத்துகள்).",
       "cancel": "ரத்து",
       "create": "உருவாக்கு"
+    },
+    "realtimeHint": "Messages appear instantly for all members.",
+    "header": {
+      "course": "பாடம்",
+      "shareShift": "ஷிப்ட் பகிர்"
+    },
+    "typing": {
+      "one": "{name} தட்டச்சு செய்கிறார்…",
+      "two": "{a} மற்றும் {b} தட்டச்சு செய்கிறார்கள்…",
+      "many": "{a}, {b} மற்றும் {n} பேர் தட்டச்சு செய்கிறார்கள்…"
+    },
+    "shiftCard": {
+      "shiftLabel": "ஷிப்ட் #{id}",
+      "visitLabel": "வருகை #{id}",
+      "openInSchedule": "திட்டத்தில் திற"
     }
   },
   "damage": {
@@ -1637,6 +1965,16 @@
     "errors": {
       "signatureRequired": "இந்த கட்டாய மாட்யூலை முடிக்க கையெழுத்து தேவை.",
       "signatureTooLarge": "கையெழுத்து மிகப் பெரியது. தயவுசெய்து எளிமையான கையெழுத்துடன் மீண்டும் முயற்சிக்கவும்."
+    },
+    "modules": {
+      "upload": {
+        "hint": "Or upload a video file directly (max. {mb} MB)",
+        "uploading": "Uploading… {pct}%",
+        "success": "Video uploaded — URL applied.",
+        "failed": "Upload failed: {msg}",
+        "notVideo": "Only video files are accepted.",
+        "tooLarge": "File too large (max. {mb} MB)."
+      }
     }
   },
   "alltagshilfeReport": {
@@ -1674,7 +2012,43 @@
     "colHours": "மணிநேரங்கள்",
     "colRate": "கட்டணம்",
     "colAmount": "தொகை",
-    "emptyMonth": "{month} இல் Alltagshilfe பணிமாற்றங்கள் இல்லை."
+    "emptyMonth": "{month} இல் Alltagshilfe பணிமாற்றங்கள் இல்லை.",
+    "byEmployeeTitle": "ஒவ்வொரு ஊழியருக்கான மணிநேரம்",
+    "byEmployeeSubtitle": "அறிக்கைக் காலத்தில் அனைத்து வாடிக்கையாளர்களையும் சேர்த்து",
+    "byEmployeeCustomersN": "{n, plural, =1 {# வாடிக்கையாளர்} other {# வாடிக்கையாளர்கள்}}",
+    "byEmployeeVisitsN": "{n, plural, =1 {# வருகை} other {# வருகைகள்}}",
+    "byEmployeeEmpty": "இந்த மாதம் வருகை எதுவும் இல்லை.",
+    "deliveryTitle": "அனுப்புதல்",
+    "deliveryDescription": "ஒவ்வொரு மாதத்தின் 1ஆம் தேதி இந்த அறிக்கை மேலாண்மைக்கு தானாக மின்னஞ்சல் மூலம் அனுப்பப்படும். Lexware ஒத்திசைவு நிகழாது.",
+    "deliveryStatus": "நிலை",
+    "deliveryRecipient": "பெறுநர்",
+    "deliveryFormat": "வடிவம்",
+    "deliveryLexwareSync": "Lexware ஒத்திசைவு",
+    "deliveryLexwareSkipped": "தவிர்க்கப்பட்டது · கைமுறை விலைப்பட்டியல்",
+    "deliveryNextVersion": "அடுத்த பதிப்பு",
+    "deliveryStatusSent": "அனுப்பப்பட்டது",
+    "deliveryStatusQueued": "வரிசையில்",
+    "deliveryStatusFailed": "தோல்வி",
+    "deliveryStatusManualSkipped": "கைமுறையாக தவிர்க்கப்பட்டது",
+    "deliveryStatusNever": "இன்னும் அனுப்பப்படவில்லை",
+    "actionResend": "மீண்டும் அனுப்பு",
+    "actionCreateInvoice": "கைமுறை விலைப்பட்டியல் உருவாக்கு",
+    "actionSendingShort": "அனுப்புகிறது…",
+    "toastSendOk": "அறிக்கை {recipient}-க்கு அனுப்பப்பட்டது.",
+    "toastSendFail": "அனுப்புதல் தோல்வி: {error}",
+    "footerLine": "தானாக உருவாக்கப்பட்டது · மாத இறுதி {dateLabel} · மின்னஞ்சல் மூலம் மேலாண்மைக்கு",
+    "everydayHelpModule": "அன்றாட உதவி தொகுதி v1.0 · இந்த அறிக்கையிலிருந்து கைமுறையாக விலைப்பட்டியல்கள் உருவாக்கப்பட்டு ஒவ்வொரு வாடிக்கையாளரின் சுகாதார காப்பீட்டு நிறுவனத்திற்கும் அனுப்பப்படுகின்றன.",
+    "careLevelPill": "பராமரிப்பு நிலை {level} · {desc}",
+    "careLevelDesc1": "லேசான",
+    "careLevelDesc2": "முக்கியமான",
+    "careLevelDesc3": "கடுமையான",
+    "careLevelDesc4": "மிகக்கடுமையான",
+    "careLevelDesc5": "சிறப்பு வழக்கு",
+    "rhythmWeekly": "வாரத்திற்கு ஒருமுறை",
+    "rhythmBiweekly": "2 வாரங்களுக்கு ஒருமுறை",
+    "rhythmMonthly": "மாதந்தோறும்",
+    "rhythmOnDemand": "கேள்வியின் பேரில்",
+    "totalRowLabel": "மொத்தம் · {month}"
   },
   "import": {
     "title": "{module}-ஐ CSV இலிருந்து இறக்குமதி செய்யவும்",
@@ -1810,6 +2184,24 @@
       "value": "Value",
       "total": "Total",
       "noStaff": "No staff assigned yet."
+    },
+    "page": {
+      "ordersBreadcrumb": "Assignments",
+      "plannedHours": "Planned hours",
+      "hourlyRate": "Hourly rate",
+      "periodTotal": "Period total",
+      "varianceLabel": "Variance (30 days)",
+      "varianceMore": "More",
+      "varianceLess": "Less",
+      "staffDistribution": "Staff distribution (last 30 days)",
+      "thEmployee": "Employee",
+      "thPlanned": "Planned",
+      "thActual": "Recorded",
+      "thVariance": "Variance",
+      "thAmount": "Value",
+      "noStaff": "No employees assigned yet.",
+      "total": "Total",
+      "client": "Client:"
     }
   },
   "alltagshilfeBudget": {
@@ -1904,5 +2296,95 @@
       "90_plus": "90+"
     },
     "bucketCount": "{count} inv."
+  },
+  "employeeOverview": {
+    "breadcrumb": {
+      "dashboard": "Overview",
+      "current": "Employee overview"
+    },
+    "title": "Employee overview",
+    "subtitle": "HR view of the entire team — utilization, attendance, certificates & training at a glance",
+    "asOf": "As of {stamp}",
+    "export": "Export",
+    "fullList": "Full list",
+    "newEmployee": "New employee",
+    "kpi": {
+      "active": {
+        "label": "Active employees",
+        "sub": "+{n} this month"
+      },
+      "inUseToday": {
+        "label": "In use today",
+        "sub": "{n} free or late shift"
+      },
+      "occupancy": {
+        "label": "Average occupancy",
+        "subUp": "+{pp} pp vs previous week",
+        "subDown": "−{pp} pp vs previous week"
+      },
+      "certificates": {
+        "label": "Certificates due",
+        "sub": "in the next 90 days"
+      },
+      "onboarding": {
+        "label": "Onboarding open",
+        "subEmpty": "—"
+      }
+    },
+    "today": {
+      "title": "Today · {date}",
+      "openPlan": "Open in deployment plan",
+      "inUseNow": "In use · now",
+      "laterToday": "Later today",
+      "freeToday": "Free today",
+      "vacationSick": "Vacation · Sick",
+      "serviceDistribution": "Service distribution today"
+    },
+    "workload": {
+      "title": "Team workload this week",
+      "showing": "Showing {n} of {total}",
+      "empty": "No active employees."
+    },
+    "attendance": {
+      "title": "Attendance · this month",
+      "punctuality": "Punctuality",
+      "legend": {
+        "present": "Present and on time",
+        "delayed": "Delayed",
+        "onHoliday": "On holiday",
+        "sick": "Reported sick"
+      }
+    },
+    "certificates": {
+      "title": "Certificates & Training — Renewals due",
+      "seeAll": "Show all",
+      "empty": "No renewals due in the next 4 months.",
+      "validUntil": "Valid until {date}",
+      "dueIn": "Due in {days} days"
+    },
+    "events": {
+      "title": "Personnel events · last 7 days",
+      "empty": "No events in the last 7 days."
+    }
+  },
+  "dashboardExt": {
+    "weeklyChartTitle": "Weekly orders",
+    "invoiceOverdue": "Overdue"
+  },
+  "monthlyReportEmail": {
+    "subject": "மாதாந்திர அறிக்கை — அன்றாட உதவி — {period}",
+    "greeting": "வணக்கம் குழுவே,",
+    "intro": "{period} காலத்திற்கான தானாக உருவாக்கப்பட்ட அன்றாட உதவி மாதாந்திர அறிக்கை இணைக்கப்பட்டுள்ளது.",
+    "statsLabel": "ஒரே பார்வையில்",
+    "hoursLabel": "மொத்த பராமரிப்பு மணிநேரம்",
+    "customersLabel": "சேவை அளித்த வாடிக்கையாளர்கள்",
+    "staffLabel": "பங்கேற்ற ஊழியர்கள்",
+    "amountLabel": "வசூல் தொகை",
+    "attachmentsLine": "PDF + CSV இணைக்கப்பட்டுள்ளது. தயவுசெய்து ஒவ்வொரு சுகாதார காப்பீட்டு நிறுவனத்திற்கும் Lexware-இல் கைமுறையாக விலைப்பட்டியல்களை உருவாக்கவும்.",
+    "nextActionTitle": "அடுத்த படிகள்",
+    "nextActionBody": "1) அறிக்கையை மதிப்பாய்வு செய்யவும், 2) ஒவ்வொரு காப்பீட்டு நிறுவனத்திற்கும் Lexware-இல் ஒரு விலைப்பட்டியலை கைமுறையாக உருவாக்கவும், 3) ஒவ்வொரு Pflegekasse-க்கும் அனுப்பவும்.",
+    "closing": "ஏதேனும் கேள்வி இருந்தால் இந்த மின்னஞ்சலுக்கு பதிலளிக்கவும்.",
+    "signature": "— Priya's செயல்பாட்டு அமைப்பு",
+    "footerNote": "இந்த மின்னஞ்சல் தானாக உருவாக்கப்பட்டது. ஒரு நகல் தணிக்கை பதிவில் சேமிக்கப்பட்டுள்ளது."
   }
 }

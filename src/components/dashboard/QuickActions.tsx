@@ -1,13 +1,23 @@
 "use client";
 
 import Link from "next/link";
+import type { Route } from "next";
 import { useTranslations } from "next-intl";
 import { routes } from "@/lib/constants/routes";
 
 export function QuickActions() {
   const t = useTranslations("dashboard.quickActions");
 
-  const items = [
+  const items: Array<{
+    /** `Route` is Next's typed-routes constraint — same value `routes`
+     *  helpers return, so this entry can be passed straight to `<Link>`. */
+    href: Route;
+    title: string;
+    sub: string;
+    icon: React.ReactNode;
+    /** Shows the prototype's NEW badge on freshly-launched actions. */
+    isNew?: boolean;
+  }> = [
     {
       href: routes.clientNew,
       title: t("addClient"),
@@ -33,6 +43,9 @@ export function QuickActions() {
       href: routes.invoices,
       title: t("generateInvoice"),
       sub: t("generateInvoiceSub"),
+      // NEW badge — the invoice drafting/Lexware flow just shipped, so
+      // dashboard surfaces it more prominently for the operations team.
+      isNew: true,
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
@@ -63,18 +76,28 @@ export function QuickActions() {
         </div>
       </header>
       <div className="grid grid-cols-2 gap-2.5 p-5">
-        {items.map((item, i) => (
+        {items.map((item) => (
           <Link
-            key={i}
+            key={String(item.href)}
             href={item.href}
-            className="flex items-center gap-2.5 rounded-md border border-neutral-100 bg-white p-3.5 transition hover:-translate-y-0.5 hover:border-primary-300 hover:bg-tertiary-200"
+            className="relative flex items-center gap-2.5 rounded-md border border-neutral-100 bg-white p-3.5 transition hover:-translate-y-0.5 hover:border-primary-300 hover:bg-tertiary-200"
           >
             <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-md bg-primary-50 text-primary-600 [&_svg]:h-4 [&_svg]:w-4">
               {item.icon}
             </span>
-            <span className="min-w-0">
-              <span className="block truncate text-[12px] font-medium text-neutral-700">
-                {item.title}
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-1.5">
+                <span className="truncate text-[12px] font-medium text-neutral-700">
+                  {item.title}
+                </span>
+                {item.isNew && (
+                  <span
+                    className="rounded-full bg-primary-500 px-1.5 py-px text-[8px] font-bold uppercase tracking-[0.06em] text-white"
+                    title="Neu"
+                  >
+                    NEU
+                  </span>
+                )}
               </span>
               <span className="mt-px block truncate text-[10px] text-neutral-400">
                 {item.sub}

@@ -22,6 +22,7 @@ export type {
   InvoiceKind,
   InvoiceEmailStatus,
   ExportTarget,
+  LexwareSyncStatus,
   InvoicesListParams,
   InvoicesListResult,
   InvoicesSummary,
@@ -114,8 +115,8 @@ export async function loadInvoicesList(
     .from("invoices")
     .select(
       `id, invoice_number, status, invoice_kind, issue_date, due_date, total_cents,
-       paid_amount_cents, paid_at, lexware_id, email_status, client_id,
-       client:clients ( id, display_name )`,
+       paid_amount_cents, paid_at, lexware_id, lexware_sync_status, email_status,
+       client_id, client:clients ( id, display_name )`,
       { count: "exact" },
     )
     .is("deleted_at", null);
@@ -150,6 +151,7 @@ export async function loadInvoicesList(
     paid_amount_cents: number | null;
     paid_at: string | null;
     lexware_id: string | null;
+    lexware_sync_status: "na" | "pending" | "synced" | "failed";
     email_status:
       | "pending" | "queued" | "sent" | "delivered" | "bounced" | "failed";
     client_id: string;
@@ -180,6 +182,7 @@ export async function loadInvoicesList(
       outstanding_cents: Math.max(0, total - paid),
       paid_at: r.paid_at,
       lexware_id: r.lexware_id,
+      lexware_sync_status: r.lexware_sync_status,
       email_status: r.email_status,
       days_overdue,
     };
@@ -193,7 +196,9 @@ export async function loadInvoiceDetail(id: string): Promise<InvoiceDetail | nul
     .from("invoices")
     .select(
       `id, invoice_number, status, invoice_kind, issue_date, due_date, paid_at, notes,
-       pdf_path, lexware_id, subtotal_cents, tax_cents, total_cents, paid_amount_cents,
+       pdf_path, lexware_id, lexware_sync_status, lexware_last_attempt_at,
+       lexware_last_error, lexware_attempts,
+       subtotal_cents, tax_cents, total_cents, paid_amount_cents,
        period_start, period_end, email_status, email_sent_at, export_target,
        client:clients (
          id, display_name, customer_type, email, billing_email, phone, tax_id,
@@ -215,6 +220,10 @@ export async function loadInvoiceDetail(id: string): Promise<InvoiceDetail | nul
     notes: string | null;
     pdf_path: string | null;
     lexware_id: string | null;
+    lexware_sync_status: "na" | "pending" | "synced" | "failed";
+    lexware_last_attempt_at: string | null;
+    lexware_last_error: string | null;
+    lexware_attempts: number;
     subtotal_cents: number | null;
     tax_cents: number | null;
     total_cents: number | null;
@@ -292,6 +301,10 @@ export async function loadInvoiceDetail(id: string): Promise<InvoiceDetail | nul
     notes: r.notes,
     pdf_path: r.pdf_path,
     lexware_id: r.lexware_id,
+    lexware_sync_status: r.lexware_sync_status,
+    lexware_last_attempt_at: r.lexware_last_attempt_at,
+    lexware_last_error: r.lexware_last_error,
+    lexware_attempts: Number(r.lexware_attempts ?? 0),
     subtotal_cents: Number(r.subtotal_cents ?? 0),
     tax_cents: Number(r.tax_cents ?? 0),
     total_cents: Number(r.total_cents ?? 0),

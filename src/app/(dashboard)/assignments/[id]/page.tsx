@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { PermissionError, requirePermission } from "@/lib/rbac/permissions";
+import { can } from "@/lib/rbac/permissions";
 import { routes } from "@/lib/constants/routes";
 import { loadAssignmentDetail } from "@/lib/api/assignments";
 import { formatEUR } from "@/lib/billing/money";
@@ -15,12 +15,7 @@ export default async function Page({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  try {
-    await requirePermission("property.read");
-  } catch (err) {
-    if (err instanceof PermissionError) redirect(routes.dashboard);
-    throw err;
-  }
+  if (!(await can("property.read"))) redirect(routes.dashboard);
   const detail = await loadAssignmentDetail(id);
   if (!detail) notFound();
 

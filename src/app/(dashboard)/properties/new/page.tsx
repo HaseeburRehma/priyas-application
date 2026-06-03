@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requirePermission, PermissionError } from "@/lib/rbac/permissions";
+import { can } from "@/lib/rbac/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { routes } from "@/lib/constants/routes";
 import { PropertyForm } from "@/components/properties/PropertyForm";
@@ -7,12 +7,7 @@ import { PropertyForm } from "@/components/properties/PropertyForm";
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  try {
-    await requirePermission("property.create");
-  } catch (err) {
-    if (err instanceof PermissionError) redirect(routes.properties);
-    throw err;
-  }
+  if (!(await can("property.create"))) redirect(routes.properties);
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("clients")

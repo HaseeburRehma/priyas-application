@@ -60,6 +60,35 @@ export default async function DashboardLayout({
     if (!verified) redirect(routes.setup2fa);
   }
 
+  // Spec §4.9 + client feedback (May 18) — new field staff must finish a
+  // mandatory training-video sequence before the system unlocks. The
+  // employees row holds `system_unlocked_at`; while it's NULL and any
+  // mandatory module is still pending, every dashboard request bounces
+  // them to /onboard/videos. Managers and existing employees (backfilled
+  // to a non-null timestamp by migration 000039) skip this gate.
+  if (profile?.role === "employee") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: empRow } = await ((supabase.from("employees") as any))
+      .select("id, system_unlocked_at")
+      .eq("profile_id", user.id)
+      .maybeSingle();
+    const emp = empRow as
+      | { id: string; system_unlocked_at: string | null }
+      | null;
+    if (emp && emp.system_unlocked_at == null) {
+      // The RPC was added in migration 000039 — Supabase's generated
+      // types may not include it until the next `supabase gen types`
+      // regen. Cast through `unknown` so the call typechecks while the
+      // types catch up.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: outstandingRaw } = await (supabase.rpc as any)(
+        "employee_has_outstanding_mandatory_training",
+        { p_employee_id: emp.id },
+      );
+      if (outstandingRaw === true) redirect(routes.onboardVideos);
+    }
+  }
+
   const fullName = profile?.full_name ?? user.email ?? "User";
   const role = profile?.role ?? "—";
   const initials = fullName

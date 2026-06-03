@@ -316,7 +316,7 @@ function TaxSection({ data, canEdit }: { data: SettingsData; canEdit: boolean })
             type="number"
             className="input"
             value={form.vatRate}
-            onChange={(e) => setForm({ ...form, vatRate: e.target.value })}
+            onChange={(e) => setForm((prev) => ({ ...prev, vatRate: e.target.value }))}
             disabled={!canEdit}
           />
         </Field>
@@ -324,7 +324,7 @@ function TaxSection({ data, canEdit }: { data: SettingsData; canEdit: boolean })
           <input
             className="input"
             value={form.currency}
-            onChange={(e) => setForm({ ...form, currency: e.target.value })}
+            onChange={(e) => setForm((prev) => ({ ...prev, currency: e.target.value }))}
             disabled={!canEdit}
           />
         </Field>
@@ -332,7 +332,7 @@ function TaxSection({ data, canEdit }: { data: SettingsData; canEdit: boolean })
           <input
             className="input"
             value={form.invoicePrefix}
-            onChange={(e) => setForm({ ...form, invoicePrefix: e.target.value })}
+            onChange={(e) => setForm((prev) => ({ ...prev, invoicePrefix: e.target.value }))}
             disabled={!canEdit}
           />
         </Field>
@@ -341,7 +341,7 @@ function TaxSection({ data, canEdit }: { data: SettingsData; canEdit: boolean })
             type="number"
             className="input"
             value={form.paymentTerms}
-            onChange={(e) => setForm({ ...form, paymentTerms: e.target.value })}
+            onChange={(e) => setForm((prev) => ({ ...prev, paymentTerms: e.target.value }))}
             disabled={!canEdit}
           />
         </Field>
@@ -351,7 +351,7 @@ function TaxSection({ data, canEdit }: { data: SettingsData; canEdit: boolean })
             step="0.01"
             className="input"
             value={form.lateFee}
-            onChange={(e) => setForm({ ...form, lateFee: e.target.value })}
+            onChange={(e) => setForm((prev) => ({ ...prev, lateFee: e.target.value }))}
             disabled={!canEdit}
           />
         </Field>
@@ -585,7 +585,7 @@ function LocaleSection({
           <select
             className="input"
             value={form.language}
-            onChange={(e) => setForm({ ...form, language: e.target.value })}
+            onChange={(e) => setForm((prev) => ({ ...prev, language: e.target.value }))}
             disabled={!canEdit}
           >
             <option value="de">Deutsch</option>
@@ -597,7 +597,7 @@ function LocaleSection({
           <input
             className="input"
             value={form.timezone}
-            onChange={(e) => setForm({ ...form, timezone: e.target.value })}
+            onChange={(e) => setForm((prev) => ({ ...prev, timezone: e.target.value }))}
             disabled={!canEdit}
           />
         </Field>
@@ -605,7 +605,7 @@ function LocaleSection({
           <select
             className="input"
             value={form.weekStart}
-            onChange={(e) => setForm({ ...form, weekStart: e.target.value })}
+            onChange={(e) => setForm((prev) => ({ ...prev, weekStart: e.target.value }))}
             disabled={!canEdit}
           >
             <option value="monday">Monday</option>
@@ -616,7 +616,7 @@ function LocaleSection({
           <input
             className="input"
             value={form.currency}
-            onChange={(e) => setForm({ ...form, currency: e.target.value })}
+            onChange={(e) => setForm((prev) => ({ ...prev, currency: e.target.value }))}
             disabled={!canEdit}
           />
         </Field>
@@ -624,7 +624,7 @@ function LocaleSection({
           <input
             className="input"
             value={form.dateFormat}
-            onChange={(e) => setForm({ ...form, dateFormat: e.target.value })}
+            onChange={(e) => setForm((prev) => ({ ...prev, dateFormat: e.target.value }))}
             disabled={!canEdit}
           />
         </Field>

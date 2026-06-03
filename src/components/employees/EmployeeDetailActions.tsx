@@ -307,6 +307,12 @@ function RoleDialog({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
+      onKeyDown={(e) => {
+        // Keyboard parity for the backdrop dismiss. We re-dispatch the
+        // click on the same element so the existing onClick logic
+        // (which checks e.target === e.currentTarget) runs unchanged.
+        if (e.key === "Escape") (e.currentTarget as HTMLElement).click();
+      }}
     >
       <div className="flex max-h-[92vh] w-full max-w-[480px] flex-col overflow-hidden rounded-t-xl border border-neutral-100 bg-white shadow-lg sm:rounded-xl">
         <header className="flex items-start justify-between gap-3 border-b border-neutral-100 px-6 pb-4 pt-5">
@@ -454,6 +460,12 @@ function EditDialog({
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-6"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
+      }}
+      onKeyDown={(e) => {
+        // Keyboard parity for the backdrop dismiss. We re-dispatch the
+        // click on the same element so the existing onClick logic
+        // (which checks e.target === e.currentTarget) runs unchanged.
+        if (e.key === "Escape") (e.currentTarget as HTMLElement).click();
       }}
     >
       <div className="flex max-h-[92vh] w-full max-w-[640px] flex-col overflow-hidden rounded-t-xl border border-neutral-100 bg-white shadow-lg sm:rounded-xl">

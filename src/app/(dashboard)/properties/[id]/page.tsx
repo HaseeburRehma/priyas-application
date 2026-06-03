@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { loadPropertyDetail } from "@/lib/api/properties";
 import { loadDamageReportsForProperty } from "@/lib/api/damage";
 import { loadClosuresForProperty } from "@/lib/api/property-closures";
+import { loadPropertyKeys } from "@/lib/api/property-keys";
 import { can, getCurrentRole, requireRoute } from "@/lib/rbac/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PropertyDetail } from "@/components/properties/PropertyDetail";
@@ -10,6 +11,7 @@ import { PropertyPhotosCard } from "@/components/properties/PropertyPhotosCard";
 import { DamageReportsCard } from "@/components/properties/DamageReportsCard";
 import { ClosuresCard } from "@/components/properties/ClosuresCard";
 import { CleaningConceptCard } from "@/components/properties/CleaningConceptCard";
+import { PropertyKeysCard } from "@/components/properties/PropertyKeysCard";
 
 export const metadata: Metadata = { title: "Objektdetails" };
 export const dynamic = "force-dynamic";
@@ -34,56 +36,77 @@ export default async function Page({
       can("damage.resolve"),
     ]);
 
-  // Photos with signed URLs (private bucket).
-  const supabase = await createSupabaseServerClient();
-  const { orgId } = await getCurrentRole();
-  const { data: photoRows } = await supabase
-    .from("property_photos")
-    .select("id, storage_path, caption, created_at")
-    .eq("property_id", id)
-    .order("created_at", { ascending: false })
-    .limit(40);
+  // ---- Independent server fetches, parallelised ---------------------------
+  // `createSupabaseServerClient` and the rest of the loaders below don't
+  // depend on each other. Awaiting them serially caused the property page
+  // to waterfall through 5+ round-trips (~600-900ms in dev). With
+  // Promise.all the tail latency drops to the slowest individual query.
+  const [supabase, { orgId }, damageReports, closures, keys] = await Promise.all([
+    createSupabaseServerClient(),
+    getCurrentRole(),
+    loadDamageReportsForProperty(id),
+    loadClosuresForProperty(id),
+    loadPropertyKeys(id),
+  ]);
 
+  // ---- Fetches that depend on `supabase` (the client handle) --------------
   type PhotoRow = {
     id: string;
     storage_path: string;
     caption: string | null;
     created_at: string;
   };
+  const [{ data: photoRows }, { data: empRows }] = await Promise.all([
+    supabase
+      .from("property_photos")
+      .select("id, storage_path, caption, created_at")
+      .eq("property_id", id)
+      .order("created_at", { ascending: false })
+      .limit(40),
+    supabase
+      .from("employees")
+      .select("id, full_name")
+      .is("deleted_at", null)
+      .eq("status", "active")
+      .order("full_name", { ascending: true }),
+  ]);
+  const keyEmployees = (empRows ?? []) as Array<{ id: string; full_name: string }>;
+
+  // Signed URLs for every photo path in parallel (one round-trip per path).
+  const photoRowList = (photoRows ?? []) as PhotoRow[];
   const photos: Array<{
     id: string;
     storage_path: string;
     caption: string | null;
     created_at: string;
     signedUrl: string | null;
-  }> = [];
-  for (const p of (photoRows ?? []) as PhotoRow[]) {
-    const { data: signed } = await supabase.storage
-      .from("property-photos")
-      .createSignedUrl(p.storage_path, 60 * 30);
-    photos.push({
-      ...p,
-      signedUrl: signed?.signedUrl ?? null,
-    });
-  }
+  }> = await Promise.all(
+    photoRowList.map(async (p) => {
+      const { data: signed } = await supabase.storage
+        .from("property-photos")
+        .createSignedUrl(p.storage_path, 60 * 30);
+      return { ...p, signedUrl: signed?.signedUrl ?? null };
+    }),
+  );
 
-  // Damage reports + signed URLs for any attached damage photos.
-  const damageReports = await loadDamageReportsForProperty(id);
-  const damageSignedUrls: Record<string, string | null> = {};
+  // Damage photos: same idea — parallel signed-URL requests on the unique
+  // path set, then assembled into the lookup map.
   const allDamagePaths = Array.from(
     new Set(damageReports.flatMap((r) => r.photo_paths)),
   );
-  for (const p of allDamagePaths) {
-    const { data: signed } = await supabase.storage
-      .from("property-photos")
-      .createSignedUrl(p, 60 * 30);
-    damageSignedUrls[p] = signed?.signedUrl ?? null;
-  }
+  const damageEntries = await Promise.all(
+    allDamagePaths.map(async (p) => {
+      const { data: signed } = await supabase.storage
+        .from("property-photos")
+        .createSignedUrl(p, 60 * 30);
+      return [p, signed?.signedUrl ?? null] as const;
+    }),
+  );
+  const damageSignedUrls: Record<string, string | null> = Object.fromEntries(
+    damageEntries,
+  );
 
-  // Closures
-  const closures = await loadClosuresForProperty(id);
-
-  // Signed URL for the cleaning concept PDF (if any).
+  // Cleaning concept PDF — independent again.
   let cleaningConceptUrl: string | null = null;
   if (detail.cleaning_concept_path) {
     const { data: signed } = await supabase.storage
@@ -132,6 +155,15 @@ export default async function Page({
           signedUrlsByPath={damageSignedUrls}
           canCreate={canDamageCreate}
           canResolve={canDamageResolve}
+        />
+      </div>
+      <div className="mt-5">
+        <PropertyKeysCard
+          propertyId={detail.id}
+          keys={keys}
+          employees={keyEmployees}
+          canEdit={canUpdate}
+          canDelete={canDelete}
         />
       </div>
     </>

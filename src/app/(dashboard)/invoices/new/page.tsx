@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { PermissionError, requirePermission } from "@/lib/rbac/permissions";
+import { can } from "@/lib/rbac/permissions";
 import { routes } from "@/lib/constants/routes";
 import { NewInvoiceWizard } from "@/components/invoices/NewInvoiceWizard";
 
@@ -17,12 +17,7 @@ type ClientOption = {
 };
 
 export default async function Page() {
-  try {
-    await requirePermission("invoice.create");
-  } catch (err) {
-    if (err instanceof PermissionError) redirect(routes.invoices);
-    throw err;
-  }
+  if (!(await can("invoice.create"))) redirect(routes.invoices);
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("clients")

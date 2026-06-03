@@ -31,6 +31,7 @@ import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
  */
 export function LoginForm() {
   const t = useTranslations("auth");
+  const tCommon = useTranslations("common");
   const router = useRouter();
   const search = useSearchParams();
   // SECURITY: `next` is attacker-controlled (URL param). Without safeNext
@@ -426,9 +427,9 @@ export function LoginForm() {
 
           <div className="mt-7 border-t border-neutral-100 pt-5 text-center text-[13px] text-neutral-500">
             {t("troubleSigning")}{" "}
-            <a href="#" className="font-medium text-primary-600 hover:underline">
+            <button type="button" className="font-medium text-primary-600 hover:underline" aria-disabled="true" title={tCommon("comingSoon")}>
               {t("contactAdmin")}
-            </a>
+            </button>
           </div>
         </form>
         )}
@@ -437,15 +438,15 @@ export function LoginForm() {
       {/* Foot */}
       <div className="flex items-center justify-between border-t border-neutral-100 px-12 py-6 text-[11px] text-neutral-400">
         <div className="flex gap-[18px]">
-          <a className="hover:text-neutral-600" href="#">
+          <button type="button" className="hover:text-neutral-600" aria-disabled="true" title={tCommon("comingSoon")}>
             {t("footerPrivacy")}
-          </a>
-          <a className="hover:text-neutral-600" href="#">
+          </button>
+          <button type="button" className="hover:text-neutral-600" aria-disabled="true" title={tCommon("comingSoon")}>
             {t("footerTerms")}
-          </a>
-          <a className="hover:text-neutral-600" href="#">
+          </button>
+          <button type="button" className="hover:text-neutral-600" aria-disabled="true" title={tCommon("comingSoon")}>
             {t("footerImprint")}
-          </a>
+          </button>
         </div>
         <div>v1.0 · {t("secureConnection")}</div>
       </div>

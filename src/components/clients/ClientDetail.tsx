@@ -283,8 +283,10 @@ function ContactsCard({ detail, canUpdate }: { detail: Detail; canUpdate: boolea
       </header>
       <div className="px-5 py-2">
         {contacts.map((c, i) => (
+          // Local UI-only array (currently a single primary contact). Key
+          // by the label which is i18n-stable across renders.
           <div
-            key={i}
+            key={c.label}
             className="flex flex-wrap items-center gap-3 border-b border-neutral-100 py-3.5 last:border-b-0"
           >
             <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full bg-primary-500 text-[12px] font-bold text-white">
@@ -475,14 +477,21 @@ function KeyInformationCard({
           value={f.date(detail.contract?.start_date)}
           mono
         />
+        {/*
+          When `end_date` is null the contract is open-ended, so the duration
+          renders as "—" rather than "(months since start)". The old code
+          fell back to `new Date()` (now), which yielded a different month
+          count on the server vs. the client at hydration time and warned in
+          the browser. Showing "—" for open contracts is both deterministic
+          and arguably the right UX: an ongoing relationship has no fixed
+          duration to display.
+        */}
         <Row
           label={t("contractDuration")}
           value={
-            detail.contract?.start_date
+            detail.contract?.start_date && detail.contract.end_date
               ? `${differenceInMonths(
-                  detail.contract.end_date
-                    ? new Date(detail.contract.end_date)
-                    : new Date(),
+                  new Date(detail.contract.end_date),
                   new Date(detail.contract.start_date),
                 )} months`
               : "—"

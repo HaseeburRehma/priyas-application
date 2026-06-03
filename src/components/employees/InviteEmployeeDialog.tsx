@@ -16,17 +16,30 @@ type Props = {
 export function InviteEmployeeDialog({ open, onClose }: Props) {
   const t = useTranslations("employees.form");
   const tDialog = useTranslations("employees.dialog");
+  const tFields = useTranslations("employees.dialog.fields");
   const tAuthRole = useTranslations("employees.authRole");
   const router = useRouter();
   const [pending, start] = useTransition();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
+    // Legacy combined name — auto-derived from first+last on submit.
     full_name: "",
+    first_name: "",
+    last_name: "",
     email: "",
     phone: "",
-    hire_date: "",
-    weekly_hours: "40",
+    address_line1: "",
+    postal_code: "",
+    city: "",
+    date_of_birth: "",
+    nationality: "Deutsch",
+    salary_type: "hourly" as "hourly" | "monthly",
     hourly_rate_eur: "",
+    monthly_salary_eur: "",
+    weekly_hours: "40",
+    vacation_days_per_year: "24",
+    contract_start: "",
+    hire_date: "",
     status: "active" as "active" | "on_leave" | "inactive",
     role: "employee" as "admin" | "dispatcher" | "employee",
     notes: "",
@@ -58,15 +71,40 @@ export function InviteEmployeeDialog({ open, onClose }: Props) {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setErrors({});
+    // Auto-derive full_name from first+last so the legacy field stays
+    // populated for the audit log, reports, and exports that still
+    // reference it. The operator only edits the split halves.
+    const fullName =
+      form.full_name.trim() ||
+      `${form.first_name.trim()} ${form.last_name.trim()}`.trim();
     start(async () => {
       const result = await createEmployeeAction({
-        full_name: form.full_name,
+        full_name: fullName,
+        first_name: form.first_name,
+        last_name: form.last_name,
         email: form.email,
         phone: form.phone,
-        hire_date: form.hire_date,
+        address_line1: form.address_line1,
+        postal_code: form.postal_code,
+        city: form.city,
+        date_of_birth: form.date_of_birth,
+        nationality: form.nationality,
+        salary_type: form.salary_type,
+        monthly_salary_eur:
+          form.salary_type === "monthly" && form.monthly_salary_eur !== ""
+            ? Number(form.monthly_salary_eur)
+            : "",
+        vacation_days_per_year:
+          form.vacation_days_per_year === ""
+            ? ""
+            : Number(form.vacation_days_per_year),
+        contract_start: form.contract_start || form.hire_date,
+        hire_date: form.hire_date || form.contract_start,
         weekly_hours: Number(form.weekly_hours || 40),
         hourly_rate_eur:
-          form.hourly_rate_eur === "" ? "" : Number(form.hourly_rate_eur),
+          form.salary_type === "hourly" && form.hourly_rate_eur !== ""
+            ? Number(form.hourly_rate_eur)
+            : "",
         status: form.status,
         role: form.role,
         notes: form.notes,
@@ -106,6 +144,12 @@ export function InviteEmployeeDialog({ open, onClose }: Props) {
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
+      onKeyDown={(e) => {
+        // Keyboard parity for the backdrop dismiss. We re-dispatch the
+        // click on the same element so the existing onClick logic
+        // (which checks e.target === e.currentTarget) runs unchanged.
+        if (e.key === "Escape") (e.currentTarget as HTMLElement).click();
+      }}
     >
       <div className="flex max-h-[92vh] w-full max-w-[640px] flex-col overflow-hidden rounded-t-xl border border-neutral-100 bg-white shadow-lg sm:rounded-xl">
         <header className="flex items-start justify-between gap-3 border-b border-neutral-100 px-6 pb-4 pt-5">
@@ -139,17 +183,42 @@ export function InviteEmployeeDialog({ open, onClose }: Props) {
 
         <form onSubmit={submit} className="flex flex-col overflow-y-auto" noValidate>
           <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2">
-            <Field
-              label={t("fullName")}
-              required
-              error={errors.full_name}
-              className="md:col-span-2"
-            >
+            {/* Section: identity ------------------------------------- */}
+            <Field label={tFields("vorname")} required error={errors.first_name}>
               <input
                 className="input"
                 required
-                value={form.full_name}
-                onChange={(e) => update("full_name", e.target.value)}
+                value={form.first_name}
+                onChange={(e) => update("first_name", e.target.value)}
+              />
+            </Field>
+            <Field label={tFields("name")} required error={errors.last_name}>
+              <input
+                className="input"
+                required
+                value={form.last_name}
+                onChange={(e) => update("last_name", e.target.value)}
+              />
+            </Field>
+            <Field label={tFields("address")} error={errors.address_line1} className="md:col-span-2">
+              <input
+                className="input"
+                value={form.address_line1}
+                onChange={(e) => update("address_line1", e.target.value)}
+              />
+            </Field>
+            <Field label={tFields("plz")} error={errors.postal_code}>
+              <input
+                className="input"
+                value={form.postal_code}
+                onChange={(e) => update("postal_code", e.target.value)}
+              />
+            </Field>
+            <Field label={tFields("city")} error={errors.city}>
+              <input
+                className="input"
+                value={form.city}
+                onChange={(e) => update("city", e.target.value)}
               />
             </Field>
             <Field label={t("email")} error={errors.email}>
@@ -167,12 +236,88 @@ export function InviteEmployeeDialog({ open, onClose }: Props) {
                 onChange={(e) => update("phone", e.target.value)}
               />
             </Field>
-            <Field label={t("hireDate")} error={errors.hire_date}>
+            <Field label={tFields("dob")} error={errors.date_of_birth}>
               <input
                 type="date"
                 className="input"
-                value={form.hire_date}
-                onChange={(e) => update("hire_date", e.target.value)}
+                value={form.date_of_birth}
+                onChange={(e) => update("date_of_birth", e.target.value)}
+              />
+            </Field>
+            <Field label={tFields("nationality")} error={errors.nationality}>
+              <input
+                className="input"
+                value={form.nationality}
+                onChange={(e) => update("nationality", e.target.value)}
+              />
+            </Field>
+
+            {/* Section: compensation --------------------------------- */}
+            <Field label={tFields("salaryType")} error={errors.salary_type}>
+              <select
+                className="input"
+                value={form.salary_type}
+                onChange={(e) =>
+                  update("salary_type", e.target.value as "hourly" | "monthly")
+                }
+              >
+                <option value="hourly">{tFields("hourly")}</option>
+                <option value="monthly">{tFields("monthly")}</option>
+              </select>
+            </Field>
+            {form.salary_type === "hourly" ? (
+              <Field label={tFields("hourlyRate")} error={errors.hourly_rate_eur}>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  className="input"
+                  value={form.hourly_rate_eur}
+                  onChange={(e) => update("hourly_rate_eur", e.target.value)}
+                />
+              </Field>
+            ) : (
+              <Field label={tFields("monthlySalary")} required error={errors.monthly_salary_eur}>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  className="input"
+                  required
+                  value={form.monthly_salary_eur}
+                  onChange={(e) => update("monthly_salary_eur", e.target.value)}
+                />
+              </Field>
+            )}
+            <Field label={tFields("weeklyHours")} error={errors.weekly_hours}>
+              <input
+                type="number"
+                step="0.5"
+                min="0"
+                className="input"
+                value={form.weekly_hours}
+                onChange={(e) => update("weekly_hours", e.target.value)}
+              />
+            </Field>
+            <Field label={tFields("vacation")} error={errors.vacation_days_per_year}>
+              <input
+                type="number"
+                step="1"
+                min="0"
+                max="60"
+                className="input"
+                value={form.vacation_days_per_year}
+                onChange={(e) =>
+                  update("vacation_days_per_year", e.target.value)
+                }
+              />
+            </Field>
+            <Field label={tFields("contractStart")} error={errors.contract_start}>
+              <input
+                type="date"
+                className="input"
+                value={form.contract_start}
+                onChange={(e) => update("contract_start", e.target.value)}
               />
             </Field>
             <Field label={t("status")} error={errors.status}>

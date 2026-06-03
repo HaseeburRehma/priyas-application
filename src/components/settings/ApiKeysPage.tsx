@@ -189,6 +189,12 @@ export function ApiKeysPage({ keys }: Props) {
           onClick={() => {
             if (!secret) setShowCreate(false);
           }}
+      onKeyDown={(e) => {
+        // Keyboard parity for the backdrop dismiss. We re-dispatch the
+        // click on the same element so the existing onClick logic
+        // (which checks e.target === e.currentTarget) runs unchanged.
+        if (e.key === "Escape") (e.currentTarget as HTMLElement).click();
+      }}
         >
           <div
             onClick={(e) => e.stopPropagation()}

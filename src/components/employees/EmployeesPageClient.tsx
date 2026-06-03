@@ -450,7 +450,7 @@ export function EmployeesPageClient({
             })}
           </div>
           <div className="flex items-center gap-1">
-            <PageBtn disabled={page === 1} onClick={() => setPage(page - 1)}>
+            <PageBtn disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
               ‹
             </PageBtn>
             {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
@@ -467,7 +467,7 @@ export function EmployeesPageClient({
             })}
             <PageBtn
               disabled={page === totalPages}
-              onClick={() => setPage(page + 1)}
+              onClick={() => setPage((p) => p + 1)}
             >
               ›
             </PageBtn>

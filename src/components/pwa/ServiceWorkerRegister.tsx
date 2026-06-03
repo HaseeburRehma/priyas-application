@@ -24,6 +24,25 @@ export function ServiceWorkerRegister() {
       return;
     }
 
+    // Dev-mode opt-out. In `next dev` the build hashes change on every
+    // file edit, and a cached SW can hand the browser a stale chunk
+    // URL that no longer exists on disk — surfacing as the runtime
+    // error "Cannot read properties of undefined (reading 'call')" or
+    // "Cannot find module ./xxx.js". Looks like a code bug but is
+    // pure cache staleness. We also actively *unregister* any
+    // previously-installed SW so a developer who built the prod
+    // bundle once doesn't keep getting served from it forever.
+    if (process.env.NODE_ENV !== "production") {
+      void navigator.serviceWorker.getRegistrations().then((regs) => {
+        for (const r of regs) {
+          // eslint-disable-next-line no-console
+          console.info("[pwa] unregistering SW in dev mode:", r.scope);
+          void r.unregister();
+        }
+      });
+      return;
+    }
+
     let cancelled = false;
     let cachedRegistration: SyncCapableRegistration | null = null;
 

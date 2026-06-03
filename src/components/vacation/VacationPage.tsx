@@ -368,7 +368,7 @@ function RequestForm({
     <div
       role="dialog"
       aria-modal="true"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={(e) => e.target === e.currentTarget && onClose()} onKeyDown={(e) => { if (e.key === "Escape") (e.currentTarget as HTMLElement).click(); }}
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center sm:p-6"
     >
       <div className="flex max-h-[92vh] w-full max-w-[520px] flex-col overflow-hidden rounded-t-xl border border-neutral-100 bg-white shadow-lg sm:rounded-xl">

@@ -12,6 +12,15 @@ export type InvoiceEmailStatus =
   | "bounced"
   | "failed";
 
+/**
+ * Lexware sync status — see migration 000040.
+ *   na      → export_target != 'lexware' (not eligible for sync)
+ *   pending → eligible, no attempt yet
+ *   synced  → lexware_id IS NOT NULL (push succeeded)
+ *   failed  → at least one attempt failed; lexware_id still null
+ */
+export type LexwareSyncStatus = "na" | "pending" | "synced" | "failed";
+
 export type InvoiceRow = {
   id: string;
   invoice_number: string;
@@ -26,6 +35,7 @@ export type InvoiceRow = {
   outstanding_cents: number;
   paid_at: string | null;
   lexware_id: string | null;
+  lexware_sync_status: LexwareSyncStatus;
   email_status: InvoiceEmailStatus;
   days_overdue: number | null;
 };
@@ -80,6 +90,10 @@ export type InvoiceDetail = {
   notes: string | null;
   pdf_path: string | null;
   lexware_id: string | null;
+  lexware_sync_status: LexwareSyncStatus;
+  lexware_last_attempt_at: string | null;
+  lexware_last_error: string | null;
+  lexware_attempts: number;
   subtotal_cents: number;
   tax_cents: number;
   total_cents: number;

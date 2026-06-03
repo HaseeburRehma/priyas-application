@@ -20,6 +20,11 @@ type Props = {
     body: string;
     attachments: ChatAttachment[];
   }) => Promise<void> | void;
+  /** Fired on every keystroke (the parent throttles internally). */
+  onTyping?: () => void;
+  /** Fired after a successful send so the typing indicator clears
+   *  immediately for peers. */
+  onTypingStopped?: () => void;
   disabled?: boolean;
 };
 
@@ -39,7 +44,14 @@ const MAX_BYTES = 25 * 1024 * 1024;
  * - Once all uploads finish, Enter (or 📨) sends a message with the
  *   attachments JSON and the body in one round-trip.
  */
-export function Composer({ channelId, orgId, onSend, disabled }: Props) {
+export function Composer({
+  channelId,
+  orgId,
+  onSend,
+  onTyping,
+  onTypingStopped,
+  disabled,
+}: Props) {
   const t = useTranslations("chat.composer");
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
@@ -201,6 +213,8 @@ export function Composer({ channelId, orgId, onSend, disabled }: Props) {
       }
       setValue("");
       setPending([]);
+      // Tell peers we're done typing now that the message has shipped.
+      onTypingStopped?.();
     } finally {
       setBusy(false);
     }
@@ -228,8 +242,12 @@ export function Composer({ channelId, orgId, onSend, disabled }: Props) {
       {pending.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-2">
           {pending.map((a, i) => (
+            // `a.path` is the Supabase Storage object key — uniquely
+            // generated per upload, so it's a stable React key. The index
+            // is still needed for the remove handler because the array
+            // ordering is meaningful (FIFO).
             <PendingChip
-              key={`${a.path}-${i}`}
+              key={a.path}
               attachment={a}
               onRemove={() => removePending(i)}
             />
@@ -314,7 +332,15 @@ export function Composer({ channelId, orgId, onSend, disabled }: Props) {
           rows={1}
           value={value}
           disabled={disabled || busy}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => {
+            setValue(e.target.value);
+            // Notify peers on every keystroke. The parent hook
+            // throttles outbound broadcasts internally so we don't
+            // hammer the wire on each char.
+            if (e.target.value.length > 0) onTyping?.();
+            else onTypingStopped?.();
+          }}
+          onBlur={() => onTypingStopped?.()}
           onKeyDown={handleKey}
           placeholder={t("placeholder")}
           className="flex-1 resize-none border-0 bg-transparent py-1.5 text-[13px] leading-[1.5] text-neutral-800 outline-none placeholder:text-neutral-400 disabled:opacity-60"

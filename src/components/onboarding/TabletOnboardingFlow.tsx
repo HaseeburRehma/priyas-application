@@ -827,8 +827,12 @@ function StepPhotos({
       {files.length > 0 && (
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {files.map((f, i) => (
+            // Composite key from the File object's own metadata so React
+            // can still distinguish "photo.jpg" uploaded twice without
+            // relying on the array index. lastModified + size make
+            // duplicates effectively impossible.
             <figure
-              key={`${f.name}-${i}`}
+              key={`${f.name}-${f.size}-${f.lastModified}-${i}`}
               className="group relative overflow-hidden rounded-md border border-neutral-200 bg-neutral-50"
             >
               {previews[i] ? (

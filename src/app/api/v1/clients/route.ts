@@ -16,11 +16,7 @@ const VALID_TYPES: ReadonlyArray<ClientCustomerType | "all"> = [
   "alltagshilfe",
 ];
 
-/**
- * GET /api/v1/clients
- * Lists clients in the caller's organisation. Bearer-authenticated;
- * requires the `read:clients` scope.
- */
+
 export async function GET(request: Request) {
   const guard = await v1Guard(request, "read:clients");
   if (guard instanceof NextResponse) return guard;

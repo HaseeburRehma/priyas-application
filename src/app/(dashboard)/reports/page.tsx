@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { loadReports, type ReportRange } from "@/lib/api/reports";
-import {
-  requirePermission,
-  PermissionError,
+import { can,
   getCurrentRole,
 } from "@/lib/rbac/permissions";
 import { routes } from "@/lib/constants/routes";
@@ -12,6 +10,8 @@ import { ReportKpis } from "@/components/reports/ReportKpis";
 import { RevenueChart } from "@/components/reports/RevenueChart";
 import { HoursDonut } from "@/components/reports/HoursDonut";
 import { ReportLibrary } from "@/components/reports/ReportLibrary";
+import { NextPlannedRuns } from "@/components/reports/NextPlannedRuns";
+import { LastExports } from "@/components/reports/LastExports";
 import { LexwareMonthlyPanel } from "@/components/reports/LexwareMonthlyPanel";
 import { loadLastMonthlyRun } from "@/app/actions/lexware-monthly-invoices";
 
@@ -28,12 +28,7 @@ export default async function Page({
   searchParams: Promise<SearchParams>;
 }) {
   // Reports are dispatcher+admin only (managers + project managers).
-  try {
-    await requirePermission("report.alltagshilfe.view");
-  } catch (err) {
-    if (err instanceof PermissionError) redirect(routes.dashboard);
-    throw err;
-  }
+  if (!(await can("report.alltagshilfe.view"))) redirect(routes.dashboard);
 
   const sp = await searchParams;
   const range: ReportRange = VALID.includes(sp.range as ReportRange)
@@ -64,6 +59,14 @@ export default async function Page({
       </div>
       {isAdmin && <LexwareMonthlyPanel lastRun={lastRun} />}
       <ReportLibrary />
+      {/*
+        The next-runs strip + last-exports table mirror the prototype's
+        "Next planned races" and "Last exports" sections. Both render
+        with static illustrative data today; they swap to live data once
+        the `report_schedules` and `export_runs` tables ship.
+      */}
+      <NextPlannedRuns />
+      <LastExports />
     </>
   );
 }

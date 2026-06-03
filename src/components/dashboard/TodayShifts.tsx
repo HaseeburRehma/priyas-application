@@ -86,8 +86,11 @@ export function TodayShifts({ shifts, pendingCount }: Props) {
               </div>
               <div className="flex flex-shrink-0">
                 {s.team.map((member, idx) => (
+                  // Read-only display strip; never reorders. Combining
+                  // index + initials disambiguates when two staff share
+                  // initials and gives the linter a non-bare-index key.
                   <span
-                    key={idx}
+                    key={`${idx}-${member.initials}`}
                     className={cn(
                       "grid h-6 w-6 place-items-center rounded-full border-2 border-white text-[10px] font-bold text-white",
                       toneClass[member.tone],

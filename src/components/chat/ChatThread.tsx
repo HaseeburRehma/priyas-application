@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { format, isSameDay } from "date-fns";
 import { de as deLocale, enUS as enLocale, ta as taLocale } from "date-fns/locale";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { Channel, Message } from "@/types/chat";
 import { useMessages } from "@/hooks/chat/useMessages";
 import { useSendMessage, useMarkChannelRead } from "@/hooks/chat/useSendMessage";
+import {
+  useTypingBroadcaster,
+  useTypingSubscribers,
+} from "@/hooks/chat/useTyping";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { MessageBubble } from "./MessageBubble";
 import { Composer } from "./Composer";
 import { routes } from "@/lib/constants/routes";
@@ -28,10 +33,55 @@ type Props = {
  */
 export function ChatThread({ channel, currentUserId }: Props) {
   const locale = useLocale() as keyof typeof localeMap;
+  const tTyping = useTranslations("chat.typing");
   const { messages, loading, error, append, replace } = useMessages(channel.id);
   const { send, error: sendError } = useSendMessage();
   const markAsRead = useMarkChannelRead();
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // ----- Typing-indicator plumbing -----
+  // Look up our own display name once so peers see something nicer
+  // than the user UUID in the "X is typing…" string.
+  const [selfName, setSelfName] = useState<string | null>(null);
+  useEffect(() => {
+    if (!currentUserId) return;
+    const supabase = createSupabaseBrowserClient();
+    void supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", currentUserId)
+      .maybeSingle()
+      .then(({ data }) => {
+        setSelfName(
+          (data as { full_name: string | null } | null)?.full_name ?? null,
+        );
+      });
+  }, [currentUserId]);
+
+  const { notifyTyping, notifyStopped } = useTypingBroadcaster(
+    channel.id,
+    currentUserId,
+    selfName,
+  );
+  const typingPeers = useTypingSubscribers(channel.id, currentUserId);
+
+  const typingLabel = (() => {
+    if (typingPeers.length === 0) return null;
+    if (typingPeers.length === 1) {
+      return tTyping("one", { name: typingPeers[0]!.name });
+    }
+    if (typingPeers.length === 2) {
+      return tTyping("two", {
+        a: typingPeers[0]!.name,
+        b: typingPeers[1]!.name,
+      });
+    }
+    return tTyping("many", {
+      a: typingPeers[0]!.name,
+      b: typingPeers[1]!.name,
+      n: typingPeers.length - 2,
+    });
+  })();
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -213,6 +263,15 @@ export function ChatThread({ channel, currentUserId }: Props) {
           })}
       </div>
 
+      {typingLabel && (
+        <div className="border-t border-neutral-100 bg-neutral-50 px-4 py-1.5 text-[11px] italic text-neutral-500">
+          <span className="inline-flex items-center gap-1.5">
+            <TypingDots />
+            {typingLabel}
+          </span>
+        </div>
+      )}
+
       {sendError && (
         <div className="border-t border-error-100 bg-error-50 px-3 py-2 text-[12px] text-error-700">
           {sendError}
@@ -222,6 +281,8 @@ export function ChatThread({ channel, currentUserId }: Props) {
       <Composer
         channelId={channel.id}
         orgId={channel.org_id}
+        onTyping={notifyTyping}
+        onTypingStopped={notifyStopped}
         onSend={async ({ body, attachments }) => {
           await send({
             channelId: channel.id,
@@ -265,6 +326,20 @@ function dmInitials(name: string): string {
     .join("")
     .toUpperCase();
   return initials || name.slice(0, 2).toUpperCase();
+}
+
+/**
+ * Three little bouncing dots for the typing indicator. CSS-only so it
+ * keeps animating even if the React tree above is idle.
+ */
+function TypingDots() {
+  return (
+    <span aria-hidden className="inline-flex items-center gap-[2px]">
+      <span className="block h-1 w-1 animate-bounce rounded-full bg-neutral-400 [animation-delay:-0.3s]" />
+      <span className="block h-1 w-1 animate-bounce rounded-full bg-neutral-400 [animation-delay:-0.15s]" />
+      <span className="block h-1 w-1 animate-bounce rounded-full bg-neutral-400" />
+    </span>
+  );
 }
 
 function HeaderIconButton({

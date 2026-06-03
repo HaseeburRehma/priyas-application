@@ -88,21 +88,46 @@ export async function createClientAction(
   const orgId = (profile as { org_id: string | null } | null)?.org_id;
   if (!orgId) return { ok: false, error: "Profile not attached to org" };
 
-  // Build row with type-specific fields.
+  // Build row with type-specific fields. Field set tracks the May 18
+  // operations spec — every column declared in migration 000039.
   const insertRow: Record<string, unknown> = {
     org_id: orgId,
     customer_type: input.customer_type,
     display_name: input.display_name,
+    first_name: input.first_name || null,
+    last_name: input.last_name || null,
     contact_name: input.contact_name || null,
     email: input.email || null,
     phone: input.phone || null,
-    tax_id: input.tax_id || null,
+    tax_id: ("tax_id" in input ? input.tax_id : null) || null,
+    address_line1: input.address_line1 || null,
+    address_line2: input.address_line2 || null,
+    postal_code: input.postal_code || null,
+    city: input.city || null,
+    country: input.country || "DE",
     notes: input.notes || null,
   };
   if (input.customer_type === "alltagshilfe") {
+    insertRow.date_of_birth = input.date_of_birth || null;
     insertRow.insurance_provider = input.insurance_provider;
     insertRow.insurance_number = input.insurance_number;
     insertRow.care_level = input.care_level;
+    insertRow.abtretungserklaerung = input.abtretungserklaerung;
+    insertRow.contract_docs_signed = input.contract_docs_signed;
+    insertRow.cleaning_rhythm = input.cleaning_rhythm;
+    insertRow.estimated_hours_per_visit = input.estimated_hours_per_visit;
+  } else {
+    // Priya regular (residential + commercial): billing address (optional),
+    // cleaning rhythm, estimated hours, agreed rate, contract start.
+    insertRow.billing_address_line1 = input.billing_address_line1 || null;
+    insertRow.billing_address_line2 = input.billing_address_line2 || null;
+    insertRow.billing_postal_code = input.billing_postal_code || null;
+    insertRow.billing_city = input.billing_city || null;
+    insertRow.billing_country = input.billing_country || null;
+    insertRow.cleaning_rhythm = input.cleaning_rhythm;
+    insertRow.estimated_hours_per_visit = input.estimated_hours_per_visit;
+    insertRow.agreed_hourly_rate_cents = input.agreed_hourly_rate_cents;
+    insertRow.contract_start = input.contract_start || null;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

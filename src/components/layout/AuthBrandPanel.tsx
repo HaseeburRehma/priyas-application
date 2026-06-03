@@ -1,4 +1,5 @@
 import { useTranslations } from "next-intl";
+import { Logo } from "@/components/brand/Logo";
 
 /**
  * Left-hand brand panel shared by /login and /register. Pure presentation;
@@ -6,6 +7,7 @@ import { useTranslations } from "next-intl";
  */
 export function AuthBrandPanel() {
   const t = useTranslations("auth");
+  const tCommon = useTranslations("common");
 
   return (
     <aside
@@ -33,18 +35,13 @@ export function AuthBrandPanel() {
         }}
       />
 
-      <div className="relative z-10 flex items-center gap-3.5 border-b border-white/[.06] pb-6">
-        <div className="grid h-11 w-11 place-items-center rounded-md bg-primary-500 text-[22px] font-extrabold text-white shadow-[0_6px_18px_rgba(114,169,79,.35)]">
-          P
-        </div>
-        <div>
-          <div className="text-[15px] font-semibold tracking-tighter2">
-            Priya's Reinigungsservice
-          </div>
-          <div className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-accent-300">
-            {t("brandSubtitle")}
-          </div>
-        </div>
+      <div className="relative z-10 border-b border-white/[.06] pb-6">
+        {/* The source PNG is 110 × 44 native. Anything past `xl`
+         *  (56 px tall ≈ 1.3× the native height) starts to look blurry
+         *  because we're upscaling a raster image. The wordmark
+         *  already carries the brand name + the "Leistung mit Herz"
+         *  tagline, so no separate subtitle is needed. */}
+        <Logo size="xl" variant="light" />
       </div>
 
       <div className="relative z-10 max-w-[460px]">
@@ -96,11 +93,11 @@ export function AuthBrandPanel() {
       <div className="relative z-10 flex items-center justify-between text-[12px] text-white/55">
         <div>{t("brandCopyright")}</div>
         <div className="space-x-1">
-          <a className="hover:text-white" href="#">{t("brandFooterPrivacy")}</a>
+          <button type="button" className="hover:text-white" aria-disabled="true" title={tCommon("comingSoon")}>{t("brandFooterPrivacy")}</button>
           <span>·</span>
-          <a className="hover:text-white" href="#">{t("brandFooterTerms")}</a>
+          <button type="button" className="hover:text-white" aria-disabled="true" title={tCommon("comingSoon")}>{t("brandFooterTerms")}</button>
           <span>·</span>
-          <a className="hover:text-white" href="#">{t("brandFooterSupport")}</a>
+          <button type="button" className="hover:text-white" aria-disabled="true" title={tCommon("comingSoon")}>{t("brandFooterSupport")}</button>
         </div>
       </div>
     </aside>

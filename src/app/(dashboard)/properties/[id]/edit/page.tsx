@@ -1,5 +1,5 @@
 import { redirect, notFound } from "next/navigation";
-import { requirePermission, PermissionError } from "@/lib/rbac/permissions";
+import { can } from "@/lib/rbac/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { routes } from "@/lib/constants/routes";
 import { PropertyForm } from "@/components/properties/PropertyForm";
@@ -14,12 +14,7 @@ export default async function Page({
   params: Promise<Params>;
 }) {
   const { id } = await params;
-  try {
-    await requirePermission("property.update");
-  } catch (err) {
-    if (err instanceof PermissionError) redirect(routes.property(id));
-    throw err;
-  }
+  if (!(await can("property.update"))) redirect(routes.property(id));
 
   const supabase = await createSupabaseServerClient();
   const [propertyRes, clientsRes] = await Promise.all([

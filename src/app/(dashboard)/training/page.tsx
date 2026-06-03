@@ -11,6 +11,7 @@ export default async function Page() {
     <TrainingHub
       myEmployeeId={data.myEmployeeId}
       canManage={data.canManage}
+      orgId={data.orgId}
       modules={data.modules}
       progress={data.progress}
       assignmentsByModule={data.assignmentsByModule}

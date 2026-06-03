@@ -28,6 +28,9 @@ export const routes = {
   training: "/training" as Route,
   employees: "/employees" as Route,
   employee: (id: string) => `/employees/${id}` as Route,
+  // HR-style overview separate from the operational employees list:
+  // utilization · attendance · certificates · personnel events.
+  employeeOverview: "/employee-overview" as Route,
   invoices: "/invoices" as Route,
   invoiceNew: "/invoices/new" as Route,
   invoice: (id: string) => `/invoices/${id}` as Route,
@@ -42,6 +45,10 @@ export const routes = {
   notifications: "/notifications" as Route,
   onboard: "/onboard" as Route,
   onboardSuccess: "/onboard/success" as Route,
+  // Sequenced training-video gate for new field staff. The dashboard
+  // layout redirects here while `employees.system_unlocked_at` is NULL
+  // and any mandatory training module is still pending.
+  onboardVideos: "/onboard/videos" as Route,
   setup2fa: "/setup-2fa" as Route,
   offline: "/offline" as Route,
 } as const;

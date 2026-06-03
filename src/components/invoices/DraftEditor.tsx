@@ -15,12 +15,23 @@ import {
 import type { InvoiceDetail } from "@/lib/api/invoices.types";
 
 type EditableItem = {
+  /** DB row id once persisted; absent for rows added in this session. */
   id?: string;
+  /**
+   * Stable in-memory key for React. The persisted `id` is reused when
+   * present, otherwise a fresh random string is minted on add. Never
+   * use the array index — when the user reorders / deletes items, React
+   * loses the inputs' focus state because the key shifts under it.
+   */
+  __key: string;
   description: string;
   quantity: number;
   unit_price_cents: number;
   tax_rate: number;
 };
+
+let __ITEM_KEY_SEQ = 0;
+const mintKey = () => `new-${++__ITEM_KEY_SEQ}-${Math.random().toString(36).slice(2, 8)}`;
 
 export function DraftEditor({ detail }: { detail: InvoiceDetail }) {
   const router = useRouter();
@@ -28,6 +39,7 @@ export function DraftEditor({ detail }: { detail: InvoiceDetail }) {
   const [items, setItems] = useState<EditableItem[]>(
     detail.items.map((it) => ({
       id: it.id,
+      __key: it.id ?? mintKey(),
       description: it.description,
       quantity: it.quantity,
       unit_price_cents: it.unit_price_cents,
@@ -62,6 +74,7 @@ export function DraftEditor({ detail }: { detail: InvoiceDetail }) {
     setItems((prev) => [
       ...prev,
       {
+        __key: mintKey(),
         description: "",
         quantity: 1,
         unit_price_cents: 0,
@@ -183,7 +196,7 @@ export function DraftEditor({ detail }: { detail: InvoiceDetail }) {
           </thead>
           <tbody>
             {items.map((it, idx) => (
-              <tr key={idx} className="border-t border-neutral-100">
+              <tr key={it.__key} className="border-t border-neutral-100">
                 <td className="py-2">
                   <input
                     value={it.description}

@@ -540,49 +540,56 @@ export function SchedulePage({
     </>
   );
 
-  function Tab({
-    active,
-    onClick,
-    children,
-  }: {
-    active?: boolean;
-    onClick?: () => void;
-    children: React.ReactNode;
-  }) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className={cn(
-          "flex items-center gap-1.5 rounded px-3 py-1.5 font-medium transition",
-          active
-            ? "bg-white text-secondary-500 shadow-xs"
-            : "text-neutral-600 hover:text-secondary-500",
-        )}
-      >
-        {children}
-      </button>
-    );
-  }
+}
 
-  function Chip({ label, active = false }: { label: string; active?: boolean }) {
-    return (
-      <button
-        type="button"
-        className={cn(
-          "inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-[12px] font-medium",
-          active
-            ? "border-primary-500 bg-tertiary-200 text-primary-700"
-            : "border-neutral-200 bg-white text-neutral-700",
-        )}
-      >
-        {label}
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
-          <path d="M6 9l6 6 6-6" />
-        </svg>
-      </button>
-    );
-  }
+// `Tab` and `Chip` were originally defined inside `SchedulePage`. That's a
+// React perf + correctness footgun: a new function reference is created on
+// every parent render, React treats it as a brand-new component type,
+// unmounts the previous instance, and any state inside resets. Lifting them
+// to module scope lets React identify them by stable reference.
+
+function Tab({
+  active,
+  onClick,
+  children,
+}: {
+  active?: boolean;
+  onClick?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-1.5 rounded px-3 py-1.5 font-medium transition",
+        active
+          ? "bg-white text-secondary-500 shadow-xs"
+          : "text-neutral-600 hover:text-secondary-500",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Chip({ label, active = false }: { label: string; active?: boolean }) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-[12px] font-medium",
+        active
+          ? "border-primary-500 bg-tertiary-200 text-primary-700"
+          : "border-neutral-200 bg-white text-neutral-700",
+      )}
+    >
+      {label}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
+        <path d="M6 9l6 6 6-6" />
+      </svg>
+    </button>
+  );
 }
 
 function ServicePill({
@@ -2153,6 +2160,12 @@ function ReassignDialog({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
+      onKeyDown={(e) => {
+        // Keyboard parity for the backdrop dismiss. We re-dispatch the
+        // click on the same element so the existing onClick logic
+        // (which checks e.target === e.currentTarget) runs unchanged.
+        if (e.key === "Escape") (e.currentTarget as HTMLElement).click();
+      }}
     >
       <div className="flex max-h-[92vh] w-full max-w-[480px] flex-col overflow-hidden rounded-t-xl border border-neutral-100 bg-white shadow-lg sm:rounded-xl">
         <header className="flex items-start justify-between gap-3 border-b border-neutral-100 px-6 pb-4 pt-5">
@@ -2320,6 +2333,12 @@ function RescheduleDialog({
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-6"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
+      }}
+      onKeyDown={(e) => {
+        // Keyboard parity for the backdrop dismiss. We re-dispatch the
+        // click on the same element so the existing onClick logic
+        // (which checks e.target === e.currentTarget) runs unchanged.
+        if (e.key === "Escape") (e.currentTarget as HTMLElement).click();
       }}
     >
       <div className="flex max-h-[92vh] w-full max-w-[520px] flex-col overflow-hidden rounded-t-xl border border-neutral-100 bg-white shadow-lg sm:rounded-xl">

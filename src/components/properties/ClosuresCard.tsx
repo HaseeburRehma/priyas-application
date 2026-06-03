@@ -187,8 +187,14 @@ export function ClosuresCard({ propertyId, closures, canEdit }: Props) {
 
       {editor && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
+          role="presentation" className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
           onClick={() => !pending && setEditor(null)}
+        // Keyboard parity for the backdrop dismiss — useEscapeToClose
+        // handles the document-level Escape; this handler keeps the
+        // div a valid interactive element for screen readers + lint.
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && !pending) setEditor(null);
+        }}
         >
           <div
             className="w-full max-w-[480px] rounded-lg bg-white shadow-xl"

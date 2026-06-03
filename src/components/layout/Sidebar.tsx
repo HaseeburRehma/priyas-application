@@ -3,12 +3,13 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
 import { useUiStore } from "@/stores/useUiStore";
 import type { SidebarCounts } from "@/lib/api/sidebar";
+import { Logo, LogoMark } from "@/components/brand/Logo";
 
 type NavItem = {
   label: string;
@@ -87,6 +88,14 @@ const icons = {
       <circle cx={9} cy={7} r={4} />
     </Icon>
   ),
+  employeeOverview: (
+    <Icon>
+      <rect x={3} y={3} width={7} height={7} rx={1} />
+      <rect x={14} y={3} width={7} height={7} rx={1} />
+      <rect x={3} y={14} width={7} height={7} rx={1} />
+      <rect x={14} y={14} width={7} height={7} rx={1} />
+    </Icon>
+  ),
   reports: (
     <Icon>
       <path d="M3 3v18h18" />
@@ -120,11 +129,6 @@ const icons = {
       <path d="M19.4 15a1.65 1.65 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.65 1.65 0 00-1.8-.3 1.65 1.65 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.65 1.65 0 00-1-1.5 1.65 1.65 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.65 1.65 0 00.3-1.8 1.65 1.65 0 00-1.5-1H3a2 2 0 110-4h.1a1.65 1.65 0 001.5-1 1.65 1.65 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.65 1.65 0 001.8.3h0a1.65 1.65 0 001-1.5V3a2 2 0 114 0v.1a1.65 1.65 0 001 1.5 1.65 1.65 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.65 1.65 0 00-.3 1.8v0a1.65 1.65 0 001.5 1H21a2 2 0 110 4h-.1a1.65 1.65 0 00-1.5 1z" />
     </Icon>
   ),
-  collapse: (
-    <Icon>
-      <path d="M19 12H5M12 19l-7-7 7-7" />
-    </Icon>
-  ),
   training: (
     <Icon>
       <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
@@ -145,8 +149,22 @@ export function Sidebar({ allowedRoutes, counts }: Props = {}) {
   const pathname = usePathname();
   const mobileNavOpen = useUiStore((s) => s.mobileNavOpen);
   const setMobileNavOpen = useUiStore((s) => s.setMobileNavOpen);
-  const collapsed = useUiStore((s) => s.sidebarCollapsed);
+  const persistedCollapsed = useUiStore((s) => s.sidebarCollapsed);
   const toggleCollapsed = useUiStore((s) => s.toggleSidebarCollapsed);
+
+  // The sidebar-collapsed state lives in localStorage via Zustand's
+  // `persist` middleware. The server has no localStorage, so SSR
+  // always emits the expanded tree, but the client may rehydrate
+  // into the collapsed tree on first paint — that's a React
+  // hydration mismatch ("Text content did not match"). To stay safe
+  // we render the *server* view (expanded) until we know we've
+  // mounted, then flip to the persisted value. A single render
+  // pass after mount swaps the layout — visually identical for
+  // users who never collapsed the rail, and a one-frame expand for
+  // those who had.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const collapsed = mounted ? persistedCollapsed : false;
 
   // Close the drawer whenever the user navigates.
   useEffect(() => {
@@ -176,6 +194,7 @@ export function Sidebar({ allowedRoutes, counts }: Props = {}) {
         { label: t("properties"), href: routes.properties, icon: icons.properties, badge: fmt(counts?.properties), routeKey: "properties" },
         { label: t("schedule"), href: routes.schedule, icon: icons.schedule, routeKey: "schedule" },
         { label: t("employees"), href: routes.employees, icon: icons.employees, badge: fmt(counts?.employees), routeKey: "employees" },
+        { label: t("employeeOverview"), href: routes.employeeOverview, icon: icons.employeeOverview, routeKey: "employees" },
         { label: t("training"), href: routes.training, icon: icons.training, routeKey: "training" },
         { label: t("reports"), href: routes.reports, icon: icons.reports, routeKey: "reports" },
       ],
@@ -232,31 +251,89 @@ export function Sidebar({ allowedRoutes, counts }: Props = {}) {
           drawerOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
       >
-        {/* Brand row */}
+        {/* Brand row
+         *
+         * suppressHydrationWarning here is a safety net against a
+         * specific dev-server failure mode: when the browser cache
+         * (or service worker) is serving an *older* JS bundle that
+         * still rendered the inline "P" tile, React's hydration sees
+         * the SSR HTML from the new code and the rehydrated DOM from
+         * the old bundle and complains. The user-visible content
+         * resolves correctly after the first effect runs (`mounted`
+         * flips true and the brand row re-renders); this attribute
+         * just stops the noisy warning from blocking the page render.
+         * In production with a single bundle, the warning never
+         * triggers regardless of this attribute. */}
         <div
+          suppressHydrationWarning
           className={cn(
-            "mb-4 flex items-center gap-3 border-b border-white/[.06] pb-6 pt-1.5",
-            collapsed ? "justify-center px-0" : "px-2.5",
+            "mb-4 border-b border-white/[.06] pb-4 pt-1.5",
+            // Collapsed: stack vertically (logo on top, toggle below
+            // it) so we don't have to fight for horizontal space in
+            // the 72px rail.
+            // Expanded: horizontal row with the logo on the left and
+            // the toggle on the right (where users expect it).
+            collapsed
+              ? "flex flex-col items-center gap-2 px-0"
+              : "flex items-center gap-2 px-2.5",
           )}
         >
-          <div className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-md bg-primary-500 text-[17px] font-extrabold text-white">
-            P
-          </div>
-          {!collapsed && (
-            <div className="min-w-0">
-              <div className="truncate text-[14px] font-semibold tracking-tighter2 text-white">
-                Priya's
-              </div>
-              <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-accent-500">
-                Betrieb
-              </div>
-            </div>
+          {/* Brand mark.
+           *  - Expanded: large wordmark image (xl = 56 px tall).
+           *  - Collapsed: small wordmark (sm = 24 px tall, ~60 px wide)
+           *    so it fits within the 72 px rail without overflowing.
+           *    The source asset is 110 × 44, so anything wider than
+           *    that crops the right edge anyway — sm is the right
+           *    visual call here. */}
+          {collapsed ? (
+            <LogoMark size="sm" inverted />
+          ) : (
+            <Logo size="xl" variant="light" />
           )}
+
+          {/* Collapse / expand toggle. Same button in both states —
+           *  the chevron flips with a CSS rotate so the affordance
+           *  reads correctly in either layout. Hidden on mobile,
+           *  which uses the hamburger in the topbar instead. */}
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand" : "Collapse"}
+            className={cn(
+              "hidden h-8 w-8 place-items-center rounded-md text-white/55 transition hover:bg-white/10 hover:text-white md:grid",
+              // In expanded mode push it to the right of the brand
+              // row; in collapsed mode it just sits centred under
+              // the logo as the second item in the flex column.
+              !collapsed && "ml-auto",
+            )}
+          >
+            <svg
+              aria-hidden
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={cn(
+                "h-4 w-4 transition-transform",
+                collapsed && "rotate-180",
+              )}
+            >
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+
+          {/* Mobile drawer close button (X) — unchanged behaviour. */}
           <button
             type="button"
             aria-label="Close menu"
             onClick={() => setMobileNavOpen(false)}
-            className="ml-auto grid h-8 w-8 place-items-center rounded-md text-white/60 transition hover:bg-white/10 hover:text-white md:hidden"
+            className={cn(
+              "grid h-8 w-8 place-items-center rounded-md text-white/60 transition hover:bg-white/10 hover:text-white md:hidden",
+              !collapsed && "ml-auto",
+            )}
           >
             <svg
               aria-hidden
@@ -339,19 +416,9 @@ export function Sidebar({ allowedRoutes, counts }: Props = {}) {
           ))}
         </nav>
 
-        {/* Footer: collapse toggle (desktop+tablet only) */}
-        <button
-          type="button"
-          onClick={toggleCollapsed}
-          className={cn(
-            "-mx-3 mt-4 hidden items-center gap-2.5 border-t border-white/[.06] py-4 text-[12px] text-white/55 transition hover:text-white md:flex",
-            collapsed ? "justify-center px-0" : "px-6",
-          )}
-          aria-label="Toggle sidebar"
-        >
-          <span className={cn(collapsed && "rotate-180")}>{icons.collapse}</span>
-          {!collapsed && t("collapseSidebar")}
-        </button>
+        {/* (Old footer collapse toggle removed — the chevron next to
+         *  the logo at the top of the rail is now the single source of
+         *  truth for collapsing/expanding the sidebar.) */}
       </aside>
     </>
   );

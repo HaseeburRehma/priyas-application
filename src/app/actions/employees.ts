@@ -105,17 +105,46 @@ export async function createEmployeeAction(
   // 1) Insert the employees row first (placeholder — profile_id stays
   //    NULL until the invite is accepted; the trigger in migration
   //    000028 then claims this row by matching email).
+  //
+  // `system_unlocked_at` is deliberately omitted so the column stays
+  // NULL: the (dashboard)/layout.tsx gate then redirects this new hire
+  // to /onboard/videos before they can use the system (spec May 18,
+  // migration 000039).
+  const monthlyCents =
+    input.salary_type === "monthly" &&
+    typeof input.monthly_salary_eur === "number"
+      ? Math.round(input.monthly_salary_eur * 100)
+      : null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await ((supabase.from("employees") as any))
     .insert({
       org_id: orgId,
       full_name: input.full_name,
+      first_name: input.first_name || null,
+      last_name: input.last_name || null,
       email: input.email || null,
       phone: input.phone || null,
-      hire_date: input.hire_date || null,
+      address_line1: input.address_line1 || null,
+      address_line2: input.address_line2 || null,
+      postal_code: input.postal_code || null,
+      city: input.city || null,
+      country: input.country || "DE",
+      date_of_birth: input.date_of_birth || null,
+      nationality: input.nationality || null,
+      salary_type: input.salary_type,
+      monthly_salary_cents: monthlyCents,
+      vacation_days_per_year:
+        typeof input.vacation_days_per_year === "number"
+          ? input.vacation_days_per_year
+          : null,
+      contract_start: input.contract_start || input.hire_date || null,
+      hire_date: input.hire_date || input.contract_start || null,
       weekly_hours: input.weekly_hours,
       hourly_rate_eur:
-        typeof input.hourly_rate_eur === "number" ? input.hourly_rate_eur : null,
+        input.salary_type === "hourly" &&
+        typeof input.hourly_rate_eur === "number"
+          ? input.hourly_rate_eur
+          : null,
       status: input.status,
       notes: input.notes || null,
     })

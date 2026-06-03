@@ -91,7 +91,35 @@ const config = {
       });
     }
 
+    // CSP for the public Swagger UI page is intentionally looser:
+    // the page loads swagger-ui from jsdelivr.net (script + style). We
+    // scope the override to that exact path so the rest of the app keeps
+    // the tight policy. Note: the route matcher's `source` MUST come
+    // before the catch-all so Next's header layering picks the more
+    // specific rule first.
+    const docsCsp = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+      "frame-src 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join("; ");
+
+    const docsHeaders = headers
+      .filter((h) => h.key !== "Content-Security-Policy")
+      .concat([{ key: "Content-Security-Policy", value: docsCsp }]);
+
     return [
+      {
+        source: "/api/v1/docs",
+        headers: docsHeaders,
+      },
       {
         source: "/(.*)",
         headers,

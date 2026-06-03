@@ -105,7 +105,9 @@
     "notifications": "Benachrichtigungen",
     "system": "System",
     "settings": "Einstellungen",
-    "collapseSidebar": "Seitenleiste einklappen"
+    "collapseSidebar": "Seitenleiste einklappen",
+    "employeeOverview": "Mitarbeiterübersicht",
+    "brandSubtitle": "Betrieb"
   },
   "greeting": {
     "morning": "Guten Morgen",
@@ -174,7 +176,8 @@
         "settings": "Einstellungen",
         "assignments": "Aufträge",
         "assignment_staff": "Auftrags-Personal",
-        "invoice_payments": "Zahlungen"
+        "invoice_payments": "Zahlungen",
+        "property_keys": "Schlüssel"
       }
     },
     "team": {
@@ -214,7 +217,16 @@
       "openTraining": "Schulungen öffnen",
       "upcomingTitle": "Kommende Schichten",
       "openSchedule": "Einsatzplan öffnen"
-    }
+    },
+    "overview": "Übersicht",
+    "exportContains": "Diese Übersicht enthält",
+    "exportKpiTitle": "KPIs & Wochenchart",
+    "exportKpiSub": "4 Kennzahlen + Auftragschart der Woche",
+    "exportPlanTitle": "Heutiger Einsatzplan",
+    "exportPlanSub": "27 Einsätze · Crew · Status",
+    "exportActivityTitle": "Recent activity",
+    "exportActivitySub": "Audit Log · 7 Tage",
+    "exportSeeAll": "Alle Berichte ansehen"
   },
   "clients": {
     "picker": {
@@ -261,7 +273,152 @@
       "careLevel": "Pflegegrad",
       "save": "Kunde anlegen",
       "saveError": "Speichern fehlgeschlagen.",
-      "back": "Zurück"
+      "back": "Zurück",
+      "section": {
+        "person": "Person",
+        "address": "Adresse",
+        "insurance": "Versicherung",
+        "servicePlan": "Reinigungsplan",
+        "other": "Sonstiges"
+      },
+      "fields": {
+        "vorname": "Vorname",
+        "name": "Name",
+        "address": "Adresse",
+        "addressHint": "Straße · PLZ · Stadt",
+        "addressPlaceholder": "z. B. Friedrichstraße 200, 10117 Berlin",
+        "billingAddress": "Rechnungsadresse",
+        "billingAddressHint": "Nur ausfüllen, wenn abweichend",
+        "billingDifferent": "Rechnungsadresse weicht ab",
+        "billingAddressPlaceholder": "Leer lassen, wenn identisch mit Adresse oben",
+        "plz": "PLZ",
+        "city": "Stadt",
+        "phoneHint": "Wird für Rechnungen und Terminbestätigungen genutzt",
+        "dateOfBirth": "Geburtsdatum",
+        "insuranceProvider": "Krankenkasse",
+        "insurancePrompt": "— bitte wählen —",
+        "insuranceNumber": "Versicherten-Nr.",
+        "insuranceNumberHint": "10-stellige Krankenversicherungsnummer von der Versichertenkarte",
+        "insuranceNumberPlaceholder": "z. B. A123456789",
+        "pflegegrad": "Pflegegrad",
+        "pflegegradHint": "Aktueller Bescheid der Pflegekasse",
+        "abtretungserklaerung": "Abtretungserklärung liegt vor",
+        "abtretungserklaerungHint": "Pflicht für die Direkt-Abrechnung mit der Krankenkasse",
+        "abtretungserklaerungYesTitle": "Ja, liegt vor.",
+        "abtretungserklaerungYesSub": "Direkt-Abrechnung mit Krankenkasse möglich",
+        "abtretungserklaerungNoTitle": "Nein, noch nicht",
+        "abtretungserklaerungNoSub": "Wird bei der Erstberatung nachgereicht",
+        "rhythm": "Reinigungsrhythmus",
+        "estimatedHours": "Geschätzter Aufwand",
+        "estimatedHoursHint": "Stunden pro Besuch",
+        "hoursPerVisitUnit": "Std / Besuch",
+        "agreedRate": "Vereinbarter Stundensatz",
+        "agreedRateHint": "Netto-Preis · 19 % USt wird automatisch zugeschlagen",
+        "agreedRatePlaceholder": "z. B. 35.00",
+        "contractStart": "Vertragsbeginn",
+        "contractDocsSignedQ": "Vertragsunterlagen schon unterzeichnet?",
+        "contractDocsSignedHint": "Falls nicht, wird die Willkommensmappe bei der Erstberatung mitgenommen",
+        "contractDocsSignedYesTitle": "Ja, vollständig unterzeichnet",
+        "contractDocsSignedYesSub": "Service kann sofort starten",
+        "contractDocsSignedNoTitle": "Nein, bei Erstberatung",
+        "contractDocsSignedNoSub": "Willkommensmappe wird mitgenommen",
+        "notes": "Sonstiges",
+        "notesAlltagshilfeLabel": "Notizen, Allergien, besondere Bedürfnisse",
+        "notesPriyaLabel": "Notizen, Besonderheiten, Wünsche",
+        "notesAlltagshilfePlaceholder": "z. B. eingeschränkte Mobilität; Diabetiker; Schlüssel bei Nachbarin Frau Schmidt; Hörgerät für Kommunikation nötig…",
+        "notesPriyaPlaceholder": "z. B. Schlüssel beim Hausmeister abgeben; Allergien gegen Reinigungsmittel; nur Vormittags möglich…",
+        "pflegegradLevels": {
+          "1": "Geringe Beeinträchtigung",
+          "2": "Erheblich",
+          "3": "Schwer",
+          "4": "Schwerst",
+          "5": "Schwerst + Härtefall"
+        }
+      },
+      "sectionTitles": {
+        "contact": "Kontaktdaten",
+        "contactSub": "Person oder Firma, die den Vertrag unterzeichnet",
+        "contactSubAlltagshilfe": "Pflegebedürftige Person",
+        "careInsurance": "Pflege & Krankenversicherung",
+        "careInsuranceSub": "Pflicht für die monatliche Leistungsabrechnung",
+        "service": "Reinigungsservice",
+        "serviceAlltagshilfe": "Pflegeeinsatz",
+        "serviceSub": "Wie häufig und in welchem Umfang gereinigt wird",
+        "serviceSubAlltagshilfe": "Häufigkeit und Dauer der Besuche",
+        "other": "Sonstiges",
+        "otherSub": "Interne Notiz — nur das Team sieht diese",
+        "otherAlltagshilfe": "Weitere medizinische Hinweise"
+      },
+      "important": {
+        "title": "Wichtig:",
+        "abtretungserklaerung": "Ohne unterschriebene Abtretungserklärung können wir die Pflegeleistungen nicht direkt mit der Krankenkasse abrechnen. Die Person erhält bei der Erstberatung eine {welcomePack} mit allen Unterlagen.",
+        "welcomePack": "Willkommensmappe"
+      },
+      "actions": {
+        "back": "Zurück",
+        "saveDraft": "Entwurf speichern",
+        "continueConfirm": "Weiter zur Bestätigung",
+        "requiredHint": "Pflichtfelder sind mit",
+        "auditedHint": "markiert · Alle Eingaben sind audit-geloggt",
+        "saving": "Speichere…",
+        "saveDraftTitle": "Als Entwurf speichern"
+      },
+      "stepper": {
+        "step": "Schritt",
+        "serviceType": "Servicetyp",
+        "masterData": "Stammdaten",
+        "masterDataAlltagshilfe": "Stammdaten & Pflege",
+        "confirmation": "Bestätigung"
+      },
+      "banner": {
+        "priyaTitle": "Stammdaten erfassen",
+        "alltagsTitle": "Stammdaten & Pflegeinformationen",
+        "priyaTag": "Priya's · Reguläre Reinigung",
+        "alltagsTag": "Alltagshilfe · Tagesbetreuung",
+        "priyaSub": "Diese Angaben erscheinen auf Rechnungen, im Einsatzplan und im Kundenportal. Pflichtfelder sind mit * markiert.",
+        "alltagsSub": "Krankenkasse, Versicherungsnummer und Pflegegrad sind für die monatliche Abrechnung erforderlich. Pflichtfelder sind mit * markiert.",
+        "changeServiceType": "Servicetyp ändern",
+        "headingPriya": "Neuen Kunden anlegen",
+        "headingAlltagshilfe": "Neuer Pflegekunde",
+        "subheadPriya": "Reguläre Reinigung · Automatische Abrechnung über Lexware · Schritt 2 von 3",
+        "subheadAlltagshilfe": "Tagesbetreuung · Manuelle Abrechnung über Krankenkasse · Schritt 2 von 3"
+      },
+      "summary": {
+        "title": "Zusammenfassung",
+        "subPriya": "Die Angaben werden in den Vertrag und die erste Rechnung übernommen.",
+        "subAlltagshilfe": "Die Angaben werden in den Pflegevertrag und den ersten Monatsbericht übernommen.",
+        "serviceType": "Servicetyp",
+        "invoice": "Rechnung",
+        "invoicePriya": "Automatisch · Lexware",
+        "invoiceAlltagshilfe": "Manuell · Krankenkasse",
+        "vat": "USt",
+        "vatPriya": "19 % Standard",
+        "vatAlltagshilfe": "befreit § 4 Nr. 16 UStG",
+        "rate": "Stundensatz",
+        "rateNone": "—",
+        "rhythm": "Rhythmus",
+        "careInterval": "Pflegeintervall",
+        "careLevel": "Pflegegrad",
+        "whatHappens": "Was passiert nach dem Speichern?",
+        "gdpr": "Alle Daten sind DSGVO-konform gespeichert. Zugriff ist auf autorisiertes Pflegepersonal beschränkt.",
+        "priyaChecks": [
+          "Der Kunde erscheint grün markiert in der Kundenliste.",
+          "Lexware-Sync legt automatisch ein Debitor-Konto an.",
+          "Die erste Schicht kann sofort im Einsatzplan angelegt werden.",
+          "Eine Willkommens-E-Mail wird an {email} versendet."
+        ],
+        "alltagsChecks": [
+          "Der Pflegekunde erscheint in der Kundenliste rot markiert.",
+          "Nur qualifiziertes Pflegepersonal kann zugewiesen werden.",
+          "Erstberatung: {contractCheck}.",
+          "Keine Lexware-Synchronisation — manuelle Rechnung.",
+          "Pflegegrad erscheint im Monatsbericht für jeden Einsatz."
+        ],
+        "contractCheckSigned": "Vertrag bereits unterzeichnet — Start sofort möglich",
+        "contractCheckUnsigned": "Willkommensmappe wird mitgenommen",
+        "priyasShort": "Priya's",
+        "alltagshilfeShort": "Alltagshilfe"
+      }
     },
     "edit": {
       "title": "Kunde bearbeiten",
@@ -624,6 +781,39 @@
       "emptyTitle": "Noch keine Fotos.",
       "emptyBody": "Lade Fotos über den Button oben rechts hoch.",
       "limitReached": "Höchstens 20 Fotos pro Objekt — {dropped} wurde(n) verworfen."
+    },
+    "keys": {
+      "title": "Schlüsselverwaltung",
+      "subtitle": "Wer hält Schlüssel oder Zugangskarten für dieses Objekt.",
+      "issueNew": "Schlüssel ausgeben",
+      "cancel": "Abbrechen",
+      "active": "Aktiv ({count})",
+      "history": "Verlauf ({count})",
+      "emptyActive": "Aktuell sind keine Schlüssel ausgegeben.",
+      "employee": "Mitarbeiter",
+      "keyLabel": "Bezeichnung",
+      "keyLabelPlaceholder": "z. B. Haupttür, Schließfach 12, Alarmcode",
+      "notes": "Notiz",
+      "issuing": "Wird ausgegeben…",
+      "submit": "Ausgeben",
+      "issueSuccess": "Schlüssel registriert.",
+      "selectEmployee": "Bitte einen Mitarbeiter auswählen.",
+      "labelRequired": "Bitte eine Bezeichnung eingeben.",
+      "stillOut": "Noch nicht zurück",
+      "markReturned": "Zurückgenommen",
+      "delete": "Löschen",
+      "returnConfirm": "Schlüssel als zurückgenommen markieren?",
+      "returnSuccess": "Als zurückgenommen markiert.",
+      "deleteConfirm": "Eintrag wirklich löschen? Dies bricht den Prüfpfad.",
+      "deleteSuccess": "Eintrag gelöscht.",
+      "col": {
+        "employee": "Mitarbeiter",
+        "label": "Schlüssel",
+        "issued": "Ausgegeben",
+        "returned": "Zurück",
+        "notes": "Notiz",
+        "actions": ""
+      }
     }
   },
   "schedule": {
@@ -894,7 +1084,24 @@
       "saving": "Wird gespeichert…",
       "saveSuccess": "Änderungen gespeichert.",
       "createWithInvite": "Mitarbeiter angelegt — Einladung per E-Mail versendet.",
-      "createNoInvite": "Mitarbeiter angelegt, Einladung konnte nicht versendet werden ({reason})."
+      "createNoInvite": "Mitarbeiter angelegt, Einladung konnte nicht versendet werden ({reason}).",
+      "fields": {
+        "vorname": "Vorname",
+        "name": "Name",
+        "address": "Adresse",
+        "plz": "PLZ",
+        "city": "Stadt",
+        "dob": "Geburtsdatum",
+        "nationality": "Staatsangehörigkeit",
+        "salaryType": "Lohnart",
+        "hourly": "Stundenlohn",
+        "monthly": "Festgehalt",
+        "hourlyRate": "Stundenlohn (€)",
+        "monthlySalary": "Monatslohn (€)",
+        "weeklyHours": "Wochenarbeitszeit (Std)",
+        "vacation": "Urlaubsanspruch (Tage/Jahr)",
+        "contractStart": "Vertragsbeginn"
+      }
     }
   },
   "reports": {
@@ -950,7 +1157,7 @@
     },
     "library": {
       "title": "Berichts-Bibliothek",
-      "subtitle": "{count} Standardberichte · auf Anforderung erstellen oder wiederkehrend planen",
+      "subtitle": "{count} Standard-Berichte · auf Abruf oder als wiederkehrenden Lauf anlegen",
       "createCustom": "Eigenen Bericht erstellen",
       "createCustomComingSoon": "In Kürze verfügbar",
       "items": {
@@ -974,7 +1181,108 @@
         "satisfactionTag": "PDF",
         "exportPdf": "PDF",
         "exportCsv": "CSV"
+      },
+      "createOwn": "Eigenen Bericht erstellen",
+      "categories": {
+        "all": "Alle",
+        "finances": "Finanzen",
+        "operation": "Betrieb",
+        "compliance": "Compliance",
+        "planned": "{count} geplant",
+        "everydayHelp": "Alltagshilfe"
+      },
+      "badges": {
+        "planned": "GEPLANT",
+        "new": "NEU",
+        "core": "STANDARD"
+      },
+      "fields": {
+        "lastRun": "Letzte Ausführung",
+        "format": "Format",
+        "deploymentPlan": "Plan",
+        "delivery": "Auslieferung",
+        "rows": "Zeilen",
+        "customers": "Kunden"
+      },
+      "actions": {
+        "createNow": "Jetzt erstellen",
+        "editSchedule": "Plan bearbeiten",
+        "planFor": "Plan erstellen"
+      },
+      "lastRunFormats": {
+        "never": "Noch nie",
+        "today": "Heute · {time}",
+        "yesterday": "Gestern · {time}",
+        "daysAgo": "vor {n} Tagen",
+        "weeksAgo": "vor {n} Wochen",
+        "explicit": "{date}"
+      },
+      "deliveryFormats": {
+        "uponRequest": "Auf Anfrage",
+        "notSpecified": "Nicht festgelegt",
+        "management": "Geschäftsleitung"
+      },
+      "reports": {
+        "revenuePerCustomer": {
+          "title": "Umsatz pro Kunde",
+          "description": "Abgerechnete & eingegangene Beträge pro Kunde mit Vorjahresvergleich und Retention-Signal."
+        },
+        "revenuePerProperty": {
+          "title": "Umsatz pro Objekt",
+          "description": "Rentabilität, Einsätze und Stunden pro Objekt. Unter- oder überausgelastete Objekte werden hervorgehoben."
+        },
+        "hoursTimeTracking": {
+          "title": "Stunden & Zeiterfassung",
+          "description": "Alle Mitarbeiterstunden inkl. Überstunden, Pausen, Abrechnungsquote und Vorgesetzten-Freigaben."
+        },
+        "employeePerformance": {
+          "title": "Mitarbeiterleistung",
+          "description": "Bewertungen, Pünktlichkeit, Abschlussquote und Schulungsstatus aller {count} Mitarbeiter."
+        },
+        "bankStatementPackage": {
+          "title": "Kontoauszug-Paket",
+          "description": "Massen-Erstellung von Kontoauszügen pro Kunde · enthält alle {count} aktiven Konten."
+        },
+        "vatReturn": {
+          "title": "USt-Voranmeldung",
+          "description": "Monatliche Vorbereitung der USt-Voranmeldung: Umsätze, Reverse Charge und Vorsteuer."
+        },
+        "alltagshilfeMonthly": {
+          "title": "Alltagshilfe — Monatsbericht",
+          "description": "Pflegestunden pro Kund:in mit Mitarbeiter:innen-Aufschlüsselung. Bereit für manuelle Rechnungserstellung an die Krankenkassen."
+        }
       }
+    },
+    "schedules": {
+      "title": "Nächste geplante Läufe",
+      "manageBtn": "Pläne verwalten",
+      "tonight": "heute Abend",
+      "weekly": "wöchentlich",
+      "daily": "täglich",
+      "monthly": "monatlich"
+    },
+    "lastExports": {
+      "title": "Letzte Exporte",
+      "filters": {
+        "all": "Alle",
+        "ready": "Bereit",
+        "inProgress": "Läuft",
+        "mine": "Meine"
+      },
+      "thFile": "Datei",
+      "thCreated": "Erstellt",
+      "thFrom": "Von",
+      "thSize": "Größe",
+      "thStatus": "Status",
+      "thActions": "Aktionen",
+      "statusReady": "BEREIT",
+      "statusInProgress": "LÄUFT",
+      "statusFailed": "FEHLER",
+      "actionDownload": "Herunterladen",
+      "actionCancel": "Abbrechen",
+      "showAll": "Alle anzeigen",
+      "empty": "Noch keine Exporte. Erstelle einen Bericht oben.",
+      "retention": "Exporte werden 24 Monate aufbewahrt."
     }
   },
   "invoices": {
@@ -1065,7 +1373,12 @@
       "lexwareNotSynced": "Noch nicht synchronisiert",
       "syncSuccess": "Lexware-Sync erfolgreich",
       "markSentSuccess": "Als versendet markiert",
-      "markPaidSuccess": "Als bezahlt markiert"
+      "markPaidSuccess": "Als bezahlt markiert",
+      "reconciliation": {
+        "attempts": "Versuche",
+        "lastAttempt": "Letzter Versuch",
+        "errorPrefix": "Fehler:"
+      }
     }
   },
   "statement": {
@@ -1410,6 +1723,21 @@
       "nameRequired": "Bitte einen Namen eingeben (min. 2 Zeichen).",
       "cancel": "Abbrechen",
       "create": "Erstellen"
+    },
+    "realtimeHint": "Nachrichten erscheinen sofort für alle Mitglieder.",
+    "header": {
+      "course": "Schulung",
+      "shareShift": "Schicht teilen"
+    },
+    "typing": {
+      "one": "{name} schreibt…",
+      "two": "{a} und {b} schreiben…",
+      "many": "{a}, {b} und {n} weitere schreiben…"
+    },
+    "shiftCard": {
+      "shiftLabel": "Schicht #{id}",
+      "visitLabel": "Einsatz #{id}",
+      "openInSchedule": "Im Plan öffnen"
     }
   },
   "damage": {
@@ -1637,6 +1965,16 @@
     "errors": {
       "signatureRequired": "Für den Abschluss dieses Pflichtmoduls ist eine Unterschrift erforderlich.",
       "signatureTooLarge": "Unterschrift ist zu groß. Bitte versuche es mit einer einfacheren Unterschrift erneut."
+    },
+    "modules": {
+      "upload": {
+        "hint": "Oder direkt eine Video-Datei hochladen (max. {mb} MB)",
+        "uploading": "Hochladen… {pct}%",
+        "success": "Video hochgeladen — URL wurde übernommen.",
+        "failed": "Upload fehlgeschlagen: {msg}",
+        "notVideo": "Nur Video-Dateien werden akzeptiert.",
+        "tooLarge": "Datei zu groß (max. {mb} MB)."
+      }
     }
   },
   "alltagshilfeReport": {
@@ -1674,7 +2012,43 @@
     "colHours": "Stunden",
     "colRate": "Satz",
     "colAmount": "Betrag",
-    "emptyMonth": "Keine Alltagshilfe-Schichten in {month}."
+    "emptyMonth": "Keine Alltagshilfe-Schichten in {month}.",
+    "byEmployeeTitle": "Stunden pro Mitarbeiter:in",
+    "byEmployeeSubtitle": "Aggregiert über alle Kund:innen im Berichtszeitraum",
+    "byEmployeeCustomersN": "{n, plural, =1 {# Kund:in} other {# Kund:innen}}",
+    "byEmployeeVisitsN": "{n, plural, =1 {# Einsatz} other {# Einsätze}}",
+    "byEmployeeEmpty": "Keine Einsätze in diesem Monat.",
+    "deliveryTitle": "Versand",
+    "deliveryDescription": "Dieser Bericht wird automatisch am 1. jedes Monats an die Geschäftsleitung gesendet. Keine Lexware-Synchronisation findet statt.",
+    "deliveryStatus": "Status",
+    "deliveryRecipient": "Empfänger",
+    "deliveryFormat": "Format",
+    "deliveryLexwareSync": "Lexware-Synchronisation",
+    "deliveryLexwareSkipped": "Übersprungen · Manuelle Rechnungserstellung",
+    "deliveryNextVersion": "Nächste Version",
+    "deliveryStatusSent": "Versendet",
+    "deliveryStatusQueued": "In Warteschlange",
+    "deliveryStatusFailed": "Fehlgeschlagen",
+    "deliveryStatusManualSkipped": "Manuell übersprungen",
+    "deliveryStatusNever": "Noch nicht versendet",
+    "actionResend": "Erneut senden",
+    "actionCreateInvoice": "Manuelle Rechnung erstellen",
+    "actionSendingShort": "Sende…",
+    "toastSendOk": "Bericht an {recipient} gesendet.",
+    "toastSendFail": "Versand fehlgeschlagen: {error}",
+    "footerLine": "Automatisch erstellt · Monatsende {dateLabel} · Via E-Mail an die Geschäftsleitung",
+    "everydayHelpModule": "Alltagshilfe-Modul v1.0 · Rechnungen werden manuell aus diesem Bericht erstellt und an die Krankenkasse jedes Kunden gesendet.",
+    "careLevelPill": "Pflegegrad {level} · {desc}",
+    "careLevelDesc1": "Gering",
+    "careLevelDesc2": "Erheblich",
+    "careLevelDesc3": "Schwer",
+    "careLevelDesc4": "Schwerst",
+    "careLevelDesc5": "Härtefall",
+    "rhythmWeekly": "Wöchentlich",
+    "rhythmBiweekly": "Alle 2 Wochen",
+    "rhythmMonthly": "Monatlich",
+    "rhythmOnDemand": "Auf Anfrage",
+    "totalRowLabel": "Gesamt · {month}"
   },
   "import": {
     "title": "{module} per CSV importieren",
@@ -1810,6 +2184,24 @@
       "value": "Wert",
       "total": "Gesamt",
       "noStaff": "Noch keine Mitarbeiter zugeordnet."
+    },
+    "page": {
+      "ordersBreadcrumb": "Aufträge",
+      "plannedHours": "Geplante Stunden",
+      "hourlyRate": "Stundensatz",
+      "periodTotal": "Periode-Summe",
+      "varianceLabel": "Variance (30 Tage)",
+      "varianceMore": "Mehr",
+      "varianceLess": "Weniger",
+      "staffDistribution": "Personalverteilung (letzte 30 Tage)",
+      "thEmployee": "Mitarbeiter",
+      "thPlanned": "Geplant",
+      "thActual": "Erfasst",
+      "thVariance": "Variance",
+      "thAmount": "Wert",
+      "noStaff": "Noch keine Mitarbeiter zugeordnet.",
+      "total": "Gesamt",
+      "client": "Kunde:"
     }
   },
   "alltagshilfeBudget": {
@@ -1904,5 +2296,95 @@
       "90_plus": "90+"
     },
     "bucketCount": "{count} Rechn."
+  },
+  "employeeOverview": {
+    "breadcrumb": {
+      "dashboard": "Übersicht",
+      "current": "Mitarbeiterübersicht"
+    },
+    "title": "Mitarbeiterübersicht",
+    "subtitle": "HR-Sicht auf das gesamte Team — Auslastung, Anwesenheit, Zertifikate & Schulungen auf einen Blick",
+    "asOf": "Stand: {stamp}",
+    "export": "Export",
+    "fullList": "Vollständige Liste",
+    "newEmployee": "Neuer Mitarbeiter",
+    "kpi": {
+      "active": {
+        "label": "Aktive Mitarbeiter",
+        "sub": "+{n} diesen Monat"
+      },
+      "inUseToday": {
+        "label": "Heute im Einsatz",
+        "sub": "{n} frei oder Spätschicht"
+      },
+      "occupancy": {
+        "label": "Durchschn. Auslastung",
+        "subUp": "+{pp} pp ggü. Vorwoche",
+        "subDown": "−{pp} pp ggü. Vorwoche"
+      },
+      "certificates": {
+        "label": "Zertifikate fällig",
+        "sub": "in den nächsten 90 Tagen"
+      },
+      "onboarding": {
+        "label": "Onboarding offen",
+        "subEmpty": "—"
+      }
+    },
+    "today": {
+      "title": "Heute · {date}",
+      "openPlan": "Im Einsatzplan öffnen",
+      "inUseNow": "Aktuell im Einsatz",
+      "laterToday": "Später heute",
+      "freeToday": "Heute frei",
+      "vacationSick": "Urlaub · Krank",
+      "serviceDistribution": "Service-Verteilung heute"
+    },
+    "workload": {
+      "title": "Wochen-Auslastung",
+      "showing": "Zeige {n} von {total}",
+      "empty": "Keine aktiven Mitarbeiter."
+    },
+    "attendance": {
+      "title": "Anwesenheit · diesen Monat",
+      "punctuality": "Pünktlichkeit",
+      "legend": {
+        "present": "Pünktlich anwesend",
+        "delayed": "Verspätet",
+        "onHoliday": "Im Urlaub",
+        "sick": "Krank gemeldet"
+      }
+    },
+    "certificates": {
+      "title": "Zertifikate & Schulungen — Erneuerungen fällig",
+      "seeAll": "Alle anzeigen",
+      "empty": "Keine Erneuerungen in den nächsten 4 Monaten.",
+      "validUntil": "Gültig bis {date}",
+      "dueIn": "Fällig in {days} Tagen"
+    },
+    "events": {
+      "title": "Personalereignisse · letzte 7 Tage",
+      "empty": "Keine Ereignisse in den letzten 7 Tagen."
+    }
+  },
+  "dashboardExt": {
+    "weeklyChartTitle": "Wöchentliche Aufträge",
+    "invoiceOverdue": "Überfällig"
+  },
+  "monthlyReportEmail": {
+    "subject": "Monatsbericht Alltagshilfe — {period}",
+    "greeting": "Hallo zusammen,",
+    "intro": "anbei der automatisch erstellte Monatsbericht Alltagshilfe für {period}.",
+    "statsLabel": "Eckdaten",
+    "hoursLabel": "Pflegestunden gesamt",
+    "customersLabel": "Bediente Kund:innen",
+    "staffLabel": "Beteiligte Mitarbeiter:innen",
+    "amountLabel": "Abrechnungsbetrag",
+    "attachmentsLine": "PDF + CSV im Anhang. Bitte für jede Krankenkasse manuelle Rechnungen in Lexware anlegen.",
+    "nextActionTitle": "Nächste Schritte",
+    "nextActionBody": "1) Bericht prüfen, 2) Rechnung pro Krankenkasse manuell in Lexware erstellen, 3) An die jeweilige Pflegekasse versenden.",
+    "closing": "Bei Fragen einfach auf diese E-Mail antworten.",
+    "signature": "— Priya's Operations System",
+    "footerNote": "Diese E-Mail wurde automatisch erstellt. Eine Kopie liegt im Auditprotokoll."
   }
 }

@@ -10,6 +10,7 @@ import type { ChatAttachment, Message, ReactionAggregate } from "@/types/chat";
 import { cn } from "@/lib/utils/cn";
 import { useSignedUrl } from "@/hooks/chat/useSignedUrl";
 import { toggleChatReactionAction } from "@/app/actions/chat-reactions";
+import { InlineLinkCard, extractRefs } from "./InlineLinkCard";
 
 const localeMap = { de: deLocale, en: enLocale, ta: taLocale } as const;
 
@@ -67,16 +68,20 @@ export function MessageBubble({
     ? (ROLE_STYLE[message.sender_role] ?? null)
     : null;
   const roleLabel = message.sender_role_label ?? role?.label;
-  // The optimistic placeholder (rendered before the insert resolves)
-  // doesn't yet carry the joined sender row, so `message.sender` is
-  // null. Fall back to "Du" / "Ich" for own messages so the avatar
-  // never collapses to "—" / "?".
+
   const senderName =
     message.sender?.full_name ?? (isOwn ? "Du" : null) ?? null;
   const initials = computeInitials(senderName);
 
   const attachments = message.attachments ?? [];
   const hasBody = !!message.body && message.body.length > 0;
+  // Extract shift/visit refs from the body so the renderer can show
+  // a pill row underneath the bubble linking back to the schedule.
+  // We don't strip the marker from the rendered text — the literal
+  // "#shift-4172" still appears so the message reads naturally for
+  // anyone whose UI doesn't surface the pill (e.g. plain-text email
+  // mirrors in future).
+  const inlineRefs = hasBody ? extractRefs(message.body) : [];
 
   return (
     <div
@@ -141,6 +146,19 @@ export function MessageBubble({
           </div>
         )}
 
+        {inlineRefs.length > 0 && (
+          <div
+            className={cn(
+              "flex flex-wrap gap-1.5",
+              isOwn ? "justify-end" : "justify-start",
+            )}
+          >
+            {inlineRefs.map((r) => (
+              <InlineLinkCard key={`${r.kind}-${r.id}`} ref={r} />
+            ))}
+          </div>
+        )}
+
         {attachments.length > 0 && (
           <div
             className={cn(
@@ -148,8 +166,10 @@ export function MessageBubble({
               isOwn ? "justify-end" : "justify-start",
             )}
           >
-            {attachments.map((a, i) => (
-              <AttachmentView key={`${a.path}-${i}`} attachment={a} isOwn={isOwn} />
+            {attachments.map((a) => (
+              // Storage `path` is unique per attachment per message — stable
+              // key without needing the array index as a tiebreaker.
+              <AttachmentView key={a.path} attachment={a} isOwn={isOwn} />
             ))}
           </div>
         )}

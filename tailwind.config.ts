@@ -93,6 +93,9 @@ const config: Config = {
         md: "var(--radius-md)",
         lg: "var(--radius-lg)",
         xl: "var(--radius-xl)",
+        // `2xl` was missing — added so authoring matches the prototype's
+        // top-tier radius (24px) for hero cards and large surfaces.
+        "2xl": "var(--radius-2xl)",
         full: "var(--radius-full)",
       },
       boxShadow: {

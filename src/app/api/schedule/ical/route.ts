@@ -63,10 +63,18 @@ export async function GET(request: Request) {
   }
 
   // Touch last_used_at — best effort, don't block the response.
+  //
+  // GET handlers on a public URL get hit by browser prefetch / prerender
+  // and various crawlers, so an unconditional UPDATE writes the same row
+  // dozens of times for one human pull. Debounce by only updating when
+  // the existing stamp is older than 5 minutes; the SQL filter does it
+  // server-side so we still issue a single statement.
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
   void supabase
     .from("calendar_tokens")
     .update({ last_used_at: new Date().toISOString() })
-    .eq("token", token);
+    .eq("token", token)
+    .or(`last_used_at.is.null,last_used_at.lt.${fiveMinAgo}`);
 
   // Resolve the employee row (if any) for this profile.
   const { data: empRow } = await supabase

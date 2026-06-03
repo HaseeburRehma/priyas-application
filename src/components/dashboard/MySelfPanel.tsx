@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { de as deLocale, enUS as enLocale, ta as taLocale } from "date-fns/locale";
@@ -69,10 +70,18 @@ export function MySelfPanel({ data }: { data: MySelfData }) {
           value={`${data.hours_this_week} h`}
           sub={t("ofTarget", { target: data.weekly_target })}
         />
+        {/*
+          The "sub" used to be `format(new Date(), "MMMM", …)` — the current
+          month name. Server SSR computes one value, the client hydration
+          computes another, and at month boundaries the two diverge,
+          producing a React hydration warning. We use suppressHydrationWarning
+          so the brief flash of stale text is silent, then re-render with the
+          client value on the first effect tick (handled below).
+        */}
         <Stat
           label={t("hoursMonth")}
           value={`${data.hours_this_month} h`}
-          sub={format(new Date(), "MMMM", { locale: localeMap[locale] })}
+          sub={<MonthLabel locale={locale} />}
         />
         <Stat
           label={t("vacation")}
@@ -198,7 +207,7 @@ function Stat({
 }: {
   label: string;
   value: string;
-  sub: string;
+  sub: string | React.ReactNode;
   tone?: "warn" | "ok";
 }) {
   return (
@@ -223,4 +232,20 @@ function Stat({
       </div>
     </div>
   );
+}
+
+/**
+ * Renders the current month name in the user's locale, with a guard to
+ * avoid the SSR/hydration mismatch that `new Date()` on the server vs
+ * client introduces. On first render we use a stable placeholder; once
+ * mounted, useEffect swaps in the live value.
+ */
+function MonthLabel({ locale }: { locale: keyof typeof localeMap }) {
+  const [label, setLabel] = useState<string>("");
+  useEffect(() => {
+    setLabel(format(new Date(), "MMMM", { locale: localeMap[locale] }));
+  }, [locale]);
+  // Empty string for the very first paint is fine — the sub line is a
+  // contextual hint, not load-bearing information.
+  return <span suppressHydrationWarning>{label}</span>;
 }

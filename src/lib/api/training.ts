@@ -46,6 +46,9 @@ export type AssignableEmployee = {
 export type TrainingHubData = {
   myEmployeeId: string | null;
   canManage: boolean;
+  /** Caller's org. Forwarded to the video uploader so storage paths
+   *  remain org-scoped — never expose this to non-members.            */
+  orgId: string | null;
   modules: TrainingModule[];
   /** Keyed by module_id — only includes the current employee's progress. */
   progress: Record<string, TrainingProgress>;
@@ -70,6 +73,7 @@ export async function loadTrainingHub(): Promise<TrainingHubData> {
     return {
       myEmployeeId: null,
       canManage,
+      orgId: null,
       modules: [],
       progress: {},
       assignmentsByModule: {},
@@ -181,6 +185,7 @@ export async function loadTrainingHub(): Promise<TrainingHubData> {
   return {
     myEmployeeId,
     canManage,
+    orgId,
     modules,
     progress,
     assignmentsByModule,

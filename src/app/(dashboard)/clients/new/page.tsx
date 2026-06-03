@@ -2,7 +2,7 @@ import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { requirePermission, PermissionError } from "@/lib/rbac/permissions";
+import { can } from "@/lib/rbac/permissions";
 import { routes } from "@/lib/constants/routes";
 
 export const metadata: Metadata = { title: "Kunde anlegen" };
@@ -13,12 +13,7 @@ export const metadata: Metadata = { title: "Kunde anlegen" };
  * client.create permission. Anyone without it gets bounced to the list.
  */
 export default async function NewClientPickerPage() {
-  try {
-    await requirePermission("client.create");
-  } catch (err) {
-    if (err instanceof PermissionError) redirect(routes.clients);
-    throw err;
-  }
+  if (!(await can("client.create"))) redirect(routes.clients);
   const t = await getTranslations("clients.picker");
 
   return (

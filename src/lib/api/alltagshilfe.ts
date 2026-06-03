@@ -19,7 +19,16 @@ export type AlltagshilfeMonthlySummary = {
 };
 
 export type AlltagshilfeRow = {
-  client: { id: string; name: string; address: string; insurance: string };
+  client: {
+    id: string;
+    name: string;
+    address: string;
+    insurance: string;
+    /** Pflegegrad 1–5. Drives the care-level pill colour on the row. */
+    careLevel: number | null;
+    /** Cleaning rhythm enum from clients table; page translates to a label. */
+    rhythm: "weekly" | "biweekly" | "monthly" | "on_demand" | null;
+  };
   staff: Array<{
     id: string;
     name: string;
@@ -35,11 +44,38 @@ export type AlltagshilfeRow = {
   totalAmountCents: number;
 };
 
+/** Cross-client roll-up showing how each employee's month broke down. */
+export type AlltagshilfeEmployeeSummary = {
+  id: string;
+  name: string;
+  customersCount: number;
+  visits: number;
+  hours: number;
+  amountCents: number;
+};
+
+export type AlltagshilfeDelivery = {
+  id: string;
+  status: "queued" | "sent" | "failed" | "manual_skipped";
+  recipient: string;
+  format: string;
+  sentAt: string | null;
+  createdAt: string;
+  emailProviderId: string | null;
+  errorMessage: string | null;
+};
+
 export type AlltagshilfeMonthlyReport = {
   month: number; // 0–11
   year: number;
   summary: AlltagshilfeMonthlySummary;
   rows: AlltagshilfeRow[];
+  /** Per-employee roll-up across all clients in the period. */
+  byEmployee: AlltagshilfeEmployeeSummary[];
+  /** Latest delivery row for this period, or null if never sent. */
+  latestDelivery: AlltagshilfeDelivery | null;
+  /** When the next automated send would fire (1st of next month, 06:00 CET). */
+  nextRunAt: string;
 };
 
 const HOURLY_RATE_CENTS = 1720; // €17.20
@@ -60,10 +96,12 @@ export async function loadAlltagshilfeMonthly(
   // huge) shifts pull to properties owned by those clients in the next
   // round-trip. Without this step we'd fetch every shift in the month
   // and filter client-side — which OOMs the lambda on large orgs.
-  const [clientsRes, prevHoursRes, employeesRes] = await Promise.all([
+  const [clientsRes, prevHoursRes, employeesRes, latestDeliveryRes] = await Promise.all([
     supabase
       .from("clients")
-      .select("id, display_name, insurance_provider, insurance_number, care_level")
+      .select(
+        "id, display_name, insurance_provider, insurance_number, care_level, cleaning_rhythm",
+      )
       .eq("customer_type", "alltagshilfe")
       .is("deleted_at", null),
     supabase
@@ -77,6 +115,19 @@ export async function loadAlltagshilfeMonthly(
       .select("id, status")
       .is("deleted_at", null)
       .limit(5000),
+    // Most recent delivery row for this period. Ordered so a 'sent'
+    // row beats any 'failed' attempts in the same period.
+    supabase
+      .from("monthly_report_deliveries")
+      .select(
+        "id, status, recipient, format, sent_at, created_at, email_provider_id, error_message",
+      )
+      .eq("report_type", "alltagshilfe")
+      .eq("period_year", year)
+      .eq("period_month", month)
+      .order("status", { ascending: true }) // 'sent' sorts before 'queued'/'failed' alphabetically
+      .order("created_at", { ascending: false })
+      .limit(1),
   ]);
 
   const altClientIds = (
@@ -120,6 +171,12 @@ export async function loadAlltagshilfeMonthly(
     insurance_provider: string | null;
     insurance_number: string | null;
     care_level: number | null;
+    cleaning_rhythm:
+      | "weekly"
+      | "biweekly"
+      | "monthly"
+      | "on_demand"
+      | null;
   };
   const clients = (clientsRes.data ?? []) as ClientRow[];
   const employees = (employeesRes.data ?? []) as Array<{
@@ -183,6 +240,8 @@ export async function loadAlltagshilfeMonthly(
           name: c.display_name,
           address: `${s.property.address_line1}, ${s.property.city}`,
           insurance: sourceClient?.insurance_provider ?? c.insurance_provider ?? "—",
+          careLevel: sourceClient?.care_level ?? null,
+          rhythm: sourceClient?.cleaning_rhythm ?? null,
         },
         byEmployee: new Map(),
       });
@@ -263,6 +322,83 @@ export async function loadAlltagshilfeMonthly(
   const hoursDeltaPctVsPrev =
     prevHours === 0 ? (totalHours > 0 ? 100 : 0) : ((totalHours - prevHours) / prevHours) * 100;
 
+  // ---------- Per-employee roll-up across all clients ----------
+  // Rather than re-walk `rows` we re-walk altShifts so the employee
+  // sees the same hours we already attributed to them in the per-client
+  // bucket — no double rounding.
+  const empBucket = new Map<
+    string,
+    {
+      name: string;
+      customers: Set<string>;
+      visits: number;
+      hours: number;
+    }
+  >();
+  for (const s of altShifts) {
+    if (!s.property?.client || !s.employee) continue;
+    const empId = s.employee.id;
+    const empName = s.employee.full_name;
+    const clientId = s.property.client.id;
+    const startsAt = new Date(s.starts_at);
+    const endsAt = new Date(s.ends_at);
+    const hours = Math.max(0, (endsAt.getTime() - startsAt.getTime()) / 3_600_000);
+
+    const e = empBucket.get(empId) ?? {
+      name: empName,
+      customers: new Set<string>(),
+      visits: 0,
+      hours: 0,
+    };
+    e.customers.add(clientId);
+    e.visits += 1;
+    e.hours += hours;
+    empBucket.set(empId, e);
+  }
+  const byEmployee: AlltagshilfeEmployeeSummary[] = Array.from(
+    empBucket.entries(),
+  )
+    .map(([id, e]) => ({
+      id,
+      name: e.name,
+      customersCount: e.customers.size,
+      visits: e.visits,
+      hours: e.hours,
+      amountCents: Math.round(e.hours * HOURLY_RATE_CENTS),
+    }))
+    .sort((a, b) => b.hours - a.hours);
+
+  // ---------- Latest delivery + next-run preview ----------
+  type DeliveryRow = {
+    id: string;
+    status: AlltagshilfeDelivery["status"];
+    recipient: string;
+    format: string;
+    sent_at: string | null;
+    created_at: string;
+    email_provider_id: string | null;
+    error_message: string | null;
+  };
+  const deliveryRows = (latestDeliveryRes.data ?? []) as DeliveryRow[];
+  const dRow = deliveryRows[0];
+  const latestDelivery: AlltagshilfeDelivery | null = dRow
+    ? {
+        id: dRow.id,
+        status: dRow.status,
+        recipient: dRow.recipient,
+        format: dRow.format,
+        sentAt: dRow.sent_at,
+        createdAt: dRow.created_at,
+        emailProviderId: dRow.email_provider_id,
+        errorMessage: dRow.error_message,
+      }
+    : null;
+
+  // Next run: 1st of the month after the *current* period at 06:00 CET.
+  // We render the wall-clock timestamp; the timezone label is computed
+  // page-side via Intl since it varies between MEZ and MESZ.
+  const nextRunAt = new Date(year, month + 1, 1, 6, 0, 0, 0).toISOString();
+
   return {
     month,
     year,
@@ -279,5 +415,8 @@ export async function loadAlltagshilfeMonthly(
       hourlyRateCents: HOURLY_RATE_CENTS,
     },
     rows,
+    byEmployee,
+    latestDelivery,
+    nextRunAt,
   };
 }

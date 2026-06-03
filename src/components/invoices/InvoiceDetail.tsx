@@ -13,6 +13,10 @@ import {
   markInvoicePaidAction,
   markInvoiceSentAction,
 } from "@/app/actions/invoices";
+import {
+  pullPaymentsAction,
+  retrySyncInvoiceAction,
+} from "@/app/actions/lexware-reconcile";
 import type { InvoiceDetail as Detail } from "@/lib/api/invoices.types";
 
 const statusStyles: Record<Detail["status"], string> = {
@@ -37,6 +41,7 @@ export function InvoiceDetail({
   canLexware,
 }: Props) {
   const t = useTranslations("invoices.detail");
+  const tRec = useTranslations("invoices.detail.reconciliation");
   const tStatus = useTranslations("invoices.status");
   const f = useFormat();
   const formatEUR = (cents: number) => f.currencyCents(cents);
@@ -140,6 +145,45 @@ export function InvoiceDetail({
               className="btn btn--ghost border border-neutral-200 bg-white"
             >
               {t("actionLexware")}
+            </button>
+          )}
+          {/* Retry sync is offered after a failed attempt — same RBAC,
+              but using the new reconcile action that stamps attempt
+              counts + last_error so the UI history makes sense. */}
+          {canLexware && detail.lexware_sync_status === "failed" && (
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() =>
+                run(
+                  () => retrySyncInvoiceAction(detail.id),
+                  "Lexware-Sync wiederholt.",
+                )
+              }
+              className="btn btn--ghost border border-warning-300 bg-warning-50 text-warning-700"
+              title={detail.lexware_last_error ?? undefined}
+            >
+              {t("actionLexware")} — Wiederholen
+            </button>
+          )}
+          {/* Pull payments — only useful once the invoice is synced. */}
+          {canLexware && detail.lexware_id && detail.status !== "paid" && (
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() =>
+                run(async () => {
+                  const r = await pullPaymentsAction();
+                  if (!r.ok) return r;
+                  return {
+                    ok: true as const,
+                    data: { id: detail.id, summary: r.data },
+                  };
+                }, "Lexware-Zahlungen abgeglichen.")
+              }
+              className="btn btn--ghost border border-neutral-200 bg-white"
+            >
+              Lexware-Zahlungen abrufen
             </button>
           )}
           <a
@@ -261,6 +305,34 @@ export function InvoiceDetail({
               <div className="mt-2 font-mono text-[11px] text-neutral-500">
                 Lexware ID: {detail.lexware_id}
               </div>
+            )}
+            {/* Reconciliation history — shown when at least one push has
+                been attempted (success or failure). Helps the manager
+                understand "why isn't this synced?" without digging into
+                the audit log. */}
+            {detail.lexware_attempts > 0 && (
+              <dl className="mt-3 space-y-1 border-t border-neutral-100 pt-2 text-[11px]">
+                <div className="flex items-baseline justify-between gap-2">
+                  <dt className="text-neutral-500">{tRec("attempts")}</dt>
+                  <dd className="font-mono text-neutral-700">
+                    {detail.lexware_attempts}
+                  </dd>
+                </div>
+                {detail.lexware_last_attempt_at && (
+                  <div className="flex items-baseline justify-between gap-2">
+                    <dt className="text-neutral-500">{tRec("lastAttempt")}</dt>
+                    <dd className="font-mono text-neutral-700">
+                      {new Date(detail.lexware_last_attempt_at).toLocaleString("de-DE")}
+                    </dd>
+                  </div>
+                )}
+                {detail.lexware_last_error && (
+                  <div className="mt-2 rounded-md bg-error-50 px-2 py-1.5 text-[11px] text-error-700">
+                    <span className="font-semibold">{tRec("errorPrefix")}</span>{" "}
+                    {detail.lexware_last_error}
+                  </div>
+                )}
+              </dl>
             )}
           </section>
 
