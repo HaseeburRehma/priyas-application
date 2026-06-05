@@ -296,6 +296,94 @@ export async function loadClientDetail(id: string): Promise<ClientDetail | null>
     0,
   );
 
+  // ---- Properties preview (up to 4, newest first) ----
+  const { data: propPreviewRaw } = await supabase
+    .from("properties")
+    .select("id, name, city, weekly_frequency, kind, created_at")
+    .eq("client_id", id)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(4);
+  type PropPrev = {
+    id: string;
+    name: string;
+    city: string;
+    weekly_frequency: number | null;
+    kind: string;
+  };
+  const properties_preview = (
+    (propPreviewRaw ?? []) as PropPrev[]
+  ).map((p) => ({
+    id: p.id,
+    name: p.name,
+    city: p.city,
+    weekly_frequency: p.weekly_frequency,
+    kind: p.kind,
+  }));
+
+  // ---- Recent activity (last 8 audit_log entries for this record) ----
+  // The audit_log has `table_name` + `record_id` so we filter by both.
+  // If the audit_log table doesn't exist in this deployment (older
+  // migrations), the query errors silently and we return an empty list.
+  let recent_activity: ClientDetail["recent_activity"] = [];
+  try {
+    const { data: auditRows } = await supabase
+      .from("audit_log")
+      .select("id, action, user_id, after, created_at")
+      .eq("table_name", "clients")
+      .eq("record_id", id)
+      .order("created_at", { ascending: false })
+      .limit(8);
+    type AuditRow = {
+      id: string;
+      action: string;
+      user_id: string | null;
+      after: Record<string, unknown> | null;
+      created_at: string;
+    };
+    const rows = (auditRows ?? []) as AuditRow[];
+
+    // Pull actor names in one round-trip — the audit row stores only
+    // user_id, but we want a friendly name on screen.
+    const actorIds = Array.from(
+      new Set(rows.map((r) => r.user_id).filter((x): x is string => !!x)),
+    );
+    const actorMap = new Map<string, string>();
+    if (actorIds.length > 0) {
+      const { data: profileRows } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", actorIds);
+      for (const p of (profileRows ?? []) as Array<{ id: string; full_name: string }>) {
+        actorMap.set(p.id, p.full_name);
+      }
+    }
+
+    recent_activity = rows.map((r) => ({
+      id: r.id,
+      action: r.action,
+      actor_name: r.user_id ? (actorMap.get(r.user_id) ?? null) : null,
+      created_at: r.created_at,
+      // Compose a short summary from common audit shapes. The audit
+      // schema is open-ended; we look for the highest-signal keys
+      // (message, change reason, status) and fall back to action.
+      summary:
+        (r.after?.message as string | undefined) ??
+        (r.after?.reason as string | undefined) ??
+        (r.after?.status as string | undefined) ??
+        r.action,
+    }));
+  } catch (err) {
+    // Only swallow "relation does not exist" (Postgres SQLSTATE 42P01) —
+    // older deployments may not have an audit_log table. Any other
+    // error (RLS denial, network, etc.) is a real bug and should
+    // bubble so we don't quietly hide a broken activity feed.
+    const code = (err as { code?: string } | null)?.code;
+    if (code !== "42P01") {
+      throw err;
+    }
+  }
+
   return {
     id: String(client.id),
     display_name: String(client.display_name),
@@ -328,5 +416,7 @@ export async function loadClientDetail(id: string): Promise<ClientDetail | null>
           status: (contractRes.data as { status: "draft" | "active" | "terminated" }).status,
         }
       : null,
+    properties_preview,
+    recent_activity,
   };
 }

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  breakSchema,
   checkInSchema,
   correctTimeEntrySchema,
 } from "@/lib/validators/time-entries";
@@ -223,6 +224,213 @@ export async function checkInAction(
       warned,
     },
   };
+}
+
+/**
+ * Start / end a break inside an active shift.
+ *
+ * Unlike check-in/check-out, breaks don't require GPS — staff can
+ * step off-site for coffee and we shouldn't penalise them by failing
+ * the geofence check. The row is still tied to (shift, employee) so
+ * payroll can compute net worked time from check_in / check_out
+ * minus the sum of break_end - break_start intervals.
+ *
+ * State machine the action enforces:
+ *   - Caller must have a `check_in` row but no `check_out` row yet
+ *     (must currently be on shift).
+ *   - For `break_start`: there must be no open break already (every
+ *     existing break_start has a matching break_end). Otherwise we
+ *     reject — taking a break while already on one is a UI bug.
+ *   - For `break_end`: there must be exactly one trailing
+ *     `break_start` with no matching `break_end`. Otherwise the
+ *     "end" doesn't make sense.
+ *
+ * Returns the new row id on success.
+ */
+async function shiftLifecycleEntries(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  shift_id: string,
+  employee_id: string,
+): Promise<
+  Array<{ kind: string; occurred_at: string }>
+> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await ((supabase.from("time_entries") as any))
+    .select("kind, occurred_at")
+    .eq("shift_id", shift_id)
+    .eq("employee_id", employee_id)
+    .order("occurred_at", { ascending: true });
+  return (data ?? []) as Array<{ kind: string; occurred_at: string }>;
+}
+
+/**
+ * Lightweight read-only probe — given a shift id, return whether the
+ * current user is currently checked in and whether a break is open.
+ * Used by the break-control UI on mount so the buttons reflect
+ * reality without forcing a full schedule refetch.
+ *
+ * The probe is scoped to the caller's own employee row — managers
+ * checking on someone else's shift get back null because the lookup
+ * key is `profile_id = auth.uid()`.
+ */
+export async function getShiftLifecycleAction(
+  shiftId: string,
+): Promise<
+  | { ok: true; data: { checkedIn: boolean; checkedOut: boolean; onBreak: boolean } }
+  | { ok: false; error: string }
+> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Not signed in" };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: empRow } = await ((supabase.from("employees") as any))
+    .select("id")
+    .eq("profile_id", user.id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  const employee = empRow as { id: string } | null;
+  if (!employee) {
+    return {
+      ok: true,
+      data: { checkedIn: false, checkedOut: false, onBreak: false },
+    };
+  }
+  const events = await shiftLifecycleEntries(supabase, shiftId, employee.id);
+  const checkedIn = events.some((e) => e.kind === "check_in");
+  const checkedOut = events.some((e) => e.kind === "check_out");
+  const openBreaks = events
+    .filter((e) => e.kind.startsWith("break_"))
+    .reduce((n, e) => n + (e.kind === "break_start" ? 1 : -1), 0);
+  return {
+    ok: true,
+    data: { checkedIn, checkedOut, onBreak: openBreaks > 0 },
+  };
+}
+
+export async function breakAction(
+  raw: unknown,
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    await requirePermission("time.checkin");
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof PermissionError ? err.message : "Forbidden",
+    };
+  }
+  const { rateLimit } = await import("@/lib/rate-limit/guard");
+  const rl = await rateLimit("write", "time.break");
+  if (rl) return { ok: false, error: rl };
+  const parsed = breakSchema.safeParse(raw);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Validation failed",
+      fieldErrors: parsed.error.flatten().fieldErrors as Record<
+        string,
+        string[]
+      >,
+    };
+  }
+  const input = parsed.data;
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Not signed in" };
+
+  // Resolve the employee row owned by this user. Same lookup the
+  // check-in flow uses — keeps a non-employee profile from logging
+  // breaks against someone else's shift.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: empRow } = await ((supabase.from("employees") as any))
+    .select("id, org_id")
+    .eq("profile_id", user.id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  const employee = empRow as { id: string; org_id: string } | null;
+  if (!employee) {
+    return { ok: false, error: "No employee profile attached to this user." };
+  }
+
+  // Verify the shift is the caller's and currently active.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: shiftRow } = await ((supabase.from("shifts") as any))
+    .select("id, employee_id, property_id, org_id, status")
+    .eq("id", input.shift_id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  type ShiftRow = {
+    id: string;
+    employee_id: string;
+    property_id: string;
+    org_id: string;
+    status: string;
+  };
+  const shift = shiftRow as ShiftRow | null;
+  if (!shift) return { ok: false, error: "Shift not found." };
+  if (shift.employee_id !== employee.id) {
+    return { ok: false, error: "Not your shift." };
+  }
+
+  // Lifecycle validation. Pull every clock-event for this shift and
+  // walk forward to compute the current state.
+  const events = await shiftLifecycleEntries(supabase, shift.id, employee.id);
+  const hasCheckIn = events.some((e) => e.kind === "check_in");
+  const hasCheckOut = events.some((e) => e.kind === "check_out");
+  if (!hasCheckIn) {
+    return { ok: false, error: "Du musst zuerst einchecken." };
+  }
+  if (hasCheckOut) {
+    return { ok: false, error: "Die Schicht ist bereits beendet." };
+  }
+  // Compute whether a break is currently open: count break_start vs
+  // break_end. Open == start > end.
+  const breaks = events.filter((e) => e.kind.startsWith("break_"));
+  const openBreaks = breaks.reduce(
+    (n, e) => n + (e.kind === "break_start" ? 1 : -1),
+    0,
+  );
+  if (input.kind === "break_start" && openBreaks > 0) {
+    return { ok: false, error: "Du befindest dich bereits in einer Pause." };
+  }
+  if (input.kind === "break_end" && openBreaks <= 0) {
+    return { ok: false, error: "Keine offene Pause zum Beenden." };
+  }
+
+  const occurred_at = new Date().toISOString();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const timeEntriesTable = supabase.from("time_entries") as any;
+  const { data: insertRow, error } = await timeEntriesTable
+    .insert({
+      org_id: employee.org_id,
+      shift_id: shift.id,
+      employee_id: employee.id,
+      property_id: shift.property_id,
+      kind: input.kind,
+      occurred_at,
+      manual: false,
+      created_by: user.id,
+    })
+    .select("id")
+    .single();
+  if (error || !insertRow) {
+    return { ok: false, error: error?.message ?? "insert_failed" };
+  }
+  const insertedId = (insertRow as { id: string }).id;
+  await audit(
+    "time_entry.break",
+    insertedId,
+    input.kind === "break_start"
+      ? "Pause gestartet"
+      : "Pause beendet",
+    { kind: input.kind, shift_id: shift.id },
+  );
+  revalidatePath(routes.schedule);
+  return { ok: true, data: { id: insertedId } };
 }
 
 /**

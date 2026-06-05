@@ -41,6 +41,7 @@ export const routes = {
   reports: "/reports" as Route,
   alltagshilfeReport: "/reports/alltagshilfe" as Route,
   settings: "/settings" as Route,
+  apiKeys: "/settings/api-keys" as Route,
   chat: "/chat" as Route,
   notifications: "/notifications" as Route,
   onboard: "/onboard" as Route,

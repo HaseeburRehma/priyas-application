@@ -157,6 +157,22 @@ export async function getCurrentRole(): Promise<{
   };
 }
 
+/**
+ * Lighter-weight check than `requirePermission`: just confirms the
+ * caller is signed in and belongs to an org. Use this on public API
+ * routes (`/api/clients`, `/api/invoices`, etc.) so unauthenticated
+ * requests get a clean 401 instead of an empty-array HTTP 200 via
+ * RLS. Returns the user id + org id when the session is valid, or
+ * null on either failure mode so callers can map it to a 401 response.
+ */
+export async function requireAuth(): Promise<
+  { userId: string; orgId: string } | null
+> {
+  const { userId, orgId } = await getCurrentRole();
+  if (!userId || !orgId) return null;
+  return { userId, orgId };
+}
+
 /** Throws PermissionError if the current user can't perform the action. */
 export async function requirePermission(action: Action) {
   const { userId, orgId, role } = await getCurrentRole();

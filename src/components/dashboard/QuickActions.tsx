@@ -93,9 +93,9 @@ export function QuickActions() {
                 {item.isNew && (
                   <span
                     className="rounded-full bg-primary-500 px-1.5 py-px text-[8px] font-bold uppercase tracking-[0.06em] text-white"
-                    title="Neu"
+                    title={t("newBadge")}
                   >
-                    NEU
+                    {t("newBadge")}
                   </span>
                 )}
               </span>

@@ -345,11 +345,14 @@ export async function loadDashboardData(): Promise<DashboardData> {
   // a foreign key on user_id, so the embedded join would need a hint).
   // Explicit org_id filter — gives the planner the leading column on
   // `idx_audit_org_created` instead of relying purely on RLS predicates.
+  // Pull a few extra rows here (16 instead of 8) so we still have
+  // enough non-system entries to display after we filter out the
+  // database-housekeeping rows below.
   let auditQuery = supabase
     .from("audit_log")
     .select("id, action, table_name, record_id, user_id, after, created_at")
     .order("created_at", { ascending: false })
-    .limit(8);
+    .limit(16);
   if (orgId) auditQuery = auditQuery.eq("org_id", orgId);
   const { data: auditRows } = await auditQuery;
   type AuditRow = {
@@ -361,7 +364,38 @@ export async function loadDashboardData(): Promise<DashboardData> {
     after: Record<string, unknown> | null;
     created_at: string;
   };
-  const auditList = (auditRows ?? []) as AuditRow[];
+
+  /**
+   * Filter out audit rows that aren't useful to surface in the user-
+   * facing activity feed. Two categories get dropped:
+   *
+   *   1. **Migration / system housekeeping** — rows whose action starts
+   *      with `migration.` or `system.` (e.g. "Existing admin profile
+   *      observed at security migration 000024…"). Those are produced
+   *      by `do $$` blocks during schema upgrades and have no actor,
+   *      no link target, and no business meaning to the people using
+   *      the dashboard.
+   *
+   *   2. **No-actor system rows** whose message explicitly mentions
+   *      "migration" — a belt-and-braces guard for migrations that
+   *      forgot to use the `migration.` action prefix.
+   */
+  const auditList = ((auditRows ?? []) as AuditRow[])
+    .filter((r) => {
+      const action = (r.action ?? "").toLowerCase();
+      if (action.startsWith("migration.")) return false;
+      if (action.startsWith("system.migration")) return false;
+      // user_id is null for system rows; combined with a migration
+      // mention in the body, that's almost certainly housekeeping
+      // noise.
+      const message =
+        (r.after && typeof r.after.message === "string"
+          ? (r.after.message as string)
+          : "") ?? "";
+      if (!r.user_id && /migration/i.test(message)) return false;
+      return true;
+    })
+    .slice(0, 8);
 
   const actorIds = Array.from(
     new Set(auditList.map((r) => r.user_id).filter((id): id is string => !!id)),

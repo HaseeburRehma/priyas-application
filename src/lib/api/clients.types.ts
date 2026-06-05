@@ -88,4 +88,24 @@ export type ClientDetail = {
     legal_form: string | null;
     status: "draft" | "active" | "terminated";
   } | null;
+  // Lightweight previews for the detail page side panels. Both are
+  // pulled in the same `loadClientDetail()` round-trip so a single
+  // request renders the whole page.
+  properties_preview: Array<{
+    id: string;
+    name: string;
+    city: string;
+    weekly_frequency: number | null;
+    kind: string;
+  }>;
+  /** Last 8 audit-log entries scoped to this client (newest first). */
+  recent_activity: Array<{
+    id: string;
+    action: string;
+    actor_name: string | null;
+    created_at: string;
+    /** Free-form summary the loader composes from after/before JSON
+     *  so the UI doesn't have to know the audit schema. */
+    summary: string;
+  }>;
 };

@@ -34,6 +34,7 @@ type Props = {
 export function ChatThread({ channel, currentUserId }: Props) {
   const locale = useLocale() as keyof typeof localeMap;
   const tTyping = useTranslations("chat.typing");
+  const tThread = useTranslations("chat.thread");
   const { messages, loading, error, append, replace } = useMessages(channel.id);
   const { send, error: sendError } = useSendMessage();
   const markAsRead = useMarkChannelRead();
@@ -207,13 +208,13 @@ export function ChatThread({ channel, currentUserId }: Props) {
       >
         {loading && (
           <div className="grid h-full place-items-center text-[13px] text-neutral-500">
-            Wird geladen…
+            {tThread("loading")}
           </div>
         )}
 
         {!loading && error && (
           <div className="rounded-md border border-error-100 bg-error-50 px-3 py-2 text-[12px] text-error-700">
-            Fehler beim Laden: {error}
+            {tThread("loadError", { error })}
           </div>
         )}
 
@@ -221,9 +222,9 @@ export function ChatThread({ channel, currentUserId }: Props) {
           <div className="grid h-full place-items-center text-center text-[13px] text-neutral-500">
             <div>
               <div className="mb-1 font-semibold text-neutral-700">
-                Sei der Erste, der hier schreibt.
+                {tThread("emptyTitle")}
               </div>
-              <div>Nachrichten erscheinen sofort für alle Mitglieder.</div>
+              <div>{tThread("emptyBody")}</div>
             </div>
           </div>
         )}

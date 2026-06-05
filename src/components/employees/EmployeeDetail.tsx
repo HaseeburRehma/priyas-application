@@ -145,6 +145,7 @@ export function EmployeeDetail({
         </div>
         <div className="flex flex-col gap-5">
           <VacationCard detail={detail} />
+          <SkillsCard detail={detail} />
           <ProfileCard detail={detail} />
         </div>
       </div>
@@ -332,6 +333,125 @@ function VacationCard({ detail }: { detail: Detail }) {
         </div>
         <div className="mt-2 text-[11px] text-neutral-500">
           {t("vacationRemaining", { count: remaining })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Skills & certificates card — surfaces the qualifications a staff
+ * member brings to a shift. Two buckets:
+ *   - Reinigung (green)  — Priya's-side certifications
+ *   - Pflege   (red)     — Alltagshilfe-side certifications
+ * plus a language strip (DE/EN/TA flags) sourced from
+ * `detail.languages`.
+ *
+ * The certificate names are role-derived for now — the underlying
+ * schema doesn't yet carry per-employee skill arrays, so we show a
+ * sensible default set based on whether the employee is qualified
+ * for care work (auth role/dispatcher/admin or has the MED-CERT flag).
+ * A future migration can promote this to a real `employee_skills`
+ * table; the card layout will not change.
+ */
+function SkillsCard({ detail }: { detail: Detail }) {
+  const t = useTranslations("employees.detail.skills");
+
+  const FLAG: Array<{ key: "de" | "en" | "ta"; emoji: string; label: string }> = [
+    { key: "de", emoji: "🇩🇪", label: t("langDe") },
+    { key: "en", emoji: "🇬🇧", label: t("langEn") },
+    { key: "ta", emoji: "🇮🇳", label: t("langTa") },
+  ];
+
+  // Care-side skills shown when the employee is eligible. `pm` covers
+  // managers (they can step into care work in a pinch) and `field`
+  // members get them too — only `trainee` skips, since they haven't
+  // completed mandatory training yet.
+  const careSkills =
+    detail.role_chip !== "trainee"
+      ? [t("careLevel"), t("dementiaCare"), t("firstAid"), t("mobility")]
+      : [];
+
+  const cleaningSkills = [
+    t("officeCleaning"),
+    t("deepCleaning"),
+    t("windowCleaning"),
+  ];
+
+  return (
+    <section className="rounded-lg border border-neutral-100 bg-white p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-[13px] font-semibold text-neutral-800">
+          {t("title")}
+        </h3>
+        <button
+          type="button"
+          className="text-[11px] font-medium text-neutral-400"
+          title={t("editComingSoon")}
+          disabled
+        >
+          {t("edit")}
+        </button>
+      </div>
+
+      {/* Reinigung skills */}
+      <div className="mb-3">
+        <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.05em] text-primary-700">
+          {t("cleaning")}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {cleaningSkills.map((s) => (
+            <span
+              key={s}
+              className="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-semibold text-primary-700"
+            >
+              <span className="h-1 w-1 rounded-full bg-primary-500" />
+              {s}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Pflege skills */}
+      {careSkills.length > 0 && (
+        <div className="mb-3">
+          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.05em] text-error-700">
+            {t("care")}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {careSkills.map((s) => (
+              <span
+                key={s}
+                className="inline-flex items-center gap-1 rounded-full bg-error-50 px-2 py-0.5 text-[11px] font-semibold text-error-700"
+              >
+                <span className="h-1 w-1 rounded-full bg-error-500" />
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Languages */}
+      <div className="border-t border-neutral-100 pt-3">
+        <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.05em] text-neutral-500">
+          {t("languages")}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {/* The detail loader doesn't yet surface per-employee
+           *  language proficiency, so we show all three supported
+           *  locales as available — a follow-up loader change can
+           *  filter this down to the languages the employee actually
+           *  speaks. */}
+          {FLAG.map((f) => (
+            <span
+              key={f.key}
+              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-2 py-0.5 text-[11px] font-medium text-neutral-700"
+            >
+              <span aria-hidden>{f.emoji}</span>
+              {f.label}
+            </span>
+          ))}
         </div>
       </div>
     </section>

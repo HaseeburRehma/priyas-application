@@ -5,6 +5,7 @@ import type {
   EmployeesSortField,
   EmployeeStatus,
 } from "@/lib/api/employees.types";
+import { requireAuth } from "@/lib/rbac/permissions";
 
 const ROLES: ReadonlyArray<EmployeeRoleChip | "all"> = [
   "all",
@@ -21,6 +22,9 @@ const STATUSES: ReadonlyArray<EmployeeStatus | "all"> = [
 const VALID_SORTS: ReadonlyArray<EmployeesSortField> = ["name", "status"];
 
 export async function GET(request: NextRequest) {
+  if (!(await requireAuth())) {
+    return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
+  }
   const url = new URL(request.url);
   const q = url.searchParams.get("q") ?? "";
   const roleRaw = url.searchParams.get("role") ?? "all";

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { loadInvoicesList } from "@/lib/api/invoices";
 import type { InvoiceStatus } from "@/lib/api/invoices.types";
+import { requireAuth } from "@/lib/rbac/permissions";
 
 const STATUSES: ReadonlyArray<InvoiceStatus | "all"> = [
   "all",
@@ -12,6 +13,9 @@ const STATUSES: ReadonlyArray<InvoiceStatus | "all"> = [
 ];
 
 export async function GET(request: NextRequest) {
+  if (!(await requireAuth())) {
+    return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
+  }
   const url = new URL(request.url);
   const q = url.searchParams.get("q") ?? "";
   const statusRaw = url.searchParams.get("status") ?? "all";

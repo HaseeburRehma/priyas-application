@@ -97,7 +97,7 @@ export function WeeklyChart({ data }: { data: WeeklyChartData }) {
           className="w-full"
           style={{ height: 220 }}
           role="img"
-          aria-label="Wöchentliche Aufträge"
+          aria-label={t("ariaLabel")}
         >
           {/* Grid lines + Y labels */}
           {[3, 2, 1, 0].map((i) => {

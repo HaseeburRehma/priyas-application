@@ -44,6 +44,12 @@ export function InvoicesPage({ summary, canCreate }: Props) {
 
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<InvoiceStatus | "all">("all");
+  // Service-line segment filter — matches the prototype's
+  // "All / Priya's / Alltagshilfe" pill toggle at the right of the
+  // toolbar. Filtered client-side because the loader pre-paginates
+  // and re-issuing the query for a UI tab feels heavy for a
+  // <50-row screen; revisit if the dataset grows past one page.
+  const [kind, setKind] = useState<"all" | "regular" | "alltagshilfe">("all");
   const [page, setPage] = useState(1);
 
   const { data, isLoading, isFetching } = useInvoices({
@@ -54,7 +60,11 @@ export function InvoicesPage({ summary, canCreate }: Props) {
     sort: "issue_date",
     direction: "desc",
   });
-  const rows = data?.rows ?? [];
+  const allRows = data?.rows ?? [];
+  // Apply the service-line filter client-side. Done after the loader
+  // returns so pagination still reflects the underlying filtered set,
+  // not the post-kind subset (which would feel jumpy as pages turn).
+  const rows = kind === "all" ? allRows : allRows.filter((r) => r.invoice_kind === kind);
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -94,10 +104,28 @@ export function InvoicesPage({ summary, canCreate }: Props) {
             href="/api/invoices?format=csv"
             target="_blank"
             rel="noopener"
-            className="btn btn--tertiary"
+            className="btn btn--ghost border border-neutral-200 bg-white"
           >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
             {t("actions.export")}
           </a>
+          {/* Lexware bulk-sync button — re-runs the retry sweep on
+           *  failed/pending invoices in the visible org. Same server
+           *  action that the nightly cron uses, just gated here on
+           *  the manual trigger. */}
+          <button
+            type="button"
+            className="btn btn--ghost border border-neutral-200 bg-white"
+            title={t("actions.syncLexwareTitle")}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+              <path d="M21 12a9 9 0 11-9-9" />
+              <path d="M21 4v5h-5" />
+            </svg>
+            {t("actions.syncLexware")}
+          </button>
           {canCreate && (
             <Link href={routes.invoiceNew} className="btn btn--primary">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
@@ -109,25 +137,31 @@ export function InvoicesPage({ summary, canCreate }: Props) {
         </div>
       </div>
 
-      {/* Summary */}
+      {/* Summary — coloured top stripes per prototype:
+       *  total = primary green, open = warning amber,
+       *  paid = success green, overdue = error red */}
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
+          stripe="primary"
           label={tSum("total")}
           value={formatEUR(summary.totalAmountCents)}
           sub={tSum("totalSub", { count: summary.total })}
         />
         <SummaryCard
+          stripe="warning"
+          label={tSum("open")}
+          value={formatEUR(summary.openAmountCents)}
+          sub={tSum("openSub", { count: summary.openCount })}
+        />
+        <SummaryCard
+          stripe="success"
           label={tSum("paid")}
           value={formatEUR(summary.paidAmountCents)}
           sub={tSum("paidSub", { count: summary.paidCount })}
           tone="up"
         />
         <SummaryCard
-          label={tSum("open")}
-          value={formatEUR(summary.openAmountCents)}
-          sub={tSum("openSub", { count: summary.openCount })}
-        />
-        <SummaryCard
+          stripe="error"
           label={tSum("overdue")}
           value={formatEUR(summary.overdueAmountCents)}
           sub={tSum("overdueSub", { count: summary.overdueCount })}
@@ -184,6 +218,45 @@ export function InvoicesPage({ summary, canCreate }: Props) {
                 </button>
               ))}
             </div>
+
+            {/* Service-line segment (All / Priya's / Alltagshilfe). */}
+            <div className="ml-auto flex items-center gap-0.5 rounded-md border border-neutral-100 bg-neutral-50 p-[3px]">
+              {(["all", "regular", "alltagshilfe"] as const).map((k) => {
+                const active = kind === k;
+                const dot =
+                  k === "all"
+                    ? "bg-gradient-to-r from-primary-500 to-error-500"
+                    : k === "regular"
+                      ? "bg-primary-500"
+                      : "bg-error-500";
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setKind(k)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-[11px] font-semibold transition",
+                      active
+                        ? k === "regular"
+                          ? "bg-primary-50 text-primary-700"
+                          : k === "alltagshilfe"
+                            ? "bg-error-50 text-error-700"
+                            : "bg-white text-neutral-800 shadow-xs"
+                        : "text-neutral-600 hover:bg-neutral-100",
+                    )}
+                  >
+                    <span className={cn("h-1.5 w-1.5 rounded-full", dot)} />
+                    {tFilter(
+                      k === "all"
+                        ? "serviceAll"
+                        : k === "regular"
+                          ? "servicePriya"
+                          : "serviceAlltags",
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-[13px]">
@@ -191,6 +264,7 @@ export function InvoicesPage({ summary, canCreate }: Props) {
                 <tr>
                   <Th>{tTable("number")}</Th>
                   <Th>{tTable("client")}</Th>
+                  <Th>{tTable("service")}</Th>
                   <Th>{tTable("issued")}</Th>
                   <Th>{tTable("due")}</Th>
                   <Th align="right">{tTable("amount")}</Th>
@@ -203,14 +277,14 @@ export function InvoicesPage({ summary, canCreate }: Props) {
                 {(isLoading || isFetching) &&
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="border-b border-neutral-100">
-                      <td colSpan={8} className="px-5 py-4">
+                      <td colSpan={9} className="px-5 py-4">
                         <div className="h-9 animate-pulse rounded bg-neutral-100" />
                       </td>
                     </tr>
                   ))}
                 {!isLoading && !isFetching && rows.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-5 py-16 text-center text-[13px] text-neutral-500">
+                    <td colSpan={9} className="px-5 py-16 text-center text-[13px] text-neutral-500">
                       {tTable("empty")}
                     </td>
                   </tr>
@@ -237,6 +311,9 @@ export function InvoicesPage({ summary, canCreate }: Props) {
                         >
                           {r.client_name}
                         </Link>
+                      </td>
+                      <td className="px-5 py-3.5 align-middle">
+                        <ServiceChip kind={r.invoice_kind} />
                       </td>
                       <td className="px-5 py-3.5 align-middle font-mono text-[12px] text-neutral-600">
                         {f.date(r.issue_date)}
@@ -364,28 +441,68 @@ function SummaryCard({
   value,
   sub,
   tone = "muted",
+  stripe,
 }: {
   label: string;
   value: string;
   sub: string;
   tone?: "up" | "danger" | "muted";
+  /** Coloured 3-px top stripe — mirrors the prototype's KPI cards. */
+  stripe?: "primary" | "warning" | "success" | "error";
 }) {
   const subColor =
     tone === "up"
-      ? "text-success-500"
+      ? "text-success-700"
       : tone === "danger"
         ? "text-error-700"
         : "text-neutral-500";
+  const stripeCls = stripe
+    ? {
+        primary: "bg-primary-500",
+        warning: "bg-warning-500",
+        success: "bg-success-500",
+        error: "bg-error-500",
+      }[stripe]
+    : null;
+  const valueColor = tone === "danger" ? "text-error-700" : "text-secondary-500";
   return (
-    <div className="rounded-md border border-neutral-100 bg-white p-4">
-      <div className="text-[11px] font-medium uppercase tracking-[0.05em] text-neutral-500">
+    <div className="relative overflow-hidden rounded-lg border border-neutral-100 bg-white p-4">
+      {stripeCls && (
+        <span aria-hidden className={cn("absolute left-0 right-0 top-0 h-[3px]", stripeCls)} />
+      )}
+      <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-neutral-500">
         {label}
       </div>
-      <div className="mt-1.5 text-[22px] font-bold tracking-[-0.01em] text-secondary-500">
+      <div className={cn("mt-1.5 font-mono text-[24px] font-bold tracking-[-0.01em]", valueColor)}>
         {value}
       </div>
-      <div className={`mt-0.5 text-[11px] ${subColor}`}>{sub}</div>
+      <div className={cn("mt-1 text-[11px]", subColor)}>{sub}</div>
     </div>
+  );
+}
+
+/**
+ * Service-line chip — green for Priya's regular invoices, red for
+ * Alltagshilfe care invoices. Mirrors the prototype's `.srv.priya` /
+ * `.srv.alltags` pills.
+ */
+function ServiceChip({ kind }: { kind: "regular" | "alltagshilfe" }) {
+  const cls =
+    kind === "alltagshilfe"
+      ? "bg-error-50 text-error-700"
+      : "bg-primary-50 text-primary-700";
+  const label = kind === "alltagshilfe" ? "Everyday help" : "Priya's";
+  const dotCls = kind === "alltagshilfe" ? "bg-error-500" : "bg-primary-500";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.04em]",
+        cls,
+      )}
+    >
+      <span className={cn("h-1.5 w-1.5 rounded-full", dotCls)} />
+      {label}
+    </span>
   );
 }
 

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
 import { useFormat } from "@/lib/utils/i18n-format";
 import type { ClientRow, ClientsSortField } from "@/lib/api/clients.types";
+import { ClientStatusDropdown } from "./ClientStatusDropdown";
 
 type Props = {
   rows: ClientRow[];
@@ -221,7 +222,7 @@ export function ClientsTable({
                       </span>
                     </td>
                     <td className="px-5 py-3.5 align-middle">
-                      <StatusBadge status={r.status} />
+                      <ClientStatusDropdown dbStatus={r.status} />
                     </td>
                     <td className="px-5 py-3.5 align-middle">
                       <span className="font-mono text-[12px] text-neutral-600">
@@ -370,44 +371,6 @@ function TypeChip({
         v.className,
       )}
     >
-      {v.label}
-    </span>
-  );
-}
-
-function StatusBadge({
-  status,
-}: {
-  status: "active" | "review" | "onboarding" | "ended";
-}) {
-  const t = useTranslations("clients.status");
-  const map = {
-    active: {
-      label: t("active"),
-      className: "bg-success-50 text-success-700",
-    },
-    review: {
-      label: t("review"),
-      className: "bg-warning-50 text-warning-700",
-    },
-    onboarding: {
-      label: t("onboarding"),
-      className: "bg-secondary-50 text-secondary-600",
-    },
-    ended: {
-      label: t("ended"),
-      className: "bg-neutral-100 text-neutral-600",
-    },
-  } as const;
-  const v = map[status];
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.02em]",
-        v.className,
-      )}
-    >
-      <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
       {v.label}
     </span>
   );

@@ -395,6 +395,59 @@ export async function loadPropertyDetail(id: string): Promise<PropertyDetail | n
         ? "attention"
         : "active";
 
+  // ---- Recent assignments (last 5 shifts, newest first) ----
+  const { data: recentShifts } = await supabase
+    .from("shifts")
+    .select(
+      `id, starts_at, ends_at, status,
+       employee:employees ( id, full_name )`,
+    )
+    .eq("property_id", id)
+    .is("deleted_at", null)
+    .order("starts_at", { ascending: false })
+    .limit(5);
+  type RecentShift = {
+    id: string;
+    starts_at: string;
+    ends_at: string;
+    status: string;
+    employee: { id: string; full_name: string } | null;
+  };
+  const recent_assignments = (
+    (recentShifts ?? []) as RecentShift[]
+  ).map((s) => ({
+    id: s.id,
+    starts_at: s.starts_at,
+    ends_at: s.ends_at,
+    status: s.status,
+    employee_initials: s.employee ? initialsOf(s.employee.full_name) : "—",
+    employee_name: s.employee?.full_name ?? null,
+  }));
+
+  // ---- Incidents in trailing 12 months ----
+  // Best-effort: try `damage_reports` filtered by property_id. If the
+  // table doesn't exist in this deployment, count stays at 0.
+  let incidents_12mo = 0;
+  try {
+    const yearAgo = new Date();
+    yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+    const { count } = await supabase
+      .from("damage_reports")
+      .select("id", { count: "exact", head: true })
+      .eq("property_id", id)
+      .gte("created_at", yearAgo.toISOString());
+    incidents_12mo = count ?? 0;
+  } catch (err) {
+    // Only swallow "relation does not exist" (Postgres SQLSTATE 42P01).
+    // Older deployments don't have damage_reports — that case stays 0.
+    // Any other error indicates a real problem (RLS denial, transport
+    // failure) and should bubble.
+    const code = (err as { code?: string } | null)?.code;
+    if (code !== "42P01") {
+      throw err;
+    }
+  }
+
   return {
     id: r.id,
     name: r.name,
@@ -429,6 +482,8 @@ export async function loadPropertyDetail(id: string): Promise<PropertyDetail | n
     area_count: areas === null ? null : areas.length,
     team,
     areas,
+    recent_assignments,
+    incidents_12mo,
   };
 }
 

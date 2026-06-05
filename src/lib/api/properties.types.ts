@@ -118,4 +118,17 @@ export type PropertyDetail = {
   // `areas` is null when no `property_areas` table exists in this
   // deployment. UI must guard against this.
   areas: PropertyArea[] | null;
+  /** Last 5 shifts at this property, newest first. Drives the
+   *  "Recent assignments" card on the detail page. */
+  recent_assignments: Array<{
+    id: string;
+    starts_at: string;
+    ends_at: string;
+    status: string;
+    employee_initials: string;
+    employee_name: string | null;
+  }>;
+  /** Incident count in the trailing 12 months, sourced from
+   *  `damage_reports` when the table exists; 0 otherwise. */
+  incidents_12mo: number;
 };

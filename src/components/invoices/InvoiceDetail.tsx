@@ -67,7 +67,7 @@ export function InvoiceDetail({
     <>
       <nav className="mb-3 flex items-center gap-2 text-[12px] text-neutral-500">
         <Link href={routes.dashboard} className="hover:text-neutral-700">
-          Übersicht
+          {t("breadcrumbDashboard")}
         </Link>
         <span className="text-neutral-400">/</span>
         <Link href={routes.invoices} className="hover:text-neutral-700">
@@ -78,6 +78,12 @@ export function InvoiceDetail({
           {detail.invoice_number}
         </span>
       </nav>
+
+      {/* Status banner — mirrors the prototype's full-width alert at
+       *  the top of the detail page. Visible whenever the invoice
+       *  needs attention (overdue + partially-paid). Paid / Sent /
+       *  Draft suppress the banner so the page header stays compact. */}
+      <StatusBanner detail={detail} />
 
       {/* Header */}
       <section className="mb-5 flex flex-wrap items-start justify-between gap-4">
@@ -373,6 +379,80 @@ export function InvoiceDetail({
       </div>
     </>
   );
+}
+
+/**
+ * Top-of-page banner that's only rendered for invoices needing
+ * attention. Three tones:
+ *  - overdue  → red gradient + alert icon (the prototype's hero variant)
+ *  - partial  → amber + dollar icon  ("partially paid · €X open")
+ *  - hidden   → returns null for draft / sent / paid / cancelled
+ */
+function StatusBanner({ detail }: { detail: Detail }) {
+  const t = useTranslations("invoices.detail.banner");
+  const f = useFormat();
+
+  if (detail.status === "overdue") {
+    const daysOverdue =
+      detail.due_date
+        ? Math.max(
+            0,
+            Math.floor(
+              (Date.now() - new Date(detail.due_date).getTime()) / 86_400_000,
+            ),
+          )
+        : 0;
+    return (
+      <div className="mb-5 flex items-center gap-4 rounded-lg border border-error-100 border-l-4 border-l-error-500 bg-gradient-to-br from-white to-error-50 px-6 py-4">
+        <span className="grid h-[42px] w-[42px] flex-shrink-0 place-items-center rounded-md bg-error-500 text-white">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            <line x1={12} y1={9} x2={12} y2={13} />
+            <line x1={12} y1={17} x2={12.01} y2={17} />
+          </svg>
+        </span>
+        <div className="flex-1">
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.06em] text-error-700">
+            {t("overdueTitle")}
+          </h2>
+          <p className="mt-0.5 text-[13px] text-neutral-700">
+            {t.rich("overdueBody", {
+              days: daysOverdue,
+              b: (c) => <b className="font-bold text-error-700">{c}</b>,
+            })}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Partially paid → amber callout.
+  const isPartial = detail.paid_amount_cents > 0 && detail.paid_amount_cents < detail.total_cents;
+  if (isPartial && detail.status !== "paid") {
+    const outstanding = detail.total_cents - detail.paid_amount_cents;
+    return (
+      <div className="mb-5 flex items-center gap-4 rounded-lg border border-warning-500 border-l-4 bg-warning-50 px-6 py-4">
+        <span className="grid h-[42px] w-[42px] flex-shrink-0 place-items-center rounded-md bg-warning-500 text-white">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+            <line x1={12} y1={1} x2={12} y2={23} />
+            <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+          </svg>
+        </span>
+        <div className="flex-1">
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.06em] text-warning-700">
+            {t("partialTitle")}
+          </h2>
+          <p className="mt-0.5 text-[13px] text-neutral-700">
+            {t.rich("partialBody", {
+              amount: f.currencyCents(outstanding),
+              b: (c) => <b className="font-bold text-warning-700">{c}</b>,
+            })}
+          </p>
+        </div>
+      </div>
+    );
+  }
+  return null;
 }
 
 function Th({ children, align = "left" }: { children: React.ReactNode; align?: "left" | "right" }) {

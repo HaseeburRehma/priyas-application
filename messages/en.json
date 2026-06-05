@@ -146,7 +146,8 @@
       "scheduled": "Scheduled",
       "hours": "Hours logged",
       "vsLastWeek": "vs. last week",
-      "completionRate": "{rate} completion rate"
+      "completionRate": "{rate} completion rate",
+      "ariaLabel": "Weekly orders"
     },
     "todaySchedule": {
       "title": "Today's schedule",
@@ -197,7 +198,8 @@
       "generateInvoice": "Generate invoice",
       "generateInvoiceSub": "Lexware sync",
       "exportReport": "Export report",
-      "exportReportSub": "PDF / iCal"
+      "exportReportSub": "PDF / iCal",
+      "newBadge": "NEW"
     },
     "mine": {
       "title": "My profile — Hello {name}",
@@ -226,7 +228,20 @@
     "exportPlanSub": "27 missions · Crew · Status",
     "exportActivityTitle": "Recent activity",
     "exportActivitySub": "Audit Log · 7 days",
-    "exportSeeAll": "View all reports"
+    "exportSeeAll": "View all reports",
+    "invoiceKpi": {
+      "title": "Receivables",
+      "subtitle": "Overview of open and paid invoices",
+      "allInvoices": "All invoices",
+      "collectedThisMonth": "Collected this month",
+      "open": "Open",
+      "overdue": "Overdue",
+      "forecast30d": "Forecast 30 days",
+      "agingTitle": "Aging",
+      "agingCurrent": "Current",
+      "invoiceCount": "{n} invoices",
+      "invoiceShort": "{n} inv."
+    }
   },
   "clients": {
     "picker": {
@@ -279,7 +294,9 @@
         "address": "Address",
         "insurance": "Insurance",
         "servicePlan": "Service plan",
-        "other": "Other"
+        "other": "Other",
+        "careInsurance": "Care & health insurance",
+        "careInsuranceSub": "Required for monthly performance billing"
       },
       "fields": {
         "vorname": "First name",
@@ -418,7 +435,8 @@
         "contractCheckUnsigned": "Welcome folder will be taken along",
         "priyasShort": "Priya's",
         "alltagshilfeShort": "Everyday assistance"
-      }
+      },
+      "abtretungWarning": "<b>Important:</b> Without a signed assignment declaration we cannot bill care services directly to the health insurance. The person receives a <b>welcome package</b> with all documents at the initial consultation."
     },
     "edit": {
       "title": "Edit client",
@@ -549,7 +567,21 @@
       "moreActions": "More actions",
       "archive": "Archive client",
       "archiveConfirm": "Archive this client? They will no longer appear in the active list.",
-      "archiveSuccess": "Client archived."
+      "archiveSuccess": "Client archived.",
+      "propertiesPreview": {
+        "title": "Properties",
+        "subtitle": "All locations for this customer",
+        "viewAll": "View all",
+        "emptyState": "Property preview will appear here once locations are added.",
+        "frequency": "{n}× per week",
+        "active": "Active"
+      },
+      "activity": {
+        "title": "Activity",
+        "subtitle": "Recent events for this customer",
+        "createdTitle": "Customer created",
+        "emptyState": "Additional events will appear here as the customer record changes."
+      }
     },
     "contacts": {
       "title": "Contact persons",
@@ -574,6 +606,26 @@
       "notes": "Notes",
       "errorName": "Please enter a name (min. 2 chars).",
       "confirmDelete": "Remove {name} from contacts?"
+    },
+    "statusDropdown": {
+      "title": "Change status",
+      "savedDemo": "Status set to {label} (demo).",
+      "saved": "Status set to {label}.",
+      "saveFailed": "Could not save status.",
+      "label": {
+        "active": "Active",
+        "vacation": "Vacation",
+        "paused_by_client": "Paused · Customer request",
+        "contract_ending_60d": "Contract ending · 60 days",
+        "inactive": "Inactive"
+      },
+      "desc": {
+        "active": "Normal operation · shifts run as planned.",
+        "vacation": "Customer on vacation · shifts temporarily suspended.",
+        "paused_by_client": "Paused per customer request · no new visits.",
+        "contract_ending_60d": "Contract ends in 60 days · honour notice period.",
+        "inactive": "Relationship ended · no active shifts."
+      }
     }
   },
   "properties": {
@@ -694,7 +746,32 @@
       "restrictedAreas": "Restricted areas",
       "safetyRegulations": "Safety regulations",
       "notesTitle": "Notes & safety",
-      "notesEmpty": "No notes recorded."
+      "notesEmpty": "No notes recorded.",
+      "recentAssignments": {
+        "title": "Recent assignments",
+        "subtitle": "{n, plural, =0 {No assignments yet} one {Latest assignment} other {Latest # assignments}}",
+        "viewAll": "View all",
+        "viewAllComingSoon": "Full history coming soon",
+        "emptyState": "No assignments have been completed at this property yet.",
+        "emptyStateWithCount": "{n} assignments · full list coming in the next update.",
+        "statusCompleted": "Done",
+        "statusInProgress": "In progress",
+        "statusScheduled": "Scheduled",
+        "statusCancelled": "Cancelled",
+        "statusNoShow": "No-show",
+        "unassigned": "Unassigned"
+      },
+      "safety": {
+        "title": "Safety & compliance",
+        "subtitle": "Mandatory checks before every visit",
+        "lastInspection": "Last inspection",
+        "coshhFile": "COSHH file",
+        "fireMarshal": "Fire marshal",
+        "incidents12mo": "Incidents (12 months)",
+        "notUploaded": "Not uploaded",
+        "notSet": "Not set",
+        "uploaded": "Uploaded"
+      }
     },
     "form": {
       "createTitle": "Create new property",
@@ -948,6 +1025,15 @@
       "prevPage": "Previous",
       "nextPage": "Next",
       "statusCancelled": "Cancelled"
+    },
+    "break": {
+      "startLabel": "Start break",
+      "endLabel": "End break",
+      "hint": "Start a break here — time is excluded from worked hours.",
+      "onBreak": "On break",
+      "onBreakWithTimer": "On break · {elapsed}",
+      "startedToast": "Break started.",
+      "endedToast": "Break ended."
     }
   },
   "employees": {
@@ -1060,7 +1146,25 @@
       "infoWeeklyHours": "Weekly hours",
       "infoLanguage": "Language",
       "assignTraining": "Assign training",
-      "downloadHours": "Hours report (CSV)"
+      "downloadHours": "Hours report (CSV)",
+      "skills": {
+        "title": "Qualifications & certificates",
+        "edit": "Edit",
+        "editComingSoon": "Editing coming soon — via profile for now.",
+        "cleaning": "Cleaning",
+        "care": "Care",
+        "languages": "Languages",
+        "langDe": "German",
+        "langEn": "English",
+        "langTa": "Tamil",
+        "officeCleaning": "Office cleaning",
+        "deepCleaning": "Deep cleaning",
+        "windowCleaning": "Window cleaning",
+        "careLevel": "Care levels",
+        "dementiaCare": "Dementia care",
+        "firstAid": "First aid",
+        "mobility": "Mobility support"
+      }
     },
     "form": {
       "createTitle": "Invite employee",
@@ -1296,7 +1400,9 @@
       "export": "Export",
       "new": "New invoice",
       "importComingSoon": "CSV import coming soon.",
-      "newComingSoon": "Manual create coming soon — invoices are generated from shifts."
+      "newComingSoon": "Manual create coming soon — invoices are generated from shifts.",
+      "syncLexware": "Lexware Sync",
+      "syncLexwareTitle": "Sync all pending invoices with Lexware"
     },
     "summary": {
       "total": "Total",
@@ -1315,7 +1421,10 @@
       "filterDraft": "Draft",
       "filterSent": "Sent",
       "filterPaid": "Paid",
-      "filterOverdue": "Overdue"
+      "filterOverdue": "Overdue",
+      "serviceAll": "All",
+      "servicePriya": "Priya's",
+      "serviceAlltags": "Everyday help"
     },
     "table": {
       "number": "Invoice",
@@ -1331,7 +1440,8 @@
       "synced": "Sync.",
       "notSynced": "—",
       "empty": "No invoices match your search.",
-      "showing": "Showing {from}–{to} of {total}"
+      "showing": "Showing {from}–{to} of {total}",
+      "service": "Service"
     },
     "status": {
       "draft": "Draft",
@@ -1378,7 +1488,40 @@
         "attempts": "Attempts",
         "lastAttempt": "Last attempt",
         "errorPrefix": "Error:"
+      },
+      "breadcrumbDashboard": "Dashboard",
+      "banner": {
+        "overdueTitle": "Overdue · payment reminder recommended",
+        "overdueBody": "This invoice is <b>{days, plural, =1 {one day} other {# days}} overdue</b>. Please send the first reminder if you haven't yet.",
+        "partialTitle": "Partial payment received",
+        "partialBody": "<b>{amount}</b> still outstanding. This invoice is not fully paid."
       }
+    },
+    "draftEditor": {
+      "alltagshilfeNote": "Everyday help (VAT-free per § 4 No. 16 UStG)",
+      "regularNote": "Regular invoice (19 % VAT)",
+      "itemsTitle": "Items",
+      "addItem": "Item",
+      "colDescription": "Description",
+      "colQty": "Quantity",
+      "colUnitPrice": "Unit price",
+      "colVat": "% VAT",
+      "colTotal": "Total",
+      "removeItem": "Remove item",
+      "noItemsYet": "No items yet.",
+      "subtotal": "Subtotal",
+      "vat": "VAT",
+      "total": "Total",
+      "dueDateLabel": "Due date",
+      "notesLabel": "Notes / payment terms",
+      "alltagshilfeTaxFree": "Everyday Help is tax-free"
+    },
+    "newWizard": {
+      "title": "New invoice",
+      "subtitle": "Pick a client and a billing period. The system aggregates approved time entries and proposes an invoice draft.",
+      "step1": "1. Client",
+      "clientSearchPlaceholder": "Search clients…",
+      "noClientsFound": "No clients found."
     }
   },
   "statement": {
@@ -1406,7 +1549,10 @@
       "debit": "Debit",
       "credit": "Credit",
       "balance": "Balance",
-      "empty": "No entries in this filter."
+      "empty": "No entries in this filter.",
+      "method": "Method",
+      "methodSepa": "SEPA direct debit",
+      "methodCredit": "Account credit"
     },
     "type": {
       "invoice": "Invoice",
@@ -1424,7 +1570,8 @@
       "contactTitle": "Contact & terms",
       "paymentTerms": "Payment terms",
       "paymentMethod": "Payment method",
-      "credit": "Credit limit"
+      "credit": "Credit limit",
+      "healthyAccount": "Healthy account · no overdue items"
     },
     "actions": {
       "exportPdf": "PDF statement",
@@ -1443,11 +1590,13 @@
     "nav": {
       "company": "Company profile",
       "team": "Team & roles",
-      "tax": "Tax & billing",
+      "tax": "Tax & accounting",
       "integrations": "Integrations",
       "notifications": "Notifications",
       "locale": "Localization",
-      "security": "Security"
+      "security": "Security",
+      "account": "My account",
+      "sessions": "Sessions & devices"
     },
     "company": {
       "title": "01 · Company profile",
@@ -1455,20 +1604,57 @@
       "legalName": "Legal name",
       "tradingName": "Trading name",
       "vatId": "VAT number",
-      "registration": "Registration",
+      "registration": "Trade register (HRB)",
       "address": "Registered address",
       "primaryContact": "Primary contact",
       "supportEmail": "Support email",
       "supportPhone": "Support phone",
-      "logo": "Logo"
+      "logo": "Logo",
+      "badge": "01 · Mgmt",
+      "verified": "Verified",
+      "members": "employees",
+      "uploadLogo": "Upload logo",
+      "legalRegistration": "Legal & registration",
+      "legalNameHint": "as registered",
+      "brandColors": "Brand colors",
+      "savedToast": "Saved",
+      "logoUploaded": "Logo updated.",
+      "logoRemoved": "Logo removed.",
+      "logoUploading": "Uploading…",
+      "logoRemove": "Remove"
     },
     "team": {
       "title": "02 · Team & roles",
       "subtitle": "4 default roles · per-plan permissions",
       "members": "Members",
       "invite": "Invite member",
-      "role": "Role",
-      "lastActive": "Last active"
+      "role": {
+        "mgmt": "MGMT",
+        "sup": "SUPER",
+        "empl": "EMPL",
+        "client": "CLIENT"
+      },
+      "lastActive": "Last active",
+      "badge": "02 · Mgmt",
+      "subtitleN": "{n} members · permissions per role",
+      "matrixTitle": "Role permission matrix",
+      "capability": "Capability",
+      "capViewPlan": "View schedule",
+      "capViewPlanDesc": "View assigned shifts and property visits",
+      "capAssign": "Assign & reschedule visits",
+      "capAssignDesc": "Change assignments and shift times",
+      "capManageClients": "Manage customers & properties",
+      "capManageClientsDesc": "Create, edit or archive customer accounts",
+      "capInvoicing": "Create & send invoices",
+      "capInvoicingDesc": "Create, finalise and send invoices",
+      "capApproveTime": "Approve time tracking",
+      "capApproveTimeDesc": "Sign off daily hours and overtime",
+      "capReports": "View reports & exports",
+      "capReportsDesc": "View revenue, hours and performance data",
+      "capOrgSettings": "Organisation settings",
+      "capOrgSettingsDesc": "Edit company, billing and integrations",
+      "activeMembers": "Active members · {n}",
+      "seeAll": "Show all"
     },
     "tax": {
       "title": "03 · Tax & billing",
@@ -1477,26 +1663,71 @@
       "currency": "Currency",
       "invoicePrefix": "Invoice prefix",
       "paymentTerms": "Payment terms (days)",
-      "lateFee": "Late fee (%)"
+      "lateFee": "Late fee (%)",
+      "badge": "03 · Mgmt",
+      "currentPlan": "Current plan",
+      "planTier": "Professional",
+      "planTierSub": "50 members included",
+      "planMembers": "Members",
+      "planObjects": "Properties",
+      "planInvoices": "Invoices",
+      "unlimited": "Unlimited",
+      "perMonth": "per month · excl. VAT",
+      "managePlan": "Manage plan",
+      "vatCompliance": "VAT & compliance",
+      "vatId": "VAT ID",
+      "vatStd": "Standard rate",
+      "vatReduced": "Reduced",
+      "invoiceDefaults": "Invoice defaults",
+      "net14": "Net 14 (SEPA)",
+      "net7": "Net 7",
+      "net30": "Net 30",
+      "savedToast": "Saved"
     },
     "integrations": {
       "title": "04 · Integrations",
       "subtitle": "Connect third-party services to sync schedules, payments and exports.",
-      "lexware": "Lexware",
-      "lexwareDesc": "Automatic invoice sync",
-      "whatsapp": "WhatsApp Business",
-      "whatsappDesc": "Notifications to staff and clients",
-      "email": "Resend (Email)",
-      "emailDesc": "Transactional emails",
-      "google": "Google Workspace",
-      "googleDesc": "SSO and calendar sync",
-      "stripe": "Stripe",
-      "stripeDesc": "Online client payments",
-      "twilio": "Twilio Voice",
-      "twilioDesc": "Call routing to on-call lines",
       "connect": "Connect",
       "active": "Active",
-      "configure": "Configure"
+      "configure": "Configure",
+      "badge": "04 · Mgmt",
+      "notConnected": "Not connected",
+      "recentlySynced": "Recently synced",
+      "freeAllPlans": "Free · all plans",
+      "manageKeys": "Manage keys",
+      "apiKeysTitle": "API keys & webhooks",
+      "apiKeysWarning": "Keep keys secret. Rotating a production key immediately invalidates the previous value — update your integrations first.",
+      "lexware": {
+        "name": "Lexware Office",
+        "tagline": "Accounting",
+        "desc": "Sync invoices and payments with the DATEV-compatible Lexware API."
+      },
+      "stripe": {
+        "name": "Stripe",
+        "tagline": "Online payments",
+        "desc": "Card & SEPA payments via hosted pay links on every invoice. EU region."
+      },
+      "email": {
+        "name": "Email",
+        "tagline": "Transactional email",
+        "desc": "Resend for invoices, confirmations and monthly reports."
+      },
+      "google": {
+        "name": "Google Calendar",
+        "tagline": "Schedule sync",
+        "desc": "Push employee shifts to personal Google Calendars (two-way sync)."
+      },
+      "whatsapp": {
+        "name": "WhatsApp Business",
+        "tagline": "Customer chat",
+        "desc": "Send reminders and updates to customers via WhatsApp."
+      },
+      "twilio": {
+        "name": "Twilio",
+        "tagline": "SMS delivery",
+        "desc": "Shift reminders via SMS for field staff without smartphones."
+      },
+      "savedToast": "Saved"
     },
     "notifications": {
       "title": "05 · Notifications",
@@ -1508,7 +1739,21 @@
       "evShiftChange": "Shift change",
       "evMissedCheckin": "Missed check-in",
       "evInvoiceOverdue": "Invoice overdue",
-      "evVacationRequest": "Vacation request"
+      "evVacationRequest": "Vacation request",
+      "badge": "05 · Mgmt",
+      "quietHours": "Quiet hours · <b>22:00 – 07:00</b> · push held until morning",
+      "editQuietHours": "Edit quiet hours",
+      "group": {
+        "ops": "Operations",
+        "finance": "Finance",
+        "team": "Team"
+      },
+      "evShiftChangeDesc": "Client-initiated cancellations, reassignments",
+      "evMissedCheckinDesc": "More than 10 minutes past scheduled start",
+      "evInvoiceOverdueDesc": "Past due + 3 days grace",
+      "evVacationRequestDesc": "Pending management approval",
+      "evNewClientDesc": "New customer created",
+      "savedToast": "Saved"
     },
     "push": {
       "title": "Web Push notifications",
@@ -1551,7 +1796,9 @@
       "manage": "Manage",
       "loginChallengeTitle": "Enter your two-factor code",
       "loginChallengeBody": "Open your authenticator app and enter the 6-digit code.",
-      "loginChallengeBack": "← Use another account"
+      "loginChallengeBack": "← Use another account",
+      "badge": "07 · Personal",
+      "strongScore": "Strong · 92 / 100"
     },
     "locale": {
       "title": "06 · Localization",
@@ -1561,6 +1808,48 @@
       "weekStart": "Week start",
       "currency": "Currency",
       "dateFormat": "Date format"
+    },
+    "breadcrumbAccount": "Account",
+    "subtitleWithSaved": "Manage organisation, integrations and personal settings · Last saved <at>{ts}</at>",
+    "navGroup": {
+      "management": "Management",
+      "personal": "Personal"
+    },
+    "helpTitle": "Need help?",
+    "helpBody": "Admin handbook & role documentation in the Help Center. All changes are audit-logged.",
+    "account": {
+      "badge": "06 · Personal",
+      "title": "My account",
+      "subtitle": "Your personal profile, language and sign-in details.",
+      "fullName": "Full name",
+      "email": "Email",
+      "language": "Language",
+      "timezone": "Timezone",
+      "weekStart": "Week starts on",
+      "dateFormat": "Date format",
+      "monday": "Monday",
+      "sunday": "Sunday",
+      "changePhoto": "Change photo",
+      "savedToast": "Saved",
+      "avatarUploaded": "Photo updated.",
+      "avatarRemoved": "Photo removed.",
+      "avatarUploading": "Uploading…",
+      "removePhoto": "Remove photo"
+    },
+    "sessions": {
+      "badge": "08 · Personal",
+      "title": "Sessions & devices",
+      "subtitle": "4 active sessions · revoke any device to force re-authentication.",
+      "revokeAll": "Sign out all other devices",
+      "revoke": "Revoke",
+      "thisDevice": "This device",
+      "activeNow": "Active now",
+      "currentDevice": "Current browser",
+      "footerNote": "All sessions use TLS 1.3 · device fingerprinting enabled",
+      "auditLog": "View full audit log",
+      "revokeAllConfirm": "Sign out of all other devices? You'll stay signed in on this device.",
+      "revokeAllSuccess": "All other devices have been signed out.",
+      "revokeAllPending": "Signing out…"
     }
   },
   "lexware": {
@@ -1613,7 +1902,27 @@
       "in_app": "In-app",
       "email": "Email",
       "whatsapp": "WhatsApp"
-    }
+    },
+    "breadcrumbCommunication": "Communication",
+    "unreadCount": "{n} unread",
+    "kpi": {
+      "today": "Today",
+      "todayDetail": "{n} unread",
+      "urgent": "Urgent",
+      "urgentDetail": "require action",
+      "week": "This week",
+      "weekDetail": "{n} unread",
+      "withTask": "With task",
+      "withTaskDetail": "in progress"
+    },
+    "groups": {
+      "today": "Today · {date}",
+      "yesterday": "Yesterday · {date}",
+      "week": "This week · {from} – {to}"
+    },
+    "olderCollapsed": "{n} older notifications are collapsed.",
+    "olderCollapsedRich": "{n} older notifications are collapsed — <link>show all</link>",
+    "footerNote": "Notifications are stored for 90 days. Who receives notifications and how (email · push · in-app · SMS) can be controlled in the <link>settings</link> for each category."
   },
   "vacation": {
     "breadcrumbDashboard": "Overview",
@@ -1738,6 +2047,12 @@
       "shiftLabel": "Shift #{id}",
       "visitLabel": "Visit #{id}",
       "openInSchedule": "Open in schedule"
+    },
+    "thread": {
+      "emptyTitle": "Be the first to write here.",
+      "emptyBody": "Messages appear instantly for all members.",
+      "loading": "Loading…",
+      "loadError": "Failed to load: {error}"
     }
   },
   "damage": {
@@ -2151,7 +2466,7 @@
   },
   "assignments": {
     "title": "Assignments",
-    "subtitle": "Property × client × planned hours × hourly rate with staff allocation.",
+    "subtitle": "Property × client × scheduled hours × rate with staff allocation.",
     "new": "New assignment",
     "activeHeading": "Active assignments ({count})",
     "archivedHeading": "Archived ({count})",
@@ -2202,6 +2517,23 @@
       "noStaff": "No employees assigned yet.",
       "total": "Total",
       "client": "Client:"
+    },
+    "activeSection": "Active assignments ({n})",
+    "archivedSection": "Archived ({n})",
+    "details": "Details",
+    "staffAllocated": "{hours}h allocated",
+    "freq": {
+      "weekly": "weekly",
+      "biweekly": "bi-weekly",
+      "monthly": "monthly"
+    },
+    "table": {
+      "client": "Client",
+      "property": "Property",
+      "hours": "Hours",
+      "rate": "Rate",
+      "total": "Total",
+      "staff": "Staff"
     }
   },
   "alltagshilfeBudget": {

@@ -30,6 +30,7 @@ import { ensureCalendarTokenAction } from "@/app/actions/calendar-token";
 import { APP_TZ, getZonedParts, zonedTimeToUtc } from "@/lib/utils/i18n-format";
 import { PlanShiftDialog } from "./PlanShiftDialog";
 import { CheckInButton } from "./CheckInButton";
+import { BreakControl } from "./BreakControl";
 import type { ShiftOptionsResponse } from "@/app/api/shifts/options/route";
 
 export type ScheduleView = "day" | "week" | "month" | "list";
@@ -1955,7 +1956,7 @@ function DetailPanel({
       {viewerEmployeeId &&
         event.employee_id === viewerEmployeeId &&
         (event.status === "scheduled" || event.status === "in_progress") && (
-          <div className="mt-1 border-t border-neutral-100 pt-3">
+          <div className="mt-1 flex flex-col gap-2 border-t border-neutral-100 pt-3">
             <CheckInButton
               shiftId={event.id}
               startsAt={event.starts_at}
@@ -1965,6 +1966,12 @@ function DetailPanel({
               }
               completed={false}
             />
+            {/* Break controls only render when the staff member is
+             *  currently on shift (component self-fetches state and
+             *  hides itself otherwise). */}
+            {event.status === "in_progress" && (
+              <BreakControl shiftId={event.id} />
+            )}
           </div>
         )}
 

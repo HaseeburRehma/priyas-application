@@ -1,14 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { loadClientsList, type ClientCustomerType } from "@/lib/api/clients";
 import type { ClientsSortField } from "@/lib/api/clients.types";
+import { requireAuth } from "@/lib/rbac/permissions";
 
 const VALID_SORTS: ReadonlyArray<ClientsSortField> = ["name", "contract_start"];
 
 /**
  * GET /api/clients?q=&type=&page=&pageSize=&sort=&direction=
  * Returns the paginated client table. RLS keeps it scoped to the caller.
+ * Unauthenticated callers get a clean 401 — RLS would otherwise return
+ * an empty list with HTTP 200, which is confusing for API consumers.
  */
 export async function GET(request: NextRequest) {
+  if (!(await requireAuth())) {
+    return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
+  }
   const url = new URL(request.url);
   const q = url.searchParams.get("q") ?? "";
   const typeRaw = url.searchParams.get("type") ?? "all";

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { routes } from "@/lib/constants/routes";
 import type { InvoicesSummary } from "@/lib/api/invoices.types";
 import type { AgingTotals } from "@/lib/billing/types";
@@ -20,8 +21,9 @@ export function InvoiceKpiPanel({
   summary: InvoicesSummary;
   aging: AgingTotals;
 }) {
+  const t = useTranslations("dashboard.invoiceKpi");
   const ageBuckets: { key: keyof AgingTotals; label: string }[] = [
-    { key: "current", label: "Aktuell" },
+    { key: "current", label: t("agingCurrent") },
     { key: "0_30", label: "1–30" },
     { key: "30_60", label: "31–60" },
     { key: "60_90", label: "61–90" },
@@ -32,49 +34,47 @@ export function InvoiceKpiPanel({
     <section className="rounded-lg border border-neutral-200 bg-white p-5">
       <header className="mb-3 flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-neutral-700">Forderungen</h2>
-          <p className="text-xs text-neutral-500">
-            Übersicht offener und bezahlter Rechnungen
-          </p>
+          <h2 className="text-sm font-semibold text-neutral-700">{t("title")}</h2>
+          <p className="text-xs text-neutral-500">{t("subtitle")}</p>
         </div>
         <Link
           href={routes.invoices}
           className="text-xs font-medium text-secondary-600 hover:text-secondary-800"
         >
-          Alle Rechnungen →
+          {t("allInvoices")} →
         </Link>
       </header>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Tile
-          label="Diesen Monat eingenommen"
+          label={t("collectedThisMonth")}
           value={fmt(summary.collectedThisMonthCents)}
           tone="success"
         />
         <Tile
-          label="Offen"
+          label={t("open")}
           value={fmt(summary.openAmountCents)}
-          sub={`${summary.openCount} Rechnungen`}
+          sub={t("invoiceCount", { n: summary.openCount })}
         />
         <Tile
-          label="Überfällig"
+          label={t("overdue")}
           value={fmt(summary.overdueAmountCents)}
-          sub={`${summary.overdueCount} Rechnungen`}
+          sub={t("invoiceCount", { n: summary.overdueCount })}
           tone={summary.overdueCount > 0 ? "danger" : undefined}
         />
         <Tile
-          label="Forecast 30 Tage"
+          label={t("forecast30d")}
           value={fmt(summary.forecast30dCents)}
         />
       </div>
 
       <div className="mt-4">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-          Altersstruktur
+          {t("agingTitle")}
         </h3>
         <div className="mt-2 grid grid-cols-5 overflow-hidden rounded-md border border-neutral-200">
           {ageBuckets.map((b) => {
-            const t = aging[b.key];
+            const bucket = aging[b.key];
             return (
               <div
                 key={b.key}
@@ -82,10 +82,10 @@ export function InvoiceKpiPanel({
               >
                 <p className="text-[11px] uppercase text-neutral-500">{b.label}</p>
                 <p className="mt-0.5 font-mono text-sm font-semibold text-neutral-700">
-                  {fmt(t.amountCents)}
+                  {fmt(bucket.amountCents)}
                 </p>
                 <p className="text-[11px] text-neutral-500">
-                  {t.count} {t.count === 1 ? "Rechn." : "Rechn."}
+                  {t("invoiceShort", { n: bucket.count })}
                 </p>
               </div>
             );

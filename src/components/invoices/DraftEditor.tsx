@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { toast } from "sonner";
 import { routes } from "@/lib/constants/routes";
@@ -35,6 +36,7 @@ const mintKey = () => `new-${++__ITEM_KEY_SEQ}-${Math.random().toString(36).slic
 
 export function DraftEditor({ detail }: { detail: InvoiceDetail }) {
   const router = useRouter();
+  const t = useTranslations("invoices.draftEditor");
   const [pending, start] = useTransition();
   const [items, setItems] = useState<EditableItem[]>(
     detail.items.map((it) => ({
@@ -168,29 +170,31 @@ export function DraftEditor({ detail }: { detail: InvoiceDetail }) {
         </h1>
         <p className="text-sm text-neutral-500">
           {detail.client.display_name} ·{" "}
-          {isAH ? "Alltagshilfe (steuerfrei § 4 Nr. 16 UStG)" : "Reguläre Rechnung (19 % USt)"}
+          {isAH ? t("alltagshilfeNote") : t("regularNote")}
         </p>
       </header>
 
       <section className="rounded-lg border border-neutral-200 bg-white p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-neutral-700">Positionen</h2>
+          <h2 className="text-sm font-semibold text-neutral-700">
+            {t("itemsTitle")}
+          </h2>
           <button
             type="button"
             onClick={addItem}
             className="rounded-md border border-neutral-300 px-3 py-1 text-xs hover:bg-neutral-50"
           >
-            + Position
+            + {t("addItem")}
           </button>
         </div>
         <table className="mt-3 w-full text-sm">
           <thead>
             <tr className="text-left text-xs text-neutral-500">
-              <th className="py-1">Beschreibung</th>
-              <th className="py-1 text-right w-20">Menge</th>
-              <th className="py-1 text-right w-32">Einzelpreis</th>
-              <th className="py-1 text-right w-16">% MwSt</th>
-              <th className="py-1 text-right w-32">Summe</th>
+              <th className="py-1">{t("colDescription")}</th>
+              <th className="py-1 text-right w-20">{t("colQty")}</th>
+              <th className="py-1 text-right w-32">{t("colUnitPrice")}</th>
+              <th className="py-1 text-right w-16">{t("colVat")}</th>
+              <th className="py-1 text-right w-32">{t("colTotal")}</th>
               <th className="py-1 w-10"></th>
             </tr>
           </thead>
@@ -242,7 +246,7 @@ export function DraftEditor({ detail }: { detail: InvoiceDetail }) {
                     }
                     className="w-14 rounded border border-neutral-200 px-2 py-1 text-right"
                     disabled={isAH}
-                    title={isAH ? "Alltagshilfe ist steuerfrei" : ""}
+                    title={isAH ? t("alltagshilfeTaxFree") : ""}
                   />
                 </td>
                 <td className="py-2 text-right font-mono text-neutral-700">
@@ -253,7 +257,7 @@ export function DraftEditor({ detail }: { detail: InvoiceDetail }) {
                     type="button"
                     onClick={() => removeItem(idx)}
                     className="text-error-500 hover:text-error-700"
-                    aria-label="Position entfernen"
+                    aria-label={t("removeItem")}
                   >
                     ×
                   </button>
@@ -263,24 +267,28 @@ export function DraftEditor({ detail }: { detail: InvoiceDetail }) {
             {items.length === 0 && (
               <tr>
                 <td colSpan={6} className="py-4 text-center text-neutral-400">
-                  Noch keine Positionen.
+                  {t("noItemsYet")}
                 </td>
               </tr>
             )}
           </tbody>
           <tfoot>
             <tr className="border-t border-neutral-200 text-sm">
-              <td colSpan={4} className="pt-3 text-right text-neutral-500">Zwischensumme</td>
+              <td colSpan={4} className="pt-3 text-right text-neutral-500">
+                {t("subtotal")}
+              </td>
               <td className="pt-3 text-right font-mono">{formatEUR(totals.subtotalCents)}</td>
               <td />
             </tr>
             <tr className="text-sm">
-              <td colSpan={4} className="pt-1 text-right text-neutral-500">USt</td>
+              <td colSpan={4} className="pt-1 text-right text-neutral-500">
+                {t("vat")}
+              </td>
               <td className="pt-1 text-right font-mono">{formatEUR(totals.taxCents)}</td>
               <td />
             </tr>
             <tr className="text-base font-semibold">
-              <td colSpan={4} className="pt-2 text-right">Gesamt</td>
+              <td colSpan={4} className="pt-2 text-right">{t("total")}</td>
               <td className="pt-2 text-right font-mono">{formatEUR(totals.totalCents)}</td>
               <td />
             </tr>
@@ -290,7 +298,7 @@ export function DraftEditor({ detail }: { detail: InvoiceDetail }) {
 
       <section className="grid gap-4 md:grid-cols-2">
         <label className="block text-sm">
-          <span className="text-neutral-600">Fälligkeitsdatum</span>
+          <span className="text-neutral-600">{t("dueDateLabel")}</span>
           <input
             type="date"
             value={dueDate}
@@ -299,7 +307,7 @@ export function DraftEditor({ detail }: { detail: InvoiceDetail }) {
           />
         </label>
         <label className="block text-sm">
-          <span className="text-neutral-600">Notizen / Zahlungsbedingungen</span>
+          <span className="text-neutral-600">{t("notesLabel")}</span>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}

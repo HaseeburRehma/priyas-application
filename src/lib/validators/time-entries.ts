@@ -9,6 +9,17 @@ export const checkInSchema = z.object({
 });
 export type CheckInInput = z.infer<typeof checkInSchema>;
 
+/**
+ * Break events don't carry GPS — staff can step off-site for a
+ * coffee or sit down inside the building, and the break timer
+ * shouldn't fight with the geofence. We just record the moment.
+ */
+export const breakSchema = z.object({
+  shift_id: z.string().uuid(),
+  kind: z.enum(["break_start", "break_end"]),
+});
+export type BreakInput = z.infer<typeof breakSchema>;
+
 export const correctTimeEntrySchema = z.object({
   shift_id: z.string().uuid(),
   employee_id: z.string().uuid(),

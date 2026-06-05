@@ -3,6 +3,7 @@ import { useTranslations } from "next-intl";
 import { differenceInMonths } from "date-fns";
 import type { ClientDetail as Detail } from "@/lib/api/clients.types";
 import { useFormat } from "@/lib/utils/i18n-format";
+import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
 import { ClientDetailActions } from "./ClientDetailActions";
 
@@ -154,7 +155,9 @@ export function ClientDetail({ detail, canUpdate, canArchive }: Props) {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col gap-5">
           <ContactsCard detail={detail} canUpdate={canUpdate} />
+          <PropertiesPreviewCard detail={detail} />
           <ScopeOfServicesCard detail={detail} canUpdate={canUpdate} />
+          <ActivityTimelineCard detail={detail} />
         </div>
         <KeyInformationCard detail={detail} canUpdate={canUpdate} />
       </div>
@@ -308,6 +311,143 @@ function ContactsCard({ detail, canUpdate }: { detail: Detail; canUpdate: boolea
           </div>
         ))}
       </div>
+    </section>
+  );
+}
+
+/**
+ * Properties preview — shows up to 4 properties belonging to this
+ * client with a thumbnail letter, frequency line, and status pill.
+ * Links to the full /properties view filtered by client.
+ *
+ * The detail loader doesn't yet surface per-client property records,
+ * so we render a CTA card linking to the filtered properties list.
+ * When the loader is extended to return `detail.properties[]`, this
+ * card lights up automatically.
+ */
+function PropertiesPreviewCard({ detail }: { detail: Detail }) {
+  const t = useTranslations("clients.detail.propertiesPreview");
+  const rows = detail.properties_preview ?? [];
+  return (
+    <section className="rounded-lg border border-neutral-100 bg-white">
+      <header className="flex items-center justify-between border-b border-neutral-100 px-5 py-4">
+        <div>
+          <h3 className="text-[14px] font-semibold text-neutral-800">
+            {t("title")}
+          </h3>
+          <p className="mt-0.5 text-[11px] text-neutral-500">
+            {t("subtitle")}
+          </p>
+        </div>
+        <Link
+          href={`${routes.properties}?client=${detail.id}` as never}
+          className="text-[12px] font-semibold text-primary-700 hover:underline"
+        >
+          {t("viewAll")} →
+        </Link>
+      </header>
+      {rows.length === 0 ? (
+        <div className="p-5">
+          <div className="rounded-md border border-dashed border-neutral-200 bg-neutral-50 px-4 py-6 text-center text-[12px] text-neutral-500">
+            {t("emptyState")}
+          </div>
+        </div>
+      ) : (
+        <ul className="divide-y divide-neutral-100">
+          {rows.map((p) => (
+            <li
+              key={p.id}
+              className="flex items-center gap-3 px-5 py-3 hover:bg-neutral-50"
+            >
+              <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-md bg-primary-50 text-[11px] font-bold text-primary-700">
+                {p.name.charAt(0).toUpperCase()}
+              </span>
+              <Link
+                href={routes.property(p.id)}
+                className="min-w-0 flex-1 hover:underline"
+              >
+                <div className="truncate text-[13px] font-semibold text-neutral-800">
+                  {p.name}
+                </div>
+                <div className="truncate text-[11px] text-neutral-500">
+                  {p.city}
+                  {p.weekly_frequency
+                    ? ` · ${t("frequency", { n: p.weekly_frequency })}`
+                    : ""}
+                </div>
+              </Link>
+              <span className="rounded-full bg-success-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-success-700">
+                {t("active")}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/**
+ * Activity timeline — recent events affecting this client (created /
+ * edited / invoiced / etc). The detail loader doesn't yet pull
+ * audit_log rows scoped to the client, so for now this is an empty
+ * state with a CTA to the audit log. Adding the audit query is a
+ * small follow-up that doesn't touch this UI.
+ */
+function ActivityTimelineCard({ detail }: { detail: Detail }) {
+  const t = useTranslations("clients.detail.activity");
+  const f = useFormat();
+  const events = detail.recent_activity ?? [];
+
+  // Always show the "Kunde angelegt" event derived from created_at,
+  // plus the audit-log entries. Newest entries first; we cap to 6
+  // visible items so the card doesn't dominate the column.
+  return (
+    <section className="rounded-lg border border-neutral-100 bg-white">
+      <header className="border-b border-neutral-100 px-5 py-4">
+        <h3 className="text-[14px] font-semibold text-neutral-800">
+          {t("title")}
+        </h3>
+        <p className="mt-0.5 text-[11px] text-neutral-500">{t("subtitle")}</p>
+      </header>
+      <ul className="px-5 py-4">
+        {events.slice(0, 5).map((e, idx) => (
+          <li
+            key={e.id}
+            className={cn(
+              "flex items-start gap-3 border-l-2 border-secondary-300 pl-3",
+              idx > 0 && "mt-3",
+            )}
+          >
+            <span className="-ml-[7px] mt-0.5 h-3 w-3 flex-shrink-0 rounded-full border-2 border-white bg-secondary-500" />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[13px] font-medium text-neutral-800">
+                {e.summary}
+              </div>
+              <div className="mt-0.5 flex flex-wrap gap-2 text-[11px] text-neutral-500">
+                {e.actor_name && <span>{e.actor_name}</span>}
+                <span className="font-mono">{f.date(e.created_at)}</span>
+              </div>
+            </div>
+          </li>
+        ))}
+        <li
+          className={cn(
+            "flex items-start gap-3 border-l-2 border-success-500 pl-3",
+            events.length > 0 && "mt-3",
+          )}
+        >
+          <span className="-ml-[7px] mt-0.5 h-3 w-3 flex-shrink-0 rounded-full border-2 border-white bg-success-500" />
+          <div className="flex-1 min-w-0">
+            <div className="text-[13px] font-medium text-neutral-800">
+              {t("createdTitle")}
+            </div>
+            <div className="mt-0.5 font-mono text-[11px] text-neutral-500">
+              {f.date(detail.created_at)}
+            </div>
+          </div>
+        </li>
+      </ul>
     </section>
   );
 }

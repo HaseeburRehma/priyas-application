@@ -146,7 +146,8 @@
       "scheduled": "திட்டமிட்டது",
       "hours": "பதிவுசெய்யப்பட்ட மணிநேரங்கள்",
       "vsLastWeek": "கடந்த வாரத்துடன்",
-      "completionRate": "{rate} நிறைவு விகிதம்"
+      "completionRate": "{rate} நிறைவு விகிதம்",
+      "ariaLabel": "வாராந்திர ஆர்டர்கள்"
     },
     "todaySchedule": {
       "title": "இன்றைய அட்டவணை",
@@ -197,7 +198,8 @@
       "generateInvoice": "விலைப்பட்டியல் உருவாக்கு",
       "generateInvoiceSub": "Lexware ஒத்திசைவு",
       "exportReport": "அறிக்கையை ஏற்றுமதி செய்",
-      "exportReportSub": "PDF / iCal"
+      "exportReportSub": "PDF / iCal",
+      "newBadge": "புதிய"
     },
     "mine": {
       "title": "என் சுயவிவரம் — வணக்கம் {name}",
@@ -226,7 +228,20 @@
     "exportPlanSub": "27 missions · Crew · Status",
     "exportActivityTitle": "Recent activity",
     "exportActivitySub": "Audit Log · 7 days",
-    "exportSeeAll": "View all reports"
+    "exportSeeAll": "View all reports",
+    "invoiceKpi": {
+      "title": "வசூலிக்க வேண்டியவை",
+      "subtitle": "திறந்த மற்றும் செலுத்தப்பட்ட விலைப்பட்டியல்களின் கண்ணோட்டம்",
+      "allInvoices": "அனைத்து விலைப்பட்டியல்கள்",
+      "collectedThisMonth": "இந்த மாதம் வசூலிக்கப்பட்டது",
+      "open": "திறந்த",
+      "overdue": "தாமதம்",
+      "forecast30d": "30 நாட்கள் முன்னோட்டம்",
+      "agingTitle": "வயது அமைப்பு",
+      "agingCurrent": "தற்போதைய",
+      "invoiceCount": "{n} விலைப்பட்டியல்கள்",
+      "invoiceShort": "{n} விலை."
+    }
   },
   "clients": {
     "picker": {
@@ -279,7 +294,9 @@
         "address": "Address",
         "insurance": "Insurance",
         "servicePlan": "Service plan",
-        "other": "Other"
+        "other": "Other",
+        "careInsurance": "பராமரிப்பு & சுகாதார காப்பீடு",
+        "careInsuranceSub": "மாதாந்திர செயல்திறன் கட்டணத்திற்கு கட்டாயம்"
       },
       "fields": {
         "vorname": "First name",
@@ -384,7 +401,7 @@
         "subheadAlltagshilfe": "Day care · Manual billing via health insurance · Step 2 of 3"
       },
       "summary": {
-        "title": "Summary",
+        "title": "சுருக்கம்",
         "subPriya": "The information will be transferred to the contract and the first invoice upon saving.",
         "subAlltagshilfe": "The information will be transferred to the care contract and the first monthly report upon saving.",
         "serviceType": "Service type",
@@ -418,7 +435,8 @@
         "contractCheckUnsigned": "Welcome folder will be taken along",
         "priyasShort": "Priya's",
         "alltagshilfeShort": "Everyday assistance"
-      }
+      },
+      "abtretungWarning": "<b>முக்கியம்:</b> கையெழுத்திட்ட ஒதுக்கீட்டு பிரகடனம் இல்லாமல், சுகாதார காப்பீட்டுடன் பராமரிப்பு சேவைகளை நேரடியாக பணம் வசூலிக்க முடியாது. தொடக்க ஆலோசனையில் அந்த நபர் அனைத்து ஆவணங்களுடன் <b>வரவேற்பு தொகுப்பை</b> பெறுவார்."
     },
     "edit": {
       "title": "வாடிக்கையாளரைத் திருத்து",
@@ -549,7 +567,21 @@
       "moreActions": "மேலும் செயல்கள்",
       "archive": "வாடிக்கையாளரை காப்பகப்படுத்து",
       "archiveConfirm": "இந்த வாடிக்கையாளரை காப்பகப்படுத்தவா? அவர்கள் செயலில் உள்ள பட்டியலில் இனி தோன்றமாட்டார்கள்.",
-      "archiveSuccess": "வாடிக்கையாளர் காப்பகப்படுத்தப்பட்டார்."
+      "archiveSuccess": "வாடிக்கையாளர் காப்பகப்படுத்தப்பட்டார்.",
+      "propertiesPreview": {
+        "title": "சொத்துகள்",
+        "subtitle": "இந்த வாடிக்கையாளரின் அனைத்து இடங்களும்",
+        "viewAll": "அனைத்தையும் காட்டு",
+        "emptyState": "இடங்கள் சேர்க்கப்பட்டவுடன் சொத்து முன்னோட்டம் இங்கே தோன்றும்.",
+        "frequency": "வாரத்திற்கு {n}×",
+        "active": "செயலில்"
+      },
+      "activity": {
+        "title": "செயல்பாடு",
+        "subtitle": "இந்த வாடிக்கையாளருக்கான சமீபத்திய நிகழ்வுகள்",
+        "createdTitle": "வாடிக்கையாளர் உருவாக்கப்பட்டார்",
+        "emptyState": "வாடிக்கையாளர் பதிவு மாறும்போது கூடுதல் நிகழ்வுகள் இங்கே தோன்றும்."
+      }
     },
     "contacts": {
       "title": "தொடர்பு நபர்கள்",
@@ -574,6 +606,26 @@
       "notes": "குறிப்புகள்",
       "errorName": "ஒரு பெயரை உள்ளிடவும் (குறைந்தது 2 எழுத்துகள்).",
       "confirmDelete": "{name} ஐ தொடர்புகளிலிருந்து அகற்றவா?"
+    },
+    "statusDropdown": {
+      "title": "நிலையை மாற்று",
+      "savedDemo": "நிலை {label}-க்கு அமைக்கப்பட்டது (டெமோ).",
+      "saved": "நிலை {label}-க்கு அமைக்கப்பட்டது.",
+      "saveFailed": "நிலையை சேமிக்க முடியவில்லை.",
+      "label": {
+        "active": "செயலில்",
+        "vacation": "விடுமுறை",
+        "paused_by_client": "நிறுத்தப்பட்டது · வாடிக்கையாளர் கோரிக்கை",
+        "contract_ending_60d": "ஒப்பந்தம் முடிகிறது · 60 நாட்கள்",
+        "inactive": "செயலற்ற"
+      },
+      "desc": {
+        "active": "சாதாரண செயல்பாடு · ஷிப்ட்கள் திட்டமிட்டபடி.",
+        "vacation": "வாடிக்கையாளர் விடுமுறையில் · ஷிப்ட்கள் தற்காலிகமாக நிறுத்தம்.",
+        "paused_by_client": "வாடிக்கையாளர் கோரிக்கையின்படி நிறுத்தம் · புதிய வருகைகள் இல்லை.",
+        "contract_ending_60d": "ஒப்பந்தம் 60 நாட்களில் முடிகிறது · அறிவிப்பு காலத்தை கவனிக்கவும்.",
+        "inactive": "உறவு முடிந்தது · செயலில் உள்ள ஷிப்ட்கள் இல்லை."
+      }
     }
   },
   "properties": {
@@ -694,7 +746,32 @@
       "restrictedAreas": "தடைசெய்யப்பட்ட பகுதிகள்",
       "safetyRegulations": "பாதுகாப்பு விதிமுறைகள்",
       "notesTitle": "குறிப்புகள் & பாதுகாப்பு",
-      "notesEmpty": "குறிப்புகள் இல்லை."
+      "notesEmpty": "குறிப்புகள் இல்லை.",
+      "recentAssignments": {
+        "title": "சமீபத்திய ஒதுக்கீடுகள்",
+        "subtitle": "{n, plural, =0 {இதுவரை ஒதுக்கீடுகள் இல்லை} one {சமீபத்திய ஒதுக்கீடு} other {சமீபத்திய # ஒதுக்கீடுகள்}}",
+        "viewAll": "அனைத்தையும் காட்டு",
+        "viewAllComingSoon": "முழு வரலாறு விரைவில்",
+        "emptyState": "இந்த சொத்தில் இன்னும் எந்த ஒதுக்கீடும் முடிக்கப்படவில்லை.",
+        "emptyStateWithCount": "{n} ஒதுக்கீடுகள் · அடுத்த புதுப்பிப்பில் முழு பட்டியல்.",
+        "statusCompleted": "முடிந்தது",
+        "statusInProgress": "செயலில்",
+        "statusScheduled": "திட்டமிடப்பட்டது",
+        "statusCancelled": "ரத்து செய்யப்பட்டது",
+        "statusNoShow": "வரவில்லை",
+        "unassigned": "ஒதுக்கப்படவில்லை"
+      },
+      "safety": {
+        "title": "பாதுகாப்பு & இணக்கம்",
+        "subtitle": "ஒவ்வொரு வருகைக்கும் முன் கட்டாய சோதனைகள்",
+        "lastInspection": "கடைசி ஆய்வு",
+        "coshhFile": "COSHH கோப்பு",
+        "fireMarshal": "தீ பாதுகாப்பாளர்",
+        "incidents12mo": "சம்பவங்கள் (12 மாதங்கள்)",
+        "notUploaded": "பதிவேற்றப்படவில்லை",
+        "notSet": "அமைக்கப்படவில்லை",
+        "uploaded": "பதிவேற்றப்பட்டது"
+      }
     },
     "form": {
       "createTitle": "புதிய சொத்தை உருவாக்கு",
@@ -948,6 +1025,15 @@
       "prevPage": "முந்தைய",
       "nextPage": "அடுத்த",
       "statusCancelled": "ரத்து செய்யப்பட்டது"
+    },
+    "break": {
+      "startLabel": "இடைவேளை தொடங்கு",
+      "endLabel": "இடைவேளை முடி",
+      "hint": "இங்கே இடைவேளை தொடங்கவும் — நேரம் வேலை மணிநேரத்திலிருந்து விலக்கப்படும்.",
+      "onBreak": "இடைவேளையில்",
+      "onBreakWithTimer": "இடைவேளையில் · {elapsed}",
+      "startedToast": "இடைவேளை தொடங்கப்பட்டது.",
+      "endedToast": "இடைவேளை முடிந்தது."
     }
   },
   "employees": {
@@ -1060,7 +1146,25 @@
       "infoWeeklyHours": "வாரந்தோறும் மணிநேரங்கள்",
       "infoLanguage": "மொழி",
       "assignTraining": "பயிற்சி ஒதுக்க",
-      "downloadHours": "மணிநேர அறிக்கை (CSV)"
+      "downloadHours": "மணிநேர அறிக்கை (CSV)",
+      "skills": {
+        "title": "தகுதிகள் & சான்றிதழ்கள்",
+        "edit": "திருத்து",
+        "editComingSoon": "திருத்தம் விரைவில் — தற்போது சுயவிவரம் வழியாக.",
+        "cleaning": "சுத்தம்",
+        "care": "பராமரிப்பு",
+        "languages": "மொழிகள்",
+        "langDe": "ஜெர்மன்",
+        "langEn": "ஆங்கிலம்",
+        "langTa": "தமிழ்",
+        "officeCleaning": "அலுவலக சுத்தம்",
+        "deepCleaning": "ஆழ சுத்தம்",
+        "windowCleaning": "ஜன்னல் சுத்தம்",
+        "careLevel": "பராமரிப்பு நிலைகள்",
+        "dementiaCare": "மறதி நோய் பராமரிப்பு",
+        "firstAid": "முதலுதவி",
+        "mobility": "இயக்க உதவி"
+      }
     },
     "form": {
       "createTitle": "பணியாளரை அழை",
@@ -1296,7 +1400,9 @@
       "export": "ஏற்றுமதி",
       "new": "புதிய விலைப்பட்டியல்",
       "importComingSoon": "CSV இறக்குமதி விரைவில்.",
-      "newComingSoon": "கைமுறை உருவாக்கம் விரைவில் — விலைப்பட்டியல்கள் ஷிப்ட்களிலிருந்து உருவாக்கப்படுகின்றன."
+      "newComingSoon": "கைமுறை உருவாக்கம் விரைவில் — விலைப்பட்டியல்கள் ஷிப்ட்களிலிருந்து உருவாக்கப்படுகின்றன.",
+      "syncLexware": "Lexware ஒத்திசை",
+      "syncLexwareTitle": "அனைத்து நிலுவையில் உள்ள விலைப்பட்டியல்களையும் Lexware-உடன் ஒத்திசைக்கவும்"
     },
     "summary": {
       "total": "மொத்தம்",
@@ -1315,7 +1421,10 @@
       "filterDraft": "வரைவு",
       "filterSent": "அனுப்பப்பட்டது",
       "filterPaid": "பணம் செலுத்தப்பட்டது",
-      "filterOverdue": "தாமதம்"
+      "filterOverdue": "தாமதம்",
+      "serviceAll": "அனைத்தும்",
+      "servicePriya": "Priya's",
+      "serviceAlltags": "அன்றாட உதவி"
     },
     "table": {
       "number": "விலைப்பட்டியல்",
@@ -1331,7 +1440,8 @@
       "synced": "ஒத்திசைவு",
       "notSynced": "—",
       "empty": "உங்கள் தேடலுக்கு விலைப்பட்டியல்கள் இல்லை.",
-      "showing": "{from}–{to} / {total} காட்டப்படுகிறது"
+      "showing": "{from}–{to} / {total} காட்டப்படுகிறது",
+      "service": "சேவை"
     },
     "status": {
       "draft": "வரைவு",
@@ -1378,7 +1488,40 @@
         "attempts": "Attempts",
         "lastAttempt": "Last attempt",
         "errorPrefix": "Error:"
+      },
+      "breadcrumbDashboard": "முகப்பு",
+      "banner": {
+        "overdueTitle": "தாமதம் · கட்டண நினைவூட்டல் பரிந்துரைக்கப்படுகிறது",
+        "overdueBody": "இந்த விலைப்பட்டியல் <b>{days, plural, =1 {ஒரு நாள்} other {# நாட்கள்}} தாமதமாக உள்ளது</b>. இன்னும் முதல் நினைவூட்டல் அனுப்பவில்லை என்றால் தயவுசெய்து அனுப்பவும்.",
+        "partialTitle": "பகுதி கட்டணம் பெறப்பட்டது",
+        "partialBody": "<b>{amount}</b> இன்னும் நிலுவையில் உள்ளது. இந்த விலைப்பட்டியல் முழுமையாக செலுத்தப்படவில்லை."
       }
+    },
+    "draftEditor": {
+      "alltagshilfeNote": "அன்றாட உதவி (வரி இல்லாதது § 4 எண் 16 UStG)",
+      "regularNote": "வழக்கமான விலைப்பட்டியல் (19 % VAT)",
+      "itemsTitle": "உருப்படிகள்",
+      "addItem": "உருப்படி",
+      "colDescription": "விளக்கம்",
+      "colQty": "அளவு",
+      "colUnitPrice": "ஒரு விலை",
+      "colVat": "% VAT",
+      "colTotal": "மொத்தம்",
+      "removeItem": "உருப்படியை அகற்று",
+      "noItemsYet": "இன்னும் உருப்படிகள் இல்லை.",
+      "subtotal": "துணை மொத்தம்",
+      "vat": "VAT",
+      "total": "மொத்தம்",
+      "dueDateLabel": "செலுத்த வேண்டிய தேதி",
+      "notesLabel": "குறிப்புகள் / கட்டண நிபந்தனைகள்",
+      "alltagshilfeTaxFree": "அன்றாட உதவி வரி இல்லாதது"
+    },
+    "newWizard": {
+      "title": "புதிய விலைப்பட்டியல்",
+      "subtitle": "ஒரு வாடிக்கையாளரையும் கட்டண காலத்தையும் தேர்ந்தெடுக்கவும். அமைப்பு அங்கீகரிக்கப்பட்ட நேர பதிவுகளை சேகரித்து விலைப்பட்டியல் வரைவை பரிந்துரைக்கிறது.",
+      "step1": "1. வாடிக்கையாளர்",
+      "clientSearchPlaceholder": "வாடிக்கையாளர்களை தேடுங்கள்…",
+      "noClientsFound": "வாடிக்கையாளர்கள் காணப்படவில்லை."
     }
   },
   "statement": {
@@ -1406,7 +1549,10 @@
       "debit": "பற்று",
       "credit": "வரவு",
       "balance": "இருப்பு",
-      "empty": "இந்த வடிகட்டியில் உள்ளீடுகள் இல்லை."
+      "empty": "இந்த வடிகட்டியில் உள்ளீடுகள் இல்லை.",
+      "method": "முறை",
+      "methodSepa": "SEPA நேரடி பற்று",
+      "methodCredit": "கணக்கு வரவு"
     },
     "type": {
       "invoice": "விலைப்பட்டியல்",
@@ -1424,7 +1570,8 @@
       "contactTitle": "தொடர்பு & நிபந்தனைகள்",
       "paymentTerms": "கட்டண நிபந்தனைகள்",
       "paymentMethod": "கட்டண முறை",
-      "credit": "கடன் வரம்பு"
+      "credit": "கடன் வரம்பு",
+      "healthyAccount": "ஆரோக்கியமான கணக்கு · தாமதமான பொருட்கள் இல்லை"
     },
     "actions": {
       "exportPdf": "PDF அறிக்கை",
@@ -1443,11 +1590,13 @@
     "nav": {
       "company": "நிறுவன சுயவிவரம்",
       "team": "குழு & பாத்திரங்கள்",
-      "tax": "வரி & விலையிடல்",
+      "tax": "வரி & கணக்கியல்",
       "integrations": "ஒருங்கிணைப்புகள்",
       "notifications": "அறிவிப்புகள்",
       "locale": "உள்ளூர்மயம்",
-      "security": "பாதுகாப்பு"
+      "security": "பாதுகாப்பு",
+      "account": "என் கணக்கு",
+      "sessions": "அமர்வுகள் & சாதனங்கள்"
     },
     "company": {
       "title": "01 · நிறுவன சுயவிவரம்",
@@ -1455,20 +1604,57 @@
       "legalName": "சட்டப் பெயர்",
       "tradingName": "வர்த்தகப் பெயர்",
       "vatId": "VAT எண்",
-      "registration": "பதிவு",
+      "registration": "வர்த்தக பதிவு (HRB)",
       "address": "பதிவு முகவரி",
       "primaryContact": "முதன்மை தொடர்பு",
       "supportEmail": "ஆதரவு மின்னஞ்சல்",
       "supportPhone": "ஆதரவு தொலைபேசி",
-      "logo": "லோகோ"
+      "logo": "லோகோ",
+      "badge": "01 · Mgmt",
+      "verified": "சரிபார்க்கப்பட்டது",
+      "members": "ஊழியர்கள்",
+      "uploadLogo": "லோகோ பதிவேற்று",
+      "legalRegistration": "சட்டம் & பதிவு",
+      "legalNameHint": "பதிவு செய்தபடி",
+      "brandColors": "பிராண்ட் வண்ணங்கள்",
+      "savedToast": "சேமிக்கப்பட்டது",
+      "logoUploaded": "லோகோ புதுப்பிக்கப்பட்டது.",
+      "logoRemoved": "லோகோ அகற்றப்பட்டது.",
+      "logoUploading": "பதிவேற்றுகிறது…",
+      "logoRemove": "அகற்று"
     },
     "team": {
       "title": "02 · குழு & பாத்திரங்கள்",
       "subtitle": "4 இயல்பு பாத்திரங்கள் · திட்டத்திற்கு ஏற்ப அனுமதிகள்",
       "members": "உறுப்பினர்கள்",
       "invite": "உறுப்பினரை அழை",
-      "role": "பாத்திரம்",
-      "lastActive": "கடைசி செயல்பாடு"
+      "role": {
+        "mgmt": "MGMT",
+        "sup": "SUPER",
+        "empl": "EMPL",
+        "client": "CLIENT"
+      },
+      "lastActive": "கடைசி செயல்பாடு",
+      "badge": "02 · Mgmt",
+      "subtitleN": "{n} உறுப்பினர்கள் · ஒவ்வொரு பாத்திரத்துக்கான அனுமதிகள்",
+      "matrixTitle": "பாத்திர அனுமதி அட்டவணை",
+      "capability": "திறன்",
+      "capViewPlan": "அட்டவணையை பார்க்க",
+      "capViewPlanDesc": "ஒதுக்கப்பட்ட ஷிப்ட்களையும் சொத்து வருகைகளையும் பார்க்க",
+      "capAssign": "வருகைகளை ஒதுக்க & மறுசீரமைக்க",
+      "capAssignDesc": "ஒதுக்கீடுகள் மற்றும் ஷிப்ட் நேரங்களை மாற்று",
+      "capManageClients": "வாடிக்கையாளர்கள் & சொத்துகளை நிர்வகி",
+      "capManageClientsDesc": "வாடிக்கையாளர் கணக்குகளை உருவாக்கு, திருத்து அல்லது காப்பகப்படுத்து",
+      "capInvoicing": "விலைப்பட்டியல்களை உருவாக்கி அனுப்பு",
+      "capInvoicingDesc": "விலைப்பட்டியல்களை உருவாக்கு, இறுதிசெய் மற்றும் அனுப்பு",
+      "capApproveTime": "நேர பதிவை அங்கீகரி",
+      "capApproveTimeDesc": "தினசரி மணிநேரம் மற்றும் கூடுதல் நேரம் ஒப்புதல்",
+      "capReports": "அறிக்கைகள் & ஏற்றுமதிகளைப் பார்க்க",
+      "capReportsDesc": "வருவாய், மணிநேரம் மற்றும் செயல்திறன் தரவு",
+      "capOrgSettings": "நிறுவன அமைப்புகள்",
+      "capOrgSettingsDesc": "நிறுவனம், கட்டணம் மற்றும் ஒருங்கிணைப்புகளைத் திருத்து",
+      "activeMembers": "செயலில் உள்ள உறுப்பினர்கள் · {n}",
+      "seeAll": "அனைத்தையும் காட்டு"
     },
     "tax": {
       "title": "03 · வரி & விலையிடல்",
@@ -1477,26 +1663,71 @@
       "currency": "நாணயம்",
       "invoicePrefix": "விலைப்பட்டியல் முன்னொட்டு",
       "paymentTerms": "கட்டண காலம் (நாட்கள்)",
-      "lateFee": "தாமத கட்டணம் (%)"
+      "lateFee": "தாமத கட்டணம் (%)",
+      "badge": "03 · Mgmt",
+      "currentPlan": "தற்போதைய திட்டம்",
+      "planTier": "Professional",
+      "planTierSub": "50 உறுப்பினர்கள் சேர்க்கப்பட்டுள்ளனர்",
+      "planMembers": "உறுப்பினர்கள்",
+      "planObjects": "சொத்துகள்",
+      "planInvoices": "விலைப்பட்டியல்கள்",
+      "unlimited": "வரம்பற்ற",
+      "perMonth": "ஒரு மாதம் · VAT நீக்கி",
+      "managePlan": "திட்டத்தை நிர்வகி",
+      "vatCompliance": "VAT & இணக்கம்",
+      "vatId": "VAT ID",
+      "vatStd": "நிலையான விகிதம்",
+      "vatReduced": "குறைக்கப்பட்ட",
+      "invoiceDefaults": "விலைப்பட்டியல் இயல்புநிலைகள்",
+      "net14": "Net 14 (SEPA)",
+      "net7": "Net 7",
+      "net30": "Net 30",
+      "savedToast": "சேமிக்கப்பட்டது"
     },
     "integrations": {
       "title": "04 · ஒருங்கிணைப்புகள்",
       "subtitle": "அட்டவணைகள், கட்டணங்கள் மற்றும் ஏற்றுமதிகளை ஒத்திசைக்க மூன்றாம் தரப்பு சேவைகளை இணைக்கவும்.",
-      "lexware": "Lexware",
-      "lexwareDesc": "தானியங்கி விலைப்பட்டியல் ஒத்திசைவு",
-      "whatsapp": "WhatsApp Business",
-      "whatsappDesc": "ஊழியர்கள் மற்றும் வாடிக்கையாளர்களுக்கு அறிவிப்புகள்",
-      "email": "Resend (மின்னஞ்சல்)",
-      "emailDesc": "பரிவர்த்தனை மின்னஞ்சல்கள்",
-      "google": "Google Workspace",
-      "googleDesc": "SSO மற்றும் காலண்டர் ஒத்திசைவு",
-      "stripe": "Stripe",
-      "stripeDesc": "ஆன்லைன் வாடிக்கையாளர் கட்டணங்கள்",
-      "twilio": "Twilio Voice",
-      "twilioDesc": "On-call வரிகளுக்கு அழைப்பு திருப்பிவிடல்",
       "connect": "இணை",
       "active": "செயலில்",
-      "configure": "கட்டமைக்க"
+      "configure": "கட்டமை",
+      "badge": "04 · Mgmt",
+      "notConnected": "இணைக்கப்படவில்லை",
+      "recentlySynced": "சமீபத்தில் ஒத்திசைக்கப்பட்டது",
+      "freeAllPlans": "இலவசம் · அனைத்து திட்டங்கள்",
+      "manageKeys": "சாவிகளை நிர்வகி",
+      "apiKeysTitle": "API சாவிகள் & வெப்ஹுக்குகள்",
+      "apiKeysWarning": "சாவிகளை ரகசியமாக வைக்கவும். உற்பத்தி சாவியை சுழற்றுவது முந்தைய மதிப்பை உடனடியாக செல்லாததாக்கும் — முதலில் உங்கள் ஒருங்கிணைப்புகளை புதுப்பிக்கவும்.",
+      "lexware": {
+        "name": "Lexware Office",
+        "tagline": "கணக்கியல்",
+        "desc": "DATEV-இணக்கமான Lexware API மூலம் விலைப்பட்டியல்களையும் கட்டணங்களையும் ஒத்திசை."
+      },
+      "stripe": {
+        "name": "Stripe",
+        "tagline": "ஆன்லைன் கட்டணம்",
+        "desc": "ஒவ்வொரு விலைப்பட்டியலிலும் பணம் செலுத்தும் இணைப்பு மூலம் கார்டு & SEPA. EU பகுதி."
+      },
+      "email": {
+        "name": "மின்னஞ்சல்",
+        "tagline": "பரிவர்த்தனை மின்னஞ்சல்",
+        "desc": "விலைப்பட்டியல்கள், உறுதிப்படுத்தல்கள் மற்றும் மாதாந்திர அறிக்கைகளுக்கு Resend."
+      },
+      "google": {
+        "name": "Google Calendar",
+        "tagline": "அட்டவணை ஒத்திசைவு",
+        "desc": "ஊழியர்களின் ஷிப்ட்களை தனிப்பட்ட Google நாட்காட்டிகளுக்கு (இரு-வழி ஒத்திசைவு)."
+      },
+      "whatsapp": {
+        "name": "WhatsApp Business",
+        "tagline": "வாடிக்கையாளர் அரட்டை",
+        "desc": "WhatsApp வழியாக வாடிக்கையாளர்களுக்கு நினைவூட்டல்கள் மற்றும் புதுப்பிப்புகள்."
+      },
+      "twilio": {
+        "name": "Twilio",
+        "tagline": "SMS அனுப்புதல்",
+        "desc": "ஸ்மார்ட்போன் இல்லாத களப் பணியாளர்களுக்கு SMS மூலம் ஷிப்ட் நினைவூட்டல்கள்."
+      },
+      "savedToast": "சேமிக்கப்பட்டது"
     },
     "notifications": {
       "title": "05 · அறிவிப்புகள்",
@@ -1508,7 +1739,21 @@
       "evShiftChange": "பணிமாற்ற மாற்றம்",
       "evMissedCheckin": "தவறவிடப்பட்ட சரிபார்ப்பு",
       "evInvoiceOverdue": "விலைப்பட்டியல் தாமதம்",
-      "evVacationRequest": "விடுமுறை கோரிக்கை"
+      "evVacationRequest": "விடுமுறை கோரிக்கை",
+      "badge": "05 · Mgmt",
+      "quietHours": "அமைதி நேரங்கள் · <b>22:00 – 07:00</b> · புஷ் காலையில் வரை வைத்திருக்கப்படும்",
+      "editQuietHours": "அமைதி நேரங்களைத் திருத்து",
+      "group": {
+        "ops": "செயல்பாடுகள்",
+        "finance": "நிதி",
+        "team": "குழு"
+      },
+      "evShiftChangeDesc": "வாடிக்கையாளர் தொடங்கிய ரத்துகள், மறு-ஒதுக்கீடுகள்",
+      "evMissedCheckinDesc": "திட்டமிட்ட தொடக்கத்திற்கு 10 நிமிடங்களுக்கு மேல்",
+      "evInvoiceOverdueDesc": "தவறிய தேதி + 3 நாட்கள் சலுகை",
+      "evVacationRequestDesc": "நிலுவையில் உள்ள மேலாண்மை ஒப்புதல்",
+      "evNewClientDesc": "புதிய வாடிக்கையாளர் உருவாக்கப்பட்டார்",
+      "savedToast": "சேமிக்கப்பட்டது"
     },
     "push": {
       "title": "வலை புஷ் அறிவிப்புகள்",
@@ -1551,7 +1796,9 @@
       "manage": "நிர்வகி",
       "loginChallengeTitle": "உங்கள் இரட்டை அடையாள குறியீட்டை உள்ளிடவும்",
       "loginChallengeBody": "உங்கள் authenticator செயலியைத் திறந்து 6-இலக்க குறியீட்டை உள்ளிடவும்.",
-      "loginChallengeBack": "← மற்றொரு கணக்கைப் பயன்படுத்து"
+      "loginChallengeBack": "← மற்றொரு கணக்கைப் பயன்படுத்து",
+      "badge": "07 · Personal",
+      "strongScore": "வலுவான · 92 / 100"
     },
     "locale": {
       "title": "06 · உள்ளூர்மயம்",
@@ -1561,6 +1808,48 @@
       "weekStart": "வார தொடக்கம்",
       "currency": "நாணயம்",
       "dateFormat": "தேதி வடிவம்"
+    },
+    "breadcrumbAccount": "கணக்கு",
+    "subtitleWithSaved": "நிறுவனம், ஒருங்கிணைப்புகள் மற்றும் தனிப்பட்ட அமைப்புகளை நிர்வகிக்கவும் · கடைசியாக சேமிக்கப்பட்டது <at>{ts}</at>",
+    "navGroup": {
+      "management": "மேலாண்மை",
+      "personal": "தனிப்பட்ட"
+    },
+    "helpTitle": "உதவி தேவையா?",
+    "helpBody": "உதவி மையத்தில் நிர்வாக கையேடு & பாத்திர ஆவணம். அனைத்து மாற்றங்களும் பதிவு செய்யப்படுகின்றன.",
+    "account": {
+      "badge": "06 · Personal",
+      "title": "என் கணக்கு",
+      "subtitle": "உங்கள் தனிப்பட்ட சுயவிவரம், மொழி மற்றும் உள்நுழைவு விவரங்கள்.",
+      "fullName": "முழுப் பெயர்",
+      "email": "மின்னஞ்சல்",
+      "language": "மொழி",
+      "timezone": "நேர மண்டலம்",
+      "weekStart": "வாரம் தொடங்கும் நாள்",
+      "dateFormat": "தேதி வடிவம்",
+      "monday": "திங்கட்கிழமை",
+      "sunday": "ஞாயிற்றுக்கிழமை",
+      "changePhoto": "புகைப்படத்தை மாற்று",
+      "savedToast": "சேமிக்கப்பட்டது",
+      "avatarUploaded": "புகைப்படம் புதுப்பிக்கப்பட்டது.",
+      "avatarRemoved": "புகைப்படம் அகற்றப்பட்டது.",
+      "avatarUploading": "பதிவேற்றுகிறது…",
+      "removePhoto": "புகைப்படத்தை அகற்று"
+    },
+    "sessions": {
+      "badge": "08 · Personal",
+      "title": "அமர்வுகள் & சாதனங்கள்",
+      "subtitle": "4 செயலில் உள்ள அமர்வுகள் · எந்த சாதனத்தையும் ரத்து செய்து மீண்டும் அங்கீகரிக்க கட்டாயப்படுத்தலாம்.",
+      "revokeAll": "மற்ற அனைத்து சாதனங்களிலிருந்தும் வெளியேறு",
+      "revoke": "ரத்து",
+      "thisDevice": "இந்த சாதனம்",
+      "activeNow": "இப்போது செயலில்",
+      "currentDevice": "தற்போதைய உலாவி",
+      "footerNote": "அனைத்து அமர்வுகளும் TLS 1.3 பயன்படுத்துகின்றன · சாதனம் fingerprinting இயக்கப்பட்டுள்ளது",
+      "auditLog": "முழு தணிக்கை பதிவைக் காண்க",
+      "revokeAllConfirm": "மற்ற அனைத்து சாதனங்களிலிருந்தும் வெளியேற வேண்டுமா? நீங்கள் இந்த சாதனத்தில் உள்நுழைந்தே இருப்பீர்கள்.",
+      "revokeAllSuccess": "மற்ற அனைத்து சாதனங்களும் வெளியேற்றப்பட்டன.",
+      "revokeAllPending": "வெளியேறுகிறது…"
     }
   },
   "lexware": {
@@ -1613,7 +1902,27 @@
       "in_app": "செயலி",
       "email": "மின்னஞ்சல்",
       "whatsapp": "WhatsApp"
-    }
+    },
+    "breadcrumbCommunication": "தொடர்பு",
+    "unreadCount": "{n} படிக்கப்படாதவை",
+    "kpi": {
+      "today": "இன்று",
+      "todayDetail": "{n} படிக்கப்படாதவை",
+      "urgent": "அவசரம்",
+      "urgentDetail": "நடவடிக்கை தேவை",
+      "week": "இந்த வாரம்",
+      "weekDetail": "{n} படிக்கப்படாதவை",
+      "withTask": "பணியுடன்",
+      "withTaskDetail": "செயல்பாட்டில்"
+    },
+    "groups": {
+      "today": "இன்று · {date}",
+      "yesterday": "நேற்று · {date}",
+      "week": "இந்த வாரம் · {from} – {to}"
+    },
+    "olderCollapsed": "{n} பழைய அறிவிப்புகள் சுருக்கப்பட்டுள்ளன.",
+    "olderCollapsedRich": "{n} பழைய அறிவிப்புகள் சுருக்கப்பட்டுள்ளன — <link>அனைத்தையும் காட்டு</link>",
+    "footerNote": "அறிவிப்புகள் 90 நாட்களுக்கு சேமிக்கப்படுகின்றன. யாருக்கு எப்படி (மின்னஞ்சல் · புஷ் · செயலியில் · SMS) அறிவிப்புகள் கிடைக்கின்றன என்பதை ஒவ்வொரு வகைக்கும் <link>அமைப்புகளில்</link> கட்டுப்படுத்தலாம்."
   },
   "vacation": {
     "breadcrumbDashboard": "மேலோட்டம்",
@@ -1738,6 +2047,12 @@
       "shiftLabel": "ஷிப்ட் #{id}",
       "visitLabel": "வருகை #{id}",
       "openInSchedule": "திட்டத்தில் திற"
+    },
+    "thread": {
+      "emptyTitle": "இங்கே முதலில் எழுதுவீர்.",
+      "emptyBody": "அனைத்து உறுப்பினர்களுக்கும் செய்திகள் உடனடியாக தோன்றும்.",
+      "loading": "ஏற்றுகிறது…",
+      "loadError": "ஏற்றுவதில் தோல்வி: {error}"
     }
   },
   "damage": {
@@ -2150,12 +2465,12 @@
     "emptyState": "வரிசையில் எதுவும் இல்லை."
   },
   "assignments": {
-    "title": "Assignments",
-    "subtitle": "Property × client × planned hours × hourly rate with staff allocation.",
-    "new": "New assignment",
+    "title": "ஒதுக்கீடுகள்",
+    "subtitle": "சொத்து × வாடிக்கையாளர் × திட்டமிட்ட மணிநேரம் × விகிதம் + ஊழியர் ஒதுக்கீடு.",
+    "new": "புதிய ஒதுக்கீடு",
     "activeHeading": "Active assignments ({count})",
     "archivedHeading": "Archived ({count})",
-    "empty": "No assignments.",
+    "empty": "ஒதுக்கீடுகள் இல்லை.",
     "columns": {
       "client": "Client",
       "property": "Property",
@@ -2169,7 +2484,7 @@
       "biweekly": "bi-wk",
       "monthly": "monthly"
     },
-    "staffMissing": "Staff missing",
+    "staffMissing": "ஊழியர் காணவில்லை",
     "staffDistributed": "{hours}h allocated",
     "detail": {
       "plannedHours": "Planned hours",
@@ -2202,6 +2517,23 @@
       "noStaff": "No employees assigned yet.",
       "total": "Total",
       "client": "Client:"
+    },
+    "activeSection": "செயலில் உள்ள ஒதுக்கீடுகள் ({n})",
+    "archivedSection": "காப்பகப்படுத்தப்பட்டது ({n})",
+    "details": "விவரங்கள்",
+    "staffAllocated": "{hours}h ஒதுக்கப்பட்டது",
+    "freq": {
+      "weekly": "வாரம்",
+      "biweekly": "2 வாரம்",
+      "monthly": "மாதம்"
+    },
+    "table": {
+      "client": "வாடிக்கையாளர்",
+      "property": "சொத்து",
+      "hours": "மணிநேரம்",
+      "rate": "விகிதம்",
+      "total": "மொத்தம்",
+      "staff": "ஊழியர்"
     }
   },
   "alltagshilfeBudget": {

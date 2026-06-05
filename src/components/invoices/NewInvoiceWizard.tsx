@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { routes } from "@/lib/constants/routes";
 import { createDraftInvoiceAction } from "@/app/actions/invoice-draft";
@@ -25,6 +26,7 @@ const CUSTOMER_LABEL: Record<ClientOption["customer_type"], string> = {
  * shifts into a draft invoice → redirect to the draft editor.
  */
 export function NewInvoiceWizard({ clients }: { clients: ClientOption[] }) {
+  const t = useTranslations("invoices.newWizard");
   const router = useRouter();
   const [pending, start] = useTransition();
   const [filter, setFilter] = useState("");
@@ -74,28 +76,24 @@ export function NewInvoiceWizard({ clients }: { clients: ClientOption[] }) {
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-secondary-700">Neue Rechnung</h1>
-        <p className="text-sm text-neutral-500">
-          Wähle einen Kunden und einen Abrechnungszeitraum. Das System
-          sammelt alle freigegebenen Zeiterfassungen in diesem Zeitraum und
-          schlägt einen Rechnungsentwurf vor.
-        </p>
+        <h1 className="text-2xl font-semibold text-secondary-700">{t("title")}</h1>
+        <p className="text-sm text-neutral-500">{t("subtitle")}</p>
       </header>
 
       <section className="grid gap-4 md:grid-cols-[2fr_3fr]">
         {/* --- Step 1: pick client --- */}
         <div className="rounded-lg border border-neutral-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-neutral-700">1. Kunde</h2>
+          <h2 className="text-sm font-semibold text-neutral-700">{t("step1")}</h2>
           <input
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="Kundensuche…"
+            placeholder={t("clientSearchPlaceholder")}
             className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary-300"
           />
           <ul className="mt-3 max-h-80 space-y-1 overflow-y-auto">
             {filtered.length === 0 ? (
               <li className="px-2 py-2 text-sm text-neutral-500">
-                Keine Kunden gefunden.
+                {t("noClientsFound")}
               </li>
             ) : (
               filtered.map((c) => (

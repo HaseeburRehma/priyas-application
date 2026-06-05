@@ -5,6 +5,7 @@ import type {
   PropertyKind,
   PropertyStatus,
 } from "@/lib/api/properties.types";
+import { requireAuth } from "@/lib/rbac/permissions";
 
 const VALID_SORTS: ReadonlyArray<PropertiesSortField> = ["name", "client"];
 
@@ -26,6 +27,9 @@ const VALID_STATUSES: ReadonlyArray<PropertyStatus | "all"> = [
 ];
 
 export async function GET(request: NextRequest) {
+  if (!(await requireAuth())) {
+    return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
+  }
   const url = new URL(request.url);
   const q = url.searchParams.get("q") ?? "";
   const kindRaw = url.searchParams.get("kind") ?? "all";

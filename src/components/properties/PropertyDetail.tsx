@@ -150,9 +150,13 @@ export function PropertyDetail({
         <div className="flex flex-col gap-5">
           <AreasCard areas={detail.areas} />
           <ServiceScopeCard canUpdate={canUpdate} />
+          <RecentAssignmentsCard detail={detail} />
           <TeamCard team={detail.team} />
         </div>
-        <KeyInfoCard detail={detail} />
+        <div className="flex flex-col gap-5">
+          <KeyInfoCard detail={detail} />
+          <SafetyComplianceCard detail={detail} />
+        </div>
       </div>
     </>
   );
@@ -451,6 +455,181 @@ function KeyInfoCard({ detail }: { detail: Detail }) {
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * Recent assignments at this property — shows the last few shifts /
+ * deep cleans / inspections, each as a row with a date pill, title,
+ * and status badge.
+ *
+ * Currently renders a CTA-only empty state since the per-property
+ * loader doesn't yet fetch assignment history; the eventual loader
+ * extension drops rows into this card without any UI change.
+ */
+function RecentAssignmentsCard({ detail }: { detail: Detail }) {
+  const t = useTranslations("properties.detail.recentAssignments");
+  const f = useFormat();
+  const rows = detail.recent_assignments ?? [];
+  const count = detail.assignment_count ?? 0;
+
+  const STATUS_STYLE: Record<string, { label: string; cls: string }> = {
+    completed: { label: t("statusCompleted"), cls: "bg-success-50 text-success-700" },
+    in_progress: { label: t("statusInProgress"), cls: "bg-warning-50 text-warning-700" },
+    scheduled: { label: t("statusScheduled"), cls: "bg-secondary-50 text-secondary-700" },
+    cancelled: { label: t("statusCancelled"), cls: "bg-neutral-100 text-neutral-600" },
+    no_show: { label: t("statusNoShow"), cls: "bg-error-50 text-error-700" },
+  };
+
+  return (
+    <section className="rounded-lg border border-neutral-100 bg-white">
+      <header className="flex items-center justify-between border-b border-neutral-100 px-5 py-4">
+        <div>
+          <h3 className="text-[14px] font-semibold text-neutral-800">
+            {t("title")}
+          </h3>
+          <p className="mt-0.5 text-[11px] text-neutral-500">
+            {t("subtitle", { n: count })}
+          </p>
+        </div>
+        <Link
+          href={`${routes.schedule}?property=${detail.id}` as never}
+          className="text-[12px] font-semibold text-primary-700 hover:underline"
+        >
+          {t("viewAll")} →
+        </Link>
+      </header>
+      {rows.length === 0 ? (
+        <div className="p-5">
+          <div className="rounded-md border border-dashed border-neutral-200 bg-neutral-50 px-4 py-6 text-center text-[12px] text-neutral-500">
+            {t("emptyState")}
+          </div>
+        </div>
+      ) : (
+        <ul className="divide-y divide-neutral-100">
+          {rows.map((s) => {
+            const d = new Date(s.starts_at);
+            const day = d.getDate().toString().padStart(2, "0");
+            const month = d
+              .toLocaleString(undefined, { month: "short" })
+              .toUpperCase();
+            const status = STATUS_STYLE[s.status] ?? {
+              label: s.status,
+              cls: "bg-neutral-100 text-neutral-600",
+            };
+            return (
+              <li key={s.id} className="flex items-center gap-3 px-5 py-3">
+                {/* Date pill — bold day on top, short month below. */}
+                <span className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-md border border-neutral-200 bg-neutral-50 text-neutral-800">
+                  <span className="text-center leading-tight">
+                    <span className="block text-[13px] font-bold">{day}</span>
+                    <span className="block text-[8px] font-semibold uppercase tracking-[0.06em] text-neutral-500">
+                      {month}
+                    </span>
+                  </span>
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[13px] font-medium text-neutral-800">
+                    {s.employee_name ?? t("unassigned")}
+                  </div>
+                  <div className="font-mono text-[11px] text-neutral-500">
+                    {f.date(s.starts_at)}
+                  </div>
+                </div>
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase",
+                    status.cls,
+                  )}
+                >
+                  {status.label}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/**
+ * Safety & compliance summary — surfaces hard constraints the team
+ * needs to know before they show up on site. Sources what we already
+ * have (`access_notes`, `allergies`, `safety_notes`, `frequency`) and
+ * derives a few derived KPIs (last inspection, fire-marshal status,
+ * incident count) from `audit_log` / `damage_reports` once those
+ * loaders are added. The card already lays out the slots.
+ */
+function SafetyComplianceCard({ detail }: { detail: Detail }) {
+  const t = useTranslations("properties.detail.safety");
+  const incidents = detail.incidents_12mo ?? 0;
+  // Last inspection: derived from the most recent shift's start date
+  // until a real `inspections` table lands. recent_assignments is
+  // already sorted newest-first by the loader.
+  const lastInspection =
+    detail.recent_assignments?.[0]?.starts_at ?? null;
+  const lastInspectionLabel = lastInspection
+    ? new Date(lastInspection).toLocaleDateString(undefined, {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    : "—";
+  return (
+    <section className="rounded-lg border border-neutral-100 bg-white">
+      <header className="border-b border-neutral-100 px-5 py-4">
+        <h3 className="text-[14px] font-semibold text-neutral-800">
+          {t("title")}
+        </h3>
+        <p className="mt-0.5 text-[11px] text-neutral-500">{t("subtitle")}</p>
+      </header>
+      <div className="divide-y divide-neutral-100 text-[12px]">
+        <SafetyRow
+          label={t("lastInspection")}
+          value={lastInspectionLabel}
+          tone={lastInspection ? "success" : "muted"}
+        />
+        <SafetyRow
+          label={t("coshhFile")}
+          value={detail.cleaning_concept_path ? t("uploaded") : t("notUploaded")}
+          tone={detail.cleaning_concept_path ? "success" : "muted"}
+        />
+        <SafetyRow
+          label={t("fireMarshal")}
+          value={t("notSet")}
+          tone="muted"
+        />
+        <SafetyRow
+          label={t("incidents12mo")}
+          value={String(incidents)}
+          tone={incidents === 0 ? "success" : "warn"}
+        />
+      </div>
+    </section>
+  );
+}
+
+function SafetyRow({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: "success" | "muted" | "warn";
+}) {
+  const valueCls =
+    tone === "success"
+      ? "text-success-700"
+      : tone === "warn"
+        ? "text-warning-700"
+        : "text-neutral-700";
+  return (
+    <div className="flex items-center justify-between gap-3 px-5 py-3">
+      <span className="text-neutral-500">{label}</span>
+      <span className={`font-mono font-semibold ${valueCls}`}>{value}</span>
+    </div>
   );
 }
 

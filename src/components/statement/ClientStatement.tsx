@@ -142,6 +142,7 @@ export function ClientStatement({ data }: Props) {
                   <Th>{tTable("ref")}</Th>
                   <Th>{tTable("type")}</Th>
                   <Th>{tTable("description")}</Th>
+                  <Th>{tTable("method")}</Th>
                   <Th align="right">{tTable("debit")}</Th>
                   <Th align="right">{tTable("credit")}</Th>
                   <Th align="right">{tTable("balance")}</Th>
@@ -150,7 +151,7 @@ export function ClientStatement({ data }: Props) {
               <tbody>
                 {withBalance.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-5 py-10 text-center text-[13px] text-neutral-500">
+                    <td colSpan={8} className="px-5 py-10 text-center text-[13px] text-neutral-500">
                       {tTable("empty")}
                     </td>
                   </tr>
@@ -179,6 +180,19 @@ export function ClientStatement({ data }: Props) {
                     </td>
                     <td className="px-5 py-3 align-middle text-[13px] text-neutral-800">
                       {e.description}
+                    </td>
+                    <td className="px-5 py-3 align-middle text-[12px] text-neutral-500">
+                      {/* The schema doesn't yet carry a `method` field
+                       *  per ledger entry, so we derive it from the
+                       *  entry type: invoices have no method (—),
+                       *  payments default to SEPA, credits are
+                       *  account credits. A future migration can
+                       *  promote this to a real column. */}
+                      {e.type === "payment"
+                        ? tTable("methodSepa")
+                        : e.type === "credit"
+                          ? tTable("methodCredit")
+                          : "—"}
                     </td>
                     <td className="px-5 py-3 text-right align-middle font-mono text-[12px] text-neutral-700">
                       {e.debit_cents ? formatEUR(e.debit_cents) : "—"}
@@ -226,6 +240,30 @@ export function ClientStatement({ data }: Props) {
                 </li>
               ))}
             </ul>
+            {/* Health banner — surfaces only when there's no overdue
+             *  debt (everything in current / not-yet-due buckets).
+             *  Matches the prototype's success-tinted "Healthy account"
+             *  callout. */}
+            {data.aging.d31_60_cents +
+              data.aging.d61_90_cents +
+              data.aging.d90plus_cents ===
+              0 && (
+              <div className="mt-3 flex items-center gap-2 rounded-md border border-success-500 bg-success-50 px-3 py-2 text-[12px] font-semibold text-success-700">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-3.5 w-3.5 flex-shrink-0"
+                >
+                  <polyline points="9 11 12 14 22 4" />
+                  <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+                </svg>
+                {tSide("healthyAccount")}
+              </div>
+            )}
           </section>
 
           <section className="rounded-lg border border-neutral-100 bg-white p-5">

@@ -418,8 +418,8 @@ export function CreateClientForm({ type }: Props) {
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-[15px] font-semibold text-neutral-800">Pflege & Krankenversicherung</h2>
-                  <p className="text-[12px] text-neutral-500">Pflicht für die monatliche Leistungsabrechnung</p>
+                  <h2 className="text-[15px] font-semibold text-neutral-800">{t("section.careInsurance")}</h2>
+                  <p className="text-[12px] text-neutral-500">{t("section.careInsuranceSub")}</p>
                 </div>
               </header>
 
@@ -534,10 +534,9 @@ export function CreateClientForm({ type }: Props) {
                       <line x1={12} y1={17} x2={12.01} y2={17} />
                     </svg>
                     <div>
-                      <strong>Wichtig:</strong> Ohne unterschriebene Abtretungserklärung können
-                      wir die Pflegeleistungen nicht direkt mit der Krankenkasse abrechnen. Die
-                      Person erhält bei der Erstberatung eine <strong>Willkommensmappe</strong>{" "}
-                      mit allen Unterlagen.
+                      {t.rich("abtretungWarning", {
+                        b: (chunks) => <strong>{chunks}</strong>,
+                      })}
                     </div>
                   </div>
                 )}
@@ -722,7 +721,7 @@ export function CreateClientForm({ type }: Props) {
         {/* ============ Summary side panel =========================== */}
         <aside className="space-y-4">
           <section className="rounded-lg border border-neutral-100 bg-white p-5 shadow-xs">
-            <h3 className="text-[15px] font-semibold text-neutral-800">Zusammenfassung</h3>
+            <h3 className="text-[15px] font-semibold text-neutral-800">{t("summary.title")}</h3>
             <p className="mt-1 text-[12px] text-neutral-500">
               {isAlltags
                 ? "Die Angaben werden in den Pflegevertrag und den ersten Monatsbericht übernommen."
