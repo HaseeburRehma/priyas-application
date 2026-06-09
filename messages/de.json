@@ -2718,5 +2718,18 @@
     "closing": "Bei Fragen einfach auf diese E-Mail antworten.",
     "signature": "— Priya's Operations System",
     "footerNote": "Diese E-Mail wurde automatisch erstellt. Eine Kopie liegt im Auditprotokoll."
+  },
+  "setup2fa": {
+    "badge": "Pflicht",
+    "title": "Konto mit 2FA absichern",
+    "lead": "Konten mit Management- oder Projektleitungsrolle müssen die Zwei-Faktor-Authentifizierung einrichten, bevor sie das Dashboard nutzen können. Dauert etwa 60 Sekunden — danach nie wieder.",
+    "checklistTitle": "Was du brauchst",
+    "step1Title": "Eine Authenticator-App",
+    "step1Body": "Google Authenticator, Authy, 1Password oder Microsoft Authenticator funktionieren alle. Wenn du noch keine hast, jetzt installieren.",
+    "step2Title": "QR-Code scannen",
+    "step2Body": "Tippe in der App auf „Neues Konto hinzufügen“ und scanne den QR-Code unten. Die App speichert dann ein neues Priya’s-Profil.",
+    "step3Title": "Sechsstelligen Code eingeben",
+    "step3Body": "Die App zeigt einen sechsstelligen Code an, der sich alle 30 Sekunden ändert. Trage ihn unten ein, um die Einrichtung zu bestätigen.",
+    "helpLine": "Stecken geblieben? Schreib uns an <mail>support@priyas-cleaning.de</mail> — wir helfen innerhalb von 15 Minuten."
   }
 }

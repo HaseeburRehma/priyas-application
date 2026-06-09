@@ -24,7 +24,7 @@ type Factor = {
  *   - User scans + types the 6-digit code → challenge() + verify().
  *   - On success, refresh the factor list. On failure, surface the error.
  */
-export function SecuritySection() {
+export function SecuritySection({ hideHeader = false }: { hideHeader?: boolean } = {}) {
   const t = useTranslations("settings.security");
   const supabase = createSupabaseBrowserClient();
   const router = useRouter();
@@ -122,12 +122,14 @@ export function SecuritySection() {
 
   return (
     <section className="rounded-lg border border-neutral-100 bg-white">
-      <header className="border-b border-neutral-100 p-5">
-        <h2 className="text-[17px] font-bold text-secondary-500">
-          {t("title")}
-        </h2>
-        <p className="mt-1 text-[12px] text-neutral-500">{t("subtitle")}</p>
-      </header>
+      {!hideHeader && (
+        <header className="border-b border-neutral-100 p-5">
+          <h2 className="text-[17px] font-bold text-secondary-500">
+            {t("title")}
+          </h2>
+          <p className="mt-1 text-[12px] text-neutral-500">{t("subtitle")}</p>
+        </header>
+      )}
       <div className="p-5">
         <div className="flex flex-wrap items-start justify-between gap-4 rounded-md border border-neutral-100 p-4">
           <div className="min-w-0">

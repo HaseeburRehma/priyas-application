@@ -126,9 +126,46 @@ export const createClientSchema = z.discriminatedUnion("customer_type", [
 ]);
 export type CreateClientInput = z.infer<typeof createClientSchema>;
 
-export const updateClientSchema = createClientSchema.and(
-  z.object({ id: z.string().uuid() }),
-);
+/**
+ * Update schema — only the fields the EditClientForm actually sends.
+ * The action never overwrites address, cleaning rhythm, contract dates, etc.,
+ * so those fields must not be required here.
+ */
+const updateBase = {
+  id: z.string().uuid(),
+  display_name: z.string().min(2, "Name ist zu kurz").max(200),
+  contact_name: optionalText(120),
+  email: z
+    .string()
+    .email("Ungültige E-Mail")
+    .max(200)
+    .optional()
+    .or(z.literal("")),
+  phone: z
+    .string()
+    .max(40)
+    .regex(/^[\d\s+\-().]+$/, "Ungültige Telefonnummer")
+    .optional()
+    .or(z.literal("")),
+  tax_id: optionalText(40),
+  notes: optionalText(4000),
+};
+
+export const updateClientSchema = z.discriminatedUnion("customer_type", [
+  z.object({ customer_type: z.literal("residential"), ...updateBase }),
+  z.object({ customer_type: z.literal("commercial"), ...updateBase }),
+  z.object({
+    customer_type: z.literal("alltagshilfe"),
+    ...updateBase,
+    insurance_provider: z.string().min(1, "Pflegekasse erforderlich").max(80),
+    insurance_number: z.string().min(1, "Versicherungsnummer erforderlich").max(40),
+    care_level: z
+      .number({ invalid_type_error: "Pflegegrad 1–5" })
+      .int()
+      .min(1)
+      .max(5),
+  }),
+]);
 export type UpdateClientInput = z.infer<typeof updateClientSchema>;
 
 // Re-export of the unused-for-now optionalIsoDate helper so future fields

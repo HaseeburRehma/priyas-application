@@ -5,6 +5,7 @@ import { can } from "@/lib/rbac/permissions";
 import { routes } from "@/lib/constants/routes";
 import { loadAssignmentDetail } from "@/lib/api/assignments";
 import { formatEUR } from "@/lib/billing/money";
+import { ArchiveAssignmentButton } from "@/components/assignments/ArchiveAssignmentButton";
 
 export const metadata: Metadata = { title: "Auftrag" };
 export const dynamic = "force-dynamic";
@@ -30,16 +31,19 @@ export default async function Page({
         / <span className="text-neutral-700">{detail.property_name}</span>
       </nav>
 
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-secondary-700">
-          {detail.property_name}
-        </h1>
-        <p className="text-sm text-neutral-500">
-          Kunde:{" "}
-          <Link href={routes.client(detail.client_id)} className="text-secondary-600 hover:underline">
-            {detail.client_name}
-          </Link>
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold text-secondary-700">
+            {detail.property_name}
+          </h1>
+          <p className="text-sm text-neutral-500">
+            Kunde:{" "}
+            <Link href={routes.client(detail.client_id)} className="text-secondary-600 hover:underline">
+              {detail.client_name}
+            </Link>
+          </p>
+        </div>
+        {detail.active && <ArchiveAssignmentButton id={detail.id} />}
       </header>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
