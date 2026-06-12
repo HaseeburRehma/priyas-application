@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { loadInvoicesList } from "@/lib/api/invoices";
 import type { InvoiceStatus } from "@/lib/api/invoices.types";
-import { requireAuth } from "@/lib/rbac/permissions";
+import { requirePermission, PermissionError } from "@/lib/rbac/permissions";
 
 const STATUSES: ReadonlyArray<InvoiceStatus | "all"> = [
   "all",
@@ -13,8 +13,14 @@ const STATUSES: ReadonlyArray<InvoiceStatus | "all"> = [
 ];
 
 export async function GET(request: NextRequest) {
-  if (!(await requireAuth())) {
-    return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
+  try {
+    await requirePermission("invoice.read");
+  } catch (err) {
+    const status = err instanceof PermissionError && !err.message.includes("signed in") ? 403 : 401;
+    return NextResponse.json(
+      { error: err instanceof PermissionError ? err.message : "Forbidden" },
+      { status },
+    );
   }
   const url = new URL(request.url);
   const q = url.searchParams.get("q") ?? "";

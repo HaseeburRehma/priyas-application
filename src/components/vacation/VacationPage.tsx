@@ -11,7 +11,9 @@ import { useFormat } from "@/lib/utils/i18n-format";
 import {
   cancelVacationRequestAction,
   createVacationRequestAction,
+  respondVacationSuggestionAction,
   reviewVacationRequestAction,
+  suggestVacationDatesAction,
 } from "@/app/actions/vacation";
 import type {
   VacationData,
@@ -22,6 +24,7 @@ import type {
 const TABS: Array<"all" | VacationStatus> = [
   "all",
   "pending",
+  "suggested",
   "approved",
   "rejected",
 ];
@@ -45,6 +48,7 @@ export function VacationPage({ data }: Props) {
   const f = useFormat();
   const [tab, setTab] = useState<"all" | VacationStatus>("all");
   const [formOpen, setFormOpen] = useState(false);
+  const [suggestFor, setSuggestFor] = useState<VacationRequest | null>(null);
   const [pending, start] = useTransition();
 
   const filtered = data.requests.filter(
@@ -73,6 +77,17 @@ export function VacationPage({ data }: Props) {
       if (!r.ok) toast.error(r.error);
       else {
         toast.success(t("cancelled"));
+        router.refresh();
+      }
+    });
+  }
+
+  function respondSuggestion(id: string, accept: boolean) {
+    start(async () => {
+      const r = await respondVacationSuggestionAction({ id, accept });
+      if (!r.ok) toast.error(r.error);
+      else {
+        toast.success(accept ? t("suggestionAccepted") : t("suggestionDeclined"));
         router.refresh();
       }
     });
@@ -213,6 +228,13 @@ export function VacationPage({ data }: Props) {
                     {f.date(r.start_date)}
                     {" – "}
                     {f.date(r.end_date)}
+                    {r.status === "suggested" &&
+                      r.suggested_start &&
+                      r.suggested_end && (
+                        <span className="ml-2 text-blue-600">
+                          → {f.date(r.suggested_start)} – {f.date(r.suggested_end)}
+                        </span>
+                      )}
                   </td>
                   <td className="px-5 py-3 text-right align-middle font-mono text-[13px] font-semibold text-secondary-500">
                     {r.days}
@@ -239,6 +261,9 @@ export function VacationPage({ data }: Props) {
                       onApprove={() => review(r.id, true)}
                       onReject={() => review(r.id, false)}
                       onCancel={() => cancel(r.id)}
+                      onSuggest={() => setSuggestFor(r)}
+                      onAcceptSuggestion={() => respondSuggestion(r.id, true)}
+                      onDeclineSuggestion={() => respondSuggestion(r.id, false)}
                       pending={pending}
                     />
                   </td>
@@ -259,6 +284,17 @@ export function VacationPage({ data }: Props) {
           }}
         />
       )}
+
+      {suggestFor && (
+        <SuggestForm
+          request={suggestFor}
+          onClose={() => setSuggestFor(null)}
+          onSaved={() => {
+            setSuggestFor(null);
+            router.refresh();
+          }}
+        />
+      )}
     </>
   );
 }
@@ -270,6 +306,9 @@ function RowActions({
   onApprove,
   onReject,
   onCancel,
+  onSuggest,
+  onAcceptSuggestion,
+  onDeclineSuggestion,
   pending,
 }: {
   request: VacationRequest;
@@ -278,11 +317,18 @@ function RowActions({
   onApprove: () => void;
   onReject: () => void;
   onCancel: () => void;
+  onSuggest: () => void;
+  onAcceptSuggestion: () => void;
+  onDeclineSuggestion: () => void;
   pending: boolean;
 }) {
   const t = useTranslations("vacation");
   const showApproveReject = canApprove && request.status === "pending";
+  const showSuggest = canApprove && request.status === "pending";
   const showCancel = isOwn && request.status === "pending";
+  const showSuggestionResponse =
+    isOwn && request.status === "suggested";
+
   return (
     <div className="flex flex-wrap items-center justify-end gap-1.5">
       {showApproveReject && (
@@ -305,6 +351,36 @@ function RowActions({
           </button>
         </>
       )}
+      {showSuggest && (
+        <button
+          type="button"
+          disabled={pending}
+          onClick={onSuggest}
+          className="rounded-md border border-blue-300 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 transition hover:bg-blue-100"
+        >
+          {t("suggest")}
+        </button>
+      )}
+      {showSuggestionResponse && (
+        <>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={onAcceptSuggestion}
+            className="rounded-md border border-success-500 bg-success-50 px-2.5 py-1 text-[11px] font-semibold text-success-700 transition hover:bg-success-50/80"
+          >
+            {t("acceptSuggestion")}
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={onDeclineSuggestion}
+            className="rounded-md border border-neutral-200 px-2.5 py-1 text-[11px] font-medium text-neutral-700 hover:bg-neutral-50"
+          >
+            {t("declineSuggestion")}
+          </button>
+        </>
+      )}
       {showCancel && (
         <button
           type="button"
@@ -315,6 +391,129 @@ function RowActions({
           {t("cancel")}
         </button>
       )}
+    </div>
+  );
+}
+
+function SuggestForm({
+  request,
+  onClose,
+  onSaved,
+}: {
+  request: VacationRequest;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const t = useTranslations("vacation.suggestForm");
+  const tPage = useTranslations("vacation");
+  const [pending, start] = useTransition();
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [form, setForm] = useState({
+    start: request.start_date,
+    end: request.end_date,
+    note: "",
+  });
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setErrors({});
+    start(async () => {
+      const r = await suggestVacationDatesAction({
+        id: request.id,
+        suggested_start: form.start,
+        suggested_end: form.end,
+        reviewer_note: form.note,
+      });
+      if (!r.ok) {
+        if (r.fieldErrors) {
+          const flat: Record<string, string> = {};
+          for (const [k, v] of Object.entries(r.fieldErrors)) {
+            if (Array.isArray(v) && v[0]) flat[k] = v[0];
+          }
+          setErrors(flat);
+        }
+        toast.error(r.error || t("saveError"));
+        return;
+      }
+      toast.success(tPage("suggested"));
+      onSaved();
+    });
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center sm:p-6"
+    >
+      <div className="flex max-h-[92vh] w-full max-w-[520px] flex-col overflow-hidden rounded-t-xl border border-neutral-100 bg-white shadow-lg sm:rounded-xl">
+        <header className="flex items-start justify-between border-b border-neutral-100 px-6 pb-4 pt-5">
+          <div>
+            <h2 className="text-[18px] font-bold text-secondary-500">
+              {t("title")}
+            </h2>
+            <p className="mt-0.5 text-[12px] text-neutral-500">
+              {t("subtitle")}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={tPage("cancel")}
+            className="grid h-8 w-8 place-items-center rounded-md text-neutral-400 hover:bg-neutral-50"
+          >
+            <span aria-hidden>✕</span>
+          </button>
+        </header>
+        <form onSubmit={submit} className="overflow-y-auto" noValidate>
+          <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2">
+            <Field label={t("startDate")} required error={errors.suggested_start}>
+              <input
+                type="date"
+                className="input"
+                required
+                value={form.start}
+                onChange={(e) => setForm((f) => ({ ...f, start: e.target.value }))}
+              />
+            </Field>
+            <Field label={t("endDate")} required error={errors.suggested_end}>
+              <input
+                type="date"
+                className="input"
+                required
+                value={form.end}
+                onChange={(e) => setForm((f) => ({ ...f, end: e.target.value }))}
+              />
+            </Field>
+            <Field label={t("note")} className="md:col-span-2">
+              <textarea
+                rows={3}
+                className="input min-h-[80px]"
+                value={form.note}
+                onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
+              />
+            </Field>
+          </div>
+          <footer className="flex items-center justify-end gap-3 border-t border-neutral-100 bg-white px-6 py-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn--ghost border border-neutral-200"
+            >
+              {tPage("cancel")}
+            </button>
+            <button
+              type="submit"
+              disabled={pending}
+              className={cn("btn btn--primary", pending && "opacity-80")}
+            >
+              {pending ? t("saving") : t("submit")}
+            </button>
+          </footer>
+        </form>
+      </div>
     </div>
   );
 }

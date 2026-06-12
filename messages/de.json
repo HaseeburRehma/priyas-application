@@ -1934,6 +1934,7 @@
     "tabs": {
       "all": "Alle",
       "pending": "Ausstehend",
+      "suggested": "Alternativvorschlag",
       "approved": "Genehmigt",
       "rejected": "Abgelehnt"
     },
@@ -1948,6 +1949,7 @@
     },
     "status": {
       "pending": "Ausstehend",
+      "suggested": "Alternativvorschlag",
       "approved": "Genehmigt",
       "rejected": "Abgelehnt",
       "cancelled": "Zurückgezogen"
@@ -1955,10 +1957,17 @@
     "approve": "Genehmigen",
     "reject": "Ablehnen",
     "cancel": "Zurückziehen",
+    "suggest": "Alternativen vorschlagen",
+    "acceptSuggestion": "Annehmen",
+    "declineSuggestion": "Ablehnen",
     "submitted": "Antrag eingereicht.",
     "approved": "Genehmigt.",
     "rejected": "Abgelehnt.",
     "cancelled": "Zurückgezogen.",
+    "suggested": "Alternativtermin vorgeschlagen.",
+    "suggestionAccepted": "Vorschlag angenommen — Urlaub genehmigt.",
+    "suggestionDeclined": "Vorschlag abgelehnt.",
+    "suggestedPeriod": "Vorgeschlagener Zeitraum",
     "form": {
       "title": "Urlaub beantragen",
       "subtitle": "Zeitraum und Grund angeben.",
@@ -1966,6 +1975,16 @@
       "endDate": "Ende",
       "reason": "Grund (optional)",
       "submit": "Antrag senden",
+      "saving": "Wird gesendet…",
+      "saveError": "Senden fehlgeschlagen."
+    },
+    "suggestForm": {
+      "title": "Alternativtermin vorschlagen",
+      "subtitle": "Schlage einen alternativen Urlaubszeitraum vor.",
+      "startDate": "Alternativ-Beginn",
+      "endDate": "Alternativ-Ende",
+      "note": "Hinweis (optional)",
+      "submit": "Vorschlag senden",
       "saving": "Wird gesendet…",
       "saveError": "Senden fehlgeschlagen."
     }

@@ -346,12 +346,10 @@ export async function runMonthlyInvoices(
           .update({ lexware_id: pushed.id, status: "sent" })
           .eq("id", newInvoiceId);
 
-        const contactId = (pushed as unknown as { contactId?: string })
-          .contactId;
-        if (contactId && client?.id) {
+        if (pushed.contactId && client?.id) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await ((supabase.from("clients") as any))
-            .update({ lexware_contact_id: contactId })
+            .update({ lexware_contact_id: pushed.contactId })
             .eq("id", client.id);
         }
 

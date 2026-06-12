@@ -140,11 +140,10 @@ export async function retryLexwarePushForInvoice(
         lexware_attempts: inv.lexware_attempts + 1,
       })
       .eq("id", inv.id);
-    const contactId = (result as unknown as { contactId?: string }).contactId;
-    if (contactId) {
+    if (result.contactId) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await ((supabase.from("clients") as any))
-        .update({ lexware_contact_id: contactId })
+        .update({ lexware_contact_id: result.contactId })
         .eq("id", inv.client.id);
     }
     return { invoiceId, ok: true, foreignId: result.id };

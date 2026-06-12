@@ -54,3 +54,6 @@ next-env.d.ts
 # Playwright + Stagehand artifacts (removed from project)
 /playwright-report
 /test-results
+
+# E2E test specs (local only — contain env-dependent credentials and test logic)
+/tests/e2e/*.spec.ts

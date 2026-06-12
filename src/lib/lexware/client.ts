@@ -1,7 +1,5 @@
 import "server-only";
 
-
-
 export type LexwareConfig = {
   baseUrl: string;
   apiKey: string;
@@ -25,15 +23,12 @@ export class LexwareError extends Error {
   }
 }
 
-/** Issue an authenticated request. Throws LexwareError on non-2xx. */
+/** Issue an authenticated request to Lexware Office REST API. Throws LexwareError on non-2xx. */
 async function request<T>(
   cfg: LexwareConfig,
   path: string,
   init: RequestInit = {},
 ): Promise<T> {
-  // 15 s timeout. Without this an unresponsive Lexware backend stalls
-  // the server action indefinitely (no app-level limit on action runtime).
-  // AbortSignal.timeout returns a signal that auto-aborts on the deadline.
   let res: Response;
   try {
     res = await fetch(`${cfg.baseUrl}${path}`, {
@@ -45,12 +40,10 @@ async function request<T>(
         ...(init.headers ?? {}),
       },
       cache: "no-store",
+      // 15 s timeout — prevents stalled server actions on Lexware outages.
       signal: AbortSignal.timeout(15_000),
     });
   } catch (err) {
-    // The standard surfaces a TimeoutError (DOMException) for the timeout
-    // path on modern Node; older runtimes raise AbortError. Match either
-    // so the caller gets a clearer message than a generic fetch failure.
     const isAbort =
       err instanceof Error &&
       (err.name === "AbortError" ||
@@ -64,6 +57,7 @@ async function request<T>(
     }
     throw err;
   }
+
   const text = await res.text();
   let parsed: unknown = undefined;
   if (text) {
@@ -83,12 +77,14 @@ async function request<T>(
   return parsed as T;
 }
 
-/* ---------------------------------------------------------------------------
- * Contacts (clients)
- * ------------------------------------------------------------------------- */
+/* ===========================================================================
+ * Contacts  —  POST /v1/contacts · GET /v1/contacts/:id · PUT /v1/contacts/:id
+ *              GET /v1/contacts?email=...
+ * ========================================================================= */
 
 export type LexwareContact = {
   id: string;
+  /** Optimistic-concurrency version — REQUIRED on PUT. */
   version: number;
   roles: { customer?: { number?: number } };
   company?: { name: string; vatRegistrationId?: string };
@@ -97,6 +93,58 @@ export type LexwareContact = {
   phoneNumbers?: { business?: string[] };
 };
 
+/**
+ * GET /v1/contacts/:id
+ *
+ * Fetches the full contact record including the current `version`.
+ * Must be called before PUT to satisfy Lexware's optimistic concurrency control:
+ * a PUT with a stale version returns 409 Conflict.
+ */
+export async function lexwareGetContact(
+  cfg: LexwareConfig,
+  id: string,
+): Promise<LexwareContact> {
+  return request<LexwareContact>(cfg, `/v1/contacts/${id}`);
+}
+
+/**
+ * GET /v1/contacts?email=...&customer=true
+ *
+ * Searches for contacts matching an email address. Used to find an existing
+ * Lexware contact before creating a duplicate. Returns the first match or null.
+ *
+ * Lexware's contact filter endpoint returns a paginated response; we only
+ * need page 0 since email is unique per customer in practice.
+ */
+export async function lexwareSearchContactByEmail(
+  cfg: LexwareConfig,
+  email: string,
+): Promise<LexwareContact | null> {
+  type SearchPage = {
+    content: LexwareContact[];
+    totalElements?: number;
+  };
+  const qs = new URLSearchParams({
+    email,
+    customer: "true",
+    page: "0",
+    size: "5",
+  });
+  const data = await request<SearchPage>(cfg, `/v1/contacts?${qs.toString()}`);
+  return data.content?.[0] ?? null;
+}
+
+/**
+ * Create or update a Lexware contact.
+ *
+ * - If `existing_id` is provided: GET the contact to fetch its current `version`,
+ *   then PUT with the correct version (avoids 409 Conflict from stale version).
+ * - If no `existing_id` but an `email` is set: search for an existing contact
+ *   by email first to avoid creating duplicates.
+ * - Otherwise: POST to create a new contact.
+ *
+ * Returns the upserted contact (always contains `id` and `version`).
+ */
 export async function lexwareUpsertContact(
   cfg: LexwareConfig,
   client: {
@@ -106,59 +154,90 @@ export async function lexwareUpsertContact(
     phone: string | null;
     tax_id: string | null;
     customer_type: "residential" | "commercial" | "alltagshilfe";
-    existing_id?: string;
+    existing_id?: string | null;
   },
 ): Promise<LexwareContact> {
-  const body = {
-    version: 0,
+  const isResidential =
+    client.customer_type === "residential" ||
+    client.customer_type === "alltagshilfe";
+
+  const contactBody = (version: number) => ({
+    version,
     roles: { customer: {} },
-    ...(client.customer_type === "residential" ||
-      client.customer_type === "alltagshilfe"
+    ...(isResidential
       ? {
-        person: {
-          firstName: (client.contact_name ?? "").split(" ")[0] ?? "",
-          lastName:
-            (client.contact_name ?? client.display_name)
-              .split(" ")
-              .slice(-1)[0] ?? client.display_name,
-        },
-      }
+          person: {
+            firstName: (client.contact_name ?? "").split(" ")[0] ?? "",
+            lastName:
+              (client.contact_name ?? client.display_name)
+                .split(" ")
+                .slice(-1)[0] ?? client.display_name,
+          },
+        }
       : {
-        company: {
-          name: client.display_name,
-          ...(client.tax_id ? { vatRegistrationId: client.tax_id } : {}),
-        },
-      }),
+          company: {
+            name: client.display_name,
+            ...(client.tax_id ? { vatRegistrationId: client.tax_id } : {}),
+          },
+        }),
     ...(client.email
       ? { emailAddresses: { business: [client.email] } }
       : {}),
     ...(client.phone
       ? { phoneNumbers: { business: [client.phone] } }
       : {}),
-  };
+  });
 
+  // — UPDATE path: must GET first to obtain the current version number.
   if (client.existing_id) {
+    const current = await lexwareGetContact(cfg, client.existing_id);
     return request<LexwareContact>(
       cfg,
       `/v1/contacts/${client.existing_id}`,
-      { method: "PUT", body: JSON.stringify(body) },
+      { method: "PUT", body: JSON.stringify(contactBody(current.version)) },
     );
   }
+
+  // — DEDUP path: search by email before creating to avoid duplicates.
+  if (client.email) {
+    const found = await lexwareSearchContactByEmail(cfg, client.email);
+    if (found) {
+      // Update the found contact with our latest data.
+      return request<LexwareContact>(
+        cfg,
+        `/v1/contacts/${found.id}`,
+        { method: "PUT", body: JSON.stringify(contactBody(found.version)) },
+      );
+    }
+  }
+
+  // — CREATE path.
   return request<LexwareContact>(cfg, `/v1/contacts`, {
     method: "POST",
-    body: JSON.stringify(body),
+    body: JSON.stringify(contactBody(0)),
   });
 }
 
-/* ---------------------------------------------------------------------------
- * Invoices
- * ------------------------------------------------------------------------- */
+/* ===========================================================================
+ * Invoices  —  POST /v1/invoices · GET /v1/invoices/:id
+ * ========================================================================= */
+
+export type LexwareInvoiceStatus =
+  | "draft"
+  | "open"
+  | "paid"
+  | "voided"
+  | "overdue"
+  | "paidoff";
 
 export type LexwareInvoice = {
   id: string;
   resourceUri: string;
   createdDate: string;
+  updatedDate?: string;
   voucherNumber?: string;
+  /** Lexware's lifecycle status for the voucher. */
+  voucherStatus?: LexwareInvoiceStatus;
 };
 
 export type LexwareInvoiceLineItem = {
@@ -169,12 +248,19 @@ export type LexwareInvoiceLineItem = {
   unitPrice: { currency: "EUR"; netAmount: number; taxRatePercentage: number };
 };
 
+/**
+ * POST /v1/invoices
+ *
+ * Creates a finalized invoice in Lexware (not a draft — omitting `?draft=true`
+ * causes Lexware to immediately assign an invoice number and lock the record).
+ * Returns the created invoice including Lexware's own `voucherNumber`.
+ */
 export async function lexwareCreateInvoice(
   cfg: LexwareConfig,
   args: {
     contactId: string;
     invoiceNumber: string;
-    issueDate: string; // ISO date
+    issueDate: string;
     dueDate: string | null;
     items: LexwareInvoiceLineItem[];
     notes: string | null;
@@ -187,14 +273,18 @@ export async function lexwareCreateInvoice(
     lineItems: args.items,
     totalPrice: { currency: "EUR" },
     taxConditions: { taxType: "net" },
-    paymentConditions: args.dueDate
+    // Only include paymentConditions when a due date was supplied.
+    ...(args.dueDate
       ? {
-        paymentTerm: { duration: 14 },
-        paymentTermLabel: "14 days",
-      }
-      : undefined,
+          paymentConditions: {
+            paymentTermLabel: "14 Tage netto",
+            paymentTermDuration: 14,
+          },
+        }
+      : {}),
     introduction: args.notes ?? "",
-    remark: `Internal: ${args.invoiceNumber}`,
+    // Embed our internal invoice number so the bookkeeper can cross-reference.
+    remark: `Interne Nr.: ${args.invoiceNumber}`,
   };
   return request<LexwareInvoice>(cfg, `/v1/invoices`, {
     method: "POST",
@@ -202,46 +292,54 @@ export async function lexwareCreateInvoice(
   });
 }
 
-/* ===========================================================================
- * Payment poll: list invoices Lexware considers paid since a cursor.
+/**
+ * GET /v1/invoices/:id
  *
- * Used by the nightly /api/jobs/lexware-payments-sync cron to mirror
- * Lexware's reconciliation back into our DB. The accountant marks an
- * invoice paid in Lexware (manually, or by importing a bank statement);
- * the cron flips our `invoice_payments` + `invoices.status` to match.
+ * Fetches a previously-created Lexware invoice by its Lexware ID.
+ * Used to verify the `voucherStatus` after creation and in the UI's
+ * "sync status" panel.
+ */
+export async function lexwareGetInvoice(
+  cfg: LexwareConfig,
+  lexwareId: string,
+): Promise<LexwareInvoice> {
+  return request<LexwareInvoice>(cfg, `/v1/invoices/${lexwareId}`);
+}
+
+/* ===========================================================================
+ * Payment poll  —  GET /v1/voucherlist?voucherType=invoice&voucherStatus=paid
+ *
+ * Lexware Office does NOT expose a push-mark-paid endpoint. Payment
+ * reconciliation is one-directional: Lexware → us. The bookkeeper marks
+ * invoices paid in Lexware (manually or via bank-import), and the nightly
+ * cron (`/api/jobs/lexware-payments-sync`) polls this endpoint to mirror
+ * those payments into our `invoice_payments` table.
  * ========================================================================= */
 
 export type LexwarePaidVoucher = {
-  /** Lexware's own invoice id — globally unique across all orgs. */
   voucherId: string;
-  /** Human-readable invoice number (matches what we pushed up). */
   voucherNumber: string;
-  /** Contact id on Lexware's side; we already cache this on clients. */
   contactId: string | null;
-  /** Cents (rounded). Lexware returns EUR with 2 decimals. */
   totalCents: number;
-  /** When Lexware records the payment as cleared. ISO 8601. */
   paidAt: string;
-  /** Optional, useful for the audit log entry. */
   paymentMethod: string | null;
 };
 
 /**
- * Fetch every voucher Lexware marks as fully paid that was paid since
- * `sinceIso`. The result is paginated; we follow links until exhausted
- * because the per-page cap is 250 and we want a definitive delta per
- * run. Most orgs settle <50 invoices/day → one page in practice.
+ * GET /v1/voucherlist?voucherType=invoice&voucherStatus=paid&paidDateFrom=...
+ *
+ * Fetches all invoices Lexware has marked paid since `sinceIso`.
+ * Follows pagination until `last=true` (max 40 pages / 10 000 records as
+ * a safety cap against infinite loops on unexpected API responses).
  */
 export async function lexwareListPaidVouchers(
   cfg: LexwareConfig,
   sinceIso: string,
 ): Promise<LexwarePaidVoucher[]> {
-  // Lexware Office's voucher list endpoint supports `voucherType=invoice`
-  // and `voucherStatus=paid`. `paidDateFrom` is the server-side filter.
-  // Page size 250 is Lexware's max.
   const out: LexwarePaidVoucher[] = [];
   let page = 0;
   const SIZE = 250;
+
   for (;;) {
     type Page = {
       content: Array<{
@@ -262,29 +360,27 @@ export async function lexwareListPaidVouchers(
       size: String(SIZE),
     });
     const data = await request<Page>(cfg, `/v1/voucherlist?${qs.toString()}`);
+
     for (const row of data.content ?? []) {
-      // Skip rows that have neither contact nor a paidDate — they
-      // wouldn't help us reconcile and might be partial drafts.
       if (!row.paidDate) continue;
-      // Lexware returns EUR amounts as decimals; convert to cents
-      // without floating-point loss.
       const gross =
         row.totalAmount?.grossAmount ?? row.totalAmount?.netAmount ?? 0;
-      const cents = Math.round(gross * 100);
       out.push({
         voucherId: row.id,
         voucherNumber: row.voucherNumber ?? "",
         contactId: row.contactId ?? null,
-        totalCents: cents,
+        totalCents: Math.round(gross * 100),
         paidAt: row.paidDate,
         paymentMethod: row.paymentMethod ?? null,
       });
     }
+
+    // Stop when Lexware signals this is the last page. Treat absent `last`
+    // as conservative stop (avoids infinite loop on malformed responses).
     if (data.last !== false) break;
     page += 1;
-    // Safety cap: if Lexware ever loops (which they shouldn't), don't
-    // run the action forever.
     if (page > 40) break;
   }
+
   return out;
 }

@@ -183,15 +183,16 @@ export async function lexwareSyncAction(
     await ((supabase.from("invoices") as any))
       .update({ lexware_id: result.id })
       .eq("id", id);
-    // Persist the contact id back so we don't keep creating new contacts.
-    const contactId = (result as unknown as { contactId?: string }).contactId;
-    if (contactId && inv.client?.id) {
+    if (result.contactId && inv.client?.id) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await ((supabase.from("clients") as any))
-        .update({ lexware_contact_id: contactId })
+        .update({ lexware_contact_id: result.contactId })
         .eq("id", inv.client.id);
     }
-    await audit("lexware_sync", id, `Lexware ID gesetzt: ${result.id}`);
+    const label = result.voucherNumber
+      ? `Lexware ID: ${result.id} (${result.voucherNumber})`
+      : `Lexware ID gesetzt: ${result.id}`;
+    await audit("lexware_sync", id, label);
     revalidatePath(routes.invoice(id));
     return { ok: true, data: { id, lexwareId: result.id } };
   } catch (err) {

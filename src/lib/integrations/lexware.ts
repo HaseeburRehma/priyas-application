@@ -2,15 +2,16 @@ import "server-only";
 import {
   getLexwareConfig,
   lexwareCreateInvoice,
+  lexwareGetInvoice,
   lexwareUpsertContact,
   LexwareError,
   type LexwareInvoiceLineItem,
 } from "@/lib/lexware/client";
 
 /**
- * Adapter facade between our `invoices.ts` action and the underlying
- * Lexware Office REST client. Falls back to a stub when the env isn't
- * configured, so local dev keeps working without credentials.
+ * Adapter facade between invoice actions and the Lexware Office REST client.
+ * Falls back to a console-warning stub when LEXWARE_* env vars are absent,
+ * keeping local dev working without credentials.
  */
 
 export type AdapterInvoice = {
@@ -21,8 +22,6 @@ export type AdapterInvoice = {
   customerEmail?: string | null;
   totalCents: number;
   pdfUrl?: string | null;
-  // Optional richer payload — if provided, we use it verbatim. If absent,
-  // we fall back to a single line item with the total amount.
   client?: {
     display_name: string;
     contact_name: string | null;
@@ -40,38 +39,53 @@ export type AdapterInvoice = {
   }>;
 };
 
+export type PushResult = {
+  /** Lexware voucher ID stored as `invoices.lexware_id`. */
+  id: string;
+  /** Lexware contact ID stored back on `clients.lexware_contact_id`. */
+  contactId?: string;
+  /** Lexware's own human-readable voucher number (e.g. RE-0001). */
+  voucherNumber?: string;
+};
+
 export interface LexwareClient {
-  pushInvoice(invoice: AdapterInvoice): Promise<{ id: string }>;
-  markPaid(externalId: string, paidAt: Date): Promise<void>;
+  pushInvoice(invoice: AdapterInvoice): Promise<PushResult>;
 }
 
 class StubLexwareClient implements LexwareClient {
-  async pushInvoice(invoice: AdapterInvoice) {
+  async pushInvoice(invoice: AdapterInvoice): Promise<PushResult> {
     // eslint-disable-next-line no-console
     console.warn("[lexware-stub] would push invoice", invoice.invoiceNumber);
     return { id: `stub_${invoice.invoiceNumber}` };
   }
-  async markPaid(externalId: string, paidAt: Date) {
-    // eslint-disable-next-line no-console
-    console.warn("[lexware-stub] would mark paid", externalId, paidAt);
-  }
 }
 
 class RealLexwareClient implements LexwareClient {
-  async pushInvoice(invoice: AdapterInvoice) {
+  async pushInvoice(invoice: AdapterInvoice): Promise<PushResult> {
     const cfg = getLexwareConfig();
     if (!cfg) throw new Error("Lexware not configured");
 
     // 1) Resolve / upsert the contact.
-    let contactId = invoice.client?.lexware_contact_id ?? undefined;
+    //    lexwareUpsertContact handles:
+    //      • existing_id present  → GET version, then PUT (avoids 409)
+    //      • email present        → search for existing contact first (dedup)
+    //      • neither              → POST create
+    let contactId: string | undefined = invoice.client?.lexware_contact_id ?? undefined;
+
     if (invoice.client) {
       const contact = await lexwareUpsertContact(cfg, {
-        ...invoice.client,
-        existing_id: contactId,
+        display_name: invoice.client.display_name,
+        contact_name: invoice.client.contact_name,
+        email: invoice.client.email,
+        phone: invoice.client.phone,
+        tax_id: invoice.client.tax_id,
+        customer_type: invoice.client.customer_type,
+        existing_id: contactId ?? null,
       });
       contactId = contact.id;
     }
-    if (!contactId) throw new Error("Missing Lexware contact");
+
+    if (!contactId) throw new Error("Missing Lexware contact ID after upsert");
 
     // 2) Build line items.
     const items: LexwareInvoiceLineItem[] = invoice.items?.length
@@ -79,7 +93,7 @@ class RealLexwareClient implements LexwareClient {
           type: "service" as const,
           name: it.description,
           quantity: it.quantity,
-          unitName: "Stk.",
+          unitName: "Std.",
           unitPrice: {
             currency: "EUR" as const,
             netAmount: it.unit_price_cents / 100,
@@ -89,9 +103,9 @@ class RealLexwareClient implements LexwareClient {
       : [
           {
             type: "service" as const,
-            name: invoice.notes ?? "Cleaning service",
+            name: invoice.notes ?? "Reinigungsdienstleistung",
             quantity: 1,
-            unitName: "Stk.",
+            unitName: "Pausch.",
             unitPrice: {
               currency: "EUR" as const,
               netAmount: invoice.totalCents / 100,
@@ -100,6 +114,7 @@ class RealLexwareClient implements LexwareClient {
           },
         ];
 
+    // 3) Create the invoice in Lexware.
     const created = await lexwareCreateInvoice(cfg, {
       contactId,
       invoiceNumber: invoice.invoiceNumber,
@@ -108,23 +123,22 @@ class RealLexwareClient implements LexwareClient {
       items,
       notes: invoice.notes,
     });
-    return { id: created.id, contactId };
-  }
 
-  async markPaid(externalId: string, paidAt: Date) {
-    const cfg = getLexwareConfig();
-    if (!cfg) return;
-    // Lexware Office's "down-payment" endpoint requires bank-side info
-    // we don't have here — for v1 we just log + leave the invoice in
-    // "open" until the bookkeeper clears it on the Lexware side.
-    // eslint-disable-next-line no-console
-    console.info(
-      `[lexware] mark-paid for ${externalId} at ${paidAt.toISOString()} — recorded internally only.`,
-    );
+    // 4) Verify the invoice was accepted and is not in draft/error state.
+    //    lexwareGetInvoice throws LexwareError on non-2xx, so if the
+    //    voucher was rejected we surface that to the caller rather than
+    //    silently storing a broken lexware_id.
+    const verified = await lexwareGetInvoice(cfg, created.id);
+
+    return {
+      id: verified.id,
+      contactId,
+      voucherNumber: verified.voucherNumber,
+    };
   }
 }
 
-/** Returns the real client when LEXWARE_* env vars are present, the stub otherwise. */
+/** Returns the real client when LEXWARE_* env vars are set, the stub otherwise. */
 export function createLexwareClient(): LexwareClient {
   const cfg = getLexwareConfig();
   if (cfg) return new RealLexwareClient();

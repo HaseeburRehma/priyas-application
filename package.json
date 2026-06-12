@@ -44,6 +44,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",
+    "dotenv": "^17.4.2",
     "@playwright/test": "^1.49.1",
     "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",

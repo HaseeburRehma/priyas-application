@@ -42,12 +42,11 @@ export class LexwareExporter implements InvoiceExporter {
           tax_rate_percent: it.taxRatePercent,
         })),
       });
-      const contactId = (result as unknown as { contactId?: string }).contactId;
       return {
         ok: true,
         foreignId: result.id,
-        contactId,
-        message: "lexware",
+        contactId: result.contactId,
+        message: result.voucherNumber ? `lexware:${result.voucherNumber}` : "lexware",
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : "lexware_push_failed";

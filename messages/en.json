@@ -1934,6 +1934,7 @@
     "tabs": {
       "all": "All",
       "pending": "Pending",
+      "suggested": "Alternative proposed",
       "approved": "Approved",
       "rejected": "Rejected"
     },
@@ -1948,6 +1949,7 @@
     },
     "status": {
       "pending": "Pending",
+      "suggested": "Alternative proposed",
       "approved": "Approved",
       "rejected": "Rejected",
       "cancelled": "Cancelled"
@@ -1955,10 +1957,17 @@
     "approve": "Approve",
     "reject": "Reject",
     "cancel": "Cancel",
+    "suggest": "Suggest alternative",
+    "acceptSuggestion": "Accept",
+    "declineSuggestion": "Decline",
     "submitted": "Request submitted.",
     "approved": "Approved.",
     "rejected": "Rejected.",
     "cancelled": "Cancelled.",
+    "suggested": "Alternative dates suggested.",
+    "suggestionAccepted": "Suggestion accepted — vacation approved.",
+    "suggestionDeclined": "Suggestion declined.",
+    "suggestedPeriod": "Suggested period",
     "form": {
       "title": "Request vacation",
       "subtitle": "Pick a date range and add a reason.",
@@ -1968,6 +1977,16 @@
       "submit": "Submit request",
       "saving": "Submitting…",
       "saveError": "Submit failed."
+    },
+    "suggestForm": {
+      "title": "Suggest alternative dates",
+      "subtitle": "Propose a different vacation period for this request.",
+      "startDate": "Alternative start",
+      "endDate": "Alternative end",
+      "note": "Note (optional)",
+      "submit": "Send suggestion",
+      "saving": "Sending…",
+      "saveError": "Failed to send suggestion."
     }
   },
   "chat": {
