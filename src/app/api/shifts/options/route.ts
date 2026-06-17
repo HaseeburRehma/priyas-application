@@ -28,9 +28,8 @@ export async function GET() {
       .is("deleted_at", null)
       .order("name", { ascending: true })
       .limit(500),
-    supabase
-      .from("employees")
-      .select("id, full_name, status")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase.from("employees").select("id, full_name, status") as any)
       .is("deleted_at", null)
       .eq("status", "active")
       .order("full_name", { ascending: true })
