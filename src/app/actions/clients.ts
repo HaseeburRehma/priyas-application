@@ -140,7 +140,7 @@ export async function createClientAction(
 
   const newId = (data as { id: string }).id;
   await audit("create", "clients", newId, null, {
-    message: `<strong>${input.display_name}</strong> wurde als neuer Kunde angelegt.`,
+    message: `**${input.display_name}** wurde als neuer Kunde angelegt.`,
     meta: "via WebApp",
     customer_type: input.customer_type,
   });
@@ -243,7 +243,7 @@ export async function updateClientAction(
   if (error) return { ok: false, error: error.message };
 
   await audit("update", "clients", input.id, beforeRow ?? null, {
-    message: `Kunde <strong>${input.display_name}</strong> aktualisiert.`,
+    message: `Kunde **${input.display_name}** aktualisiert.`,
     meta: "via WebApp",
     ...updateRow,
   });

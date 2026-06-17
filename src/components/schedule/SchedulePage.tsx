@@ -46,6 +46,7 @@ type ViewerRole = "admin" | "dispatcher" | "employee" | null;
 function canClient(role: ViewerRole, action: string): boolean {
   if (!role) return false;
   switch (action) {
+    case "shift.create":
     case "shift.update":
     case "shift.complete":
     case "shift.cancel":
@@ -305,27 +306,31 @@ export function SchedulePage({
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
           <ExportMenu anchorDate={week.days[0] ?? null} />
-          <button
-            type="button"
-            onClick={() => setDialogOpen(true)}
-            className="btn btn--ghost border border-neutral-200 bg-white"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            {t("actions.newAssignment")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setDialogOpen(true)}
-            className="btn btn--primary"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-              <rect x={3} y={5} width={18} height={16} rx={2} />
-              <path d="M3 9h18M8 3v4M16 3v4" />
-            </svg>
-            {t("actions.planShift")}
-          </button>
+          {canClient(viewerRole, "shift.create") && (
+            <>
+              <button
+                type="button"
+                onClick={() => setDialogOpen(true)}
+                className="btn btn--ghost border border-neutral-200 bg-white"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                {t("actions.newAssignment")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setDialogOpen(true)}
+                className="btn btn--primary"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                  <rect x={3} y={5} width={18} height={16} rx={2} />
+                  <path d="M3 9h18M8 3v4M16 3v4" />
+                </svg>
+                {t("actions.planShift")}
+              </button>
+            </>
+          )}
         </div>
       </div>
 

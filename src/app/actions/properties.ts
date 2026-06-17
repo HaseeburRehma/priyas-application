@@ -102,7 +102,7 @@ export async function createPropertyAction(
   if (error) return { ok: false, error: error.message };
 
   const newId = (data as { id: string }).id;
-  await audit("create", newId, `Objekt <strong>${input.name}</strong> wurde angelegt.`);
+  await audit("create", newId, `Objekt **${input.name}** wurde angelegt.`);
   revalidatePath(routes.properties);
   revalidatePath(routes.dashboard);
   return { ok: true, data: { id: newId } };
@@ -165,7 +165,7 @@ export async function updatePropertyAction(
   await audit(
     "update",
     input.id,
-    `Objekt <strong>${input.name}</strong> aktualisiert.`,
+    `Objekt **${input.name}** aktualisiert.`,
     beforeRow ?? null,
   );
   revalidatePath(routes.property(input.id));

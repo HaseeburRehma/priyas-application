@@ -8,6 +8,7 @@ import { asAppLocale, bcp47Of } from "@/lib/utils/i18n-format";
 
 type Props = {
   greetingName: string;
+  canCreateClient?: boolean;
 };
 
 // Route the legacy locale-to-BCP47 helper through the canonical map so
@@ -31,7 +32,7 @@ function germanGreetingKey(d: Date): "morning" | "afternoon" | "evening" {
  * real values in via useEffect after mount. The user sees the dashboard
  * skeleton instantly, the greeting + date snap in a frame later.
  */
-export function PageHead({ greetingName }: Props) {
+export function PageHead({ greetingName, canCreateClient = false }: Props) {
   const t = useTranslations("dashboard");
   const tg = useTranslations("greeting");
   const tCommon = useTranslations("common");
@@ -196,21 +197,23 @@ export function PageHead({ greetingName }: Props) {
           )}
         </div>
 
-        <Link href={routes.clientNew} className="btn btn--primary">
-          <svg
-            aria-hidden
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-4 w-4"
-          >
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          {t("newCustomer")}
-        </Link>
+        {canCreateClient && (
+          <Link href={routes.clientNew} className="btn btn--primary">
+            <svg
+              aria-hidden
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            {t("newCustomer")}
+          </Link>
+        )}
       </div>
     </div>
   );

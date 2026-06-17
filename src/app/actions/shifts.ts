@@ -231,7 +231,7 @@ export async function createShiftAction(
   await audit(
     "create",
     newId,
-    `Schicht <strong>${input.starts_at}</strong> wurde geplant.`,
+    `Schicht **${input.starts_at}** wurde geplant.`,
   );
 
   revalidatePath(routes.schedule);

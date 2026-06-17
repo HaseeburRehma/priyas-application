@@ -7,6 +7,7 @@ import { routes } from "@/lib/constants/routes";
 import { updateTrainingProgressAction } from "@/app/actions/training";
 import { unlockSystemAction } from "@/app/actions/onboard-videos";
 import type { OnboardingState, OnboardingVideo } from "@/lib/api/onboard-videos";
+import { SignaturePad } from "./SignaturePad";
 
 /**
  * Sequenced video player + sign-off for new field staff.
@@ -45,6 +46,7 @@ export function OnboardVideos({ initial }: { initial: OnboardingState }) {
         initial.videos.filter((v) => v.completed_at).map((v) => v.id),
       ),
   );
+  const [signatureSvg, setSignatureSvg] = useState<string | null>(null);
 
   const mandatory = useMemo(() => videos.filter((v) => v.is_mandatory), [videos]);
   const mandatoryDone = mandatory.filter((v) => v.completed_at !== null).length;
@@ -57,6 +59,7 @@ export function OnboardVideos({ initial }: { initial: OnboardingState }) {
       const r = await updateTrainingProgressAction({
         module_id: video.id,
         state: "complete",
+        ...(signatureSvg ? { signature_svg: signatureSvg } : {}),
       });
       if (!r.ok) {
         toast.error(r.error);
@@ -70,6 +73,7 @@ export function OnboardVideos({ initial }: { initial: OnboardingState }) {
           v.id === video.id ? { ...v, completed_at: nowIso } : v,
         ),
       );
+      setSignatureSvg(null);
       // Advance to the next incomplete mandatory module, or stop on
       // the last entry.
       const nextIdx = videos.findIndex(
@@ -214,12 +218,26 @@ export function OnboardVideos({ initial }: { initial: OnboardingState }) {
                 )}
               </div>
 
+              {/* Signature pad — shown after the video is watched for mandatory modules */}
+              {current.is_mandatory &&
+                !current.completed_at &&
+                watchedThisSession.has(current.id) && (
+                  <div className="mt-4 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+                    <p className="mb-2 text-[12px] font-medium text-neutral-700">
+                      Bitte unterschreiben Sie, um den Abschluss zu bestätigen:
+                    </p>
+                    <SignaturePad onChange={setSignatureSvg} />
+                  </div>
+                )}
+
               <footer className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <p className="text-[12px] text-neutral-500">
                   {current.completed_at
                     ? "Bereits abgeschlossen."
                     : watchedThisSession.has(current.id)
-                      ? "Video angesehen. Bestätige unten den Abschluss."
+                      ? current.is_mandatory && !signatureSvg
+                        ? "Bitte unterschreiben Sie oben, um fortzufahren."
+                        : "Video angesehen. Bestätige unten den Abschluss."
                       : "Bitte das Video vollständig ansehen, bevor du fortfährst."}
                 </p>
                 <div className="flex items-center gap-2">
@@ -229,12 +247,10 @@ export function OnboardVideos({ initial }: { initial: OnboardingState }) {
                       onClick={() => markCompleteThenAdvance(current)}
                       disabled={
                         pending ||
-                        // Require either: the video ended this session,
-                        // or there's no video at all (e.g. a doc-only
-                        // module — completing it on a click is fine).
                         (current.video_url
                           ? !watchedThisSession.has(current.id)
-                          : false)
+                          : false) ||
+                        (current.is_mandatory && !signatureSvg)
                       }
                       className="rounded-md bg-secondary-500 px-4 py-2 text-[13px] font-medium text-white hover:bg-secondary-600 disabled:opacity-50"
                     >

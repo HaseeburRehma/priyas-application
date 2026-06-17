@@ -146,6 +146,7 @@ export async function createEmployeeAction(
           ? input.hourly_rate_eur
           : null,
       status: input.status,
+      service_type: input.service_type,
       notes: input.notes || null,
     })
     .select("id")
@@ -200,8 +201,8 @@ export async function createEmployeeAction(
     "create",
     newId,
     inviteStatus === "sent"
-      ? `Mitarbeiter <strong>${input.full_name}</strong> angelegt + eingeladen.`
-      : `Mitarbeiter <strong>${input.full_name}</strong> angelegt (Einladung: ${inviteStatus}).`,
+      ? `Mitarbeiter **${input.full_name}** angelegt + eingeladen.`
+      : `Mitarbeiter **${input.full_name}** angelegt (Einladung: ${inviteStatus}).`,
   );
   revalidatePath(routes.employees);
   revalidatePath(routes.dashboard);
@@ -263,6 +264,7 @@ export async function updateEmployeeAction(
       hourly_rate_eur:
         typeof input.hourly_rate_eur === "number" ? input.hourly_rate_eur : null,
       status: input.status,
+      service_type: input.service_type,
       notes: input.notes || null,
     })
     .eq("id", input.id);
@@ -270,7 +272,7 @@ export async function updateEmployeeAction(
   await audit(
     "update",
     input.id,
-    `Mitarbeiter <strong>${input.full_name}</strong> aktualisiert.`,
+    `Mitarbeiter **${input.full_name}** aktualisiert.`,
     beforeRow ?? null,
   );
   revalidatePath(routes.employee(input.id));
@@ -379,7 +381,7 @@ export async function updateEmployeeRoleAction(
   await audit(
     "role_change",
     emp.id,
-    `Rolle für <strong>${emp.full_name}</strong> auf <code>${nextRole}</code> gesetzt (vorher: ${previousRole ?? "—"}).`,
+    `Rolle für **${emp.full_name}** auf ${nextRole} gesetzt (vorher: ${previousRole ?? "—"}).`,
     { role: previousRole },
   );
   revalidatePath(routes.employee(emp.id));
@@ -568,7 +570,7 @@ export async function bulkInviteEmployeesAction(
       await audit(
         "invite",
         emp.id,
-        `Einladung an <strong>${emp.full_name}</strong> erneut gesendet (Bulk-Aktion).`,
+        `Einladung an **${emp.full_name}** erneut gesendet (Bulk-Aktion).`,
       );
       success += 1;
     } catch (err) {

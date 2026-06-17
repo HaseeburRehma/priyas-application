@@ -28,10 +28,11 @@ export default async function DashboardPage() {
   //   - org-level dashboard data (KPIs, today's shifts, charts)
   //   - the caller's own self-service data (only present when their
   //     auth profile has a linked employees row).
-  const [data, mySelf, canReadInvoices] = await Promise.all([
+  const [data, mySelf, canReadInvoices, canCreateClient] = await Promise.all([
     loadDashboardData(),
     loadMySelf(),
     can("invoice.read"),
+    can("client.create"),
   ]);
   const [invoiceSummary, aging] = canReadInvoices
     ? await Promise.all([loadInvoicesSummary(), loadAgingReport()])
@@ -39,7 +40,7 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <PageHead greetingName={data.greetingName} />
+      <PageHead greetingName={data.greetingName} canCreateClient={canCreateClient} />
 
       {mySelf && (
         <div className="mb-6">

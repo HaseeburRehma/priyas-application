@@ -163,6 +163,8 @@ export async function GET(request: Request) {
 }
 
 function csv(s: string): string {
-  if (!/[",\n]/.test(s)) return s;
-  return `"${s.replace(/"/g, '""')}"`;
+  // Defuse spreadsheet formula injection: prefix cells starting with = + - @ \t \r
+  const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+  if (!/[",\n]/.test(safe)) return safe;
+  return `"${safe.replace(/"/g, '""')}"`;
 }
