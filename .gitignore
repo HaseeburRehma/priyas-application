@@ -57,3 +57,11 @@ next-env.d.ts
 
 # E2E test specs (local only — contain env-dependent credentials and test logic)
 /tests/e2e/*.spec.ts
+/tests/e2e/**/*.spec.ts
+/tests/e2e/debug-stagehand.mjs
+
+# Local directories
+/downloads
+
+# Claude Code session data (AI assistant local state)
+/.claude
