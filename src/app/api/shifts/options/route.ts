@@ -30,7 +30,7 @@ export async function GET() {
       .limit(500),
     supabase
       .from("employees")
-      .select("id, full_name, status, service_type")
+      .select("id, full_name, status")
       .is("deleted_at", null)
       .eq("status", "active")
       .order("full_name", { ascending: true })
@@ -53,13 +53,12 @@ export async function GET() {
       id: string;
       full_name: string;
       status: string;
-      service_type: "priya" | "alltagshilfe" | "both" | null;
     }>
   ).map((e) => ({
     id: e.id,
     full_name: e.full_name,
     status: e.status,
-    service_type: (e.service_type ?? "both") as "priya" | "alltagshilfe" | "both",
+    service_type: "both" as "priya" | "alltagshilfe" | "both",
   }));
 
   const body: ShiftOptionsResponse = { properties, employees };

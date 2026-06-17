@@ -1035,6 +1035,16 @@
       "onBreakWithTimer": "இடைவேளையில் · {elapsed}",
       "startedToast": "இடைவேளை தொடங்கப்பட்டது.",
       "endedToast": "இடைவேளை முடிந்தது."
+    },
+    "checkin": {
+      "checkInLabel": "நுழைவு பதிவு",
+      "checkOutLabel": "வெளியேறு பதிவு",
+      "markCompleteLabel": "முடிந்தது என குறி",
+      "doneLabel": "பணி முடிந்தது",
+      "nowInRange": "GPS இடம் சரிபார்க்கப்பட்டது",
+      "notInWindow": "நேர சாளரத்திற்கு வெளியே — பதிவு செய்யவும்",
+      "checkedInAlready": "நீங்கள் உள்நுழைந்துள்ளீர்கள்",
+      "checkedOutAlready": "பணி முடிந்தது — முடிந்தது என குறிக்கவும்"
     }
   },
   "employees": {

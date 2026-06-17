@@ -1035,6 +1035,16 @@
       "onBreakWithTimer": "Pause · {elapsed}",
       "startedToast": "Pause gestartet.",
       "endedToast": "Pause beendet."
+    },
+    "checkin": {
+      "checkInLabel": "Einchecken",
+      "checkOutLabel": "Auschecken",
+      "markCompleteLabel": "Als erledigt markieren",
+      "doneLabel": "Einsatz abgeschlossen",
+      "nowInRange": "GPS-Standort bestätigt",
+      "notInWindow": "Außerhalb des Zeitfensters — trotzdem einchecken",
+      "checkedInAlready": "Du bist eingecheckt",
+      "checkedOutAlready": "Einsatz beendet — als erledigt markieren"
     }
   },
   "employees": {

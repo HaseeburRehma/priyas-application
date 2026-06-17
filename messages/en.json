@@ -1035,6 +1035,16 @@
       "onBreakWithTimer": "On break · {elapsed}",
       "startedToast": "Break started.",
       "endedToast": "Break ended."
+    },
+    "checkin": {
+      "checkInLabel": "Check in",
+      "checkOutLabel": "Check out",
+      "markCompleteLabel": "Mark complete",
+      "doneLabel": "Shift complete",
+      "nowInRange": "GPS location verified",
+      "notInWindow": "Outside shift window — check in anyway",
+      "checkedInAlready": "You are clocked in",
+      "checkedOutAlready": "Shift finished — mark as complete"
     }
   },
   "employees": {
