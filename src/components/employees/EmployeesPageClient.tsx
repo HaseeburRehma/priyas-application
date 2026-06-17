@@ -532,11 +532,19 @@ function Row({
   );
   const overtime = row.status === "overtime";
 
+  const serviceTypeMap = {
+    priya: { label: "Priya's", dot: "bg-primary-500", cls: "bg-primary-50 text-primary-700" },
+    alltagshilfe: { label: "Alltagshilfe", dot: "bg-error-500", cls: "bg-error-50 text-error-700" },
+    both: { label: "Beide", dot: "bg-neutral-400", cls: "bg-neutral-100 text-neutral-700" },
+  } as const;
+  const stv = serviceTypeMap[row.service_type] ?? serviceTypeMap.both;
+
   return (
     <tr
       className={cn(
         "border-b border-neutral-100 transition last:border-b-0 hover:bg-tertiary-200",
         isSelected && "bg-primary-50",
+        row.service_type === "alltagshilfe" && "border-l-2 border-l-error-400",
       )}
     >
       <td className="px-5 py-3.5 align-middle">
@@ -577,14 +585,25 @@ function Row({
         </Link>
       </td>
       <td className="px-5 py-3.5 align-middle">
-        <span
-          className={cn(
-            "inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium",
-            roleChipClass[row.role_chip],
-          )}
-        >
-          {tRole(row.role_chip)}
-        </span>
+        <div className="flex flex-wrap gap-1.5">
+          <span
+            className={cn(
+              "inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium",
+              roleChipClass[row.role_chip],
+            )}
+          >
+            {tRole(row.role_chip)}
+          </span>
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
+              stv.cls,
+            )}
+          >
+            <span className={cn("h-1.5 w-1.5 rounded-full", stv.dot)} />
+            {stv.label}
+          </span>
+        </div>
       </td>
       <td className="px-5 py-3.5 align-middle">
         {row.team_label && row.team_tone ? (

@@ -55,7 +55,7 @@ type DbShift = {
   org_id: string;
   property: {
     client_id: string;
-    client: { id: string; display_name: string } | null;
+    client: { id: string; display_name: string; customer_type: string } | null;
   } | null;
 };
 
@@ -139,7 +139,7 @@ export async function runMonthlyInvoices(
     .select(
       `id, starts_at, ends_at, org_id,
        property:properties ( client_id,
-                             client:clients ( id, display_name ) )`,
+                             client:clients ( id, display_name, customer_type ) )`,
     )
     .eq("status", "completed")
     .gte("starts_at", monthStart.toISOString())
@@ -172,6 +172,8 @@ export async function runMonthlyInvoices(
     const c = s.property?.client;
     const clientId = s.property?.client_id ?? c?.id;
     if (!clientId || !c) continue;
+    // Alltagshilfe clients are billed manually — never auto-sync to Lexware.
+    if (c.customer_type === "alltagshilfe") continue;
     const hrs = Math.max(
       0,
       (new Date(s.ends_at).getTime() - new Date(s.starts_at).getTime()) /

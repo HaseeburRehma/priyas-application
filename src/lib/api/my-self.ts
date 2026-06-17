@@ -39,6 +39,8 @@ export type MySelfData = {
     ends_at: string;
     property_name: string;
     client_name: string;
+    status: string;
+    last_entry_kind: "check_in" | "check_out" | null;
   }>;
 };
 
@@ -159,37 +161,62 @@ export async function loadMySelf(): Promise<MySelfData | null> {
     }
   }
 
-  // Next 5 upcoming shifts.
+  // Today's + next upcoming shifts. We start from beginning of today so
+  // in-progress shifts (started earlier today) also appear with clock-out buttons.
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
   const { data: shiftRows } = await supabase
     .from("shifts")
     .select(
-      `id, starts_at, ends_at,
+      `id, starts_at, ends_at, status,
        property:properties ( id, name, client:clients ( id, display_name ) )`,
     )
     .eq("employee_id", me.id)
     .is("deleted_at", null)
-    .gte("starts_at", now.toISOString())
+    .gte("starts_at", todayStart)
+    .not("status", "in", '("completed","cancelled","no_show")')
     .order("starts_at", { ascending: true })
     .limit(5);
   type ShiftRow = {
     id: string;
     starts_at: string;
     ends_at: string;
+    status: string;
     property: {
       id: string;
       name: string;
       client: { id: string; display_name: string } | null;
     } | null;
   };
-  const upcoming_shifts = ((shiftRows ?? []) as unknown as ShiftRow[]).map(
-    (s) => ({
-      id: s.id,
-      starts_at: s.starts_at,
-      ends_at: s.ends_at,
-      property_name: s.property?.name ?? "—",
-      client_name: s.property?.client?.display_name ?? "—",
-    }),
-  );
+  const shiftList = ((shiftRows ?? []) as unknown as ShiftRow[]);
+
+  // For each shift, get the most-recent time_entry kind so the check-in
+  // button on MySelfPanel knows whether to show "Check in" or "Check out".
+  const lastEntryByShift = new Map<string, "check_in" | "check_out">();
+  if (shiftList.length > 0) {
+    const shiftIds = shiftList.map((s) => s.id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: entryRows } = await ((supabase.from("time_entries") as any))
+      .select("shift_id, kind, occurred_at")
+      .eq("employee_id", me.id)
+      .in("shift_id", shiftIds)
+      .in("kind", ["check_in", "check_out"])
+      .order("occurred_at", { ascending: false });
+    for (const row of ((entryRows ?? []) as Array<{ shift_id: string; kind: "check_in" | "check_out" }>)) {
+      if (!lastEntryByShift.has(row.shift_id)) {
+        lastEntryByShift.set(row.shift_id, row.kind);
+      }
+    }
+  }
+
+  const upcoming_shifts = shiftList.map((s) => ({
+    id: s.id,
+    starts_at: s.starts_at,
+    ends_at: s.ends_at,
+    property_name: s.property?.name ?? "—",
+    client_name: s.property?.client?.display_name ?? "—",
+    status: s.status,
+    last_entry_kind: lastEntryByShift.get(s.id) ?? null,
+  }));
 
   return {
     employee_id: me.id,

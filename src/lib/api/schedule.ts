@@ -124,6 +124,7 @@ export async function loadScheduleRange(
           ]
         : [],
       notes: r.notes,
+      actual_minutes: null,
     };
   });
 
@@ -250,6 +251,32 @@ export async function loadScheduleWeek(
   };
   const rows = (data ?? []) as unknown as Row[];
 
+  // Load time_entries for this week's shifts so the detail panel can
+  // show "Actual: Xh Ym" alongside the scheduled window.
+  const shiftIds = rows.map((r) => r.id);
+  type EntryRow = { shift_id: string; kind: string; occurred_at: string };
+  const actualMinutesByShift = new Map<string, number>();
+  if (shiftIds.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: entryData } = await ((supabase.from("time_entries") as any))
+      .select("shift_id, kind, occurred_at")
+      .in("shift_id", shiftIds)
+      .in("kind", ["check_in", "check_out"]);
+    const byShift = new Map<string, { in?: number; out?: number }>();
+    for (const e of ((entryData ?? []) as EntryRow[])) {
+      const p = byShift.get(e.shift_id) ?? {};
+      const t = new Date(e.occurred_at).getTime();
+      if (e.kind === "check_in") p.in = t;
+      if (e.kind === "check_out") p.out = t;
+      byShift.set(e.shift_id, p);
+    }
+    for (const [id, p] of byShift.entries()) {
+      if (p.in != null && p.out != null) {
+        actualMinutesByShift.set(id, Math.round((p.out - p.in) / 60_000));
+      }
+    }
+  }
+
   const events: ShiftEvent[] = rows.map((r, idx) => {
     const customerType = r.property?.client?.customer_type ?? "commercial";
     const lane: ServiceLane =
@@ -278,6 +305,7 @@ export async function loadScheduleWeek(
           ]
         : [],
       notes: r.notes,
+      actual_minutes: actualMinutesByShift.get(r.id) ?? null,
     };
   });
 

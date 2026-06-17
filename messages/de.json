@@ -976,7 +976,8 @@
       "fieldStaff": "Field staff",
       "teamLead": "Team lead",
       "notes": "NOTIZEN",
-      "close": "Schließen"
+      "close": "Schließen",
+      "actualTime": "Tatsächliche Zeit"
     },
     "empty": "Keine Schichten in diesem Zeitraum.",
     "dialog": {
@@ -1621,7 +1622,43 @@
       "logoUploaded": "Logo aktualisiert.",
       "logoRemoved": "Logo entfernt.",
       "logoUploading": "Lädt hoch…",
-      "logoRemove": "Entfernen"
+      "logoRemove": "Entfernen",
+      "industry": "Branche",
+      "companySize": "Unternehmensgröße",
+      "documentTone": "Dokumenten-Ton",
+      "toneHint": "Steuert E-Mail-Anreden und Rechnungs-Fußzeilen in DE / EN / TA.",
+      "website": "Website",
+      "operationalLocations": "Standorte",
+      "addLocation": "Standort hinzufügen",
+      "noLocations": "Noch keine Standorte — Hauptsitz und Depots/Außenstellen hinzufügen.",
+      "locName": "Standortname",
+      "locAddress": "Straße, PLZ, Stadt",
+      "remove": "Entfernen",
+      "defaultHqName": "Berlin Hauptsitz",
+      "defaultHqAddress": "Friedrichstraße 200, 10117 Berlin",
+      "ind": {
+        "facility": "Gebäudedienste",
+        "cleaning": "Reinigung",
+        "care": "Pflege / Alltagshilfe",
+        "security": "Sicherheit",
+        "logistics": "Logistik"
+      },
+      "color": {
+        "primary": "Primär",
+        "secondary": "Sekundär",
+        "accent": "Akzent",
+        "warning": "Warnung"
+      },
+      "tone": {
+        "professional": "Professionell",
+        "friendly": "Freundlich",
+        "minimal": "Minimal"
+      },
+      "locType": {
+        "hq": "Hauptsitz",
+        "depot": "Depot",
+        "satellite": "Satellit"
+      }
     },
     "team": {
       "title": "02 · Team & Rollen",
@@ -1654,7 +1691,9 @@
       "capOrgSettings": "Organisationseinstellungen",
       "capOrgSettingsDesc": "Firma, Abrechnung und Integrationen bearbeiten",
       "activeMembers": "Aktive Mitglieder · {n}",
-      "seeAll": "Alle anzeigen"
+      "seeAll": "Alle anzeigen",
+      "export": "Exportieren",
+      "memberMenu": "Optionen"
     },
     "tax": {
       "title": "03 · Steuer & Abrechnung",
@@ -1682,7 +1721,17 @@
       "net14": "Netto 14 (SEPA)",
       "net7": "Netto 7",
       "net30": "Netto 30",
-      "savedToast": "Gespeichert"
+      "savedToast": "Gespeichert",
+      "legalName": "Firmenname (rechtlich)",
+      "iban": "IBAN",
+      "reducedAutoApply": "Ermäßigten Satz automatisch anwenden",
+      "reducedAutoApplyHint": "Erkennt Kunden mit ermäßigter Umsatzsteuer und wendet 7 % automatisch auf ihre Rechnungen an.",
+      "lateReminder": "Zahlungserinnerung",
+      "lateReminderHint": "Kunden erhalten automatisch eine E-Mail, wenn eine Rechnung 3 Tage überfällig ist.",
+      "invoiceFooter": "Rechnungs-Fußzeile",
+      "invoiceFooterHint": "Erscheint am Ende jeder PDF-Rechnung und Kundenabrechnung.",
+      "defaultInvoiceFooter": "Priya's Cleaning Service GmbH · HRB 124 AB · Charlottenburg · Geschäftsführer R. Sundaram · Rechnung fällig 14 Tage nach Ausstellung.",
+      "planSeats": "Feld-Plätze"
     },
     "integrations": {
       "title": "04 · Integrationen",
@@ -1704,8 +1753,8 @@
       },
       "stripe": {
         "name": "Stripe",
-        "tagline": "Online-Zahlungen",
-        "desc": "Karten- und SEPA-Zahlungen über Pay-Links auf jeder Rechnung. EU-Region."
+        "tagline": "Karten · SEPA · Klarna",
+        "desc": "Lastschrift am Fälligkeitstag oder per Zahlungs-Link."
       },
       "email": {
         "name": "E-Mail-Versand",
@@ -1713,9 +1762,9 @@
         "desc": "Resend für Rechnungen, Bestätigungen und Monatsberichte."
       },
       "google": {
-        "name": "Google Calendar",
-        "tagline": "Einsatzplan-Sync",
-        "desc": "Schichten in persönliche Google-Kalender pushen (zwei-Wege-Sync)."
+        "name": "Google Kalender",
+        "tagline": "Schicht-Sync (bidirektional)",
+        "desc": "Priya-Schichten in den Google-Kalender jeder Mitarbeitenden spiegeln."
       },
       "whatsapp": {
         "name": "WhatsApp Business",
@@ -1727,7 +1776,37 @@
         "tagline": "SMS-Versand",
         "desc": "Schichterinnerungen per SMS an Feldmitarbeitende ohne Smartphone."
       },
-      "savedToast": "Gespeichert"
+      "savedToast": "Gespeichert",
+      "marketplace": "Marktplatz öffnen",
+      "auditPending": "Audit läuft",
+      "auditChip": "Audit",
+      "waitlist": "Warteliste",
+      "waitlistNote": "Beta — nur per Einladung",
+      "joinWaitlist": "Warteliste",
+      "apiKeyProd": "Produktion",
+      "apiKeySandbox": "Sandbox",
+      "apiKeyLastUsed": "Zuletzt verwendet {ago}",
+      "rotate": "Rotieren",
+      "datev": {
+        "name": "DATEV",
+        "tagline": "Buchhaltung · Deutschland",
+        "desc": "Bezahlte Rechnungen direkt in DATEV Unternehmen online übergeben."
+      },
+      "gdpr": {
+        "name": "GDPR Direct GmbH",
+        "tagline": "Datenschutz-Aufsicht",
+        "desc": "Jährliches DSGVO-Audit aktiv. AVVs und Betroffenenanfragen hier steuern."
+      },
+      "slack": {
+        "name": "Slack",
+        "tagline": "Team-Chat-Brücke",
+        "desc": "Chat-Threads und Dispatch-Alarme in einen Slack-Workspace weiterleiten."
+      },
+      "quickbooks": {
+        "name": "QuickBooks",
+        "tagline": "Internationale Buchhaltung",
+        "desc": "Bald verfügbar — Early Access anfragen, wenn ihr QuickBooks Online nutzt."
+      }
     },
     "notifications": {
       "title": "05 · Benachrichtigungen",
@@ -1736,24 +1815,36 @@
       "channelEmail": "E-Mail",
       "channelWhatsapp": "WhatsApp",
       "evNewClient": "Neuer Kunde angelegt",
-      "evShiftChange": "Schichtänderung",
-      "evMissedCheckin": "Verpasster Check-in",
+      "evShiftChange": "Schicht abgesagt oder verschoben",
+      "evMissedCheckin": "Mitarbeitende verspätet",
       "evInvoiceOverdue": "Rechnung überfällig",
-      "evVacationRequest": "Urlaubsantrag",
+      "evVacationRequest": "Urlaubsantrag eingereicht",
       "badge": "05 · Mgmt",
       "quietHours": "Ruhezeiten · <b>22:00 – 07:00</b> · Push wird bis zum Morgen zurückgehalten",
       "editQuietHours": "Ruhezeiten bearbeiten",
       "group": {
-        "ops": "Betrieb",
+        "ops": "Operations",
         "finance": "Finanzen",
         "team": "Team"
       },
-      "evShiftChangeDesc": "Vom Kunden veranlasste Stornierungen, Umverteilungen",
-      "evMissedCheckinDesc": "Mehr als 10 Minuten nach geplantem Start",
-      "evInvoiceOverdueDesc": "Fällig + 3 Tage Karenz",
-      "evVacationRequestDesc": "Ausstehende Geschäftsleitungs-Genehmigung",
+      "evShiftChangeDesc": "Alle Eingeplanten werden benachrichtigt.",
+      "evMissedCheckinDesc": "Check-in fehlt nach 10 Minuten.",
+      "evInvoiceOverdueDesc": "Fälligkeit überschritten ohne Zahlungseingang.",
+      "evVacationRequestDesc": "Mitarbeitende reicht Urlaub zur Prüfung ein.",
       "evNewClientDesc": "Neuer Kunde angelegt",
-      "savedToast": "Gespeichert"
+      "savedToast": "Gespeichert",
+      "channelSmsWa": "SMS · WA",
+      "evFeaturePub": "Neue Funktion veröffentlicht",
+      "evFeaturePubDesc": "Beim Release das Team informieren.",
+      "evInvoicePaid": "Rechnung bezahlt",
+      "evInvoicePaidDesc": "Bestätigung bei eingehender Zahlung.",
+      "evFinanceDigest": "Wöchentliche Finanzübersicht",
+      "evFinanceDigestDesc": "Montagmorgen-Übersicht der Forderungen.",
+      "evTrainingExpiring": "Schulung läuft ab",
+      "evTrainingExpiringDesc": "Zertifikat läuft in den nächsten 30 Tagen ab.",
+      "quietHoursRange": "Ruhezeiten · <b>{range}</b> (Push stummgeschaltet)",
+      "saveQuiet": "Ruhezeiten speichern",
+      "cancel": "Abbrechen"
     },
     "push": {
       "title": "Web-Push-Benachrichtigungen",
@@ -1798,7 +1889,9 @@
       "loginChallengeBody": "Öffne deine Authenticator-App und gib den 6-stelligen Code ein.",
       "loginChallengeBack": "← Anderes Konto verwenden",
       "badge": "07 · Persönlich",
-      "strongScore": "Stark · 92 / 100"
+      "strongScore": "Stark · 92 / 100",
+      "loginAlerts": "Anmelde-Benachrichtigungen",
+      "loginAlertsHint": "E-Mail bei Anmeldung von einem neuen Gerät."
     },
     "locale": {
       "title": "06 · Lokalisierung",
@@ -1834,7 +1927,9 @@
       "avatarUploaded": "Foto aktualisiert.",
       "avatarRemoved": "Foto entfernt.",
       "avatarUploading": "Lädt hoch…",
-      "removePhoto": "Foto entfernen"
+      "removePhoto": "Foto entfernen",
+      "displayName": "Anzeigename",
+      "phone": "Telefon"
     },
     "sessions": {
       "badge": "08 · Persönlich",
@@ -1849,8 +1944,19 @@
       "auditLog": "Vollständiges Audit-Log anzeigen",
       "revokeAllConfirm": "Auf allen anderen Geräten abmelden? Du bleibst auf diesem Gerät angemeldet.",
       "revokeAllSuccess": "Alle anderen Geräte wurden abgemeldet.",
-      "revokeAllPending": "Wird abgemeldet…"
-    }
+      "revokeAllPending": "Wird abgemeldet…",
+      "loading": "Sitzungen werden geladen…",
+      "noDevices": "Keine aktiven Geräte.",
+      "geoUnknown": "Unbekannter Standort",
+      "footerCount": "{count, plural, =0 {Keine Sitzungen} one {1 Sitzung} other {# Sitzungen}} auf diesem Konto.",
+      "revoked": "Gerät abgemeldet."
+    },
+    "bulkSaved": "Alle Änderungen gespeichert.",
+    "bulkSaveError": "Einige Änderungen konnten nicht gespeichert werden.",
+    "unsavedCount": "{count} ungespeicherte Änderung{count, plural, one {} other {en}}",
+    "discard": "Verwerfen",
+    "saveAll": "Änderungen speichern",
+    "savingAll": "Speichern…"
   },
   "lexware": {
     "title": "Monatliche Lexware-Rechnungen",
@@ -2370,7 +2476,7 @@
     "actionSendingShort": "Sende…",
     "toastSendOk": "Bericht an {recipient} gesendet.",
     "toastSendFail": "Versand fehlgeschlagen: {error}",
-    "footerLine": "Automatisch erstellt · Monatsende {dateLabel} · Via E-Mail an die Geschäftsleitung",
+    "footerLine": "Automatisch erzeugt · Monatsende {ts} · An Priya's Geschäftsleitung gesendet · Alltagshilfe-Modul v1.0 · Rechnungen werden manuell aus diesem Bericht erstellt und an die Krankenkasse jedes Kunden gesendet.",
     "everydayHelpModule": "Alltagshilfe-Modul v1.0 · Rechnungen werden manuell aus diesem Bericht erstellt und an die Krankenkasse jedes Kunden gesendet.",
     "careLevelPill": "Pflegegrad {level} · {desc}",
     "careLevelDesc1": "Gering",
@@ -2382,7 +2488,35 @@
     "rhythmBiweekly": "Alle 2 Wochen",
     "rhythmMonthly": "Monatlich",
     "rhythmOnDemand": "Auf Anfrage",
-    "totalRowLabel": "Gesamt · {month}"
+    "totalRowLabel": "Gesamt · {month}",
+    "heroEyebrow": "Alltagshilfe · Pflegedienst-Bericht",
+    "heroBody": "Automatisch am Monatsende erzeugt · Von Priya's Team genutzt, um die manuelle Rechnung an die <b>Krankenkasse</b> jedes Kunden zu erstellen — nicht direkt an den Kunden.",
+    "heroGenerated": "Erzeugt",
+    "monthPill": "Monat",
+    "kpi": {
+      "totalHours": "Pflegestunden gesamt",
+      "totalHoursDelta": "{delta, select, up {+{n}%} down {-{n}%} other {{n}%}} ggü. {prev}",
+      "customers": "Betreute Kundinnen",
+      "customersSub": "{active} aktiv",
+      "staff": "Beteiligte Mitarbeitende",
+      "staffSub": "{qualified} von {total} qualifiziert",
+      "amount": "Abrechnungsbetrag",
+      "amountSub": "Netto · €{rate}/h Pflegesatz"
+    },
+    "groupBy": "Stunden pro Kundin",
+    "groupByHint": "Gruppiert nach Pflegebedürftigen · Personal und Besuche unter jeder Gruppe",
+    "staffMember": "Mitarbeitende",
+    "periodHeader": "Zeitraum",
+    "totalLabel": "Gesamt · {month}",
+    "perStaff": "Stunden pro Mitarbeitende",
+    "perStaffStats": "{customers} Kunden · {visits} Besuche",
+    "delivery": "Versand",
+    "deliveryHint": "Dieser Bericht wird am 1. eines Monats automatisch an Priya's Geschäftsleitung gesendet. Lexware-Sync wird übersprungen.",
+    "lexwareSyncLabel": "Lexware-Sync",
+    "lexwareSkipped": "Übersprungen · manuelle Abrechnung",
+    "deliveryNextRun": "Nächster Versand",
+    "resend": "Erneut senden",
+    "createInvoice": "Manuelle Rechnung erstellen"
   },
   "import": {
     "title": "{module} per CSV importieren",

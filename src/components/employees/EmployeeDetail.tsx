@@ -74,6 +74,7 @@ export function EmployeeDetail({
               >
                 {tRole(detail.role_chip)}
               </span>
+              <ServiceTypeChip serviceType={detail.service_type} />
             </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[12px] text-neutral-500">
               {detail.email && <span>✉ {detail.email}</span>}
@@ -114,6 +115,7 @@ export function EmployeeDetail({
               weekly_hours: detail.weekly_hours,
               hourly_rate_eur: detail.hourly_rate_eur,
               status: detail.status,
+              service_type: detail.service_type,
               auth_role: detail.auth_role,
               profile_id: detail.profile_id,
             }}
@@ -505,5 +507,29 @@ function Row({
         {value}
       </dd>
     </div>
+  );
+}
+
+function ServiceTypeChip({
+  serviceType,
+}: {
+  serviceType: "priya" | "alltagshilfe" | "both";
+}) {
+  const map = {
+    priya: { label: "Nur Priya's", dot: "bg-primary-500", cls: "bg-primary-50 text-primary-700" },
+    alltagshilfe: { label: "Nur Alltagshilfe", dot: "bg-error-500", cls: "bg-error-50 text-error-700" },
+    both: { label: "Beide Bereiche", dot: "bg-neutral-400", cls: "bg-neutral-100 text-neutral-700" },
+  } as const;
+  const v = map[serviceType];
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em]",
+        v.cls,
+      )}
+    >
+      <span className={cn("h-1.5 w-1.5 rounded-full", v.dot)} />
+      {v.label}
+    </span>
   );
 }

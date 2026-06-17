@@ -246,6 +246,7 @@ export async function updateClientAction(
     message: `Kunde **${input.display_name}** aktualisiert.`,
     meta: "via WebApp",
     ...updateRow,
+    
   });
 
   revalidatePath(routes.client(input.id));

@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAllowedRoutes } from "@/lib/rbac/permissions";
 import { routes } from "@/lib/constants/routes";
 import { loadSidebarCounts } from "@/lib/api/sidebar";
+import { recordCurrentDeviceAction } from "@/app/actions/devices";
 
 /** Translate the DB enum to the user-facing role names from the spec. */
 function roleLabel(role: string): string {
@@ -108,6 +109,13 @@ export default async function DashboardLayout({
   // in the sense of "fresh on every navigation". Counts that are 0
   // come back as null and the Sidebar omits the badge entirely.
   const sidebarCounts = await loadSidebarCounts();
+
+  // Refresh the current device's last_seen_at every navigation so the
+  // Settings → Sessions page can show realistic activity. Idempotent
+  // upsert keyed on (user_id, fingerprint) — never inserts duplicates.
+  // Fire-and-forget: rendering doesn't depend on the result, and a
+  // transient failure here would only stale-out the device row.
+  recordCurrentDeviceAction().catch(() => {});
 
   return (
     <div className="min-h-screen bg-tertiary-200">

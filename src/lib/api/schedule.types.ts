@@ -27,6 +27,8 @@ export type ShiftEvent = {
   employee_id: string | null;
   team: { id: string; initials: string; tone: "primary" | "secondary" | "accent" | "warning" }[];
   notes: string | null;
+  /** GPS-logged actual duration in minutes. Null when no check_in/check_out pair exists yet. */
+  actual_minutes: number | null;
 };
 
 /** A property closure that intersects the loaded week. */

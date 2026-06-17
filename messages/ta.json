@@ -976,7 +976,8 @@
       "fieldStaff": "வேலையாள்",
       "teamLead": "குழுத்தலைவர்",
       "notes": "குறிப்புகள்",
-      "close": "மூடு"
+      "close": "மூடு",
+      "actualTime": "உண்மையான நேரம்"
     },
     "empty": "இந்த காலகட்டத்தில் பணிமாற்றங்கள் இல்லை.",
     "dialog": {
@@ -1621,7 +1622,43 @@
       "logoUploaded": "லோகோ புதுப்பிக்கப்பட்டது.",
       "logoRemoved": "லோகோ அகற்றப்பட்டது.",
       "logoUploading": "பதிவேற்றுகிறது…",
-      "logoRemove": "அகற்று"
+      "logoRemove": "அகற்று",
+      "industry": "தொழில்துறை",
+      "companySize": "நிறுவன அளவு",
+      "documentTone": "ஆவண பாணி",
+      "toneHint": "DE / EN / TA-ல் மின்னஞ்சல் வாழ்த்துகள் மற்றும் இன்வாய்ஸ் அடிக்குறிப்பை கட்டுப்படுத்துகிறது.",
+      "website": "வலைத்தளம்",
+      "operationalLocations": "இடங்கள்",
+      "addLocation": "இடம் சேர்",
+      "noLocations": "இன்னும் இடங்கள் இல்லை — HQ மற்றும் கிளைகளை சேர்.",
+      "locName": "இட பெயர்",
+      "locAddress": "தெரு, அஞ்சல், நகரம்",
+      "remove": "நீக்கு",
+      "defaultHqName": "பெர்லின் HQ",
+      "defaultHqAddress": "Friedrichstraße 200, 10117 பெர்லின்",
+      "ind": {
+        "facility": "வசதி சேவைகள்",
+        "cleaning": "சுத்தம்",
+        "care": "பராமரிப்பு / Alltagshilfe",
+        "security": "பாதுகாப்பு",
+        "logistics": "தளவாடம்"
+      },
+      "color": {
+        "primary": "முதன்மை",
+        "secondary": "இரண்டாம்நிலை",
+        "accent": "ஆக்செண்ட்",
+        "warning": "எச்சரிக்கை"
+      },
+      "tone": {
+        "professional": "தொழில்முறை",
+        "friendly": "நட்பு",
+        "minimal": "குறைந்தபட்சம்"
+      },
+      "locType": {
+        "hq": "தலைமையகம்",
+        "depot": "டிபோ",
+        "satellite": "சாட்டிலைட்"
+      }
     },
     "team": {
       "title": "02 · குழு & பாத்திரங்கள்",
@@ -1654,7 +1691,9 @@
       "capOrgSettings": "நிறுவன அமைப்புகள்",
       "capOrgSettingsDesc": "நிறுவனம், கட்டணம் மற்றும் ஒருங்கிணைப்புகளைத் திருத்து",
       "activeMembers": "செயலில் உள்ள உறுப்பினர்கள் · {n}",
-      "seeAll": "அனைத்தையும் காட்டு"
+      "seeAll": "அனைத்தையும் காட்டு",
+      "export": "ஏற்றுமதி",
+      "memberMenu": "விருப்பங்கள்"
     },
     "tax": {
       "title": "03 · வரி & விலையிடல்",
@@ -1682,7 +1721,17 @@
       "net14": "Net 14 (SEPA)",
       "net7": "Net 7",
       "net30": "Net 30",
-      "savedToast": "சேமிக்கப்பட்டது"
+      "savedToast": "சேமிக்கப்பட்டது",
+      "legalName": "சட்டப்பூர்வ பெயர்",
+      "iban": "IBAN",
+      "reducedAutoApply": "குறைக்கப்பட்ட விகிதம் தானியங்கி",
+      "reducedAutoApplyHint": "குறைக்கப்பட்ட VAT அமைப்புள்ள வாடிக்கையாளர்களை தானாக கண்டறிந்து 7 % பயன்படுத்தும்.",
+      "lateReminder": "தாமத கட்டண நினைவூட்டல்",
+      "lateReminderHint": "இன்வாய்ஸ் 3 நாட்கள் தாமதமானால் வாடிக்கையாளருக்கு தானாக மின்னஞ்சல்.",
+      "invoiceFooter": "இன்வாய்ஸ் அடிக்குறிப்பு",
+      "invoiceFooterHint": "ஒவ்வொரு PDF இன்வாய்ஸ் மற்றும் அறிக்கையின் கீழே தோன்றும்.",
+      "defaultInvoiceFooter": "Priya's Cleaning Service GmbH · HRB 124 AB · Charlottenburg · Geschäftsführer R. Sundaram · Rechnung fällig 14 Tage nach Ausstellung.",
+      "planSeats": "கள ஊழியர் இடங்கள்"
     },
     "integrations": {
       "title": "04 · ஒருங்கிணைப்புகள்",
@@ -1704,8 +1753,8 @@
       },
       "stripe": {
         "name": "Stripe",
-        "tagline": "ஆன்லைன் கட்டணம்",
-        "desc": "ஒவ்வொரு விலைப்பட்டியலிலும் பணம் செலுத்தும் இணைப்பு மூலம் கார்டு & SEPA. EU பகுதி."
+        "tagline": "கார்டு · SEPA · Klarna",
+        "desc": "காலக்கெடுவில் தானியங்கி கட்டணம் அல்லது payment link."
       },
       "email": {
         "name": "மின்னஞ்சல்",
@@ -1714,8 +1763,8 @@
       },
       "google": {
         "name": "Google Calendar",
-        "tagline": "அட்டவணை ஒத்திசைவு",
-        "desc": "ஊழியர்களின் ஷிப்ட்களை தனிப்பட்ட Google நாட்காட்டிகளுக்கு (இரு-வழி ஒத்திசைவு)."
+        "tagline": "ஷிஃப்ட் ஒத்திசைவு (இருவழி)",
+        "desc": "ஒவ்வொரு ஊழியரின் Google காலெண்டரில் ஷிஃப்ட்கள் பிரதிபலிக்கும்."
       },
       "whatsapp": {
         "name": "WhatsApp Business",
@@ -1727,7 +1776,37 @@
         "tagline": "SMS அனுப்புதல்",
         "desc": "ஸ்மார்ட்போன் இல்லாத களப் பணியாளர்களுக்கு SMS மூலம் ஷிப்ட் நினைவூட்டல்கள்."
       },
-      "savedToast": "சேமிக்கப்பட்டது"
+      "savedToast": "சேமிக்கப்பட்டது",
+      "marketplace": "மார்க்கெட் பார்",
+      "auditPending": "ஆடிட் நடைபெறுகிறது",
+      "auditChip": "ஆடிட்",
+      "waitlist": "காத்திருப்பு",
+      "waitlistNote": "பீட்டா — அழைப்பு மட்டும்",
+      "joinWaitlist": "காத்திருப்பு பட்டியல்",
+      "apiKeyProd": "உற்பத்தி",
+      "apiKeySandbox": "சாண்ட்பாக்ஸ்",
+      "apiKeyLastUsed": "கடைசியாக {ago}",
+      "rotate": "சுழற்று",
+      "datev": {
+        "name": "DATEV",
+        "tagline": "கணக்கியல் · ஜெர்மனி",
+        "desc": "செலுத்தப்பட்ட இன்வாய்ஸ்களை DATEV-க்கு நேரடியாக அனுப்பு."
+      },
+      "gdpr": {
+        "name": "GDPR Direct GmbH",
+        "tagline": "தரவு-பாதுகாப்பு கண்காணிப்பு",
+        "desc": "வருடாந்த GDPR ஆடிட் நடைபெறுகிறது."
+      },
+      "slack": {
+        "name": "Slack",
+        "tagline": "டீம் சாட் பாலம்",
+        "desc": "சாட் த்ரெட்களை Slack-க்கு பகிர்."
+      },
+      "quickbooks": {
+        "name": "QuickBooks",
+        "tagline": "சர்வதேச கணக்கியல்",
+        "desc": "விரைவில் வரும் — early access கேள்."
+      }
     },
     "notifications": {
       "title": "05 · அறிவிப்புகள்",
@@ -1736,9 +1815,9 @@
       "channelEmail": "மின்னஞ்சல்",
       "channelWhatsapp": "WhatsApp",
       "evNewClient": "புதிய வாடிக்கையாளர் உருவாக்கப்பட்டார்",
-      "evShiftChange": "பணிமாற்ற மாற்றம்",
-      "evMissedCheckin": "தவறவிடப்பட்ட சரிபார்ப்பு",
-      "evInvoiceOverdue": "விலைப்பட்டியல் தாமதம்",
+      "evShiftChange": "ஷிஃப்ட் ரத்து / மாற்றம்",
+      "evMissedCheckin": "ஊழியர் தாமதம்",
+      "evInvoiceOverdue": "இன்வாய்ஸ் தாமதம்",
       "evVacationRequest": "விடுமுறை கோரிக்கை",
       "badge": "05 · Mgmt",
       "quietHours": "அமைதி நேரங்கள் · <b>22:00 – 07:00</b> · புஷ் காலையில் வரை வைத்திருக்கப்படும்",
@@ -1748,12 +1827,24 @@
         "finance": "நிதி",
         "team": "குழு"
       },
-      "evShiftChangeDesc": "வாடிக்கையாளர் தொடங்கிய ரத்துகள், மறு-ஒதுக்கீடுகள்",
-      "evMissedCheckinDesc": "திட்டமிட்ட தொடக்கத்திற்கு 10 நிமிடங்களுக்கு மேல்",
-      "evInvoiceOverdueDesc": "தவறிய தேதி + 3 நாட்கள் சலுகை",
-      "evVacationRequestDesc": "நிலுவையில் உள்ள மேலாண்மை ஒப்புதல்",
+      "evShiftChangeDesc": "ஒதுக்கப்பட்டவர்களுக்கு அறிவிப்பு.",
+      "evMissedCheckinDesc": "10 நிமிடம் கடந்த பின்னும் check-in இல்லை.",
+      "evInvoiceOverdueDesc": "காலக்கெடு கடந்தது.",
+      "evVacationRequestDesc": "ஊழியர் விடுமுறை கோருகிறார்.",
       "evNewClientDesc": "புதிய வாடிக்கையாளர் உருவாக்கப்பட்டார்",
-      "savedToast": "சேமிக்கப்பட்டது"
+      "savedToast": "சேமிக்கப்பட்டது",
+      "channelSmsWa": "SMS · WA",
+      "evFeaturePub": "புதிய அம்சம் வெளியீடு",
+      "evFeaturePubDesc": "வெளியீட்டின் போது குழுவுக்கு தெரிவி.",
+      "evInvoicePaid": "இன்வாய்ஸ் செலுத்தப்பட்டது",
+      "evInvoicePaidDesc": "கட்டண உறுதிப்படுத்தல்.",
+      "evFinanceDigest": "வாராந்த நிதி தொகுப்பு",
+      "evFinanceDigestDesc": "திங்கள் காலை நிலுவை சுருக்கம்.",
+      "evTrainingExpiring": "பயிற்சி காலாவதி",
+      "evTrainingExpiringDesc": "சான்றிதழ் 30 நாட்களில் காலாவதியாகும்.",
+      "quietHoursRange": "அமைதி நேரம் · <b>{range}</b> (push அமைதி)",
+      "saveQuiet": "அமைதி நேரத்தை சேமி",
+      "cancel": "ரத்து"
     },
     "push": {
       "title": "வலை புஷ் அறிவிப்புகள்",
@@ -1798,7 +1889,9 @@
       "loginChallengeBody": "உங்கள் authenticator செயலியைத் திறந்து 6-இலக்க குறியீட்டை உள்ளிடவும்.",
       "loginChallengeBack": "← மற்றொரு கணக்கைப் பயன்படுத்து",
       "badge": "07 · Personal",
-      "strongScore": "வலுவான · 92 / 100"
+      "strongScore": "வலுவான · 92 / 100",
+      "loginAlerts": "உள்நுழைவு எச்சரிக்கைகள்",
+      "loginAlertsHint": "புதிய சாதனம் உள்நுழையும் போது மின்னஞ்சல்."
     },
     "locale": {
       "title": "06 · உள்ளூர்மயம்",
@@ -1834,7 +1927,9 @@
       "avatarUploaded": "புகைப்படம் புதுப்பிக்கப்பட்டது.",
       "avatarRemoved": "புகைப்படம் அகற்றப்பட்டது.",
       "avatarUploading": "பதிவேற்றுகிறது…",
-      "removePhoto": "புகைப்படத்தை அகற்று"
+      "removePhoto": "புகைப்படத்தை அகற்று",
+      "displayName": "காட்சி பெயர்",
+      "phone": "தொலைபேசி"
     },
     "sessions": {
       "badge": "08 · Personal",
@@ -1849,8 +1944,19 @@
       "auditLog": "முழு தணிக்கை பதிவைக் காண்க",
       "revokeAllConfirm": "மற்ற அனைத்து சாதனங்களிலிருந்தும் வெளியேற வேண்டுமா? நீங்கள் இந்த சாதனத்தில் உள்நுழைந்தே இருப்பீர்கள்.",
       "revokeAllSuccess": "மற்ற அனைத்து சாதனங்களும் வெளியேற்றப்பட்டன.",
-      "revokeAllPending": "வெளியேறுகிறது…"
-    }
+      "revokeAllPending": "வெளியேறுகிறது…",
+      "loading": "அமர்வுகள் ஏற்றப்படுகின்றன…",
+      "noDevices": "செயலில் சாதனங்கள் இல்லை.",
+      "geoUnknown": "தெரியாத இடம்",
+      "footerCount": "{count, plural, =0 {அமர்வுகள் இல்லை} one {1 அமர்வு} other {# அமர்வுகள்}} இந்த கணக்கில்.",
+      "revoked": "சாதனம் ரத்து செய்யப்பட்டது."
+    },
+    "bulkSaved": "அனைத்து மாற்றங்களும் சேமிக்கப்பட்டன.",
+    "bulkSaveError": "சில மாற்றங்களை சேமிக்க முடியவில்லை.",
+    "unsavedCount": "{count} சேமிக்கப்படாத மாற்றம்{count, plural, one {} other {கள்}}",
+    "discard": "மாற்றங்களை விட்டு",
+    "saveAll": "மாற்றங்களை சேமி",
+    "savingAll": "சேமிக்கிறது…"
   },
   "lexware": {
     "title": "மாதாந்திர Lexware பில்லிங்",
@@ -2324,8 +2430,8 @@
     "statusLabel": "நிலை:",
     "statusFinal": "இறுதி",
     "month": "மாதம்",
-    "exportPdf": "PDF ஏற்றுமதி",
-    "exportCsv": "CSV ஏற்றுமதி",
+    "exportPdf": "PDF ஏற்று",
+    "exportCsv": "CSV ஏற்று",
     "sendToManagement": "நிர்வாகத்திற்கு அனுப்பு",
     "sendComingSoon": "விரைவில் வரும்",
     "kpiHoursTotal": "மொத்த பராமரிப்பு மணிநேரங்கள்",
@@ -2370,7 +2476,7 @@
     "actionSendingShort": "அனுப்புகிறது…",
     "toastSendOk": "அறிக்கை {recipient}-க்கு அனுப்பப்பட்டது.",
     "toastSendFail": "அனுப்புதல் தோல்வி: {error}",
-    "footerLine": "தானாக உருவாக்கப்பட்டது · மாத இறுதி {dateLabel} · மின்னஞ்சல் மூலம் மேலாண்மைக்கு",
+    "footerLine": "தானாக உருவாக்கப்பட்டது · மாத இறுதி {ts} · Priya's நிர்வாகத்திற்கு மின்னஞ்சல் · Alltagshilfe தொகுதி v1.0 · இந்த அறிக்கையில் இருந்து கைமுறையாக இன்வாய்ஸ்கள் உருவாக்கப்பட்டு ஒவ்வொரு வாடிக்கையாளரின் சுகாதார காப்பீட்டுக்கு அனுப்பப்படும்.",
     "everydayHelpModule": "அன்றாட உதவி தொகுதி v1.0 · இந்த அறிக்கையிலிருந்து கைமுறையாக விலைப்பட்டியல்கள் உருவாக்கப்பட்டு ஒவ்வொரு வாடிக்கையாளரின் சுகாதார காப்பீட்டு நிறுவனத்திற்கும் அனுப்பப்படுகின்றன.",
     "careLevelPill": "பராமரிப்பு நிலை {level} · {desc}",
     "careLevelDesc1": "லேசான",
@@ -2382,7 +2488,35 @@
     "rhythmBiweekly": "2 வாரங்களுக்கு ஒருமுறை",
     "rhythmMonthly": "மாதந்தோறும்",
     "rhythmOnDemand": "கேள்வியின் பேரில்",
-    "totalRowLabel": "மொத்தம் · {month}"
+    "totalRowLabel": "மொத்தம் · {month}",
+    "heroEyebrow": "Alltagshilfe · பராமரிப்பு சேவை அறிக்கை",
+    "heroBody": "ஒவ்வொரு மாதமும் தானாக உருவாக்கப்படுகிறது · Priya குழு இதை ஒவ்வொரு வாடிக்கையாளரின் <b>சுகாதார காப்பீட்டுக்கு</b> அனுப்பப்படும் கைமுறை இன்வாய்ஸை உருவாக்க பயன்படுத்துகிறது.",
+    "heroGenerated": "உருவாக்கப்பட்டது",
+    "monthPill": "மாதம்",
+    "kpi": {
+      "totalHours": "மொத்த பராமரிப்பு மணி",
+      "totalHoursDelta": "{delta, select, up {+{n}%} down {-{n}%} other {{n}%}} {prev}-ஐ விட",
+      "customers": "சேவை செய்யப்பட்டோர்",
+      "customersSub": "{active} செயலில்",
+      "staff": "ஈடுபட்ட ஊழியர்கள்",
+      "staffSub": "{total}-இல் {qualified} தகுதியான",
+      "amount": "பில்லிங் தொகை",
+      "amountSub": "நிகர · €{rate}/h நிலையான கட்டணம்"
+    },
+    "groupBy": "வாடிக்கையாளர் வாரியாக மணி",
+    "groupByHint": "பராமரிக்கப்படுபவர் வாரியாக குழுவாக்கப்பட்டது · ஊழியர்கள் மற்றும் வருகைகள் ஒவ்வொரு குழுவின் கீழ்",
+    "staffMember": "ஊழியர்",
+    "periodHeader": "காலம்",
+    "totalLabel": "மொத்தம் · {month}",
+    "perStaff": "ஊழியர் வாரியாக மணி",
+    "perStaffStats": "{customers} வாடிக்கையாளர்கள் · {visits} வருகைகள்",
+    "delivery": "வழங்கல்",
+    "deliveryHint": "இந்த அறிக்கை ஒவ்வொரு மாதம் 1ஆம் தேதி Priya's நிர்வாகத்திற்கு தானாக மின்னஞ்சல் செய்யப்படுகிறது.",
+    "lexwareSyncLabel": "Lexware ஒத்திசைவு",
+    "lexwareSkipped": "தவிர்க்கப்பட்டது · கைமுறை பில்லிங்",
+    "deliveryNextRun": "அடுத்த அனுப்புதல்",
+    "resend": "மீண்டும் அனுப்பு",
+    "createInvoice": "கைமுறை இன்வாய்ஸ் உருவாக்கு"
   },
   "import": {
     "title": "{module}-ஐ CSV இலிருந்து இறக்குமதி செய்யவும்",

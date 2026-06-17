@@ -358,7 +358,6 @@ export function CreateClientForm({ type }: Props) {
               <Field
                 label={t("fields.address")}
                 required
-                hint={t("fields.addressHint")}
                 error={errors.address_line1}
                 className="md:col-span-2"
               >
@@ -367,6 +366,22 @@ export function CreateClientForm({ type }: Props) {
                   required
                   placeholder={t("fields.addressPlaceholder")}
                   {...input("address_line1")}
+                />
+              </Field>
+              <Field label={t("fields.plz")} required error={errors.postal_code}>
+                <input
+                  className="input"
+                  required
+                  placeholder="z. B. 10117"
+                  {...input("postal_code")}
+                />
+              </Field>
+              <Field label={t("fields.city")} required error={errors.city}>
+                <input
+                  className="input"
+                  required
+                  placeholder="z. B. Berlin"
+                  {...input("city")}
                 />
               </Field>
               {!isAlltags && (

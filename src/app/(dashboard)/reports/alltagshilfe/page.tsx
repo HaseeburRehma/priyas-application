@@ -104,36 +104,38 @@ export default async function Page({
         <span className="text-neutral-700">{t("breadcrumbCurrent")}</span>
       </nav>
 
-      {/* Banner */}
-      <section className="mb-6 rounded-lg border-l-4 border-error-500 bg-error-50/40 p-5">
+      {/* Hero banner — pink rose card with heart icon, eyebrow tag,
+       *  rich-text body, right-aligned "generated at" metadata. Matches
+       *  prototype 16-alltagshilfe-report.html. */}
+      <section className="mb-6 rounded-lg border border-error-100 bg-error-50 p-5">
         <div className="flex flex-wrap items-center gap-4">
-          <span className="grid h-12 w-12 flex-shrink-0 place-items-center rounded-md bg-error-500 text-white">
+          <span className="grid h-12 w-12 flex-shrink-0 place-items-center rounded-md bg-error-500 text-white shadow-sm">
             <svg
               aria-hidden
               viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              fill="currentColor"
               className="h-6 w-6"
             >
-              <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" />
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
             </svg>
           </span>
-          <div className="flex-1">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.05em] text-error-700">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.06em] text-error-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-error-500" />
               {t("bannerTag")}
             </div>
-            <p className="mt-1 max-w-2xl text-[13px] leading-[1.5] text-neutral-700">
-              <strong>{t("bannerStrong")}</strong> {t("bannerBody")}
+            <p className="mt-1.5 max-w-2xl text-[13px] leading-[1.5] text-neutral-700">
+              <strong className="font-semibold text-neutral-800">
+                {t("bannerStrong")}
+              </strong>{" "}
+              {t("bannerBody")}
             </p>
           </div>
           <div className="text-right">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.05em] text-neutral-500">
+            <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-neutral-500">
               {t("createdAt")}
             </div>
-            <div className="font-mono text-[12px] text-neutral-700">
+            <div className="mt-0.5 font-mono text-[12px] text-neutral-700">
               {reportCreatedLabel}
             </div>
           </div>
@@ -214,12 +216,14 @@ export default async function Page({
         )}
       </div>
 
-      {/* KPI strip */}
+      {/* KPI strip — each tile carries its own icon variant so the eye
+       *  catches the metric type at a glance. */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
           label={t("kpiHoursTotal")}
           value={`${report.summary.totalHours.toFixed(1)} h`}
           sub={`${report.summary.hoursDeltaPctVsPrev > 0 ? "+" : ""}${report.summary.hoursDeltaPctVsPrev.toFixed(0)}% ${t("vsPrevious")}`}
+          icon="clock"
         />
         <KpiCard
           label={t("kpiClients")}
@@ -228,11 +232,13 @@ export default async function Page({
             visits: report.summary.visitsCount,
             insurers: report.summary.insurersCount,
           })}
+          icon="users"
         />
         <KpiCard
           label={t("kpiStaff")}
           value={`${report.summary.involvedStaff} ${t("kpiOf")} ${report.summary.qualifiedStaff} ${t("kpiQualified")}`}
           sub={t("kpiStaffSub")}
+          icon="star"
         />
         <KpiCard
           label={t("kpiAmount")}
@@ -240,20 +246,22 @@ export default async function Page({
           sub={t("kpiAmountSub", {
             rate: (report.summary.hourlyRateCents / 100).toFixed(2),
           })}
+          icon="euro"
         />
       </div>
 
-      {/* Per-client breakdown */}
+      {/* Per-client breakdown — header puts subtitle on the right per
+       *  prototype so the title reads cleanly without a stacked block. */}
       <section className="mb-6 rounded-lg border border-neutral-100 bg-white">
-        <header className="flex items-center justify-between border-b border-neutral-100 p-5">
-          <div>
-            <h3 className="flex items-center gap-2 text-[15px] font-semibold text-neutral-800">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 p-5">
+          <h3 className="flex items-center gap-2 text-[15px] font-semibold text-neutral-800">
+            <span className="grid h-7 w-7 place-items-center rounded-md bg-error-50 text-error-700">
               <DocIcon />
-              {t("breakdownTitle")}
-            </h3>
-            <div className="mt-0.5 text-[12px] text-neutral-500">
-              {t("breakdownSubtitle")}
-            </div>
+            </span>
+            {t("breakdownTitle")}
+          </h3>
+          <div className="text-[12px] text-neutral-500">
+            {t("breakdownSubtitle")}
           </div>
         </header>
 
@@ -342,20 +350,19 @@ function KpiCard({
   label,
   value,
   sub,
+  icon,
 }: {
   label: string;
   value: string;
   sub: string;
+  icon: "clock" | "users" | "star" | "euro";
 }) {
   return (
     <div className="rounded-md border-t-2 border-error-500 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.05em] text-neutral-500">
-        {label}
+        <span>{label}</span>
         <span className="grid h-7 w-7 place-items-center rounded-md bg-error-50 text-error-700">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
-            <circle cx={12} cy={12} r={10} />
-            <path d="M12 6v6l4 2" />
-          </svg>
+          <KpiIcon name={icon} />
         </span>
       </div>
       <div className="mt-2 text-[24px] font-bold tracking-[-0.01em] text-error-700">
@@ -363,6 +370,36 @@ function KpiCard({
       </div>
       <div className="mt-0.5 text-[11px] text-neutral-500">{sub}</div>
     </div>
+  );
+}
+
+function KpiIcon({ name }: { name: "clock" | "users" | "star" | "euro" }) {
+  const cls = "h-3.5 w-3.5";
+  if (name === "clock")
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={cls}>
+        <circle cx={12} cy={12} r={10} />
+        <path d="M12 6v6l4 2" />
+      </svg>
+    );
+  if (name === "users")
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={cls}>
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+        <circle cx={9} cy={7} r={4} />
+        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+      </svg>
+    );
+  if (name === "star")
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={cls}>
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z" />
+      </svg>
+    );
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={cls}>
+      <path d="M4 10h12M4 14h9M18 6a8 8 0 100 12" />
+    </svg>
   );
 }
 

@@ -8,6 +8,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
 import type { MySelfData } from "@/lib/api/my-self";
+import { CheckInButton } from "@/components/schedule/CheckInButton";
 
 const localeMap = { de: deLocale, en: enLocale, ta: taLocale } as const;
 
@@ -162,27 +163,43 @@ export function MySelfPanel({ data }: { data: MySelfData }) {
             {data.upcoming_shifts.map((s) => {
               const start = new Date(s.starts_at);
               const end = new Date(s.ends_at);
+              const todayStr = new Date().toISOString().slice(0, 10);
+              const isToday = s.starts_at.slice(0, 10) === todayStr;
+              const canCheckIn =
+                isToday &&
+                (s.status === "scheduled" || s.status === "in_progress");
               return (
                 <li
                   key={s.id}
-                  className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-[12px]"
+                  className="flex flex-col gap-2 px-3 py-2 text-[12px]"
                 >
-                  <div className="min-w-0">
-                    <div className="font-medium text-neutral-800">
-                      {s.property_name}
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-medium text-neutral-800">
+                        {s.property_name}
+                      </div>
+                      <div className="text-[11px] text-neutral-500">
+                        {s.client_name}
+                      </div>
                     </div>
-                    <div className="text-[11px] text-neutral-500">
-                      {s.client_name}
+                    <div className="text-right font-mono text-[11px] text-neutral-700">
+                      {format(start, "EEE d. MMM", {
+                        locale: localeMap[locale],
+                      })}
+                      <div className="text-neutral-500">
+                        {format(start, "HH:mm")} – {format(end, "HH:mm")}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right font-mono text-[11px] text-neutral-700">
-                    {format(start, "EEE d. MMM", {
-                      locale: localeMap[locale],
-                    })}
-                    <div className="text-neutral-500">
-                      {format(start, "HH:mm")} – {format(end, "HH:mm")}
-                    </div>
-                  </div>
+                  {canCheckIn && (
+                    <CheckInButton
+                      shiftId={s.id}
+                      startsAt={s.starts_at}
+                      endsAt={s.ends_at}
+                      lastEntryKind={s.last_entry_kind}
+                      completed={false}
+                    />
+                  )}
                 </li>
               );
             })}

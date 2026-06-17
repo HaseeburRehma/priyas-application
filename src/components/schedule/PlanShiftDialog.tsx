@@ -183,7 +183,11 @@ export function PlanShiftDialog({
                 className="input"
                 required
                 value={form.property_id}
-                onChange={(e) => update("property_id", e.target.value)}
+                onChange={(e) => {
+                  update("property_id", e.target.value);
+                  // Clear employee so wrong-service-line selection doesn't persist.
+                  update("employee_id", "");
+                }}
                 disabled={!options}
               >
                 {!options && <option>{t("loadingOptions")}</option>}
@@ -195,30 +199,54 @@ export function PlanShiftDialog({
                 {options?.properties.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name} · {p.client_name}
+                    {p.client_customer_type === "alltagshilfe" ? " · Alltagshilfe" : ""}
                   </option>
                 ))}
               </select>
             </Field>
 
-            {/* Employee */}
+            {/* Employee — filtered to those qualified for the selected property's service line */}
             <Field
               label={t("employee")}
               error={errors.employee_id}
               className="md:col-span-2"
             >
-              <select
-                className="input"
-                value={form.employee_id}
-                onChange={(e) => update("employee_id", e.target.value)}
-                disabled={!options}
-              >
-                <option value="">{t("noEmployee")}</option>
-                {options?.employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.full_name}
-                  </option>
-                ))}
-              </select>
+              {(() => {
+                const selectedProp = options?.properties.find(
+                  (p) => p.id === form.property_id,
+                );
+                const clientType = selectedProp?.client_customer_type ?? "commercial";
+                const eligibleEmployees = options?.employees.filter((emp) => {
+                  if (clientType === "alltagshilfe") {
+                    return emp.service_type === "alltagshilfe" || emp.service_type === "both";
+                  }
+                  // Priya / residential / commercial → priya or both
+                  return emp.service_type === "priya" || emp.service_type === "both";
+                });
+                const isAlltags = clientType === "alltagshilfe";
+                return (
+                  <>
+                    {options && isAlltags && (
+                      <p className="mb-1.5 text-[11px] text-error-700">
+                        Nur qualifiziertes Pflegepersonal (Alltagshilfe) wird angezeigt.
+                      </p>
+                    )}
+                    <select
+                      className="input"
+                      value={form.employee_id}
+                      onChange={(e) => update("employee_id", e.target.value)}
+                      disabled={!options}
+                    >
+                      <option value="">{t("noEmployee")}</option>
+                      {eligibleEmployees?.map((emp) => (
+                        <option key={emp.id} value={emp.id}>
+                          {emp.full_name}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                );
+              })()}
             </Field>
 
             {/* Date */}

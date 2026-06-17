@@ -78,6 +78,12 @@ export const createEmployeeSchema = z
       .optional()
       .or(z.literal("")),
     status: z.enum(["active", "on_leave", "inactive"]).default("active"),
+    /**
+     * Which service line this employee is qualified / assigned to work for.
+     * Drives the staff filter in the shift planner so only compatible
+     * employees appear when scheduling for a Priya or Alltagshilfe property.
+     */
+    service_type: z.enum(["priya", "alltagshilfe", "both"]).default("both"),
     notes: z.string().max(2000).optional().or(z.literal("")),
     /**
      * Role assigned to the invited user. Used by the `handle_new_user()`

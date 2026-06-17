@@ -42,6 +42,7 @@ export function InviteEmployeeDialog({ open, onClose }: Props) {
     hire_date: "",
     status: "active" as "active" | "on_leave" | "inactive",
     role: "employee" as "admin" | "dispatcher" | "employee",
+    service_type: "both" as "priya" | "alltagshilfe" | "both",
     notes: "",
   });
 
@@ -107,6 +108,7 @@ export function InviteEmployeeDialog({ open, onClose }: Props) {
             : "",
         status: form.status,
         role: form.role,
+        service_type: form.service_type,
         notes: form.notes,
       });
       if (!result.ok) {
@@ -351,6 +353,35 @@ export function InviteEmployeeDialog({ open, onClose }: Props) {
                 <option value="dispatcher">{tAuthRole("dispatcher")}</option>
                 <option value="admin">{tAuthRole("admin")}</option>
               </select>
+            </Field>
+            <Field label="Servicebereich" error={errors.service_type} className="md:col-span-2">
+              <div className="grid grid-cols-3 gap-2">
+                {(
+                  [
+                    { v: "priya", label: "Nur Priya's", dot: "bg-primary-500", ring: "border-primary-500 bg-primary-50 ring-primary-200" },
+                    { v: "alltagshilfe", label: "Nur Alltagshilfe", dot: "bg-error-500", ring: "border-error-500 bg-error-50 ring-error-200" },
+                    { v: "both", label: "Beide", dot: "bg-neutral-500", ring: "border-neutral-500 bg-neutral-50 ring-neutral-200" },
+                  ] as const
+                ).map((opt) => {
+                  const active = form.service_type === opt.v;
+                  return (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      onClick={() => update("service_type", opt.v)}
+                      className={cn(
+                        "flex items-center gap-2 rounded-md border px-3 py-2.5 text-[12px] font-medium transition",
+                        active
+                          ? `${opt.ring} ring-1`
+                          : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50",
+                      )}
+                    >
+                      <span className={cn("h-2.5 w-2.5 flex-shrink-0 rounded-full", opt.dot)} />
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
             </Field>
             <Field
               label={t("weeklyHours")}

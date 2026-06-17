@@ -2,6 +2,9 @@ export type EmployeeStatus = "active" | "on_leave" | "inactive";
 
 export type EmployeeRoleChip = "pm" | "field" | "trainee";
 
+/** Which service line the employee is qualified to work in. */
+export type EmployeeServiceType = "priya" | "alltagshilfe" | "both";
+
 export type EmployeeRow = {
   id: string;
   full_name: string;
@@ -28,6 +31,7 @@ export type EmployeeRow = {
   vacation_total: number;
   vacation_label: string;
   med_cert: boolean;
+  service_type: EmployeeServiceType;
 };
 
 export type EmployeesSummary = {
@@ -78,6 +82,7 @@ export type EmployeeDetail = {
   hire_date: string | null;
   status: EmployeeStatus;
   role_chip: EmployeeRoleChip;
+  service_type: EmployeeServiceType;
   /**
    * The auth role from `profiles.role` (or null when the invite hasn't
    * been accepted yet). Drives the "Change role" UI on the detail

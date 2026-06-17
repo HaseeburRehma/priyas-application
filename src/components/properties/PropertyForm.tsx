@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils/cn";
@@ -39,7 +38,6 @@ type Props = {
 
 export function PropertyForm({ mode, clients, initial }: Props) {
   const t = useTranslations("properties.form");
-  const router = useRouter();
   const [pending, start] = useTransition();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
@@ -108,8 +106,8 @@ export function PropertyForm({ mode, clients, initial }: Props) {
         toast.error(result.error || t("saveError"));
         return;
       }
-      router.replace(routes.property(result.data.id));
-      router.refresh();
+      toast.success(mode === "edit" ? t("saveUpdate") : t("save"));
+      window.location.href = routes.property(result.data.id);
     });
   }
 

@@ -18,6 +18,9 @@ export type SettingsData = {
     role: "admin" | "dispatcher" | "employee";
   };
   data: Record<string, unknown>;
+  /** Display-formatted "Last saved" timestamp from settings.updated_at,
+   *  in the org's default locale. Null if the row has never been saved. */
+  savedAt: string | null;
   members: Array<{
     id: string;
     full_name: string;
@@ -45,7 +48,7 @@ export async function loadSettings(): Promise<SettingsData | null> {
 
   const [orgRes, settingsRes, membersRes, meRes] = await Promise.all([
     supabase.from("organizations").select("id, name, slug, logo_url").eq("id", orgId).maybeSingle(),
-    supabase.from("settings").select("data").eq("org_id", orgId).maybeSingle(),
+    supabase.from("settings").select("data, updated_at").eq("org_id", orgId).maybeSingle(),
     supabase
       .from("profiles")
       .select("id, full_name, role, avatar_url")
@@ -64,8 +67,20 @@ export async function loadSettings(): Promise<SettingsData | null> {
   const org = orgRes.data as Org | null;
   if (!org) return null;
 
-  const settingsData =
-    ((settingsRes.data as { data: Record<string, unknown> } | null)?.data) ?? {};
+  const settingsRow = settingsRes.data as
+    | { data: Record<string, unknown>; updated_at: string }
+    | null;
+  const settingsData = settingsRow?.data ?? {};
+  const savedAt = settingsRow?.updated_at
+    ? new Intl.DateTimeFormat("de-DE", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/Berlin",
+      }).format(new Date(settingsRow.updated_at))
+    : null;
 
   type Member = {
     id: string;
@@ -88,6 +103,7 @@ export async function loadSettings(): Promise<SettingsData | null> {
     org,
     me,
     data: settingsData,
+    savedAt,
     members: members.map((m) => ({ ...m, email: null })),
   };
 }

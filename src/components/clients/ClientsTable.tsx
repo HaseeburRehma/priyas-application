@@ -162,6 +162,7 @@ export function ClientsTable({
                     className={cn(
                       "border-b border-neutral-100 transition last:border-b-0 hover:bg-tertiary-200",
                       isSel && "bg-primary-50",
+                      r.customer_type === "alltagshilfe" && "border-l-2 border-l-error-400",
                     )}
                   >
                     <td className="px-5 py-3.5 align-middle">
@@ -360,7 +361,7 @@ function TypeChip({
     },
     alltagshilfe: {
       label: t("typeAlltagshilfe"),
-      className: "bg-primary-50 text-primary-700",
+      className: "bg-error-50 text-error-700",
     },
   } as const;
   const v = map[type];

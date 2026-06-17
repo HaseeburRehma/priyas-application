@@ -16,6 +16,8 @@ export type PropertyRow = {
   kind: PropertyKind;
   client_id: string;
   client_name: string;
+  /** `"alltagshilfe"` when the owning client is a care client — drives red row tinting. */
+  client_customer_type: string | null;
   assignments_per_week: number;
   status: PropertyStatus;
   team_lead_id: string | null;

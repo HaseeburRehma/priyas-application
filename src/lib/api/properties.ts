@@ -247,6 +247,7 @@ export async function loadPropertiesList(
       kind: k,
       client_id: r.client_id,
       client_name: r.client?.display_name ?? "—",
+      client_customer_type: r.client?.customer_type ?? null,
       assignments_per_week: assignments,
       status: rowStatus,
       team_lead_id: tl?.id ?? null,

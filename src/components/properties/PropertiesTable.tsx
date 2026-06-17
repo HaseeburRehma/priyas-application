@@ -186,6 +186,7 @@ export function PropertiesTable({
                     className={cn(
                       "border-b border-neutral-100 transition last:border-b-0 hover:bg-tertiary-200",
                       isSel && "bg-primary-50",
+                      r.client_customer_type === "alltagshilfe" && "border-l-2 border-l-error-400",
                     )}
                   >
                     <td className="px-5 py-3.5 align-middle">

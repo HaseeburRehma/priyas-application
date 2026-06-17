@@ -21,6 +21,7 @@ export type {
   EmployeeDetail,
   EmployeeRoleChip,
   EmployeeRow,
+  EmployeeServiceType,
   EmployeeStatus,
   EmployeesListParams,
   EmployeesListResult,
@@ -322,7 +323,8 @@ export async function loadEmployeesList(
     query = query.range(from, to);
   }
 
-  const { data, count } = await query;
+  const { data, count, error } = await query;
+  if (error) throw new Error(error.message);
 
   type DbRow = {
     id: string;
@@ -412,6 +414,7 @@ export async function loadEmployeesList(
       vacation_total: 30,
       vacation_label: `${30 - 0} / 30`,
       med_cert: false,
+      service_type: "both" as "priya" | "alltagshilfe" | "both",
     };
   });
 
@@ -663,6 +666,7 @@ export async function loadEmployeeDetail(id: string): Promise<EmployeeDetail | n
     shifts_total: totalRes.count ?? 0,
     vacation_used: 0,
     vacation_total: 30,
+    service_type: "both" as "priya" | "alltagshilfe" | "both",
     upcoming_shifts: upcoming,
     recent_time_entries: recent,
   };

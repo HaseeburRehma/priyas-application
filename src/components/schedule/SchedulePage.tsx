@@ -1906,6 +1906,13 @@ function DetailPanel({
           label={t("panel.duration")}
           value={`${durationH.toFixed(durationH % 1 === 0 ? 0 : 1)}h`}
         />
+        {event.actual_minutes != null && (
+          <DetailRow
+            label={t("panel.actualTime")}
+            value={`${Math.floor(event.actual_minutes / 60)}h ${event.actual_minutes % 60}m`}
+            accent={event.actual_minutes / 60 > durationH}
+          />
+        )}
         <DetailRow label={t("panel.costCenter")} value={`CC-${event.id.slice(0, 6).toUpperCase()}`} mono />
       </dl>
 

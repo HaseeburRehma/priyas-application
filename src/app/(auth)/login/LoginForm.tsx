@@ -83,8 +83,8 @@ export function LoginForm() {
         setMfa({ factorId: result.data.factorId });
         return;
       }
-      router.replace(next);
       router.refresh();
+      router.replace(next);
     });
   }
 
@@ -108,8 +108,8 @@ export function LoginForm() {
         toast.error(t("mfaWrongCode"));
         return;
       }
-      router.replace(next);
       router.refresh();
+      router.replace(next);
     });
   }
 

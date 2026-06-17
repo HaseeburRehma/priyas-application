@@ -24,6 +24,7 @@ type Initial = {
   weekly_hours: number;
   hourly_rate_eur: number | null;
   status: "active" | "on_leave" | "inactive";
+  service_type?: "priya" | "alltagshilfe" | "both";
   auth_role: AuthRole | null;
   profile_id: string | null;
 };
@@ -398,6 +399,7 @@ function EditDialog({
     hourly_rate_eur:
       initial.hourly_rate_eur != null ? String(initial.hourly_rate_eur) : "",
     status: initial.status,
+    service_type: (initial.service_type ?? "both") as "priya" | "alltagshilfe" | "both",
     notes: "",
   });
 
@@ -435,6 +437,7 @@ function EditDialog({
         hourly_rate_eur:
           form.hourly_rate_eur === "" ? "" : Number(form.hourly_rate_eur),
         status: form.status,
+        service_type: form.service_type,
         notes: form.notes,
       });
       if (!r.ok) {
@@ -569,6 +572,19 @@ function EditDialog({
                 value={form.hourly_rate_eur}
                 onChange={(e) => update("hourly_rate_eur", e.target.value)}
               />
+            </Field>
+            <Field label="Servicebereich" error={errors.service_type} className="md:col-span-2">
+              <select
+                className="input"
+                value={form.service_type}
+                onChange={(e) =>
+                  update("service_type", e.target.value as "priya" | "alltagshilfe" | "both")
+                }
+              >
+                <option value="both">Beide Bereiche</option>
+                <option value="priya">Nur Priya&apos;s</option>
+                <option value="alltagshilfe">Nur Alltagshilfe</option>
+              </select>
             </Field>
           </div>
 

@@ -150,6 +150,16 @@ export async function lexwareSyncAction(
   const inv = invRow as Row | null;
   if (!inv) return { ok: false, error: "invoice_not_found" };
 
+  // Alltagshilfe invoices are handled manually by Priya's team — never
+  // push them to Lexware. The health-insurance billing runs outside the
+  // regular accounting workflow.
+  if (inv.client?.customer_type === "alltagshilfe") {
+    return {
+      ok: false,
+      error: "Alltagshilfe-Rechnungen werden manuell abgerechnet und nicht an Lexware übertragen.",
+    };
+  }
+
   const lex = createLexwareClient();
   try {
     const result = await lex.pushInvoice({

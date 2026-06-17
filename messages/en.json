@@ -976,7 +976,8 @@
       "fieldStaff": "Field staff",
       "teamLead": "Team lead",
       "notes": "NOTES",
-      "close": "Close"
+      "close": "Close",
+      "actualTime": "Actual time"
     },
     "empty": "No shifts in this period.",
     "dialog": {
@@ -1621,7 +1622,43 @@
       "logoUploaded": "Logo updated.",
       "logoRemoved": "Logo removed.",
       "logoUploading": "Uploading…",
-      "logoRemove": "Remove"
+      "logoRemove": "Remove",
+      "industry": "Industry",
+      "companySize": "Company size",
+      "documentTone": "Document tone",
+      "toneHint": "These controls email greetings and invoice footer copy across DE / EN / TA.",
+      "website": "Website",
+      "operationalLocations": "Operational locations",
+      "addLocation": "Add location",
+      "noLocations": "No locations yet — add your HQ and any depots / satellites.",
+      "locName": "Location name",
+      "locAddress": "Street, postal code, city",
+      "remove": "Remove",
+      "defaultHqName": "Berlin HQ",
+      "defaultHqAddress": "Friedrichstraße 200, 10117 Berlin",
+      "ind": {
+        "facility": "Facility services",
+        "cleaning": "Cleaning",
+        "care": "Care / Alltagshilfe",
+        "security": "Security",
+        "logistics": "Logistics"
+      },
+      "color": {
+        "primary": "Primary",
+        "secondary": "Secondary",
+        "accent": "Accent",
+        "warning": "Warning"
+      },
+      "tone": {
+        "professional": "Professional",
+        "friendly": "Friendly",
+        "minimal": "Minimal"
+      },
+      "locType": {
+        "hq": "HQ",
+        "depot": "Depot",
+        "satellite": "Satellite"
+      }
     },
     "team": {
       "title": "02 · Team & roles",
@@ -1654,7 +1691,9 @@
       "capOrgSettings": "Organisation settings",
       "capOrgSettingsDesc": "Edit company, billing and integrations",
       "activeMembers": "Active members · {n}",
-      "seeAll": "Show all"
+      "seeAll": "Show all",
+      "export": "Export",
+      "memberMenu": "Member options"
     },
     "tax": {
       "title": "03 · Tax & billing",
@@ -1682,7 +1721,17 @@
       "net14": "Net 14 (SEPA)",
       "net7": "Net 7",
       "net30": "Net 30",
-      "savedToast": "Saved"
+      "savedToast": "Saved",
+      "legalName": "Legal name",
+      "iban": "IBAN",
+      "reducedAutoApply": "Auto-apply reduced rate",
+      "reducedAutoApplyHint": "Automatically detect customers with a reduced-rate VAT setup and apply 7 % on their invoices.",
+      "lateReminder": "Late-payment reminder",
+      "lateReminderHint": "Email customers automatically when an invoice is 3 days overdue.",
+      "invoiceFooter": "Invoice footer copy",
+      "invoiceFooterHint": "Appears at the bottom of every PDF invoice and customer statement.",
+      "defaultInvoiceFooter": "Priya's Cleaning Service GmbH · HRB 124 AB · Charlottenburg · Geschäftsführer R. Sundaram · Rechnung fällig 14 Tage nach Ausstellung.",
+      "planSeats": "Field staff seats"
     },
     "integrations": {
       "title": "04 · Integrations",
@@ -1704,8 +1753,8 @@
       },
       "stripe": {
         "name": "Stripe",
-        "tagline": "Online payments",
-        "desc": "Card & SEPA payments via hosted pay links on every invoice. EU region."
+        "tagline": "Card payments · SEPA · Klarna",
+        "desc": "Charge customers automatically on the due date or send a hosted payment link."
       },
       "email": {
         "name": "Email",
@@ -1714,8 +1763,8 @@
       },
       "google": {
         "name": "Google Calendar",
-        "tagline": "Schedule sync",
-        "desc": "Push employee shifts to personal Google Calendars (two-way sync)."
+        "tagline": "Two-way shift sync",
+        "desc": "Mirror Priya's schedule into each employee's Google Calendar so they get native reminders."
       },
       "whatsapp": {
         "name": "WhatsApp Business",
@@ -1727,7 +1776,37 @@
         "tagline": "SMS delivery",
         "desc": "Shift reminders via SMS for field staff without smartphones."
       },
-      "savedToast": "Saved"
+      "savedToast": "Saved",
+      "marketplace": "Browse marketplace",
+      "auditPending": "Audit pending",
+      "auditChip": "Audit",
+      "waitlist": "Waitlist",
+      "waitlistNote": "Beta — invite-only",
+      "joinWaitlist": "Join waitlist",
+      "apiKeyProd": "Production",
+      "apiKeySandbox": "Sandbox",
+      "apiKeyLastUsed": "Last used {ago}",
+      "rotate": "Rotate",
+      "datev": {
+        "name": "DATEV",
+        "tagline": "Accounting export · Germany",
+        "desc": "Push posted invoices straight into DATEV Unternehmen online for your tax advisor."
+      },
+      "gdpr": {
+        "name": "GDPR Direct GmbH",
+        "tagline": "Data-processing oversight",
+        "desc": "Annual GDPR audit running. Configure DPAs and route data-subject requests here."
+      },
+      "slack": {
+        "name": "Slack",
+        "tagline": "Team chat bridge",
+        "desc": "Forward chat threads and dispatch alerts to a Slack workspace alongside the in-app inbox."
+      },
+      "quickbooks": {
+        "name": "QuickBooks",
+        "tagline": "International accounting",
+        "desc": "Coming soon — request early access if you keep books in QuickBooks Online."
+      }
     },
     "notifications": {
       "title": "05 · Notifications",
@@ -1736,10 +1815,10 @@
       "channelEmail": "Email",
       "channelWhatsapp": "WhatsApp",
       "evNewClient": "New client created",
-      "evShiftChange": "Shift change",
-      "evMissedCheckin": "Missed check-in",
+      "evShiftChange": "Shift cancelled or moved",
+      "evMissedCheckin": "Employee running late",
       "evInvoiceOverdue": "Invoice overdue",
-      "evVacationRequest": "Vacation request",
+      "evVacationRequest": "Vacation request submitted",
       "badge": "05 · Mgmt",
       "quietHours": "Quiet hours · <b>22:00 – 07:00</b> · push held until morning",
       "editQuietHours": "Edit quiet hours",
@@ -1748,12 +1827,24 @@
         "finance": "Finance",
         "team": "Team"
       },
-      "evShiftChangeDesc": "Client-initiated cancellations, reassignments",
-      "evMissedCheckinDesc": "More than 10 minutes past scheduled start",
-      "evInvoiceOverdueDesc": "Past due + 3 days grace",
-      "evVacationRequestDesc": "Pending management approval",
+      "evShiftChangeDesc": "Anyone assigned to the shift gets notified.",
+      "evMissedCheckinDesc": "Missed clock-in window past 10 minutes.",
+      "evInvoiceOverdueDesc": "Past the due date with no payment received.",
+      "evVacationRequestDesc": "Employee submits time-off for review.",
       "evNewClientDesc": "New customer created",
-      "savedToast": "Saved"
+      "savedToast": "Saved",
+      "channelSmsWa": "SMS · WA",
+      "evFeaturePub": "Feature published",
+      "evFeaturePubDesc": "We ship something — heads-up the team.",
+      "evInvoicePaid": "Invoice paid",
+      "evInvoicePaidDesc": "Confirmation when payment hits the books.",
+      "evFinanceDigest": "Weekly finance digest",
+      "evFinanceDigestDesc": "Monday morning roundup of receivables.",
+      "evTrainingExpiring": "Training expiring",
+      "evTrainingExpiringDesc": "Certificate expires in the next 30 days.",
+      "quietHoursRange": "Quiet hours · <b>{range}</b> (push silenced)",
+      "saveQuiet": "Save quiet hours",
+      "cancel": "Cancel"
     },
     "push": {
       "title": "Web Push notifications",
@@ -1798,7 +1889,9 @@
       "loginChallengeBody": "Open your authenticator app and enter the 6-digit code.",
       "loginChallengeBack": "← Use another account",
       "badge": "07 · Personal",
-      "strongScore": "Strong · 92 / 100"
+      "strongScore": "Strong · 92 / 100",
+      "loginAlerts": "Login alerts",
+      "loginAlertsHint": "Email me whenever a new device signs in to my account."
     },
     "locale": {
       "title": "06 · Localization",
@@ -1834,7 +1927,9 @@
       "avatarUploaded": "Photo updated.",
       "avatarRemoved": "Photo removed.",
       "avatarUploading": "Uploading…",
-      "removePhoto": "Remove photo"
+      "removePhoto": "Remove photo",
+      "displayName": "Display name",
+      "phone": "Phone"
     },
     "sessions": {
       "badge": "08 · Personal",
@@ -1849,8 +1944,19 @@
       "auditLog": "View full audit log",
       "revokeAllConfirm": "Sign out of all other devices? You'll stay signed in on this device.",
       "revokeAllSuccess": "All other devices have been signed out.",
-      "revokeAllPending": "Signing out…"
-    }
+      "revokeAllPending": "Signing out…",
+      "loading": "Loading sessions…",
+      "noDevices": "No active devices.",
+      "geoUnknown": "Unknown location",
+      "footerCount": "{count, plural, =0 {No sessions} one {1 session} other {# sessions}} across this account.",
+      "revoked": "Device revoked."
+    },
+    "bulkSaved": "All changes saved.",
+    "bulkSaveError": "Some changes could not be saved.",
+    "unsavedCount": "{count} unsaved change{count, plural, one {} other {s}}",
+    "discard": "Discard",
+    "saveAll": "Save changes",
+    "savingAll": "Saving…"
   },
   "lexware": {
     "title": "Monthly Lexware billing",
@@ -2370,7 +2476,7 @@
     "actionSendingShort": "Sending…",
     "toastSendOk": "Report sent to {recipient}.",
     "toastSendFail": "Send failed: {error}",
-    "footerLine": "Automatically generated · End of month {dateLabel} · Via email to Priya's management",
+    "footerLine": "Auto-generated · End of month {ts} · Emailed to Priya's management · Alltagshilfe module v1.0 · Invoices created manually from this report and sent to the health insurance of each customer.",
     "everydayHelpModule": "Everyday Help module v1.0 · Invoices are created manually from this report and sent to each customer's health insurance company.",
     "careLevelPill": "Care level {level} · {desc}",
     "careLevelDesc1": "Mild",
@@ -2382,7 +2488,35 @@
     "rhythmBiweekly": "Every 2 weeks",
     "rhythmMonthly": "Monthly",
     "rhythmOnDemand": "On demand",
-    "totalRowLabel": "Total · {month}"
+    "totalRowLabel": "Total · {month}",
+    "heroEyebrow": "Alltagshilfe · Care-service report",
+    "heroBody": "Auto-generated at the end of each month · Used by Priya's team to create the manual invoice sent to each customer's <b>health insurance</b> — not to the customer directly.",
+    "heroGenerated": "Generated",
+    "monthPill": "Month",
+    "kpi": {
+      "totalHours": "Total care hours",
+      "totalHoursDelta": "{delta, select, up {+{n}%} down {-{n}%} other {{n}%}} vs {prev}",
+      "customers": "Customers served",
+      "customersSub": "{active} active",
+      "staff": "Staff involved",
+      "staffSub": "{qualified} of {total} qualified",
+      "amount": "Billable amount",
+      "amountSub": "Net · €{rate}/h standard care rate"
+    },
+    "groupBy": "Hours by customer",
+    "groupByHint": "Grouped by care recipient · staff and visits detailed below each group",
+    "staffMember": "Staff member",
+    "periodHeader": "Period",
+    "totalLabel": "Total · {month}",
+    "perStaff": "Hours per staff member",
+    "perStaffStats": "{customers} customers · {visits} visits",
+    "delivery": "Delivery",
+    "deliveryHint": "This report is emailed automatically to Priya's management on the 1st of each month. Lexware sync is skipped.",
+    "lexwareSyncLabel": "Lexware sync",
+    "lexwareSkipped": "Skipped · manual invoicing",
+    "deliveryNextRun": "Next run",
+    "resend": "Resend",
+    "createInvoice": "Create manual invoice"
   },
   "import": {
     "title": "Import {module} from CSV",
