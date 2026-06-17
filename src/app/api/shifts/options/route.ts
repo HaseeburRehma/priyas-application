@@ -7,11 +7,12 @@ export type ShiftOptionsResponse = {
 };
 
 /**
- * GET /api/shifts/options — fetches the property + employee picker data
- * for the "Plan shift" modal. Includes service_type per employee and
- * client_customer_type per property so the dialog can filter staff to
- * only those qualified for the selected shift's service line.
- * RLS keeps these scoped to the org.
+ * GET /api/shifts/options — fetches property + employee picker data for
+ * the "Plan shift" modal. RLS keeps results scoped to the org.
+ *
+ * NOTE: service_type is omitted from the employee select until migration
+ * 20260616_000049_employees_service_type is pushed to the remote DB.
+ * All employees default to "both" until then.
  */
 export async function GET() {
   const supabase = await createSupabaseServerClient();
