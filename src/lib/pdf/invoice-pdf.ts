@@ -21,6 +21,40 @@ function fmtEUR(cents: number): string {
   }).format(cents / 100);
 }
 
+/** "yyyy-MM-dd" → "DD.MM.YYYY". Falls back to the raw string if unparseable. */
+function fmtDateDE(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  if (!y || !m || !d) return iso;
+  return `${d}.${m}.${y}`;
+}
+
+/**
+ * Greedy word-wrap for pdf-lib, which has no built-in line-breaking —
+ * `page.drawText` always renders a single line, so a sentence wider than
+ * the page margin would otherwise run off the edge uncut.
+ */
+function wrapText(
+  text: string,
+  font: PDFFont,
+  size: number,
+  maxWidth: number,
+): string[] {
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (font.widthOfTextAtSize(candidate, size) > maxWidth && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
 type Org = {
   name: string;
   vat_id?: string | null;
@@ -163,6 +197,45 @@ async function renderRegularInvoicePdf(
     );
   }
   y -= 28;
+
+  // Pretext — fixed intro sentence + a quick Kunde/Zeitraum/Objekt/Betrag
+  // summary above the line-item table. Clarifies that the invoice address
+  // is the cleaned site's address, not necessarily the client's own
+  // mailing address (relevant whenever `billing_address_*` differs, or a
+  // client has more than one property).
+  const pretextLines = wrapText(
+    "Unsere Leistungen stellen wir Ihnen wie folgt in Rechnung. Die Rechnungsadresse entspricht dem Objekt, an dem die Reinigung durchgeführt wurde.",
+    helv,
+    10,
+    PAGE_W - MARGIN * 2,
+  );
+  for (const line of pretextLines) {
+    drawText(page, line, MARGIN, y, helv, 10, COLOR_NEUTRAL_700);
+    y -= 14;
+  }
+  y -= 6;
+
+  const summaryRows: Array<[string, string]> = [["Kunde:", invoice.client.display_name]];
+  if (invoice.period_start && invoice.period_end) {
+    summaryRows.push([
+      "Zeitraum:",
+      `${fmtDateDE(invoice.period_start)} – ${fmtDateDE(invoice.period_end)}`,
+    ]);
+  }
+  const objektLabel = invoice.properties.length
+    ? invoice.properties.map((p) => `${p.name} (${p.address})`).join("; ")
+    : [invoice.client.address_line1, invoice.client.postal_code, invoice.client.city]
+        .filter(Boolean)
+        .join(", ");
+  if (objektLabel) summaryRows.push(["Objekt:", objektLabel]);
+  summaryRows.push(["Betrag:", fmtEUR(invoice.total_cents)]);
+
+  for (const [label, value] of summaryRows) {
+    drawText(page, label, MARGIN, y, helvBold, 10, COLOR_NEUTRAL_500);
+    drawText(page, value, MARGIN + 70, y, helv, 10, COLOR_NEUTRAL_700);
+    y -= 14;
+  }
+  y -= 14;
 
   // Line items header
   page.drawRectangle({

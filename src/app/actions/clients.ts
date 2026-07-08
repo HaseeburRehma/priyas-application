@@ -47,9 +47,7 @@ async function audit(
   });
 }
 
-/* ============================================================================
- * createClient — only admin / dispatcher.
- * ========================================================================== */
+
 export async function createClientAction(
   raw: unknown,
 ): Promise<ActionResult<{ id: string }>> {
@@ -217,7 +215,7 @@ export async function updateClientAction(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: beforeRow } = await ((supabase.from("clients") as any))
     .select(
-      "display_name, contact_name, email, phone, tax_id, notes, customer_type, insurance_provider, insurance_number, care_level",
+      "display_name, contact_name, email, phone, tax_id, notes, customer_type, insurance_provider, insurance_number, care_level, export_target, billing_email, address_line1, city, postal_code",
     )
     .eq("id", input.id)
     .maybeSingle();
@@ -228,12 +226,37 @@ export async function updateClientAction(
     email: input.email || null,
     phone: input.phone || null,
     tax_id: input.tax_id || null,
+    address_line1: input.address_line1 || null,
+    postal_code: input.postal_code || null,
+    city: input.city || null,
+    country: input.country || null,
     notes: input.notes || null,
   };
   if (input.customer_type === "alltagshilfe") {
     updateRow.insurance_provider = input.insurance_provider;
     updateRow.insurance_number = input.insurance_number;
     updateRow.care_level = input.care_level;
+  } else {
+    // Switching a client onto Lexware billing requires a real billing
+    // address and email — Lexware rejects a push otherwise (confirmed
+    // against the live API: "0 addresses were found"). Check against the
+    // *incoming* values this same save is about to write, not the stale
+    // pre-update row — address is now editable in this same form, so an
+    // admin correcting the address and flipping the toggle in one submit
+    // must not be checked against the old (possibly empty) DB values.
+    if (input.export_target === "lexware") {
+      const row = beforeRow as { billing_email: string | null } | null;
+      const hasAddress = Boolean(input.address_line1 && input.city && input.postal_code);
+      const hasEmail = Boolean(input.email || row?.billing_email);
+      if (!hasAddress || !hasEmail) {
+        return {
+          ok: false,
+          error:
+            "Lexware-Abrechnung erfordert eine vollständige Adresse (Straße, PLZ, Ort) und eine E-Mail-Adresse.",
+        };
+      }
+    }
+    updateRow.export_target = input.export_target;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

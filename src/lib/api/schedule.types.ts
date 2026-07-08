@@ -46,11 +46,12 @@ export type ScheduleClosure = {
     | "other";
 };
 
-/** An approved vacation that intersects the loaded week. */
+/** An approved vacation or sick-leave request that intersects the loaded week. */
 export type ScheduleVacation = {
   id: string;
   employee_id: string;
   employee_name: string;
+  kind: "vacation" | "sick";
   start_date: string;
   end_date: string;
 };

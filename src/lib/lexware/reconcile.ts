@@ -46,7 +46,8 @@ export async function retryLexwarePushForInvoice(
        export_target, lexware_id, lexware_attempts,
        client:clients (
          id, display_name, contact_name, email, billing_email, phone, tax_id,
-         customer_type, insurance_provider, insurance_number, service_code,
+         customer_type, address_line1, city, postal_code, country,
+         insurance_provider, insurance_number, service_code,
          lexware_contact_id
        ),
        items:invoice_items ( description, quantity, unit_price_cents, tax_rate )`,
@@ -76,6 +77,10 @@ export async function retryLexwarePushForInvoice(
       phone: string | null;
       tax_id: string | null;
       customer_type: "residential" | "commercial" | "alltagshilfe";
+      address_line1: string | null;
+      city: string | null;
+      postal_code: string | null;
+      country: string | null;
       insurance_provider: string | null;
       insurance_number: string | null;
       service_code: string | null;
@@ -121,6 +126,10 @@ export async function retryLexwarePushForInvoice(
         phone: inv.client.phone,
         tax_id: inv.client.tax_id,
         customer_type: inv.client.customer_type,
+        address_line1: inv.client.address_line1,
+        city: inv.client.city,
+        postal_code: inv.client.postal_code,
+        country: inv.client.country,
         lexware_contact_id: inv.client.lexware_contact_id,
       },
       items: (inv.items ?? []).map((it) => ({

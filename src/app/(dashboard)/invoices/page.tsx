@@ -10,9 +10,10 @@ export const dynamic = "force-dynamic";
 
 export default async function Page() {
   if (!(await can("invoice.read"))) redirect(routes.dashboard);
-  const [summary, canCreate] = await Promise.all([
+  const [summary, canCreate, canSync] = await Promise.all([
     loadInvoicesSummary(),
     can("invoice.create"),
+    can("invoice.lexware_sync"),
   ]);
-  return <InvoicesPage summary={summary} canCreate={canCreate} />;
+  return <InvoicesPage summary={summary} canCreate={canCreate} canSync={canSync} />;
 }

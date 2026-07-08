@@ -32,6 +32,7 @@ type Props = {
   canSend: boolean;
   canMarkPaid: boolean;
   canLexware: boolean;
+  canEdit: boolean;
 };
 
 export function InvoiceDetail({
@@ -39,6 +40,7 @@ export function InvoiceDetail({
   canSend,
   canMarkPaid,
   canLexware,
+  canEdit,
 }: Props) {
   const t = useTranslations("invoices.detail");
   const tRec = useTranslations("invoices.detail.reconciliation");
@@ -117,6 +119,17 @@ export function InvoiceDetail({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {/* Edit — only on drafts. Hidden once the invoice is sent
+              because line edits then would diverge from what Lexware
+              and the customer already saw. */}
+          {canEdit && detail.status === "draft" && (
+            <Link
+              href={routes.invoiceEdit(detail.id)}
+              className="btn btn--ghost border border-neutral-200 bg-white"
+            >
+              {t("actionEdit")}
+            </Link>
+          )}
           {canSend && detail.status === "draft" && (
             <button
               type="button"

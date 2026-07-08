@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
 import { useFormat } from "@/lib/utils/i18n-format";
 import { useInvoices } from "@/hooks/invoices/useInvoices";
+import { bulkRetrySyncAction } from "@/app/actions/lexware-reconcile";
 import type {
   InvoiceRow,
   InvoicesSummary,
@@ -30,9 +33,9 @@ const statusStyles: Record<InvoiceStatus, string> = {
   cancelled: "bg-neutral-100 text-neutral-500",
 };
 
-type Props = { summary: InvoicesSummary; canCreate: boolean };
+type Props = { summary: InvoicesSummary; canCreate: boolean; canSync: boolean };
 
-export function InvoicesPage({ summary, canCreate }: Props) {
+export function InvoicesPage({ summary, canCreate, canSync }: Props) {
   const t = useTranslations("invoices");
   const tStatus = useTranslations("invoices.status");
   const tFilter = useTranslations("invoices.toolbar");
@@ -42,8 +45,29 @@ export function InvoicesPage({ summary, canCreate }: Props) {
   const f = useFormat();
   const formatEUR = (cents: number) => f.currencyCents(cents);
 
+  const router = useRouter();
+  const [syncPending, startSync] = useTransition();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<InvoiceStatus | "all">("all");
+
+  function onBulkSync() {
+    startSync(async () => {
+      const r = await bulkRetrySyncAction();
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      const { attempted, pushed, failed } = r.data;
+      if (attempted === 0) {
+        toast.info(t("actions.syncLexwareNoCandidates"));
+      } else if (failed === 0) {
+        toast.success(t("actions.syncLexwareDone", { pushed }));
+      } else {
+        toast.warning(t("actions.syncLexwareMixed", { pushed, failed }));
+      }
+      router.refresh();
+    });
+  }
   // Service-line segment filter — matches the prototype's
   // "All / Priya's / Alltagshilfe" pill toggle at the right of the
   // toolbar. Filtered client-side because the loader pre-paginates
@@ -114,18 +138,32 @@ export function InvoicesPage({ summary, canCreate }: Props) {
           {/* Lexware bulk-sync button — re-runs the retry sweep on
            *  failed/pending invoices in the visible org. Same server
            *  action that the nightly cron uses, just gated here on
-           *  the manual trigger. */}
-          <button
-            type="button"
-            className="btn btn--ghost border border-neutral-200 bg-white"
-            title={t("actions.syncLexwareTitle")}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
-              <path d="M21 12a9 9 0 11-9-9" />
-              <path d="M21 4v5h-5" />
-            </svg>
-            {t("actions.syncLexware")}
-          </button>
+           *  the manual trigger. Hidden without invoice.lexware_sync
+           *  since the server action rejects it anyway. */}
+          {canSync && (
+            <button
+              type="button"
+              onClick={onBulkSync}
+              disabled={syncPending}
+              className="btn btn--ghost border border-neutral-200 bg-white disabled:opacity-60"
+              title={t("actions.syncLexwareTitle")}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={cn("h-3.5 w-3.5", syncPending && "animate-spin")}>
+                <path d="M21 12a9 9 0 11-9-9" />
+                <path d="M21 4v5h-5" />
+              </svg>
+              {syncPending ? t("actions.syncLexwarePending") : t("actions.syncLexware")}
+            </button>
+          )}
+          {canCreate && (
+            <Link
+              href={routes.scheduleBillingApproval}
+              className="btn btn--ghost border border-neutral-200 bg-white"
+              title={t("actions.billingApprovalTitle")}
+            >
+              {t("actions.billingApproval")}
+            </Link>
+          )}
           {canCreate && (
             <Link href={routes.invoiceNew} className="btn btn--primary">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
@@ -419,15 +457,32 @@ export function InvoicesPage({ summary, canCreate }: Props) {
               {tSide("quickActions")}
             </h3>
             <div className="mt-3 flex flex-col gap-2">
-              <button className="btn btn--ghost border border-neutral-200 bg-white">
+              <button
+                type="button"
+                disabled
+                title={t("actions.importComingSoon")}
+                className="btn btn--ghost border border-neutral-200 bg-white opacity-50"
+              >
                 {tSide("qaSendReminders")}
               </button>
-              <button className="btn btn--ghost border border-neutral-200 bg-white">
+              <a
+                href="/api/invoices?format=csv"
+                target="_blank"
+                rel="noopener"
+                className="btn btn--ghost border border-neutral-200 bg-white text-center"
+              >
                 {tSide("qaExportXls")}
-              </button>
-              <button className="btn btn--tertiary">
-                {tSide("qaSyncLexware")}
-              </button>
+              </a>
+              {canSync && (
+                <button
+                  type="button"
+                  onClick={onBulkSync}
+                  disabled={syncPending}
+                  className="btn btn--tertiary disabled:opacity-60"
+                >
+                  {syncPending ? t("actions.syncLexwarePending") : tSide("qaSyncLexware")}
+                </button>
+              )}
             </div>
           </section>
         </aside>

@@ -328,10 +328,11 @@ export async function issueInvoiceAction(
   const { data: invRow } = await ((supabase.from("invoices") as any))
     .select(
       `id, org_id, status, invoice_kind, invoice_number, issue_date, due_date, period_start, period_end,
-       total_cents, subtotal_cents, tax_cents, notes, pdf_path, export_target,
+       total_cents, subtotal_cents, tax_cents, notes, pdf_path, export_target, lexware_attempts,
        client:clients (
          id, display_name, contact_name, email, phone, tax_id, customer_type,
-         billing_email, insurance_provider, insurance_number, service_code, lexware_contact_id
+         billing_email, address_line1, city, postal_code, country,
+         insurance_provider, insurance_number, service_code, lexware_contact_id
        ),
        items:invoice_items ( description, quantity, unit_price_cents, tax_rate )`,
     )
@@ -353,6 +354,7 @@ export async function issueInvoiceAction(
     notes: string | null;
     pdf_path: string | null;
     export_target: "internal" | "lexware";
+    lexware_attempts: number;
     client: {
       id: string;
       display_name: string;
@@ -362,6 +364,10 @@ export async function issueInvoiceAction(
       tax_id: string | null;
       customer_type: "residential" | "commercial" | "alltagshilfe";
       billing_email: string | null;
+      address_line1: string | null;
+      city: string | null;
+      postal_code: string | null;
+      country: string | null;
       insurance_provider: string | null;
       insurance_number: string | null;
       service_code: string | null;
@@ -436,6 +442,10 @@ export async function issueInvoiceAction(
         phone: inv.client.phone,
         taxId: inv.client.tax_id,
         customerType: inv.client.customer_type,
+        addressLine1: inv.client.address_line1,
+        city: inv.client.city,
+        postalCode: inv.client.postal_code,
+        country: inv.client.country,
         insuranceProvider: inv.client.insurance_provider,
         insuranceNumber: inv.client.insurance_number,
         serviceCode: inv.client.service_code,
@@ -448,10 +458,17 @@ export async function issueInvoiceAction(
         taxRatePercent: Number(it.tax_rate),
       })),
     });
+    const nowIso = new Date().toISOString();
     if (res.ok) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await ((supabase.from("invoices") as any))
-        .update({ lexware_id: res.foreignId })
+        .update({
+          lexware_id: res.foreignId,
+          lexware_sync_status: "synced",
+          lexware_last_attempt_at: nowIso,
+          lexware_last_error: null,
+          lexware_attempts: inv.lexware_attempts + 1,
+        })
         .eq("id", inv.id);
       if (res.contactId) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -461,6 +478,15 @@ export async function issueInvoiceAction(
       }
       exporterFinish = `synced:${res.foreignId}`;
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await ((supabase.from("invoices") as any))
+        .update({
+          lexware_sync_status: "failed",
+          lexware_last_attempt_at: nowIso,
+          lexware_last_error: res.error.slice(0, 500),
+          lexware_attempts: inv.lexware_attempts + 1,
+        })
+        .eq("id", inv.id);
       exporterFinish = `failed:${res.error}`;
     }
   }
@@ -657,9 +683,10 @@ export async function exportInvoiceAction(
     .select(
       `id, org_id, status, invoice_kind, invoice_number, issue_date, due_date,
        period_start, period_end, total_cents, subtotal_cents, tax_cents, notes,
-       pdf_path, export_target,
+       pdf_path, export_target, lexware_attempts,
        client:clients (
          id, display_name, contact_name, email, billing_email, phone, tax_id, customer_type,
+         address_line1, city, postal_code, country,
          insurance_provider, insurance_number, service_code, lexware_contact_id
        ),
        items:invoice_items ( description, quantity, unit_price_cents, tax_rate )`,
@@ -669,6 +696,7 @@ export async function exportInvoiceAction(
   type Row = {
     id: string;
     status: string;
+    lexware_attempts: number;
     invoice_kind: "regular" | "alltagshilfe";
     invoice_number: string;
     issue_date: string;
@@ -690,6 +718,10 @@ export async function exportInvoiceAction(
       phone: string | null;
       tax_id: string | null;
       customer_type: "residential" | "commercial" | "alltagshilfe";
+      address_line1: string | null;
+      city: string | null;
+      postal_code: string | null;
+      country: string | null;
       insurance_provider: string | null;
       insurance_number: string | null;
       service_code: string | null;
@@ -730,6 +762,10 @@ export async function exportInvoiceAction(
       phone: inv.client.phone,
       taxId: inv.client.tax_id,
       customerType: inv.client.customer_type,
+      addressLine1: inv.client.address_line1,
+      city: inv.client.city,
+      postalCode: inv.client.postal_code,
+      country: inv.client.country,
       insuranceProvider: inv.client.insurance_provider,
       insuranceNumber: inv.client.insurance_number,
       serviceCode: inv.client.service_code,
@@ -742,10 +778,28 @@ export async function exportInvoiceAction(
       taxRatePercent: Number(it.tax_rate),
     })),
   });
-  if (!res.ok) return { ok: false, error: res.error };
+  const nowIso = new Date().toISOString();
+  if (!res.ok) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await ((supabase.from("invoices") as any))
+      .update({
+        lexware_sync_status: "failed",
+        lexware_last_attempt_at: nowIso,
+        lexware_last_error: res.error.slice(0, 500),
+        lexware_attempts: inv.lexware_attempts + 1,
+      })
+      .eq("id", inv.id);
+    return { ok: false, error: res.error };
+  }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await ((supabase.from("invoices") as any))
-    .update({ lexware_id: res.foreignId })
+    .update({
+      lexware_id: res.foreignId,
+      lexware_sync_status: "synced",
+      lexware_last_attempt_at: nowIso,
+      lexware_last_error: null,
+      lexware_attempts: inv.lexware_attempts + 1,
+    })
     .eq("id", inv.id);
   if (res.contactId) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

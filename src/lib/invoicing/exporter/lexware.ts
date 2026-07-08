@@ -33,6 +33,10 @@ export class LexwareExporter implements InvoiceExporter {
           phone: invoice.client.phone,
           tax_id: invoice.client.taxId,
           customer_type: invoice.client.customerType,
+          address_line1: invoice.client.addressLine1,
+          city: invoice.client.city,
+          postal_code: invoice.client.postalCode,
+          country: invoice.client.country,
           lexware_contact_id: invoice.client.lexwareContactId,
         },
         items: invoice.items.map((it) => ({

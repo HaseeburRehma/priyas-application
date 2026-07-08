@@ -74,6 +74,11 @@ export type ClientDetail = {
   archived: boolean;
   created_at: string;
   updated_at: string;
+  export_target: "internal" | "lexware";
+  address_line1: string | null;
+  city: string | null;
+  postal_code: string | null;
+  country: string | null;
   // Aggregates
   property_count: number;
   contact_count: number;

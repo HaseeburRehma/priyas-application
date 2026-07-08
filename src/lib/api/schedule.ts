@@ -1,4 +1,5 @@
 import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { startOfWeek, endOfWeek, addDays, format, getISOWeek } from "date-fns";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type {
@@ -54,8 +55,12 @@ const initialsOf = (n: string | null | undefined) =>
 export async function loadScheduleRange(
   from: Date,
   to: Date,
+  // Service-role path only (v1 API — no session cookie to derive an org
+  // from). RLS scopes the default session-client path already.
+  opts?: { supabase?: SupabaseClient; orgId?: string },
 ): Promise<ScheduleWeek> {
-  const supabase = await createSupabaseServerClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = (opts?.supabase ?? (await createSupabaseServerClient())) as any;
 
   // Clamp ranges that exceed our defensive cap. We narrow `to`
   // rather than throw so a malformed deep-link still renders a sane
@@ -66,7 +71,7 @@ export async function loadScheduleRange(
     to = new Date(from.getTime() + maxMs);
   }
 
-  const { data } = await supabase
+  let shiftsQuery = supabase
     .from("shifts")
     .select(
       `id, starts_at, ends_at, status, notes, employee_id,
@@ -81,6 +86,8 @@ export async function loadScheduleRange(
     .lte("starts_at", to.toISOString())
     .order("starts_at", { ascending: true })
     .limit(SHIFTS_HARD_LIMIT);
+  if (opts?.orgId) shiftsQuery = shiftsQuery.eq("org_id", opts.orgId);
+  const { data } = await shiftsQuery;
 
   type Row = {
     id: string;
@@ -154,7 +161,7 @@ export async function loadScheduleRange(
     supabase
       .from("vacation_requests")
       .select(
-        "id, employee_id, start_date, end_date, status, employee:employees ( id, full_name )",
+        "id, employee_id, kind, start_date, end_date, status, employee:employees ( id, full_name )",
       )
       .eq("status", "approved")
       .lte("start_date", toIso)
@@ -172,6 +179,7 @@ export async function loadScheduleRange(
   type VacationRow = {
     id: string;
     employee_id: string;
+    kind: "vacation" | "sick";
     start_date: string;
     end_date: string;
     employee: { id: string; full_name: string } | null;
@@ -194,6 +202,7 @@ export async function loadScheduleRange(
     id: v.id,
     employee_id: v.employee_id,
     employee_name: v.employee?.full_name ?? "—",
+    kind: v.kind,
     start_date: v.start_date,
     end_date: v.end_date,
   }));
@@ -328,7 +337,7 @@ export async function loadScheduleWeek(
     supabase
       .from("vacation_requests")
       .select(
-        "id, employee_id, start_date, end_date, status, employee:employees ( id, full_name )",
+        "id, employee_id, kind, start_date, end_date, status, employee:employees ( id, full_name )",
       )
       .eq("status", "approved")
       .lte("start_date", weekEndIso)
@@ -346,6 +355,7 @@ export async function loadScheduleWeek(
   type VacationRow = {
     id: string;
     employee_id: string;
+    kind: "vacation" | "sick";
     start_date: string;
     end_date: string;
     employee: { id: string; full_name: string } | null;
@@ -368,6 +378,7 @@ export async function loadScheduleWeek(
     id: v.id,
     employee_id: v.employee_id,
     employee_name: v.employee?.full_name ?? "—",
+    kind: v.kind,
     start_date: v.start_date,
     end_date: v.end_date,
   }));

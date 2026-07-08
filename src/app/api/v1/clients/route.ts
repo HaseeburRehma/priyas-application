@@ -5,6 +5,7 @@ import type {
   ClientsSortField,
 } from "@/lib/api/clients.types";
 import { v1Guard, v1ListResponse, v1ErrorResponse } from "@/lib/api/v1-respond";
+import { getServiceClient } from "@/lib/api/v1-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -43,15 +44,18 @@ export async function GET(request: Request) {
     ? (typeRaw as ClientCustomerType | "all")
     : "all";
 
+  // v1Guard already required a working service-role client to get this
+  // far (authenticateApiKey fails fast otherwise), so null here would
+  // mean the env changed mid-request — bail rather than silently fall
+  // back to the unscoped session-client path.
+  const serviceClient = getServiceClient();
+  if (!serviceClient) return v1ErrorResponse(503, "v1_api_not_configured");
+
   try {
-    const result = await loadClientsList({
-      q,
-      type,
-      page,
-      pageSize,
-      sort,
-      direction,
-    });
+    const result = await loadClientsList(
+      { q, type, page, pageSize, sort, direction },
+      { supabase: serviceClient, orgId: guard.orgId },
+    );
     return v1ListResponse(result.rows, { page, pageSize, total: result.total });
   } catch (err) {
     return v1ErrorResponse(

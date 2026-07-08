@@ -1,4 +1,5 @@
 import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sanitizeQ } from "@/lib/utils/postgrest-sanitize";
 import type {
@@ -104,6 +105,9 @@ export async function loadPropertiesSummary(): Promise<PropertiesSummary> {
 /** Paginated list with search + filters + sort. */
 export async function loadPropertiesList(
   params: PropertiesListParams = {},
+  // Service-role path only (v1 API — no session cookie to derive an org
+  // from). RLS scopes the default session-client path already.
+  opts?: { supabase?: SupabaseClient; orgId?: string },
 ): Promise<PropertiesListResult> {
   const {
     q = "",
@@ -115,7 +119,8 @@ export async function loadPropertiesList(
     direction = "asc",
     ids,
   } = params;
-  const supabase = await createSupabaseServerClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = (opts?.supabase ?? (await createSupabaseServerClient())) as any;
 
   // Canonical query order (mirrors loadClientsList):
   //   1. base select with count: "exact" + soft-delete guard
@@ -141,6 +146,7 @@ export async function loadPropertiesList(
       { count: "exact" },
     )
     .is("deleted_at", null);
+  if (opts?.orgId) query = query.eq("org_id", opts.orgId);
 
   if (q) {
     // sanitizeQ defends against PostgREST `.or()` filter injection — see
@@ -272,13 +278,18 @@ export async function loadPropertiesList(
 }
 
 /** Detail loader for /properties/[id]. */
-export async function loadPropertyDetail(id: string): Promise<PropertyDetail | null> {
-  const supabase = await createSupabaseServerClient();
+export async function loadPropertyDetail(
+  id: string,
+  // Service-role path only (v1 API) — see loadPropertiesList above.
+  opts?: { supabase?: SupabaseClient; orgId?: string },
+): Promise<PropertyDetail | null> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = (opts?.supabase ?? (await createSupabaseServerClient())) as any;
   // The route filters archived rows by leaving the `.is("deleted_at", null)`
   // guard in place — by the time we resolve a row, the property is live.
   // That means status can never be "paused" via the soft-delete path here;
   // it's still computed below from recent shift activity.
-  const { data: row } = await supabase
+  let detailQuery = supabase
     .from("properties")
     .select(
       `id, name, address_line1, address_line2, postal_code, city, country,
@@ -290,8 +301,9 @@ export async function loadPropertyDetail(id: string): Promise<PropertyDetail | n
        client:clients ( id, display_name, customer_type )`,
     )
     .eq("id", id)
-    .is("deleted_at", null)
-    .maybeSingle();
+    .is("deleted_at", null);
+  if (opts?.orgId) detailQuery = detailQuery.eq("org_id", opts.orgId);
+  const { data: row } = await detailQuery.maybeSingle();
 
   type DetailRow = {
     id: string;

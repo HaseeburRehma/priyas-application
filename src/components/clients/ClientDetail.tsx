@@ -49,6 +49,7 @@ export function ClientDetail({ detail, canUpdate, canArchive }: Props) {
   const NEW_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
   const isNew =
     Date.now() - new Date(detail.created_at).getTime() < NEW_WINDOW_MS;
+  const isAlltagshilfe = detail.customer_type === "alltagshilfe";
 
   return (
     <>
@@ -68,11 +69,20 @@ export function ClientDetail({ detail, canUpdate, canArchive }: Props) {
         <span className="truncate text-neutral-700">{detail.display_name}</span>
       </nav>
 
-      {/* Hero card */}
-      <section className="mb-6 rounded-lg border border-neutral-100 bg-white p-5">
+      {/* Hero card — left border accent matches the red left-border
+          convention used on Alltagshilfe rows in ClientsTable. */}
+      <section
+        className={cn(
+          "mb-6 rounded-lg border border-neutral-100 bg-white p-5",
+          isAlltagshilfe && "border-l-2 border-l-error-400",
+        )}
+      >
         <div className="flex flex-wrap items-start gap-5">
           <span
-            className={`grid h-16 w-16 flex-shrink-0 place-items-center rounded-full bg-primary-500 text-[20px] font-bold text-white`}
+            className={cn(
+              "grid h-16 w-16 flex-shrink-0 place-items-center rounded-full text-[20px] font-bold text-white",
+              isAlltagshilfe ? "bg-error-500" : "bg-primary-500",
+            )}
           >
             {initials || "—"}
           </span>
@@ -81,6 +91,11 @@ export function ClientDetail({ detail, canUpdate, canArchive }: Props) {
               <h1 className="truncate text-[24px] font-bold text-secondary-500">
                 {detail.display_name}
               </h1>
+              {isAlltagshilfe && (
+                <span className="inline-flex rounded-full bg-error-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.04em] text-error-700">
+                  {t("alltagshilfeBadge")}
+                </span>
+              )}
               {isNew && (
                 <span
                   className={`inline-flex rounded-full bg-primary-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.04em] text-white`}

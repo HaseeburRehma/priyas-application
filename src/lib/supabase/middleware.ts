@@ -45,8 +45,22 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/api/auth") ||
     pathname === "/favicon.ico";
 
-  // Unauthenticated → bounce to login (except on public routes).
-  if (!user && !isPublic) {
+  // Every `/api/*` route already enforces its own auth (requirePermission()/
+  // can() for cookie-session routes, v1Guard()'s Bearer-token check for the
+  // public v1 API, a CRON_SECRET comparison for /api/jobs/*) and returns a
+  // proper JSON 401/403 on failure. Redirecting these to the HTML /login
+  // page instead — the previous behavior here — broke every non-browser
+  // caller: a cron trigger or a v1 API client sends no session cookie by
+  // design, so it always hit this redirect before its own auth header was
+  // ever checked. `/api/auth/*` (Supabase's own callback endpoints) is
+  // covered by isPublic above already; this exemption is for every other
+  // `/api/*` route, which are JSON endpoints, not pages, so a redirect is
+  // the wrong response shape regardless of auth outcome.
+  const isApiRoute = pathname.startsWith("/api/");
+
+  // Unauthenticated → bounce to login (except on public routes and any API
+  // route, which handles its own auth and must return JSON, not a redirect).
+  if (!user && !isPublic && !isApiRoute) {
     const url = request.nextUrl.clone();
     url.pathname = routes.login;
     url.searchParams.set("next", pathname);

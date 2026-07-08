@@ -282,6 +282,9 @@
       "email": "Email",
       "phone": "Phone",
       "taxId": "Tax / VAT number",
+      "exportTarget": "Billing",
+      "exportTargetInternal": "Internal",
+      "exportTargetLexware": "Lexware",
       "notes": "Internal notes",
       "insuranceProvider": "Health insurer",
       "insuranceNumber": "Insurance number",
@@ -310,6 +313,7 @@
         "billingAddressPlaceholder": "Leave blank if identical to the address above",
         "plz": "ZIP",
         "city": "City",
+        "country": "Country",
         "phoneHint": "Used for invoices and appointment confirmations",
         "dateOfBirth": "Date of birth",
         "insuranceProvider": "Health insurance",
@@ -508,6 +512,7 @@
       "breadcrumbDashboard": "Overview",
       "breadcrumbClients": "Clients",
       "newBadge": "New client",
+      "alltagshilfeBadge": "Alltagshilfe",
       "clientSince": "Client since {date}",
       "statProperties": "PROPERTIES",
       "statContacts": "CONTACTS",
@@ -694,6 +699,7 @@
       "breadcrumbDashboard": "Overview",
       "breadcrumbProperties": "Properties",
       "newBadge": "NEW",
+      "alltagshilfeBadge": "Alltagshilfe",
       "openMessage": "Message",
       "openSchedule": "Schedule",
       "edit": "Edit",
@@ -961,7 +967,10 @@
       "running": "Running",
       "prevMonth": "Previous month",
       "nextMonth": "Next month",
-      "teamEmpty": "No staffed shifts in this week."
+      "teamEmpty": "No staffed shifts in this week.",
+      "staffRoster": "Staff",
+      "staffRosterHint": "Drag onto a time slot to plan a shift.",
+      "staffRosterEmpty": "No active staff."
     },
     "panel": {
       "scheduledTag": "Scheduled",
@@ -985,6 +994,7 @@
       "subtitle": "Set property, staff member and time range.",
       "property": "Property",
       "propertyPlaceholder": "Choose a property…",
+      "pickPropertyForEmployee": "Pick a property {name} is qualified for.",
       "employee": "Employee",
       "employeePlaceholder": "Choose an employee…",
       "noEmployee": "— No employee (open) —",
@@ -1400,6 +1410,32 @@
       "retention": "Exports are kept for 24 months."
     }
   },
+  "shiftBilling": {
+    "breadcrumbDashboard": "Overview",
+    "breadcrumbSchedule": "Schedule",
+    "breadcrumbCurrent": "Billing approval",
+    "title": "Billing approval",
+    "subtitle": "Completed shifts still waiting for billing approval.",
+    "toInvoice": "Go to \"New invoice\" →",
+    "empty": "No shifts to approve. Completed shifts appear here automatically.",
+    "colProperty": "Property",
+    "colEmployee": "Employee",
+    "colDate": "Date",
+    "colScheduled": "Scheduled",
+    "colActual": "Actual",
+    "colBillable": "Billable (hrs)",
+    "colAction": "Action",
+    "noCheckIn": "no check-in",
+    "hoursSuffix": "hrs",
+    "reasonPlaceholder": "Reason…",
+    "reject": "Reject",
+    "approve": "Approve",
+    "confirmReject": "Confirm",
+    "cancelReject": "Cancel",
+    "reasonRequired": "Please provide a reason.",
+    "approveSuccess": "Approved ({hours} hrs)",
+    "rejectSuccess": "Shift rejected."
+  },
   "invoices": {
     "breadcrumbDashboard": "Overview",
     "breadcrumbFinance": "Finance",
@@ -1410,10 +1446,16 @@
       "import": "Import",
       "export": "Export",
       "new": "New invoice",
+      "billingApproval": "Billing approval",
+      "billingApprovalTitle": "Approve shifts for billing before creating an invoice",
       "importComingSoon": "CSV import coming soon.",
       "newComingSoon": "Manual create coming soon — invoices are generated from shifts.",
       "syncLexware": "Lexware Sync",
-      "syncLexwareTitle": "Sync all pending invoices with Lexware"
+      "syncLexwareTitle": "Sync all pending invoices with Lexware",
+      "syncLexwarePending": "Syncing…",
+      "syncLexwareDone": "Pushed {pushed} to Lexware.",
+      "syncLexwareMixed": "Pushed {pushed} · {failed} failed.",
+      "syncLexwareNoCandidates": "Nothing to sync right now."
     },
     "summary": {
       "total": "Total",
@@ -1506,7 +1548,8 @@
         "overdueBody": "This invoice is <b>{days, plural, =1 {one day} other {# days}} overdue</b>. Please send the first reminder if you haven't yet.",
         "partialTitle": "Partial payment received",
         "partialBody": "<b>{amount}</b> still outstanding. This invoice is not fully paid."
-      }
+      },
+      "actionEdit": "Edit invoice"
     },
     "draftEditor": {
       "alltagshilfeNote": "Everyday help (VAT-free per § 4 No. 16 UStG)",
@@ -2056,6 +2099,9 @@
     },
     "table": {
       "employee": "Employee",
+      "kind": "Type",
+      "kindVacation": "Vacation",
+      "kindSick": "Sick",
       "period": "Period",
       "days": "Days",
       "reason": "Reason",
@@ -2085,8 +2131,11 @@
     "suggestionDeclined": "Suggestion declined.",
     "suggestedPeriod": "Suggested period",
     "form": {
-      "title": "Request vacation",
+      "title": "Request leave",
       "subtitle": "Pick a date range and add a reason.",
+      "kind": "Type",
+      "kindVacation": "Vacation",
+      "kindSick": "Sick day",
       "startDate": "Start",
       "endDate": "End",
       "reason": "Reason (optional)",

@@ -24,6 +24,7 @@ export const routes = {
   property: (id: string) => `/properties/${id}` as Route,
   propertyEdit: (id: string) => `/properties/${id}/edit` as Route,
   schedule: "/schedule" as Route,
+  scheduleBillingApproval: "/schedule/billing-approval" as Route,
   vacation: "/vacation" as Route,
   training: "/training" as Route,
   employees: "/employees" as Route,

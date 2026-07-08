@@ -1,4 +1,5 @@
 import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sanitizeQ } from "@/lib/utils/postgrest-sanitize";
 import type {
@@ -87,8 +88,15 @@ export async function loadClientsSummary(): Promise<ClientsSummary> {
  */
 export async function loadClientsList(
   params: ClientsListParams = {},
+  // `opts` is only used by the v1 API's service-role path (no session
+  // cookie to derive an org from). RLS already scopes the default
+  // session-client path, so `orgId` is a required extra filter *only*
+  // when a caller-supplied client bypasses RLS — see loadClientDetail
+  // below for why that matters for a by-id lookup.
+  opts?: { supabase?: SupabaseClient; orgId?: string },
 ): Promise<ClientsListResult> {
-  const supabase = await createSupabaseServerClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = (opts?.supabase ?? (await createSupabaseServerClient())) as any;
   const {
     q = "",
     type = "all",
@@ -107,6 +115,7 @@ export async function loadClientsList(
       { count: "exact" },
     )
     .is("deleted_at", null);
+  if (opts?.orgId) query = query.eq("org_id", opts.orgId);
 
   // Bug 2 — Archived clients leak into list view. Hide archived rows by
   // default; callers can opt in via the `archived` flag.
@@ -235,18 +244,26 @@ export async function loadClientsList(
 /* ============================================================================
  * Detail loader — drives /clients/[id]
  * ========================================================================== */
-export async function loadClientDetail(id: string): Promise<ClientDetail | null> {
-  const supabase = await createSupabaseServerClient();
-  const { data: clientRaw, error } = await supabase
+export async function loadClientDetail(
+  id: string,
+  // Service-role path only (v1 API) — see loadClientsList above. Without
+  // this, a service-role caller could fetch *any* org's client by id;
+  // the session-client default path is already scoped by RLS regardless.
+  opts?: { supabase?: SupabaseClient; orgId?: string },
+): Promise<ClientDetail | null> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = (opts?.supabase ?? (await createSupabaseServerClient())) as any;
+  let detailQuery = supabase
     .from("clients")
     .select(
       `id, display_name, customer_type, contact_name, email, phone, tax_id,
        insurance_provider, insurance_number, care_level, notes, archived,
-       created_at, updated_at`,
+       created_at, updated_at, export_target, address_line1, city, postal_code, country`,
     )
     .eq("id", id)
-    .is("deleted_at", null)
-    .maybeSingle();
+    .is("deleted_at", null);
+  if (opts?.orgId) detailQuery = detailQuery.eq("org_id", opts.orgId);
+  const { data: clientRaw, error } = await detailQuery.maybeSingle();
   if (error || !clientRaw) return null;
   const client = clientRaw as Record<string, unknown>;
 
@@ -399,6 +416,11 @@ export async function loadClientDetail(id: string): Promise<ClientDetail | null>
     archived: Boolean(client.archived),
     created_at: String(client.created_at),
     updated_at: String(client.updated_at),
+    export_target: (client.export_target as "internal" | "lexware") ?? "internal",
+    address_line1: (client.address_line1 as string | null) ?? null,
+    city: (client.city as string | null) ?? null,
+    postal_code: (client.postal_code as string | null) ?? null,
+    country: (client.country as string | null) ?? null,
     property_count: propsRes.count ?? 0,
     contact_count: 1, // single contact_name today; future: contacts table
     assignment_count: shiftsRes.count ?? 0,

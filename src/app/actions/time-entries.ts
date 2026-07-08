@@ -23,6 +23,7 @@ async function audit(
   recordId: string,
   message: string,
   meta?: Record<string, unknown>,
+  before?: Record<string, unknown> | null,
 ) {
   const supabase = await createSupabaseServerClient();
   const {
@@ -43,6 +44,7 @@ async function audit(
     action,
     table_name: "time_entries",
     record_id: recordId,
+    before: before ?? null,
     after: { message, ...meta },
   });
 }
@@ -482,8 +484,29 @@ export async function correctTimeEntryAction(
   const propertyId = (shiftRow as { property_id: string } | null)?.property_id;
   if (!propertyId) return { ok: false, error: "Shift not found" };
 
+  // The unique index on (shift_id, employee_id, kind) means the upsert
+  // below overwrites whatever row is already there — including a genuine
+  // GPS-verified check-in/check-out. Spec 4.4 requires that original event
+  // to stay immutable, so capture its full pre-overwrite state here and
+  // preserve it in the audit log's `before` field. The "current" row still
+  // reflects the correction (unchanged design for every other consumer of
+  // this table — shift-billing hours, working-time reports, etc.), but the
+  // real GPS event it replaced is never actually lost, just superseded.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: existingRow } = await ((supabase.from("time_entries") as any))
+    .select(
+      "occurred_at, latitude, longitude, accuracy_m, distance_m, manual, created_by",
+    )
+    .eq("shift_id", input.shift_id)
+    .eq("employee_id", input.employee_id)
+    .eq("kind", input.kind)
+    .maybeSingle();
+
   // Upsert: a manual correction either creates the row or updates the
-  // existing one with the corrected timestamp + reason.
+  // existing one with the corrected timestamp + reason. GPS-specific
+  // fields are explicitly cleared — a manager-entered time has no real
+  // location behind it, so leaving the previous event's coordinates in
+  // place would misleadingly suggest the new timestamp was GPS-verified.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await ((supabase.from("time_entries") as any))
     .upsert(
@@ -494,6 +517,10 @@ export async function correctTimeEntryAction(
         property_id: propertyId,
         kind: input.kind,
         occurred_at: input.occurred_at,
+        latitude: null,
+        longitude: null,
+        accuracy_m: null,
+        distance_m: null,
         manual: true,
         manual_reason: input.reason,
         created_by: user?.id ?? null,
@@ -509,6 +536,7 @@ export async function correctTimeEntryAction(
     (data as { id: string }).id,
     `Zeit korrigiert: ${input.kind}`,
     { reason: input.reason },
+    existingRow ?? null,
   );
   revalidatePath(routes.schedule);
   return { ok: true, data: { id: (data as { id: string }).id } };

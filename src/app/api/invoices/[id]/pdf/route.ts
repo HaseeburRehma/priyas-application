@@ -6,6 +6,7 @@ import {
   PermissionError,
   requirePermission,
 } from "@/lib/rbac/permissions";
+import { rateLimit } from "@/lib/rate-limit/guard";
 
 export async function GET(
   _request: Request,
@@ -18,6 +19,14 @@ export async function GET(
       { error: err instanceof PermissionError ? err.message : "Forbidden" },
       { status: 403 },
     );
+  }
+
+  // PDF rendering does multiple DB round-trips plus in-process layout —
+  // the heaviest single request this route type makes. Without a cap, a
+  // looping caller (or one compromised account) can burn CPU indefinitely.
+  const blocked = await rateLimit("heavy", "invoice.pdf");
+  if (blocked) {
+    return NextResponse.json({ error: blocked }, { status: 429 });
   }
 
   const { id } = await context.params;

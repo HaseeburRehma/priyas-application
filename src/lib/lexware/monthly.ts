@@ -55,7 +55,12 @@ type DbShift = {
   org_id: string;
   property: {
     client_id: string;
-    client: { id: string; display_name: string; customer_type: string } | null;
+    client: {
+      id: string;
+      display_name: string;
+      customer_type: string;
+      export_target: string;
+    } | null;
   } | null;
 };
 
@@ -139,7 +144,7 @@ export async function runMonthlyInvoices(
     .select(
       `id, starts_at, ends_at, org_id,
        property:properties ( client_id,
-                             client:clients ( id, display_name, customer_type ) )`,
+                             client:clients ( id, display_name, customer_type, export_target ) )`,
     )
     .eq("status", "completed")
     .gte("starts_at", monthStart.toISOString())
@@ -174,6 +179,11 @@ export async function runMonthlyInvoices(
     if (!clientId || !c) continue;
     // Alltagshilfe clients are billed manually — never auto-sync to Lexware.
     if (c.customer_type === "alltagshilfe") continue;
+    // This pipeline always pushes straight to Lexware (see step 4b below) —
+    // clients left on "internal" billing must never be auto-invoiced here,
+    // or the export_target toggle would be meaningless. They're billed via
+    // the manual shift-approval → /invoices/new flow instead.
+    if (c.export_target !== "lexware") continue;
     const hrs = Math.max(
       0,
       (new Date(s.ends_at).getTime() - new Date(s.starts_at).getTime()) /
@@ -298,7 +308,7 @@ export async function runMonthlyInvoices(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: clientRow } = await ((supabase.from("clients") as any))
         .select(
-          "id, display_name, contact_name, email, phone, tax_id, customer_type, lexware_contact_id",
+          "id, display_name, contact_name, email, phone, tax_id, customer_type, address_line1, city, postal_code, country, lexware_contact_id",
         )
         .eq("id", bucket.clientId)
         .maybeSingle();
@@ -310,6 +320,10 @@ export async function runMonthlyInvoices(
         phone: string | null;
         tax_id: string | null;
         customer_type: "residential" | "commercial" | "alltagshilfe";
+        address_line1: string | null;
+        city: string | null;
+        postal_code: string | null;
+        country: string | null;
         lexware_contact_id: string | null;
       };
       const client = clientRow as ClientRow | null;
@@ -330,6 +344,10 @@ export async function runMonthlyInvoices(
                 phone: client.phone,
                 tax_id: client.tax_id,
                 customer_type: client.customer_type,
+                address_line1: client.address_line1,
+                city: client.city,
+                postal_code: client.postal_code,
+                country: client.country,
                 lexware_contact_id: client.lexware_contact_id,
               }
             : undefined,

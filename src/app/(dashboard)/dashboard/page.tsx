@@ -18,29 +18,50 @@ export const metadata: Metadata = { title: "Übersicht" };
 export const dynamic = "force-dynamic";
 
 /**
- * Dashboard — pixel-faithful conversion of 02-dashboard.html, wired to live
- * Supabase data via the loader in src/lib/api/dashboard.ts. Server-rendered
- * to keep the initial paint fast; everything inside is plain RSC except the
- * QuickActions links.
+ * Dashboard — server-rendered from live Supabase data.
+ *
+ * Access model: the org-wide overview (client / property / invoice KPIs,
+ * team utilization, cross-employee activity feed) is management-only.
+ * Field staff (`employee` role) see a personal-scope dashboard: their
+ * own hours / vacation / training + their own upcoming shifts. Nothing
+ * else, because "how many active clients" and "how much is unpaid"
+ * are business KPIs they don't need — and "team utilization" leaks
+ * colleagues' hours, which is PII.
+ *
+ * `time.read_all` is the natural gate — it already means "can see
+ * cross-employee data" (used by time-tracking + report screens), so
+ * reusing it here keeps the RBAC surface small.
  */
 export default async function DashboardPage() {
-  // Two parallel loads:
-  //   - org-level dashboard data (KPIs, today's shifts, charts)
-  //   - the caller's own self-service data (only present when their
-  //     auth profile has a linked employees row).
-  const [data, mySelf, canReadInvoices, canCreateClient] = await Promise.all([
-    loadDashboardData(),
-    loadMySelf(),
-    can("invoice.read"),
-    can("client.create"),
-  ]);
+  const [mySelf, canSeeOrgOverview, canReadInvoices, canCreateClient] =
+    await Promise.all([
+      loadMySelf(),
+      can("time.read_all"),
+      can("invoice.read"),
+      can("client.create"),
+    ]);
+
+  // Only pay for the org-wide loader when the caller can actually see
+  // its contents. Field staff skip the query entirely — cheaper AND
+  // means a compromised employee session can never surface org KPIs
+  // by tampering with the client bundle.
+  const data = canSeeOrgOverview ? await loadDashboardData() : null;
   const [invoiceSummary, aging] = canReadInvoices
     ? await Promise.all([loadInvoicesSummary(), loadAgingReport()])
     : [null, null];
 
+  // Personal-scope name for the greeting: prefer the caller's own
+  // profile name, fall back to the org loader when available, then to
+  // a neutral placeholder.
+  const greetingName =
+    mySelf?.full_name ?? data?.greetingName ?? "";
+
   return (
     <>
-      <PageHead greetingName={data.greetingName} canCreateClient={canCreateClient} />
+      <PageHead
+        greetingName={greetingName}
+        canCreateClient={canCreateClient}
+      />
 
       {mySelf && (
         <div className="mb-6">
@@ -48,33 +69,39 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <KpiGrid kpis={data.kpis} />
+      {/* Everything below is org-scope. Field staff never sees it. */}
+      {canSeeOrgOverview && data && (
+        <>
+          <KpiGrid kpis={data.kpis} />
 
-      {/* Main grid: chart (2/3) + today's shifts (1/3) on desktop, stacked
-          below 1024px to match the prototype's media query. */}
-      <div className="mb-6 grid grid-cols-1 gap-5 xl:grid-cols-[2fr_1fr]">
-        <WeeklyChart data={data.chart} />
-        <TodayShifts
-          shifts={data.todayShifts}
-          pendingCount={data.kpis.todayShifts.pendingCheckins}
-        />
-      </div>
+          {/* Main grid: chart (2/3) + today's shifts (1/3) on desktop,
+              stacked below 1024px to match the prototype's media
+              query. */}
+          <div className="mb-6 grid grid-cols-1 gap-5 xl:grid-cols-[2fr_1fr]">
+            <WeeklyChart data={data.chart} />
+            <TodayShifts
+              shifts={data.todayShifts}
+              pendingCount={data.kpis.todayShifts.pendingCheckins}
+            />
+          </div>
 
-      {invoiceSummary && aging && (
-        <div className="mb-6">
-          <InvoiceKpiPanel summary={invoiceSummary} aging={aging.totals} />
-        </div>
+          {invoiceSummary && aging && (
+            <div className="mb-6">
+              <InvoiceKpiPanel summary={invoiceSummary} aging={aging.totals} />
+            </div>
+          )}
+
+          {/* Secondary grid: activity feed + (team utilization stacked
+              over quick actions). */}
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <RecentActivity items={data.activities} />
+            <div className="flex flex-col gap-5">
+              <TeamUtilization team={data.teamLoad} />
+              <QuickActions />
+            </div>
+          </div>
+        </>
       )}
-
-      {/* Secondary grid: activity feed + (team utilization stacked over
-          quick actions). */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <RecentActivity items={data.activities} />
-        <div className="flex flex-col gap-5">
-          <TeamUtilization team={data.teamLoad} />
-          <QuickActions />
-        </div>
-      </div>
     </>
   );
 }

@@ -1,4 +1,5 @@
 import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   startOfWeek,
   endOfWeek,
@@ -255,6 +256,9 @@ async function countEmployeesPendingOnboarding(
  * ========================================================================== */
 export async function loadEmployeesList(
   params: EmployeesListParams = {},
+  // Service-role path only (v1 API — no session cookie to derive an org
+  // from). RLS scopes the default session-client path already.
+  opts?: { supabase?: SupabaseClient; orgId?: string },
 ): Promise<EmployeesListResult> {
   const {
     q = "",
@@ -266,7 +270,8 @@ export async function loadEmployeesList(
     direction = "asc",
     ids,
   } = params;
-  const supabase = await createSupabaseServerClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = (opts?.supabase ?? (await createSupabaseServerClient())) as any;
 
   // Canonical query order (mirrors loadClientsList):
   //   1. base select with count: "exact" + soft-delete guard
@@ -292,6 +297,7 @@ export async function loadEmployeesList(
       { count: "exact" },
     )
     .is("deleted_at", null);
+  if (opts?.orgId) query = query.eq("org_id", opts.orgId);
 
   if (q) {
     // sanitizeQ defends against PostgREST `.or()` filter injection — see
@@ -507,17 +513,23 @@ async function computeOutstandingMandatoryByEmployee(
 /* ============================================================================
  * Detail
  * ========================================================================== */
-export async function loadEmployeeDetail(id: string): Promise<EmployeeDetail | null> {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+export async function loadEmployeeDetail(
+  id: string,
+  // Service-role path only (v1 API) — see loadEmployeesList above.
+  opts?: { supabase?: SupabaseClient; orgId?: string },
+): Promise<EmployeeDetail | null> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = (opts?.supabase ?? (await createSupabaseServerClient())) as any;
+  let detailQuery = supabase
     .from("employees")
     .select(
       `id, full_name, email, phone, hire_date, status, weekly_hours, hourly_rate_eur,
        profile:profiles ( id, role )`,
     )
     .eq("id", id)
-    .is("deleted_at", null)
-    .maybeSingle();
+    .is("deleted_at", null);
+  if (opts?.orgId) detailQuery = detailQuery.eq("org_id", opts.orgId);
+  const { data } = await detailQuery.maybeSingle();
   type Row = {
     id: string;
     full_name: string;

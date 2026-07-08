@@ -1,6 +1,7 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentRole } from "@/lib/rbac/permissions";
+import type { LeaveKind } from "@/lib/validators/vacation";
 
 export type VacationStatus =
   | "pending"
@@ -13,6 +14,7 @@ export type VacationRequest = {
   id: string;
   employee_id: string;
   employee_name: string;
+  kind: LeaveKind;
   start_date: string;
   end_date: string;
   days: number;
@@ -62,7 +64,7 @@ export async function loadVacation(): Promise<VacationData> {
   let query = supabase
     .from("vacation_requests")
     .select(
-      `id, employee_id, start_date, end_date, days, reason, status,
+      `id, employee_id, kind, start_date, end_date, days, reason, status,
        reviewed_by, reviewed_at, reviewer_note,
        suggested_start, suggested_end,
        created_at,
@@ -79,6 +81,7 @@ export async function loadVacation(): Promise<VacationData> {
   type Row = {
     id: string;
     employee_id: string;
+    kind: LeaveKind;
     start_date: string;
     end_date: string;
     days: number;
@@ -98,6 +101,7 @@ export async function loadVacation(): Promise<VacationData> {
     id: r.id,
     employee_id: r.employee_id,
     employee_name: r.employee?.full_name ?? "—",
+    kind: r.kind,
     start_date: r.start_date,
     end_date: r.end_date,
     days: Number(r.days),
@@ -111,7 +115,9 @@ export async function loadVacation(): Promise<VacationData> {
     created_at: r.created_at,
   }));
 
-  // My balance: sum approved days for this calendar year.
+  // My balance: sum approved *vacation* days for this calendar year — sick
+  // days are tracked separately and must not eat into the annual vacation
+  // allowance.
   const yearStart = new Date(new Date().getFullYear(), 0, 1)
     .toISOString()
     .slice(0, 10);
@@ -122,6 +128,7 @@ export async function loadVacation(): Promise<VacationData> {
       .select("days")
       .eq("employee_id", myEmployeeId)
       .eq("status", "approved")
+      .eq("kind", "vacation")
       .gte("start_date", yearStart);
     used = ((balRows ?? []) as Array<{ days: number }>).reduce(
       (s, r) => s + Number(r.days),

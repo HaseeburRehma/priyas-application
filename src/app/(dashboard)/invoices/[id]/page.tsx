@@ -19,10 +19,11 @@ export default async function Page({
   if (!(await can("invoice.read"))) redirect(routes.dashboard);
   const detail = await loadInvoiceDetail(id);
   if (!detail) notFound();
-  const [canSend, canMarkPaid, canLexware] = await Promise.all([
+  const [canSend, canMarkPaid, canLexware, canEdit] = await Promise.all([
     can("invoice.send"),
     can("invoice.mark_paid"),
     can("invoice.lexware_sync"),
+    can("invoice.update"),
   ]);
   return (
     <InvoiceDetail
@@ -30,6 +31,7 @@ export default async function Page({
       canSend={canSend}
       canMarkPaid={canMarkPaid}
       canLexware={canLexware}
+      canEdit={canEdit}
     />
   );
 }

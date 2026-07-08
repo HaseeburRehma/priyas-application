@@ -29,6 +29,10 @@ export type AdapterInvoice = {
     phone: string | null;
     tax_id: string | null;
     customer_type: "residential" | "commercial" | "alltagshilfe";
+    address_line1: string | null;
+    city: string | null;
+    postal_code: string | null;
+    country: string | null;
     lexware_contact_id?: string | null;
   };
   items?: Array<{
@@ -73,6 +77,20 @@ class RealLexwareClient implements LexwareClient {
     let contactId: string | undefined = invoice.client?.lexware_contact_id ?? undefined;
 
     if (invoice.client) {
+      // Fail fast with an actionable message instead of Lexware's opaque
+      // "0 addresses were found" 406 — confirmed live that a contact with
+      // no billing address can't be invoiced at all.
+      const c = invoice.client;
+      if (!c.address_line1 || !c.city || !c.postal_code) {
+        throw new Error(
+          `Kunde "${c.display_name}" hat keine vollständige Rechnungsadresse hinterlegt (Straße/PLZ/Ort erforderlich für Lexware).`,
+        );
+      }
+      if (!c.email) {
+        throw new Error(
+          `Kunde "${c.display_name}" hat keine E-Mail-Adresse hinterlegt (erforderlich für Lexware).`,
+        );
+      }
       const contact = await lexwareUpsertContact(cfg, {
         display_name: invoice.client.display_name,
         contact_name: invoice.client.contact_name,
@@ -80,6 +98,10 @@ class RealLexwareClient implements LexwareClient {
         phone: invoice.client.phone,
         tax_id: invoice.client.tax_id,
         customer_type: invoice.client.customer_type,
+        address_line1: invoice.client.address_line1,
+        city: invoice.client.city,
+        postal_code: invoice.client.postal_code,
+        country: invoice.client.country,
         existing_id: contactId ?? null,
       });
       contactId = contact.id;
@@ -90,7 +112,7 @@ class RealLexwareClient implements LexwareClient {
     // 2) Build line items.
     const items: LexwareInvoiceLineItem[] = invoice.items?.length
       ? invoice.items.map((it) => ({
-          type: "service" as const,
+          type: "custom" as const,
           name: it.description,
           quantity: it.quantity,
           unitName: "Std.",
@@ -102,7 +124,7 @@ class RealLexwareClient implements LexwareClient {
         }))
       : [
           {
-            type: "service" as const,
+            type: "custom" as const,
             name: invoice.notes ?? "Reinigungsdienstleistung",
             quantity: 1,
             unitName: "Pausch.",

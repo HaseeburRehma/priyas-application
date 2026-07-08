@@ -85,6 +85,14 @@ export function v1ErrorResponse(
  *   const ctx = await v1Guard(request, "read:clients");
  *   if (ctx instanceof NextResponse) return ctx;
  *   // ctx is V1AuthContext here.
+ *
+ * IMPORTANT — every handler MUST then call its loader with
+ * `{ supabase: getServiceClient(), orgId: ctx.orgId }` as the `opts`
+ * argument. A v1 request carries no session cookie, so the loaders'
+ * *default* path (`createSupabaseServerClient()`, relying on RLS via
+ * `auth.uid()`) resolves to no org at all — passing the service-role
+ * client without also passing `orgId` would mean the query runs with
+ * RLS bypassed and NO org filter, returning every tenant's data.
  */
 export async function v1Guard(
   request: Request,

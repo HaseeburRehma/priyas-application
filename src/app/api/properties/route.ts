@@ -34,8 +34,11 @@ export async function GET(request: NextRequest) {
   const q = url.searchParams.get("q") ?? "";
   const kindRaw = url.searchParams.get("kind") ?? "all";
   const statusRaw = url.searchParams.get("status") ?? "all";
-  const page = Number(url.searchParams.get("page") ?? "1");
-  const pageSize = Number(url.searchParams.get("pageSize") ?? "25");
+  const page = Math.max(1, Number(url.searchParams.get("page") ?? "1") || 1);
+  const pageSize = Math.min(
+    200,
+    Math.max(1, Number(url.searchParams.get("pageSize") ?? "25") || 25),
+  );
   const sortRaw = url.searchParams.get("sort") ?? "name";
   const sort: PropertiesSortField = VALID_SORTS.includes(
     sortRaw as PropertiesSortField,

@@ -29,7 +29,17 @@ export function hashApiKey(rawKey: string): string {
  * RLS is therefore bypassed — the auth helper itself enforces revoke /
  * expiry checks before returning a context.
  */
-function getServiceClient(): SupabaseClient | null {
+/**
+ * Exported so v1 route handlers can reuse the same service-role client
+ * for their actual data query — see `v1Guard`'s doc comment in
+ * `v1-respond.ts` for why every v1 loader call MUST pass this plus the
+ * resolved `orgId` explicitly. Without it, loaders default to the
+ * cookie-session client, which has no relationship to the API key at
+ * all: with no session cookie the RLS-scoped query returns nothing,
+ * and with one present it silently returns *that browser session's*
+ * org instead of the API key's org.
+ */
+export function getServiceClient(): SupabaseClient | null {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceKey) return null;
   return createClient(env.NEXT_PUBLIC_SUPABASE_URL, serviceKey, {

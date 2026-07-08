@@ -198,6 +198,7 @@ export function VacationPage({ data }: Props) {
             <thead>
               <tr>
                 <Th>{tTable("employee")}</Th>
+                <Th>{tTable("kind")}</Th>
                 <Th>{tTable("period")}</Th>
                 <Th align="right">{tTable("days")}</Th>
                 <Th>{tTable("reason")}</Th>
@@ -209,7 +210,7 @@ export function VacationPage({ data }: Props) {
               {filtered.length === 0 && (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-5 py-12 text-center text-[13px] text-neutral-500"
                   >
                     {tTable("empty")}
@@ -223,6 +224,18 @@ export function VacationPage({ data }: Props) {
                 >
                   <td className="px-5 py-3 align-middle text-[13px] font-semibold text-neutral-800">
                     {r.employee_name}
+                  </td>
+                  <td className="px-5 py-3 align-middle">
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase",
+                        r.kind === "sick"
+                          ? "bg-error-50 text-error-700"
+                          : "bg-primary-50 text-primary-700",
+                      )}
+                    >
+                      {r.kind === "sick" ? tTable("kindSick") : tTable("kindVacation")}
+                    </span>
                   </td>
                   <td className="px-5 py-3 align-middle font-mono text-[12px] text-neutral-700">
                     {f.date(r.start_date)}
@@ -532,6 +545,7 @@ function RequestForm({
   const [pending, start] = useTransition();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
+    kind: "vacation" as "vacation" | "sick",
     start: "",
     end: "",
     reason: "",
@@ -543,6 +557,7 @@ function RequestForm({
     start(async () => {
       const r = await createVacationRequestAction({
         employee_id: employeeId,
+        kind: form.kind,
         start_date: form.start,
         end_date: form.end,
         reason: form.reason,
@@ -591,6 +606,27 @@ function RequestForm({
         </header>
         <form onSubmit={submit} className="overflow-y-auto" noValidate>
           <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2">
+            <Field label={t("kind")} className="md:col-span-2">
+              <div className="flex gap-2">
+                {(["vacation", "sick"] as const).map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, kind: k }))}
+                    className={cn(
+                      "flex-1 rounded-md border px-3 py-2 text-[13px] font-medium transition",
+                      form.kind === k
+                        ? k === "sick"
+                          ? "border-error-500 bg-error-50 text-error-700"
+                          : "border-primary-500 bg-primary-50 text-primary-700"
+                        : "border-neutral-200 text-neutral-600 hover:bg-neutral-50",
+                    )}
+                  >
+                    {k === "sick" ? t("kindSick") : t("kindVacation")}
+                  </button>
+                ))}
+              </div>
+            </Field>
             <Field label={t("startDate")} required error={errors.start_date}>
               <input
                 type="date"

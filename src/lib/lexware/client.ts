@@ -6,10 +6,24 @@ export type LexwareConfig = {
 };
 
 export function getLexwareConfig(): LexwareConfig | null {
-  const baseUrl = process.env.LEXWARE_BASE_URL?.trim();
-  const apiKey = process.env.LEXWARE_API_KEY?.trim();
+  // Accept both the canonical names (LEXWARE_BASE_URL / LEXWARE_API_KEY)
+  // and the more verbose names used in some deployment manifests
+  // (LEXWARE_API_BASE_URL / LEXWARE_API_TOKEN). Picking the first one
+  // that's set lets either naming convention work without changing
+  // .env.local files in the wild.
+  const baseUrl =
+    process.env.LEXWARE_BASE_URL?.trim() ||
+    process.env.LEXWARE_API_BASE_URL?.trim();
+  const apiKey =
+    process.env.LEXWARE_API_KEY?.trim() ||
+    process.env.LEXWARE_API_TOKEN?.trim();
   if (!baseUrl || !apiKey) return null;
-  return { baseUrl: baseUrl.replace(/\/$/, ""), apiKey };
+  // Every path below already includes its own "/v1/..." prefix, so a
+  // base URL that also ends in "/v1" (an easy misconfiguration — the two
+  // canonical env names don't make this obvious) would double up into
+  // "/v1/v1/..." and 404 against the real API.
+  const trimmed = baseUrl.replace(/\/$/, "").replace(/\/v1$/i, "");
+  return { baseUrl: trimmed, apiKey };
 }
 
 export class LexwareError extends Error {
@@ -91,6 +105,7 @@ export type LexwareContact = {
   person?: { firstName?: string; lastName: string };
   emailAddresses?: { business?: string[] };
   phoneNumbers?: { business?: string[] };
+  addresses?: { billing?: Array<{ street?: string; zip?: string; city?: string; countryCode: string }> };
 };
 
 /**
@@ -154,6 +169,10 @@ export async function lexwareUpsertContact(
     phone: string | null;
     tax_id: string | null;
     customer_type: "residential" | "commercial" | "alltagshilfe";
+    address_line1: string | null;
+    city: string | null;
+    postal_code: string | null;
+    country: string | null;
     existing_id?: string | null;
   },
 ): Promise<LexwareContact> {
@@ -185,6 +204,24 @@ export async function lexwareUpsertContact(
       : {}),
     ...(client.phone
       ? { phoneNumbers: { business: [client.phone] } }
+      : {}),
+    // Lexware refuses to attach an invoice to a contact with zero billing
+    // addresses, so we forward whatever postal address the client record
+    // has. Country defaults to Germany since this business only operates
+    // domestically.
+    ...(client.address_line1 || client.city || client.postal_code
+      ? {
+          addresses: {
+            billing: [
+              {
+                ...(client.address_line1 ? { street: client.address_line1 } : {}),
+                ...(client.postal_code ? { zip: client.postal_code } : {}),
+                ...(client.city ? { city: client.city } : {}),
+                countryCode: client.country ?? "DE",
+              },
+            ],
+          },
+        }
       : {}),
   });
 
@@ -241,7 +278,10 @@ export type LexwareInvoice = {
 };
 
 export type LexwareInvoiceLineItem = {
-  type: "service";
+  // "service"/"material" line items must reference a real Lexware catalog
+  // article (POST rejects them with "referenced entity does not exist"
+  // otherwise); "custom" is the free-text line type our ad-hoc invoices need.
+  type: "custom";
   name: string;
   quantity: number;
   unitName: string;
@@ -249,10 +289,12 @@ export type LexwareInvoiceLineItem = {
 };
 
 /**
- * POST /v1/invoices
+ * POST /v1/invoices?finalize=true
  *
- * Creates a finalized invoice in Lexware (not a draft — omitting `?draft=true`
- * causes Lexware to immediately assign an invoice number and lock the record).
+ * Creates a finalized (voucherStatus "open") invoice in Lexware. Without
+ * `finalize=true` the voucher is created as an editable draft — it still
+ * gets a voucherNumber, but it won't appear in Lexware's normal invoice
+ * list/exports and could still be edited or discarded from their side.
  * Returns the created invoice including Lexware's own `voucherNumber`.
  */
 export async function lexwareCreateInvoice(
@@ -266,13 +308,20 @@ export async function lexwareCreateInvoice(
     notes: string | null;
   },
 ): Promise<LexwareInvoice> {
+  // Lexware rejects a bare "YYYY-MM-DD" with "cannot be parsed" — it wants
+  // a full ISO-8601 instant for both voucherDate and shippingDate.
+  const voucherDate = `${args.issueDate}T00:00:00.000Z`;
   const body = {
     archived: false,
-    voucherDate: args.issueDate,
+    voucherDate,
     address: { contactId: args.contactId },
     lineItems: args.items,
     totalPrice: { currency: "EUR" },
     taxConditions: { taxType: "net" },
+    // Required — Lexware rejects invoices with "shipping conditions must
+    // not be null" otherwise. We bill after the fact for a completed
+    // period, so the shipping date is just the voucher date.
+    shippingConditions: { shippingDate: voucherDate, shippingType: "service" },
     // Only include paymentConditions when a due date was supplied.
     ...(args.dueDate
       ? {
@@ -286,7 +335,7 @@ export async function lexwareCreateInvoice(
     // Embed our internal invoice number so the bookkeeper can cross-reference.
     remark: `Interne Nr.: ${args.invoiceNumber}`,
   };
-  return request<LexwareInvoice>(cfg, `/v1/invoices`, {
+  return request<LexwareInvoice>(cfg, `/v1/invoices?finalize=true`, {
     method: "POST",
     body: JSON.stringify(body),
   });

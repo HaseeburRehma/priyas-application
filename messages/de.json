@@ -282,6 +282,9 @@
       "email": "E-Mail",
       "phone": "Telefon",
       "taxId": "Steuernummer",
+      "exportTarget": "Rechnungsstellung",
+      "exportTargetInternal": "Intern",
+      "exportTargetLexware": "Lexware",
       "notes": "Interne Notizen",
       "insuranceProvider": "Pflegekasse",
       "insuranceNumber": "Versicherungsnummer",
@@ -310,6 +313,7 @@
         "billingAddressPlaceholder": "Leer lassen, wenn identisch mit Adresse oben",
         "plz": "PLZ",
         "city": "Stadt",
+        "country": "Land",
         "phoneHint": "Wird für Rechnungen und Terminbestätigungen genutzt",
         "dateOfBirth": "Geburtsdatum",
         "insuranceProvider": "Krankenkasse",
@@ -508,6 +512,7 @@
       "breadcrumbDashboard": "Übersicht",
       "breadcrumbClients": "Kunden",
       "newBadge": "Neuer Kunde",
+      "alltagshilfeBadge": "Alltagshilfe",
       "clientSince": "Kunde seit {date}",
       "statProperties": "OBJEKTE",
       "statContacts": "CONTACTS",
@@ -694,6 +699,7 @@
       "breadcrumbDashboard": "Übersicht",
       "breadcrumbProperties": "Properties",
       "newBadge": "NEU",
+      "alltagshilfeBadge": "Alltagshilfe",
       "openMessage": "Nachricht",
       "openSchedule": "Einsatzplan",
       "edit": "Bearbeiten",
@@ -961,7 +967,10 @@
       "running": "Läuft",
       "prevMonth": "Vorheriger Monat",
       "nextMonth": "Nächster Monat",
-      "teamEmpty": "In dieser Woche sind keine Schichten besetzt."
+      "teamEmpty": "In dieser Woche sind keine Schichten besetzt.",
+      "staffRoster": "Mitarbeiter",
+      "staffRosterHint": "Auf einen Zeitslot ziehen, um eine Schicht zu planen.",
+      "staffRosterEmpty": "Keine aktiven Mitarbeiter."
     },
     "panel": {
       "scheduledTag": "Geplant",
@@ -985,6 +994,7 @@
       "subtitle": "Objekt, Mitarbeiter und Zeitraum festlegen.",
       "property": "Objekt",
       "propertyPlaceholder": "Objekt auswählen…",
+      "pickPropertyForEmployee": "Wählen Sie ein Objekt, für das {name} qualifiziert ist.",
       "employee": "Mitarbeiter",
       "employeePlaceholder": "Mitarbeiter auswählen…",
       "noEmployee": "— Kein Mitarbeiter (offen) —",
@@ -1400,6 +1410,32 @@
       "retention": "Exporte werden 24 Monate aufbewahrt."
     }
   },
+  "shiftBilling": {
+    "breadcrumbDashboard": "Übersicht",
+    "breadcrumbSchedule": "Schichtplan",
+    "breadcrumbCurrent": "Freigabe für Abrechnung",
+    "title": "Freigabe für Abrechnung",
+    "subtitle": "Abgeschlossene Schichten, die noch auf Freigabe für die Rechnungsstellung warten.",
+    "toInvoice": "Zu „Neue Rechnung“ →",
+    "empty": "Keine Schichten zur Freigabe. Abgeschlossene Schichten erscheinen hier automatisch.",
+    "colProperty": "Objekt",
+    "colEmployee": "Mitarbeiter",
+    "colDate": "Datum",
+    "colScheduled": "Geplant",
+    "colActual": "Erfasst",
+    "colBillable": "Abrechenbar (Std.)",
+    "colAction": "Aktion",
+    "noCheckIn": "kein Check-in",
+    "hoursSuffix": "Std.",
+    "reasonPlaceholder": "Grund…",
+    "reject": "Ablehnen",
+    "approve": "Freigeben",
+    "confirmReject": "Bestätigen",
+    "cancelReject": "Abbrechen",
+    "reasonRequired": "Bitte einen Grund angeben.",
+    "approveSuccess": "Freigegeben ({hours} Std.)",
+    "rejectSuccess": "Schicht abgelehnt."
+  },
   "invoices": {
     "breadcrumbDashboard": "Übersicht",
     "breadcrumbFinance": "Finanzen",
@@ -1410,10 +1446,16 @@
       "import": "Import",
       "export": "Export",
       "new": "Neue Rechnung",
+      "billingApproval": "Freigabe für Abrechnung",
+      "billingApprovalTitle": "Schichten für die Abrechnung freigeben, bevor eine Rechnung erstellt wird",
       "importComingSoon": "Import per CSV kommt in Kürze.",
       "newComingSoon": "Manuelles Erstellen folgt — Rechnungen werden aus Schichten generiert.",
       "syncLexware": "Lexware-Sync",
-      "syncLexwareTitle": "Alle ausstehenden Rechnungen mit Lexware synchronisieren"
+      "syncLexwareTitle": "Alle ausstehenden Rechnungen mit Lexware synchronisieren",
+      "syncLexwarePending": "Synchronisiere…",
+      "syncLexwareDone": "{pushed} an Lexware übertragen.",
+      "syncLexwareMixed": "{pushed} übertragen · {failed} fehlgeschlagen.",
+      "syncLexwareNoCandidates": "Im Moment nichts zu synchronisieren."
     },
     "summary": {
       "total": "Gesamt",
@@ -1506,7 +1548,8 @@
         "overdueBody": "Diese Rechnung ist seit <b>{days, plural, =1 {einem Tag} other {# Tagen}} überfällig</b>. Bitte erste Mahnung versenden, falls noch nicht geschehen.",
         "partialTitle": "Teilzahlung eingegangen",
         "partialBody": "<b>{amount}</b> sind noch offen. Diese Rechnung ist nicht vollständig bezahlt."
-      }
+      },
+      "actionEdit": "Rechnung bearbeiten"
     },
     "draftEditor": {
       "alltagshilfeNote": "Alltagshilfe (steuerfrei § 4 Nr. 16 UStG)",
@@ -2056,6 +2099,9 @@
     },
     "table": {
       "employee": "Mitarbeiter",
+      "kind": "Art",
+      "kindVacation": "Urlaub",
+      "kindSick": "Krank",
       "period": "Zeitraum",
       "days": "Tage",
       "reason": "Grund",
@@ -2085,8 +2131,11 @@
     "suggestionDeclined": "Vorschlag abgelehnt.",
     "suggestedPeriod": "Vorgeschlagener Zeitraum",
     "form": {
-      "title": "Urlaub beantragen",
+      "title": "Abwesenheit beantragen",
       "subtitle": "Zeitraum und Grund angeben.",
+      "kind": "Art",
+      "kindVacation": "Urlaub",
+      "kindSick": "Krankmeldung",
       "startDate": "Beginn",
       "endDate": "Ende",
       "reason": "Grund (optional)",

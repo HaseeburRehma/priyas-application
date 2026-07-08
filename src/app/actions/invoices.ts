@@ -116,9 +116,10 @@ export async function lexwareSyncAction(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: invRow } = await ((supabase.from("invoices") as any))
     .select(
-      `invoice_number, total_cents, pdf_path, issue_date, due_date, notes,
+      `invoice_number, total_cents, pdf_path, issue_date, due_date, notes, lexware_attempts,
        client:clients (
-         id, display_name, contact_name, email, phone, tax_id, customer_type, lexware_contact_id
+         id, display_name, contact_name, email, phone, tax_id, customer_type,
+         address_line1, city, postal_code, country, lexware_contact_id
        ),
        items:invoice_items ( description, quantity, unit_price_cents )`,
     )
@@ -131,6 +132,7 @@ export async function lexwareSyncAction(
     issue_date: string;
     due_date: string | null;
     notes: string | null;
+    lexware_attempts: number;
     client: {
       id: string;
       display_name: string;
@@ -139,6 +141,10 @@ export async function lexwareSyncAction(
       phone: string | null;
       tax_id: string | null;
       customer_type: "residential" | "commercial" | "alltagshilfe";
+      address_line1: string | null;
+      city: string | null;
+      postal_code: string | null;
+      country: string | null;
       lexware_contact_id: string | null;
     } | null;
     items: Array<{
@@ -178,6 +184,10 @@ export async function lexwareSyncAction(
             phone: inv.client.phone,
             tax_id: inv.client.tax_id,
             customer_type: inv.client.customer_type,
+            address_line1: inv.client.address_line1,
+            city: inv.client.city,
+            postal_code: inv.client.postal_code,
+            country: inv.client.country,
             lexware_contact_id: inv.client.lexware_contact_id,
           }
         : undefined,
@@ -189,9 +199,16 @@ export async function lexwareSyncAction(
       })),
     });
 
+    const nowIso = new Date().toISOString();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await ((supabase.from("invoices") as any))
-      .update({ lexware_id: result.id })
+      .update({
+        lexware_id: result.id,
+        lexware_sync_status: "synced",
+        lexware_last_attempt_at: nowIso,
+        lexware_last_error: null,
+        lexware_attempts: inv.lexware_attempts + 1,
+      })
       .eq("id", id);
     if (result.contactId && inv.client?.id) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -208,6 +225,15 @@ export async function lexwareSyncAction(
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Lexware sync failed";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await ((supabase.from("invoices") as any))
+      .update({
+        lexware_sync_status: "failed",
+        lexware_last_attempt_at: new Date().toISOString(),
+        lexware_last_error: message.slice(0, 500),
+        lexware_attempts: inv.lexware_attempts + 1,
+      })
+      .eq("id", id);
     return { ok: false, error: message };
   }
 }

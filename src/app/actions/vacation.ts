@@ -90,6 +90,7 @@ export async function createVacationRequestAction(
     .insert({
       org_id: orgId,
       employee_id: input.employee_id,
+      kind: input.kind,
       start_date: input.start_date,
       end_date: input.end_date,
       days,
@@ -100,7 +101,13 @@ export async function createVacationRequestAction(
     .single();
   if (error) return { ok: false, error: error.message };
   const newId = (data as { id: string }).id;
-  await audit("create", newId, `Urlaubsantrag eingereicht (${days} Tage).`);
+  await audit(
+    "create",
+    newId,
+    input.kind === "sick"
+      ? `Krankmeldung eingereicht (${days} Tage).`
+      : `Urlaubsantrag eingereicht (${days} Tage).`,
+  );
   revalidatePath(routes.vacation);
   return { ok: true, data: { id: newId } };
 }

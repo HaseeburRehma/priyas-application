@@ -4,9 +4,13 @@ const isoDate = z.string().refine((v) => !Number.isNaN(Date.parse(v)), {
   message: "Ungültiges Datum",
 });
 
+export const leaveKindSchema = z.enum(["vacation", "sick"]);
+export type LeaveKind = z.infer<typeof leaveKindSchema>;
+
 export const createVacationSchema = z
   .object({
     employee_id: z.string().uuid(),
+    kind: leaveKindSchema.default("vacation"),
     start_date: isoDate,
     end_date: isoDate,
     reason: z.string().max(2000).optional().or(z.literal("")),

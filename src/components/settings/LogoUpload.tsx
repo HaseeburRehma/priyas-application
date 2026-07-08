@@ -102,7 +102,7 @@ export function LogoUpload({
       <input
         ref={fileRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/svg+xml"
+        accept="image/jpeg,image/png,image/webp"
         hidden
         onChange={(e) => handleFiles(e.target.files)}
       />

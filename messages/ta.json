@@ -282,6 +282,9 @@
       "email": "மின்னஞ்சல்",
       "phone": "தொலைபேசி",
       "taxId": "வரி எண்",
+      "exportTarget": "பில்லிங்",
+      "exportTargetInternal": "உள்நாட்டு",
+      "exportTargetLexware": "Lexware",
       "notes": "உள் குறிப்புகள்",
       "insuranceProvider": "சுகாதார காப்பீட்டாளர்",
       "insuranceNumber": "காப்பீட்டு எண்",
@@ -310,6 +313,7 @@
         "billingAddressPlaceholder": "Leave blank if identical to the address above",
         "plz": "ZIP",
         "city": "City",
+        "country": "Country",
         "phoneHint": "Used for invoices and appointment confirmations",
         "dateOfBirth": "Date of birth",
         "insuranceProvider": "Health insurance",
@@ -508,6 +512,7 @@
       "breadcrumbDashboard": "மேலோட்டம்",
       "breadcrumbClients": "வாடிக்கையாளர்கள்",
       "newBadge": "புதிய வாடிக்கையாளர்",
+      "alltagshilfeBadge": "Alltagshilfe",
       "clientSince": "{date} முதல் வாடிக்கையாளர்",
       "statProperties": "சொத்துக்கள்",
       "statContacts": "தொடர்புகள்",
@@ -694,6 +699,7 @@
       "breadcrumbDashboard": "மேலோட்டம்",
       "breadcrumbProperties": "சொத்துக்கள்",
       "newBadge": "புதிய",
+      "alltagshilfeBadge": "Alltagshilfe",
       "openMessage": "செய்தி",
       "openSchedule": "அட்டவணை",
       "edit": "திருத்து",
@@ -961,7 +967,10 @@
       "running": "நடைபெறுகிறது",
       "prevMonth": "முந்தைய மாதம்",
       "nextMonth": "அடுத்த மாதம்",
-      "teamEmpty": "இந்த வாரத்தில் ஊழியர் ஒதுக்கப்படவில்லை."
+      "teamEmpty": "இந்த வாரத்தில் ஊழியர் ஒதுக்கப்படவில்லை.",
+      "staffRoster": "Staff",
+      "staffRosterHint": "Drag onto a time slot to plan a shift.",
+      "staffRosterEmpty": "No active staff."
     },
     "panel": {
       "scheduledTag": "திட்டமிடப்பட்டது",
@@ -985,6 +994,7 @@
       "subtitle": "சொத்து, ஊழியர் மற்றும் காலகட்டத்தை அமைக்கவும்.",
       "property": "சொத்து",
       "propertyPlaceholder": "சொத்தைத் தேர்வு செய்…",
+      "pickPropertyForEmployee": "Pick a property {name} is qualified for.",
       "employee": "ஊழியர்",
       "employeePlaceholder": "ஊழியரைத் தேர்வு செய்…",
       "noEmployee": "— ஊழியர் இல்லை (திறந்தது) —",
@@ -1400,6 +1410,32 @@
       "retention": "Exports are kept for 24 months."
     }
   },
+  "shiftBilling": {
+    "breadcrumbDashboard": "மேலோட்டம்",
+    "breadcrumbSchedule": "பணி அட்டவணை",
+    "breadcrumbCurrent": "பில்லிங் ஒப்புதல்",
+    "title": "பில்லிங் ஒப்புதல்",
+    "subtitle": "பில்லிங் ஒப்புதலுக்காக காத்திருக்கும் முடிக்கப்பட்ட ஷிஃப்டுகள்.",
+    "toInvoice": "\"புதிய விலைப்பட்டியல்\" க்கு →",
+    "empty": "ஒப்புதலுக்கு ஷிஃப்டுகள் இல்லை. முடிக்கப்பட்ட ஷிஃப்டுகள் தானாகவே இங்கே தோன்றும்.",
+    "colProperty": "சொத்து",
+    "colEmployee": "பணியாளர்",
+    "colDate": "தேதி",
+    "colScheduled": "திட்டமிடப்பட்டது",
+    "colActual": "உண்மையானது",
+    "colBillable": "பில் செய்யக்கூடியது (மணி)",
+    "colAction": "செயல்",
+    "noCheckIn": "செக்-இன் இல்லை",
+    "hoursSuffix": "மணி",
+    "reasonPlaceholder": "காரணம்…",
+    "reject": "நிராகரி",
+    "approve": "ஒப்புதல்",
+    "confirmReject": "உறுதிப்படுத்து",
+    "cancelReject": "ரத்து செய்",
+    "reasonRequired": "தயவுசெய்து ஒரு காரணத்தை வழங்கவும்.",
+    "approveSuccess": "ஒப்புதல் அளிக்கப்பட்டது ({hours} மணி)",
+    "rejectSuccess": "ஷிஃப்ட் நிராகரிக்கப்பட்டது."
+  },
   "invoices": {
     "breadcrumbDashboard": "மேலோட்டம்",
     "breadcrumbFinance": "நிதி",
@@ -1410,10 +1446,16 @@
       "import": "இறக்குமதி",
       "export": "ஏற்றுமதி",
       "new": "புதிய விலைப்பட்டியல்",
+      "billingApproval": "பில்லிங் ஒப்புதல்",
+      "billingApprovalTitle": "விலைப்பட்டியல் உருவாக்கும் முன் பில்லிங்கிற்கு ஷிஃப்டுகளை ஒப்புதல் அளிக்கவும்",
       "importComingSoon": "CSV இறக்குமதி விரைவில்.",
       "newComingSoon": "கைமுறை உருவாக்கம் விரைவில் — விலைப்பட்டியல்கள் ஷிப்ட்களிலிருந்து உருவாக்கப்படுகின்றன.",
       "syncLexware": "Lexware ஒத்திசை",
-      "syncLexwareTitle": "அனைத்து நிலுவையில் உள்ள விலைப்பட்டியல்களையும் Lexware-உடன் ஒத்திசைக்கவும்"
+      "syncLexwareTitle": "அனைத்து நிலுவையில் உள்ள விலைப்பட்டியல்களையும் Lexware-உடன் ஒத்திசைக்கவும்",
+      "syncLexwarePending": "ஒத்திசைகிறது…",
+      "syncLexwareDone": "Lexware-க்கு {pushed} அனுப்பப்பட்டது.",
+      "syncLexwareMixed": "{pushed} அனுப்பப்பட்டது · {failed} தோல்வி.",
+      "syncLexwareNoCandidates": "தற்போது ஒத்திசைக்க எதுவும் இல்லை."
     },
     "summary": {
       "total": "மொத்தம்",
@@ -1506,7 +1548,8 @@
         "overdueBody": "இந்த விலைப்பட்டியல் <b>{days, plural, =1 {ஒரு நாள்} other {# நாட்கள்}} தாமதமாக உள்ளது</b>. இன்னும் முதல் நினைவூட்டல் அனுப்பவில்லை என்றால் தயவுசெய்து அனுப்பவும்.",
         "partialTitle": "பகுதி கட்டணம் பெறப்பட்டது",
         "partialBody": "<b>{amount}</b> இன்னும் நிலுவையில் உள்ளது. இந்த விலைப்பட்டியல் முழுமையாக செலுத்தப்படவில்லை."
-      }
+      },
+      "actionEdit": "இன்வாய்ஸை திருத்து"
     },
     "draftEditor": {
       "alltagshilfeNote": "அன்றாட உதவி (வரி இல்லாதது § 4 எண் 16 UStG)",
@@ -2056,6 +2099,9 @@
     },
     "table": {
       "employee": "பணியாளர்",
+      "kind": "Type",
+      "kindVacation": "Vacation",
+      "kindSick": "Sick",
       "period": "காலம்",
       "days": "நாட்கள்",
       "reason": "காரணம்",
@@ -2087,6 +2133,9 @@
     "form": {
       "title": "விடுமுறை கோரிக்கை",
       "subtitle": "தேதி வரம்பு மற்றும் காரணம்.",
+      "kind": "Type",
+      "kindVacation": "Vacation",
+      "kindSick": "Sick day",
       "startDate": "தொடக்கம்",
       "endDate": "முடிவு",
       "reason": "காரணம் (விரும்பினால்)",

@@ -28,6 +28,7 @@ export function PropertyDetail({
   const NEW_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
   const isNew =
     Date.now() - new Date(detail.created_at).getTime() < NEW_WINDOW_MS;
+  const isAlltagshilfe = detail.client_type === "alltagshilfe";
 
   return (
     <>
@@ -44,8 +45,14 @@ export function PropertyDetail({
         <span className="truncate text-neutral-700">{detail.name}</span>
       </nav>
 
-      {/* Hero */}
-      <section className="mb-6 rounded-lg border border-neutral-100 bg-white p-5">
+      {/* Hero — left border accent matches the red left-border convention
+          used on Alltagshilfe rows in PropertiesTable/ClientsTable. */}
+      <section
+        className={cn(
+          "mb-6 rounded-lg border border-neutral-100 bg-white p-5",
+          isAlltagshilfe && "border-l-2 border-l-error-400",
+        )}
+      >
         <div className="flex flex-wrap items-start gap-5">
           <span className="grid h-16 w-16 flex-shrink-0 place-items-center rounded-md bg-secondary-50 text-secondary-700">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7">
@@ -58,6 +65,11 @@ export function PropertyDetail({
               <h1 className="truncate text-[24px] font-bold text-secondary-500">
                 {detail.name}
               </h1>
+              {isAlltagshilfe && (
+                <span className="rounded-full bg-error-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.04em] text-error-700">
+                  {t("alltagshilfeBadge")}
+                </span>
+              )}
               {isNew && (
                 <span className="rounded-full bg-primary-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.04em] text-white">
                   {t("newBadge")}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { format } from "date-fns";
@@ -16,6 +16,17 @@ type Props = {
   defaultDate?: string;
   /** Pre-select a property (e.g. when launched from a property detail page). */
   defaultPropertyId?: string;
+  /**
+   * Pre-select an employee — set when the dialog was opened by dragging a
+   * staff member from the roster onto a calendar cell. When set, the
+   * property list is filtered to properties compatible with this
+   * employee's `service_type` instead of auto-picking the first property,
+   * so the drag can't silently pair an Alltagshilfe-only carer with a
+   * Priya's property (or vice versa).
+   */
+  defaultEmployeeId?: string;
+  /** Hour-of-day (0–23) from the dropped calendar cell, seeds start_time. */
+  defaultHour?: number;
 };
 
 /**
@@ -28,23 +39,58 @@ export function PlanShiftDialog({
   onClose,
   defaultDate,
   defaultPropertyId,
+  defaultEmployeeId,
+  defaultHour,
 }: Props) {
   const t = useTranslations("schedule.dialog");
   const router = useRouter();
   const [pending, start] = useTransition();
   const [options, setOptions] = useState<ShiftOptionsResponse | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [form, setForm] = useState(() => {
+
+  /**
+   * Picks the property to pre-select: an explicit default wins, then — as
+   * long as no employee was pre-selected via drag (that path needs an
+   * explicit, service-line-compatible choice, not an arbitrary first
+   * property) — falls back to the first property once options are loaded.
+   */
+  const resolvePropertyId = useCallback(
+    (opts: ShiftOptionsResponse | null): string => {
+      if (defaultPropertyId) return defaultPropertyId;
+      if (defaultEmployeeId || !opts) return "";
+      return opts.properties[0]?.id || "";
+    },
+    [defaultPropertyId, defaultEmployeeId],
+  );
+
+  function buildInitialForm(opts: ShiftOptionsResponse | null) {
     const date = defaultDate ?? format(new Date(), "yyyy-MM-dd");
+    const startHour = defaultHour ?? 9;
     return {
-      property_id: defaultPropertyId ?? "",
-      employee_id: "",
+      property_id: resolvePropertyId(opts),
+      employee_id: defaultEmployeeId ?? "",
       date,
-      start_time: "09:00",
-      end_time: "11:00",
+      start_time: `${String(startHour).padStart(2, "0")}:00`,
+      end_time: `${String(startHour + 2).padStart(2, "0")}:00`,
       notes: "",
     };
-  });
+  }
+  const [form, setForm] = useState(() => buildInitialForm(null));
+
+  // This component never unmounts while the parent keeps it in the tree
+  // (it just renders null when `!open`), so the `useState` initializer
+  // above only runs on first mount — without this effect, a second
+  // drag-drop (or a second "+ Plan shift" click with a different set of
+  // defaults) would keep showing the *first* open's prefilled
+  // employee/date/time/property instead of the new one. Re-seed on every
+  // closed→open transition instead, using `options` if already cached
+  // from a previous open (the fetch effect below only runs once).
+  useEffect(() => {
+    if (!open) return;
+    setForm(buildInitialForm(options));
+    setErrors({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, defaultDate, defaultPropertyId, defaultEmployeeId, defaultHour]);
 
   // Lock background scroll while open + handle Esc to close.
   useEffect(() => {
@@ -61,7 +107,7 @@ export function PlanShiftDialog({
     };
   }, [open, onClose]);
 
-  // Fetch options once when first opened.
+  // Fetch options once when first opened (cached across later opens).
   useEffect(() => {
     if (!open || options) return;
     let cancelled = false;
@@ -72,8 +118,7 @@ export function PlanShiftDialog({
         setOptions(data);
         setForm((f) => ({
           ...f,
-          property_id:
-            f.property_id || defaultPropertyId || data.properties[0]?.id || "",
+          property_id: f.property_id || resolvePropertyId(data),
         }));
       })
       .catch(() => {
@@ -82,7 +127,7 @@ export function PlanShiftDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, options, t, defaultPropertyId]);
+  }, [open, options, t, resolvePropertyId]);
 
   if (!open) return null;
 
@@ -179,14 +224,43 @@ export function PlanShiftDialog({
               error={errors.property_id}
               className="md:col-span-2"
             >
+              {options && defaultEmployeeId && !form.property_id && (
+                <p className="mb-1.5 text-[11px] text-primary-700">
+                  {t("pickPropertyForEmployee", {
+                    name:
+                      options.employees.find((e) => e.id === defaultEmployeeId)
+                        ?.full_name ?? "",
+                  })}
+                </p>
+              )}
               <select
                 className="input"
                 required
                 value={form.property_id}
                 onChange={(e) => {
-                  update("property_id", e.target.value);
-                  // Clear employee so wrong-service-line selection doesn't persist.
-                  update("employee_id", "");
+                  const newPropertyId = e.target.value;
+                  update("property_id", newPropertyId);
+                  // Only clear the employee if they're not eligible for the
+                  // newly-picked property's service line. Blindly clearing
+                  // here would wipe out an employee pre-selected by dragging
+                  // them onto the grid the moment the user picks a property
+                  // (the very next required step of that same flow).
+                  const newProp = options?.properties.find(
+                    (p) => p.id === newPropertyId,
+                  );
+                  const newClientType =
+                    newProp?.client_customer_type ?? "commercial";
+                  const currentEmp = options?.employees.find(
+                    (emp) => emp.id === form.employee_id,
+                  );
+                  const stillEligible =
+                    currentEmp &&
+                    (newClientType === "alltagshilfe"
+                      ? currentEmp.service_type === "alltagshilfe" ||
+                        currentEmp.service_type === "both"
+                      : currentEmp.service_type === "priya" ||
+                        currentEmp.service_type === "both");
+                  if (!stillEligible) update("employee_id", "");
                 }}
                 disabled={!options}
               >

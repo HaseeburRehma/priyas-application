@@ -25,8 +25,11 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const q = url.searchParams.get("q") ?? "";
   const statusRaw = url.searchParams.get("status") ?? "all";
-  const page = Number(url.searchParams.get("page") ?? "1");
-  const pageSize = Number(url.searchParams.get("pageSize") ?? "25");
+  const page = Math.max(1, Number(url.searchParams.get("page") ?? "1") || 1);
+  const pageSize = Math.min(
+    200,
+    Math.max(1, Number(url.searchParams.get("pageSize") ?? "25") || 25),
+  );
   const sort = (url.searchParams.get("sort") as "issue_date" | "total" | "client") ?? "issue_date";
   const direction = (url.searchParams.get("direction") as "asc" | "desc") ?? "desc";
 

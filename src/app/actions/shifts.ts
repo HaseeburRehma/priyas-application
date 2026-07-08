@@ -79,20 +79,25 @@ async function detectShiftConflicts(
       };
     }
 
-    // 2) Vacation overlap
+    // 2) Vacation / sick-leave overlap — approved leave of either kind
+    // blocks scheduling; the employee simply isn't available either way.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: vacationRows } = await ((supabase.from("vacation_requests") as any))
-      .select("id, start_date, end_date")
+      .select("id, kind, start_date, end_date")
       .eq("employee_id", employee_id)
       .eq("status", "approved")
       .lte("start_date", endDate)
       .gte("end_date", startDate)
       .limit(1);
-    if ((vacationRows ?? []).length > 0) {
+    const leaveRow = (vacationRows ?? [])[0] as { kind?: "vacation" | "sick" } | undefined;
+    if (leaveRow) {
+      const isSick = leaveRow.kind === "sick";
       return {
         ok: false,
-        error: "Mitarbeiter ist in dieser Zeit im Urlaub.",
-        fieldErrors: { employee_id: ["Urlaub"] },
+        error: isSick
+          ? "Mitarbeiter ist in dieser Zeit krankgemeldet."
+          : "Mitarbeiter ist in dieser Zeit im Urlaub.",
+        fieldErrors: { employee_id: [isSick ? "Krankmeldung" : "Urlaub"] },
       };
     }
   }

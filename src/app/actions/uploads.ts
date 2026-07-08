@@ -36,12 +36,11 @@ const LOGO_BUCKET = "org-logos";
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 const LOGO_MAX_BYTES = 2 * 1024 * 1024; // 2 MB
 const AVATAR_MIME_ALLOW = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-const LOGO_MIME_ALLOW = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/svg+xml",
-];
+// SVG intentionally excluded: org-logos is a public bucket, and an SVG
+// can embed <script>/event handlers that execute if the raw object URL
+// is opened directly (not through an <img>/<Image> tag, which neutralizes
+// it) — unnecessary risk for what's realistically always a raster logo.
+const LOGO_MIME_ALLOW = ["image/jpeg", "image/png", "image/webp"];
 
 /**
  * Sluggify a filename for use in a storage path.

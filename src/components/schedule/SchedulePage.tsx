@@ -171,6 +171,20 @@ export function SchedulePage({
     setEmployeeFilter(new Set(allEmployeeIds));
   }, [allEmployeeIds]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  // Set when a staff member from the roster panel is dropped onto a
+  // calendar cell — pre-fills the "Plan shift" dialog with the dragged
+  // employee + the dropped day/hour, so the drop only leaves the property
+  // choice to make. Cleared whenever the dialog closes (success or cancel)
+  // so re-opening via the toolbar "+" button doesn't carry stale state.
+  const [dropPrefill, setDropPrefill] = useState<{
+    date: string;
+    hour: number;
+    employeeId: string;
+  } | null>(null);
+  function handleAssignEmployeeDrop(employeeId: string, isoDay: string, hour: number) {
+    setDropPrefill({ date: isoDay, hour, employeeId });
+    setDialogOpen(true);
+  }
   const router = useRouter();
   const [, dndStart] = useTransition();
 
@@ -336,8 +350,13 @@ export function SchedulePage({
 
       <PlanShiftDialog
         open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        defaultDate={week.days[0] ?? undefined}
+        onClose={() => {
+          setDialogOpen(false);
+          setDropPrefill(null);
+        }}
+        defaultDate={dropPrefill?.date ?? week.days[0] ?? undefined}
+        defaultEmployeeId={dropPrefill?.employeeId}
+        defaultHour={dropPrefill?.hour}
       />
 
       {/* Toolbar — view tabs + range label + service + filters. The
@@ -469,6 +488,7 @@ export function SchedulePage({
         <Sidebar
           anchor={focusDate}
           events={week.events}
+          canAssignStaff={canClient(viewerRole, "shift.create")}
           statusFilter={statusFilter}
           onToggleStatus={(s) =>
             setStatusFilter((prev) => {
@@ -500,6 +520,11 @@ export function SchedulePage({
             selectedId={selected?.id ?? null}
             onSelect={setSelectedId}
             onMove={moveShift}
+            onAssignEmployee={
+              canClient(viewerRole, "shift.create")
+                ? handleAssignEmployeeDrop
+                : undefined
+            }
             locale={locale}
           />
         )}
@@ -510,6 +535,11 @@ export function SchedulePage({
             selectedId={selected?.id ?? null}
             onSelect={setSelectedId}
             onMove={moveShift}
+            onAssignEmployee={
+              canClient(viewerRole, "shift.create")
+                ? handleAssignEmployeeDrop
+                : undefined
+            }
             locale={locale}
           />
         )}
@@ -638,6 +668,7 @@ function ServicePill({
 function Sidebar({
   anchor,
   events,
+  canAssignStaff,
   statusFilter,
   onToggleStatus,
   employeeFilter,
@@ -647,6 +678,8 @@ function Sidebar({
 }: {
   anchor: Date;
   events: ShiftEvent[];
+  /** Gates the draggable staff-roster panel — only shift.create holders get it. */
+  canAssignStaff: boolean;
   statusFilter: Set<ShiftEvent["status"]>;
   onToggleStatus: (s: ShiftEvent["status"]) => void;
   employeeFilter: Set<string>;
@@ -655,6 +688,29 @@ function Sidebar({
   onPickDate: (date: Date | null) => void;
 }) {
   const t = useTranslations("schedule.sidebar");
+
+  // Full active-employee roster for the draggable staff panel — distinct
+  // from `employees` below (which only lists staff already on this week's
+  // schedule). Fetched lazily, same endpoint PlanShiftDialog/ReassignDialog
+  // use, so it stays in sync with the same source of truth.
+  const [roster, setRoster] = useState<ShiftOptionsResponse["employees"] | null>(
+    null,
+  );
+  useEffect(() => {
+    if (!canAssignStaff || roster) return;
+    let cancelled = false;
+    fetch("/api/shifts/options", { cache: "no-store" })
+      .then((r) => r.json() as Promise<ShiftOptionsResponse>)
+      .then((data) => {
+        if (!cancelled) setRoster(data.employees);
+      })
+      .catch(() => {
+        /* Non-critical — the panel just stays empty/loading. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [canAssignStaff, roster]);
 
   // The mini-calendar's visible month is local state — paging it back/forward
   // shouldn't auto-jump the calendar grid. The grid only moves when the user
@@ -835,6 +891,55 @@ function Sidebar({
         )}
       </section>
 
+      {/* Staff roster — draggable source for assigning an employee to a
+          property. Distinct from the "Employee filters" list above (which
+          only shows staff already on this week's schedule): this is the
+          full active roster, since the whole point is to drag someone who
+          *isn't* scheduled yet onto a calendar cell. Dropping opens
+          PlanShiftDialog pre-filled with that employee + the dropped
+          day/hour; the user only has to pick the property. */}
+      {canAssignStaff && (
+        <section className="rounded-lg border border-neutral-100 bg-white p-4">
+          <header className="mb-1 flex items-center justify-between">
+            <h4 className="text-[13px] font-semibold text-neutral-800">
+              {t("staffRoster")}
+            </h4>
+          </header>
+          <p className="mb-3 text-[11px] text-neutral-500">
+            {t("staffRosterHint")}
+          </p>
+          {!roster ? (
+            <div className="rounded-md border border-dashed border-neutral-200 px-3 py-4 text-center text-[11px] text-neutral-500">
+              …
+            </div>
+          ) : roster.length === 0 ? (
+            <div className="rounded-md border border-dashed border-neutral-200 px-3 py-4 text-center text-[11px] text-neutral-500">
+              {t("staffRosterEmpty")}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {roster.map((emp) => (
+                <div
+                  key={emp.id}
+                  draggable
+                  onDragStart={(ev) => {
+                    ev.dataTransfer.setData("text/employee-id", emp.id);
+                    ev.dataTransfer.effectAllowed = "copy";
+                  }}
+                  title={emp.full_name}
+                  className={cn(
+                    "flex cursor-grab items-center gap-2 rounded-md border border-neutral-100 px-2 py-1.5 text-[12px] text-neutral-700 transition active:cursor-grabbing hover:bg-neutral-50",
+                    emp.service_type === "alltagshilfe" && "border-l-2 border-l-error-400",
+                  )}
+                >
+                  <span className="truncate">{emp.full_name}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
       {/* Status filters */}
       <section className="rounded-lg border border-neutral-100 bg-white p-4">
         <header className="mb-3 flex items-center justify-between">
@@ -910,6 +1015,7 @@ function CalendarGrid({
   selectedId,
   onSelect,
   onMove,
+  onAssignEmployee,
   locale,
 }: {
   week: ScheduleWeek;
@@ -917,6 +1023,7 @@ function CalendarGrid({
   selectedId: string | null;
   onSelect: (id: string) => void;
   onMove?: (shiftId: string, isoDay: string, hour: number) => void;
+  onAssignEmployee?: (employeeId: string, isoDay: string, hour: number) => void;
   locale: keyof typeof localeMap;
 }) {
   // Compute "today" only after mount — calling new Date() during render
@@ -1003,10 +1110,15 @@ function CalendarGrid({
                 {vs.map((v) => (
                   <span
                     key={v.id}
-                    title={`${v.employee_name} · vacation`}
-                    className="truncate rounded bg-secondary-50 px-1.5 py-0.5 text-[9px] font-semibold text-secondary-700"
+                    title={`${v.employee_name} · ${v.kind === "sick" ? "sick" : "vacation"}`}
+                    className={cn(
+                      "truncate rounded px-1.5 py-0.5 text-[9px] font-semibold",
+                      v.kind === "sick"
+                        ? "bg-error-50 text-error-700"
+                        : "bg-secondary-50 text-secondary-700",
+                    )}
                   >
-                    🏖 {v.employee_name}
+                    {v.kind === "sick" ? "🤒" : "🏖"} {v.employee_name}
                   </span>
                 ))}
               </div>
@@ -1027,6 +1139,7 @@ function CalendarGrid({
               events={events}
               onSelect={onSelect}
               onMove={onMove}
+              onAssignEmployee={onAssignEmployee}
               selectedId={selectedId}
             />
           ))}
@@ -1044,6 +1157,7 @@ function Row({
   selectedId,
   onSelect,
   onMove,
+  onAssignEmployee,
 }: {
   hour: number;
   days: string[];
@@ -1052,6 +1166,7 @@ function Row({
   selectedId: string | null;
   onSelect: (id: string) => void;
   onMove?: (shiftId: string, isoDay: string, hour: number) => void;
+  onAssignEmployee?: (employeeId: string, isoDay: string, hour: number) => void;
 }) {
   return (
     <>
@@ -1069,22 +1184,28 @@ function Row({
         const isWeekend = i >= 5;
         // Both sides are yyyy-MM-dd Berlin day keys — see CalendarGrid above.
         const isTodayCol = iso === isToday;
+        const dropEnabled = !!onMove || !!onAssignEmployee;
         return (
           <div
             key={`${iso}-${hour}`}
-            onDragOver={onMove ? (ev) => {
+            onDragOver={dropEnabled ? (ev) => {
               ev.preventDefault();
               ev.dataTransfer.dropEffect = "move";
               (ev.currentTarget as HTMLElement).classList.add("ring-2", "ring-primary-300");
             } : undefined}
-            onDragLeave={onMove ? (ev) => {
+            onDragLeave={dropEnabled ? (ev) => {
               (ev.currentTarget as HTMLElement).classList.remove("ring-2", "ring-primary-300");
             } : undefined}
-            onDrop={onMove ? (ev) => {
+            onDrop={dropEnabled ? (ev) => {
               ev.preventDefault();
               (ev.currentTarget as HTMLElement).classList.remove("ring-2", "ring-primary-300");
-              const id = ev.dataTransfer.getData("text/shift-id");
-              if (id) onMove(id, iso, hour);
+              const shiftId = ev.dataTransfer.getData("text/shift-id");
+              if (shiftId) {
+                onMove?.(shiftId, iso, hour);
+                return;
+              }
+              const employeeId = ev.dataTransfer.getData("text/employee-id");
+              if (employeeId) onAssignEmployee?.(employeeId, iso, hour);
             } : undefined}
             className={cn(
               "min-h-[64px] border-b border-r border-neutral-100 p-1",
@@ -1186,6 +1307,7 @@ function DayView({
   selectedId,
   onSelect,
   onMove,
+  onAssignEmployee,
   locale,
 }: {
   focusDate: Date;
@@ -1193,6 +1315,7 @@ function DayView({
   selectedId: string | null;
   onSelect: (id: string) => void;
   onMove?: (shiftId: string, isoDay: string, hour: number) => void;
+  onAssignEmployee?: (employeeId: string, isoDay: string, hour: number) => void;
   locale: keyof typeof localeMap;
 }) {
   const t = useTranslations("schedule");
@@ -1281,6 +1404,7 @@ function DayView({
                   selectedId={selectedId}
                   onSelect={onSelect}
                   onMove={onMove}
+                  onAssignEmployee={onAssignEmployee}
                 />
               );
             })}
@@ -1298,6 +1422,7 @@ function DayRow({
   selectedId,
   onSelect,
   onMove,
+  onAssignEmployee,
 }: {
   hour: number;
   isoDay: string;
@@ -1305,26 +1430,33 @@ function DayRow({
   selectedId: string | null;
   onSelect: (id: string) => void;
   onMove?: (shiftId: string, isoDay: string, hour: number) => void;
+  onAssignEmployee?: (employeeId: string, isoDay: string, hour: number) => void;
 }) {
+  const dropEnabled = !!onMove || !!onAssignEmployee;
   return (
     <>
       <div className="border-b border-r border-neutral-100 bg-neutral-50/40 px-2 py-3 text-right font-mono text-[10px] text-neutral-500">
         {String(hour).padStart(2, "0")}:00
       </div>
       <div
-        onDragOver={onMove ? (ev) => {
+        onDragOver={dropEnabled ? (ev) => {
           ev.preventDefault();
           ev.dataTransfer.dropEffect = "move";
           (ev.currentTarget as HTMLElement).classList.add("ring-2", "ring-primary-300");
         } : undefined}
-        onDragLeave={onMove ? (ev) => {
+        onDragLeave={dropEnabled ? (ev) => {
           (ev.currentTarget as HTMLElement).classList.remove("ring-2", "ring-primary-300");
         } : undefined}
-        onDrop={onMove ? (ev) => {
+        onDrop={dropEnabled ? (ev) => {
           ev.preventDefault();
           (ev.currentTarget as HTMLElement).classList.remove("ring-2", "ring-primary-300");
-          const id = ev.dataTransfer.getData("text/shift-id");
-          if (id) onMove(id, isoDay, hour);
+          const shiftId = ev.dataTransfer.getData("text/shift-id");
+          if (shiftId) {
+            onMove?.(shiftId, isoDay, hour);
+            return;
+          }
+          const employeeId = ev.dataTransfer.getData("text/employee-id");
+          if (employeeId) onAssignEmployee?.(employeeId, isoDay, hour);
         } : undefined}
         className="min-h-[64px] border-b border-neutral-100 p-1.5"
       >

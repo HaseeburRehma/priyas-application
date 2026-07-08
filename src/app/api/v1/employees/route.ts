@@ -6,6 +6,7 @@ import type {
   EmployeesSortField,
 } from "@/lib/api/employees.types";
 import { v1Guard, v1ListResponse, v1ErrorResponse } from "@/lib/api/v1-respond";
+import { getServiceClient } from "@/lib/api/v1-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -53,16 +54,16 @@ export async function GET(request: Request) {
     ? (statusRaw as EmployeeStatus | "all")
     : "all";
 
+  // See v1/clients/route.ts for why this must be explicit rather than an
+  // `?? undefined` fallback to the unscoped session-client default.
+  const serviceClient = getServiceClient();
+  if (!serviceClient) return v1ErrorResponse(503, "v1_api_not_configured");
+
   try {
-    const result = await loadEmployeesList({
-      q,
-      role,
-      status,
-      page,
-      pageSize,
-      sort,
-      direction,
-    });
+    const result = await loadEmployeesList(
+      { q, role, status, page, pageSize, sort, direction },
+      { supabase: serviceClient, orgId: guard.orgId },
+    );
     return v1ListResponse(result.rows, { page, pageSize, total: result.total });
   } catch (err) {
     return v1ErrorResponse(

@@ -1,4 +1,5 @@
 import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { startOfMonth, endOfMonth, addDays } from "date-fns";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sanitizeQ } from "@/lib/utils/postgrest-sanitize";
@@ -100,6 +101,9 @@ export async function loadInvoicesSummary(): Promise<InvoicesSummary> {
 
 export async function loadInvoicesList(
   params: InvoicesListParams = {},
+  // Service-role path only (v1 API — no session cookie to derive an org
+  // from). RLS scopes the default session-client path already.
+  opts?: { supabase?: SupabaseClient; orgId?: string },
 ): Promise<InvoicesListResult> {
   const {
     q = "",
@@ -109,7 +113,8 @@ export async function loadInvoicesList(
     sort = "issue_date",
     direction = "desc",
   } = params;
-  const supabase = await createSupabaseServerClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = (opts?.supabase ?? (await createSupabaseServerClient())) as any;
 
   let query = supabase
     .from("invoices")
@@ -120,6 +125,7 @@ export async function loadInvoicesList(
       { count: "exact" },
     )
     .is("deleted_at", null);
+  if (opts?.orgId) query = query.eq("org_id", opts.orgId);
 
   if (q) {
     // sanitizeQ defends against PostgREST `.or()` filter injection — see
@@ -202,6 +208,7 @@ export async function loadInvoiceDetail(id: string): Promise<InvoiceDetail | nul
        period_start, period_end, email_status, email_sent_at, export_target,
        client:clients (
          id, display_name, customer_type, email, billing_email, phone, tax_id,
+         address_line1, city, postal_code,
          insurance_provider, insurance_number, service_code
        )`,
     )
@@ -242,6 +249,9 @@ export async function loadInvoiceDetail(id: string): Promise<InvoiceDetail | nul
       billing_email: string | null;
       phone: string | null;
       tax_id: string | null;
+      address_line1: string | null;
+      city: string | null;
+      postal_code: string | null;
       insurance_provider: string | null;
       insurance_number: string | null;
       service_code: string | null;
@@ -264,6 +274,47 @@ export async function loadInvoiceDetail(id: string): Promise<InvoiceDetail | nul
     unit_price_cents: Number(i.unit_price_cents),
     tax_rate: Number(i.tax_rate),
   }));
+
+  // Resolve the distinct properties ("Objekt") these line items were
+  // billed for, via shift_id → shifts.property_id → properties. Powers the
+  // PDF pretext line clarifying the invoice address is the cleaned site's
+  // address, not necessarily the client's own mailing address.
+  const shiftIds = Array.from(
+    new Set(items.map((i) => i.shift_id).filter((s): s is string => Boolean(s))),
+  );
+  let properties: { name: string; address: string }[] = [];
+  if (shiftIds.length > 0) {
+    const { data: shiftRows } = await supabase
+      .from("shifts")
+      .select(
+        "id, property:properties ( id, name, address_line1, city, postal_code )",
+      )
+      .in("id", shiftIds);
+    type ShiftPropRow = {
+      id: string;
+      property: {
+        id: string;
+        name: string;
+        address_line1: string | null;
+        city: string | null;
+        postal_code: string | null;
+      } | null;
+    };
+    const byProperty = new Map<string, { name: string; address: string }>();
+    for (const s of (shiftRows ?? []) as unknown as ShiftPropRow[]) {
+      const p = s.property;
+      if (!p) continue;
+      if (!byProperty.has(p.id)) {
+        byProperty.set(p.id, {
+          name: p.name,
+          address: [p.address_line1, [p.postal_code, p.city].filter(Boolean).join(" ")]
+            .filter(Boolean)
+            .join(", "),
+        });
+      }
+    }
+    properties = Array.from(byProperty.values());
+  }
 
   const { data: payRows } = await supabase
     .from("invoice_payments")
@@ -315,6 +366,7 @@ export async function loadInvoiceDetail(id: string): Promise<InvoiceDetail | nul
     client: r.client,
     items,
     payments,
+    properties,
   };
 }
 

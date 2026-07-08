@@ -36,6 +36,10 @@ export type ExportableInvoice = {
     phone: string | null;
     taxId: string | null;
     customerType: "residential" | "commercial" | "alltagshilfe";
+    addressLine1: string | null;
+    city: string | null;
+    postalCode: string | null;
+    country: string | null;
     insuranceProvider: string | null;
     insuranceNumber: string | null;
     serviceCode: string | null;

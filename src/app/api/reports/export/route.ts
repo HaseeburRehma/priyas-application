@@ -11,6 +11,7 @@ import { renderAlltagshilfePdf } from "@/lib/pdf/alltagshilfe-pdf";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { asAppLocale } from "@/lib/utils/i18n-format";
 import { getLocale } from "next-intl/server";
+import { rateLimit } from "@/lib/rate-limit/guard";
 
 const VALID_RANGES: ReportRange[] = ["30d", "Q", "YTD", "12mo"];
 const VALID_TYPES = [
@@ -65,6 +66,16 @@ export async function GET(request: NextRequest) {
   const range = VALID_RANGES.includes(rangeRaw as ReportRange)
     ? (rangeRaw as ReportRange)
     : "YTD";
+
+  // PDF rendering (below) is the expensive path here — report aggregation
+  // plus in-process layout — so it shares the same "heavy" bucket as
+  // invoice PDF export rather than gating the cheap CSV path too.
+  if (format === "pdf") {
+    const blocked = await rateLimit("heavy", "report.export.pdf");
+    if (blocked) {
+      return NextResponse.json({ error: blocked }, { status: 429 });
+    }
+  }
 
   const data = await loadReports(range);
 

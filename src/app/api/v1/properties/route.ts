@@ -6,6 +6,7 @@ import type {
   PropertyStatus,
 } from "@/lib/api/properties.types";
 import { v1Guard, v1ListResponse, v1ErrorResponse } from "@/lib/api/v1-respond";
+import { getServiceClient } from "@/lib/api/v1-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -57,16 +58,14 @@ export async function GET(request: Request) {
     ? (statusRaw as PropertyStatus | "all")
     : "all";
 
+  const serviceClient = getServiceClient();
+  if (!serviceClient) return v1ErrorResponse(503, "v1_api_not_configured");
+
   try {
-    const result = await loadPropertiesList({
-      q,
-      kind,
-      status,
-      page,
-      pageSize,
-      sort,
-      direction,
-    });
+    const result = await loadPropertiesList(
+      { q, kind, status, page, pageSize, sort, direction },
+      { supabase: serviceClient, orgId: guard.orgId },
+    );
     return v1ListResponse(result.rows, { page, pageSize, total: result.total });
   } catch (err) {
     return v1ErrorResponse(

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { loadScheduleRange } from "@/lib/api/schedule";
 import { v1Guard, v1ListResponse, v1ErrorResponse } from "@/lib/api/v1-respond";
+import { getServiceClient } from "@/lib/api/v1-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -37,8 +38,14 @@ export async function GET(request: Request) {
     return v1ErrorResponse(400, `range_too_large:${MAX_DAYS}_days_max`);
   }
 
+  const serviceClient = getServiceClient();
+  if (!serviceClient) return v1ErrorResponse(503, "v1_api_not_configured");
+
   try {
-    const week = await loadScheduleRange(from, to);
+    const week = await loadScheduleRange(from, to, {
+      supabase: serviceClient,
+      orgId: guard.orgId,
+    });
     // Date-range endpoints aren't paginated — clients narrow `from`/`to`
     // instead. Report the full count in both `pageSize` and `total` so
     // `totalPages === 1` (or 0 when empty).

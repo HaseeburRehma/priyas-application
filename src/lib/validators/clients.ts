@@ -128,8 +128,10 @@ export type CreateClientInput = z.infer<typeof createClientSchema>;
 
 /**
  * Update schema — only the fields the EditClientForm actually sends.
- * The action never overwrites address, cleaning rhythm, contract dates, etc.,
- * so those fields must not be required here.
+ * The action never overwrites cleaning rhythm, contract dates, etc.,
+ * so those fields must not be required here. Address fields *are* included
+ * (unlike other create-only fields) because they're required for Lexware
+ * export and otherwise had no way to be corrected after onboarding.
  */
 const updateBase = {
   id: z.string().uuid(),
@@ -148,12 +150,23 @@ const updateBase = {
     .optional()
     .or(z.literal("")),
   tax_id: optionalText(40),
+  address_line1: z.string().min(1, "Adresse erforderlich").max(200),
+  postal_code: z.string().min(3, "PLZ erforderlich").max(20),
+  city: z.string().min(1, "Stadt erforderlich").max(120),
+  country: optionalText(60),
   notes: optionalText(4000),
 };
 
+/**
+ * Alltagshilfe invoices are billed manually to the health insurer and must
+ * never be routed to Lexware (see lexwareSyncAction) — so only the
+ * residential/commercial variants below carry `export_target`.
+ */
+const exportTargetSchema = z.enum(["internal", "lexware"]);
+
 export const updateClientSchema = z.discriminatedUnion("customer_type", [
-  z.object({ customer_type: z.literal("residential"), ...updateBase }),
-  z.object({ customer_type: z.literal("commercial"), ...updateBase }),
+  z.object({ customer_type: z.literal("residential"), ...updateBase, export_target: exportTargetSchema }),
+  z.object({ customer_type: z.literal("commercial"), ...updateBase, export_target: exportTargetSchema }),
   z.object({
     customer_type: z.literal("alltagshilfe"),
     ...updateBase,

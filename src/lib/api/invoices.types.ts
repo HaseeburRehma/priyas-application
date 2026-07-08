@@ -109,12 +109,22 @@ export type InvoiceDetail = {
     billing_email: string | null;
     phone: string | null;
     tax_id: string | null;
+    address_line1: string | null;
+    city: string | null;
+    postal_code: string | null;
     insurance_provider: string | null;
     insurance_number: string | null;
     service_code: string | null;
   };
   items: InvoiceLineItem[];
   payments: InvoicePayment[];
+  /**
+   * Distinct properties (site/"Objekt") the invoice's line items were
+   * billed for, resolved via `invoice_items.shift_id → shifts.property_id`.
+   * Empty when items have no shift link (e.g. a manually-added line) —
+   * the PDF pretext falls back to the client's own address in that case.
+   */
+  properties: { name: string; address: string }[];
 };
 
 export type InvoicePayment = {

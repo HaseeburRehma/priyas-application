@@ -1,4 +1,5 @@
 import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   type AppLocale,
@@ -80,13 +81,31 @@ export type AlltagshilfeMonthlyReport = {
 
 const HOURLY_RATE_CENTS = 1720; // €17.20
 
-/** Builds the monthly Alltagshilfe report. RLS scopes to the org. */
+/**
+ * Builds the monthly Alltagshilfe report.
+ *
+ * Session-scoped calls (no `opts`) rely on RLS to scope every query to
+ * the caller's org, same as before. The cron path (`runAlltagshilfeMonthlyReport`)
+ * runs on a service-role client, which bypasses RLS entirely — so when
+ * `opts.supabase` + `opts.orgId` are passed in, every org-scannable query
+ * gets an explicit `.eq("org_id", ...)` filter to avoid leaking another
+ * org's clients/employees/deliveries into this org's report.
+ */
 export async function loadAlltagshilfeMonthly(
   year: number,
   month: number, // 0–11
   locale: AppLocale = "de",
+  opts?: { supabase?: SupabaseClient; orgId?: string },
 ): Promise<AlltagshilfeMonthlyReport> {
-  const supabase = await createSupabaseServerClient();
+  // Cast once here: `opts.supabase` (service-role, untyped) and the
+  // session client from `createSupabaseServerClient()` are two distinct
+  // overload sets, and TS refuses to call `.from()` on a union of
+  // differently-overloaded types ("expression is not callable"). Every
+  // query below is manually typed via explicit interfaces anyway, so
+  // the loss of inference here doesn't cost us anything real.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = (opts?.supabase ?? (await createSupabaseServerClient())) as any;
+  const orgId = opts?.orgId;
   const monthStart = new Date(year, month, 1);
   const monthEnd = new Date(year, month + 1, 1);
   const prevStart = new Date(year, month - 1, 1);
@@ -96,38 +115,49 @@ export async function loadAlltagshilfeMonthly(
   // huge) shifts pull to properties owned by those clients in the next
   // round-trip. Without this step we'd fetch every shift in the month
   // and filter client-side — which OOMs the lambda on large orgs.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let clientsQuery = (supabase.from("clients") as any)
+    .select(
+      "id, display_name, insurance_provider, insurance_number, care_level, cleaning_rhythm",
+    )
+    .eq("customer_type", "alltagshilfe")
+    .is("deleted_at", null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let timeEntriesQuery = (supabase.from("time_entries") as any)
+    .select("check_in_at, check_out_at, break_minutes, shift_id")
+    .gte("check_in_at", prevStart.toISOString())
+    .lt("check_in_at", prevEnd.toISOString())
+    .limit(10000);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let employeesQuery = (supabase.from("employees") as any)
+    .select("id, status")
+    .is("deleted_at", null)
+    .limit(5000);
+  // Most recent delivery row for this period. Ordered so a 'sent'
+  // row beats any 'failed' attempts in the same period.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let deliveriesQuery = (supabase.from("monthly_report_deliveries") as any)
+    .select(
+      "id, status, recipient, format, sent_at, created_at, email_provider_id, error_message",
+    )
+    .eq("report_type", "alltagshilfe")
+    .eq("period_year", year)
+    .eq("period_month", month)
+    .order("status", { ascending: true }) // 'sent' sorts before 'queued'/'failed' alphabetically
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (orgId) {
+    clientsQuery = clientsQuery.eq("org_id", orgId);
+    timeEntriesQuery = timeEntriesQuery.eq("org_id", orgId);
+    employeesQuery = employeesQuery.eq("org_id", orgId);
+    deliveriesQuery = deliveriesQuery.eq("org_id", orgId);
+  }
+
   const [clientsRes, prevHoursRes, employeesRes, latestDeliveryRes] = await Promise.all([
-    supabase
-      .from("clients")
-      .select(
-        "id, display_name, insurance_provider, insurance_number, care_level, cleaning_rhythm",
-      )
-      .eq("customer_type", "alltagshilfe")
-      .is("deleted_at", null),
-    supabase
-      .from("time_entries")
-      .select("check_in_at, check_out_at, break_minutes, shift_id")
-      .gte("check_in_at", prevStart.toISOString())
-      .lt("check_in_at", prevEnd.toISOString())
-      .limit(10000),
-    supabase
-      .from("employees")
-      .select("id, status")
-      .is("deleted_at", null)
-      .limit(5000),
-    // Most recent delivery row for this period. Ordered so a 'sent'
-    // row beats any 'failed' attempts in the same period.
-    supabase
-      .from("monthly_report_deliveries")
-      .select(
-        "id, status, recipient, format, sent_at, created_at, email_provider_id, error_message",
-      )
-      .eq("report_type", "alltagshilfe")
-      .eq("period_year", year)
-      .eq("period_month", month)
-      .order("status", { ascending: true }) // 'sent' sorts before 'queued'/'failed' alphabetically
-      .order("created_at", { ascending: false })
-      .limit(1),
+    clientsQuery,
+    timeEntriesQuery,
+    employeesQuery,
+    deliveriesQuery,
   ]);
 
   const altClientIds = (
@@ -138,8 +168,8 @@ export async function loadAlltagshilfeMonthly(
   // can use a property_id `.in()` filter instead of pulling everything.
   let altPropIds: string[] = [];
   if (altClientIds.length > 0) {
-    const { data: propRows } = await supabase
-      .from("properties")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: propRows } = await (supabase.from("properties") as any)
       .select("id")
       .in("client_id", altClientIds)
       .is("deleted_at", null)
@@ -149,8 +179,8 @@ export async function loadAlltagshilfeMonthly(
 
   const currentShiftsRes = altPropIds.length === 0
     ? { data: [] as unknown[] }
-    : await supabase
-        .from("shifts")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    : await (supabase.from("shifts") as any)
         .select(
           `id, starts_at, ends_at, status,
            property:properties ( id, name, address_line1, city,

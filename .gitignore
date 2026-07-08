@@ -63,5 +63,8 @@ next-env.d.ts
 # Local directories
 /downloads
 
+# Requirements/spec documents (local reference only)
+/*.pdf
+
 # Claude Code session data (AI assistant local state)
 /.claude

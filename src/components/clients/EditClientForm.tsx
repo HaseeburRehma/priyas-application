@@ -18,10 +18,17 @@ type FormState = {
   email: string;
   phone: string;
   tax_id: string;
+  address_line1: string;
+  postal_code: string;
+  city: string;
+  country: string;
   notes: string;
   insurance_provider: string;
   insurance_number: string;
   care_level: string;
+  // Kept as plain string (like care_level) so it works with the generic
+  // `field()` helper below; cast to the real union at submit time.
+  export_target: string;
 };
 
 /**
@@ -43,10 +50,15 @@ export function EditClientForm({ detail }: Props) {
     email: detail.email ?? "",
     phone: detail.phone ?? "",
     tax_id: detail.tax_id ?? "",
+    address_line1: detail.address_line1 ?? "",
+    postal_code: detail.postal_code ?? "",
+    city: detail.city ?? "",
+    country: detail.country ?? "",
     notes: detail.notes ?? "",
     insurance_provider: detail.insurance_provider ?? "",
     insurance_number: detail.insurance_number ?? "",
     care_level: detail.care_level ? String(detail.care_level) : "1",
+    export_target: detail.export_target,
   });
 
   function field<K extends keyof FormState>(key: K) {
@@ -73,6 +85,10 @@ export function EditClientForm({ detail }: Props) {
               email: form.email,
               phone: form.phone,
               tax_id: form.tax_id,
+              address_line1: form.address_line1,
+              postal_code: form.postal_code,
+              city: form.city,
+              country: form.country,
               notes: form.notes,
               insurance_provider: form.insurance_provider,
               insurance_number: form.insurance_number,
@@ -86,7 +102,12 @@ export function EditClientForm({ detail }: Props) {
               email: form.email,
               phone: form.phone,
               tax_id: form.tax_id,
+              address_line1: form.address_line1,
+              postal_code: form.postal_code,
+              city: form.city,
+              country: form.country,
               notes: form.notes,
+              export_target: form.export_target as "internal" | "lexware",
             };
       const result = await updateClientAction(payload);
       if (!result.ok) {
@@ -146,6 +167,34 @@ export function EditClientForm({ detail }: Props) {
           {!isAlltags && (
             <Field label={t("taxId")} error={errors.tax_id}>
               <input className="input" {...field("tax_id")} />
+            </Field>
+          )}
+          <Field
+            label={t("fields.address")}
+            error={errors.address_line1}
+            className="md:col-span-2"
+          >
+            <input
+              className="input"
+              placeholder={t("fields.addressPlaceholder")}
+              {...field("address_line1")}
+            />
+          </Field>
+          <Field label={t("fields.plz")} error={errors.postal_code}>
+            <input className="input" {...field("postal_code")} />
+          </Field>
+          <Field label={t("fields.city")} error={errors.city}>
+            <input className="input" {...field("city")} />
+          </Field>
+          <Field label={t("fields.country")} error={errors.country}>
+            <input className="input" {...field("country")} />
+          </Field>
+          {!isAlltags && (
+            <Field label={t("exportTarget")} error={errors.export_target}>
+              <select className="input" {...field("export_target")}>
+                <option value="internal">{t("exportTargetInternal")}</option>
+                <option value="lexware">{t("exportTargetLexware")}</option>
+              </select>
             </Field>
           )}
           {isAlltags && (

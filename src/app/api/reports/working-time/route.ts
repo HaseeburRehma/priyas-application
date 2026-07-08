@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { canReachRoute, getCurrentRole } from "@/lib/rbac/permissions";
 import { format } from "date-fns";
+import { rateLimit } from "@/lib/rate-limit/guard";
 
 /**
  * Working-time report — CSV export of every check-in/check-out pair for
@@ -21,6 +22,13 @@ import { format } from "date-fns";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  // Unbounded (whole-month, potentially whole-org) time_entries query with
+  // an in-memory pairing pass — the same "heavy" bucket as PDF export.
+  const blocked = await rateLimit("heavy", "report.working-time.export");
+  if (blocked) {
+    return NextResponse.json({ error: blocked }, { status: 429 });
+  }
+
   const url = new URL(request.url);
   const month =
     url.searchParams.get("month") ?? format(new Date(), "yyyy-MM");

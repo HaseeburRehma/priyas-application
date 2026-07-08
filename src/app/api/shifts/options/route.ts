@@ -9,10 +9,6 @@ export type ShiftOptionsResponse = {
 /**
  * GET /api/shifts/options — fetches property + employee picker data for
  * the "Plan shift" modal. RLS keeps results scoped to the org.
- *
- * NOTE: service_type is omitted from the employee select until migration
- * 20260616_000049_employees_service_type is pushed to the remote DB.
- * All employees default to "both" until then.
  */
 export async function GET() {
   const supabase = await createSupabaseServerClient();
@@ -30,7 +26,7 @@ export async function GET() {
       .order("name", { ascending: true })
       .limit(500),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase.from("employees").select("id, full_name, status") as any)
+    (supabase.from("employees").select("id, full_name, status, service_type") as any)
       .is("deleted_at", null)
       .eq("status", "active")
       .order("full_name", { ascending: true })
@@ -53,12 +49,13 @@ export async function GET() {
       id: string;
       full_name: string;
       status: string;
+      service_type: "priya" | "alltagshilfe" | "both" | null;
     }>
   ).map((e) => ({
     id: e.id,
     full_name: e.full_name,
     status: e.status,
-    service_type: "both" as "priya" | "alltagshilfe" | "both",
+    service_type: e.service_type ?? "both",
   }));
 
   const body: ShiftOptionsResponse = { properties, employees };
