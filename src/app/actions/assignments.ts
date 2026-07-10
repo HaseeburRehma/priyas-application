@@ -59,14 +59,43 @@ export async function upsertAssignmentAction(
   }
 
   const supabase = await createSupabaseServerClient();
-  // Resolve org_id from property.
+  // Resolve org_id from property, and verify the property actually belongs
+  // to the client the caller claims — clientId is otherwise trusted as-is
+  // from the request, so without this check a stale/crafted request could
+  // link a property to an unrelated client in the same org, corrupting the
+  // client↔property↔billing chain invoices are built from.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: propRow } = await ((supabase.from("properties") as any))
-    .select("org_id")
+    .select("org_id, client_id")
     .eq("id", parsed.data.propertyId)
     .maybeSingle();
-  const orgId = (propRow as { org_id: string } | null)?.org_id;
-  if (!orgId) return { ok: false, error: "property_not_found" };
+  const prop = propRow as { org_id: string; client_id: string } | null;
+  if (!prop) return { ok: false, error: "property_not_found" };
+  const orgId = prop.org_id;
+  if (prop.client_id !== parsed.data.clientId) {
+    return { ok: false, error: "property_client_mismatch" };
+  }
+
+  // Every allocated employee must belong to the same org as the assignment.
+  // Neither the RLS write policy on assignment_staff nor (until this check)
+  // this action verified that — a dispatcher could otherwise link another
+  // org's employee record into their own org's assignment, corrupting that
+  // employee's workload data across the tenant boundary.
+  const wantEmployeeIds = Array.from(
+    new Set(parsed.data.staff.map((s) => s.employeeId)),
+  );
+  if (wantEmployeeIds.length) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: empRows } = await ((supabase.from("employees") as any))
+      .select("id")
+      .eq("org_id", orgId)
+      .in("id", wantEmployeeIds)
+      .is("deleted_at", null);
+    const validIds = new Set(((empRows ?? []) as Array<{ id: string }>).map((r) => r.id));
+    if (validIds.size !== wantEmployeeIds.length) {
+      return { ok: false, error: "employee_not_in_org" };
+    }
+  }
 
   let assignmentId = parsed.data.id;
   const payload = {

@@ -6,6 +6,8 @@ Codebase: `/Users/macbookpro/Desktop/hasseeb/priya's-application` (commit state 
 
 > Note on the existing `STATUS.md`: the repository already contains a status file written earlier in development. Several of its claims are now stale — for example, it says GPS check-in/out is unbuilt, Lexware is a stub, drag-and-drop scheduling is missing, and PDF/iCal export aren't done. **All of those have since been implemented.** This audit was performed by reading the actual code in `src/`, `supabase/migrations/`, and `messages/` rather than trusting the existing status doc.
 
+> **⚠️ See the "Update — 2026-07-09" section at the end of this file.** Two months of development happened between this original audit and the update (commit `f2f3c35` → `769c314`, 336 files, +46.9k/-5.6k lines) — most items below marked ⚠️/❌ have since moved, and a large amount of brand-new code (a full `/api/v1/` REST surface, a billing/invoicing/Lexware-automation subsystem, real PWA offline support) was never covered by this original pass. Read the update section for current status.
+
 ---
 
 ## Project Overview
@@ -556,3 +558,93 @@ The web platform is **substantially more complete than the existing `STATUS.md` 
 The gaps that remain are **operational** (production hosting, backups, SLAs, browser matrix, OpenAPI), **mobile-native** (the entire React Native deliverable), and **a small number of polish issues** (WCAG audit, photo compression, the schedule UI's missing onClick handlers, a few hard-coded mocks).
 
 Address the four Tier 0 security items immediately. Then it's a matter of stack-ranking Tier 1 quick wins for client visibility, and making a deliberate call about whether the responsive web app is acceptable as the field-staff client (saving months of native work) or whether the React Native build is a hard contractual requirement.
+
+---
+
+## Update — 2026-07-09
+
+**Baseline for this update:** commit `f2f3c35` (2026-05-06, matches the original audit above) → current `HEAD` `769c314` (2026-07-08). **336 files changed, +46,874 / −5,628 lines** — roughly two months of work, including an entire new `/api/v1/` REST + API-key surface, a billing/invoicing/Lexware-reconciliation subsystem, real PWA offline support (service worker + IndexedDB outbox), CSV import tooling, sessions/devices management, and 2FA/CSP/RLS security hardening. None of this existed at the original audit.
+
+**Method:** three parallel review passes (security/auth/v1-API; billing/invoicing/Lexware; UI-mocks/PWA-offline/import), each (a) re-verified specific numbered findings from the original audit against current code with file:line evidence, and (b) read every new file in its domain hunting for correctness/security bugs. Full agent transcripts are not preserved here — this section is the synthesis.
+
+### Old findings — now fixed
+
+| Ref | Finding | Fix evidence |
+|---|---|---|
+| Bug #1 | `PropertyDetail.tsx` always shows "NEW" badge | Now computes `isNew` from `created_at`, same 30-day window as `ClientDetail.tsx` |
+| Bug #2 | Mock team initials / PM assignment / sidebar counts | `properties.ts` resolves real `team_lead_id/name/initials`; schedule sidebar `statusCounts` and roster now derived from live `week.events` (one residual mock remains — see below) |
+| Bug #3 | `employees.ts` role from `idx % 9` | Now derives `role_chip` from real `profiles.role` |
+| Bug #4 | `LoginBrandPanel.tsx.deleted.bak` orphan file | Deleted |
+| Bug #5 | Hard-coded schedule sidebar status counts | Now computed from live events |
+| Bug #11 / Untouched #3 | No offline strategy, no real offline mode | `public/sw.js` now does app-shell precache, offline-page fallback, stale-while-revalidate, and an IndexedDB mutation outbox with Background Sync replay — infra exists, but see new findings below for correctness bugs in it |
+| Partial #6 | `/api/reports/export?format=pdf` returns placeholder text | Real `pdf-lib` rendering via `src/lib/pdf/reports-pdf.ts` for all report types; old placeholder is now unreachable dead code |
+| Partial #13 | No photo compression / no 20-photo cap | `src/lib/utils/image.ts` (`compressImage`, `enforcePhotoCap`) wired into `DamageReportsCard.tsx` — client-side cap now enforced (server-side cap still missing, see below) |
+| Partial #16 | Hard-coded German date/number formats | `i18n-format.ts` / `useFormat` adopted in `ClientsTable`, `EmployeeDetail`, `InvoicesPage`, `VacationPage` (residual hard-coding remains in 4 other files, see below) |
+| Partial #17 | Schedule Export/Today/week-nav buttons have no onClick | All wired: prev/next, Today, view tabs, and a working `ExportMenu` (PDF download + iCal token copy) |
+| Untouched #11 | No Lexware month-end automation | `src/lib/lexware/monthly.ts` + `/api/jobs/lexware-monthly` cron implement it end-to-end, auth matches the `missed-checkout` cron pattern, idempotent via a partial unique index — **but see Critical findings below, the rate/tax logic has serious bugs** |
+| Security #12 (2FA) | 2FA optional, not enforced | `DashboardLayout` now hard-redirects `admin`/`dispatcher` with no verified TOTP factor to `/setup-2fa` — real enforcement, not just an optional page (caveat below) |
+| Security #15 | Login not rate-limited | `loginAction` now applies 5/min per email\|IP + 15/min per email before calling Supabase (forgot-password/register still unthrottled, see below) |
+| Security #16 | `profiles.role` self-escalation via RLS | `BEFORE UPDATE` trigger `prevent_profile_self_role_escalation` blocks non-admins from changing their own `role`/`org_id` — confirmed correct |
+| Security #19 | No CSP/HSTS headers | `next.config.mjs` now ships full CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, prod-only HSTS |
+| Security #20 | `org_id` trusted from client at signup | `handle_new_user()` rewritten to force `role='employee'` and resolve `org_id` server-side; register form only sends `full_name` |
+
+### Old findings — confirmed still open
+
+- **Security #18 — No CAPTCHA on register/forgot-password.** Still nothing. Compounded by a new finding: neither flow is even rate-limited (see below).
+- **Security #21 — `as any` casts still everywhere** (`api-keys.ts`, `sessions.ts`, `devices.ts`, etc.). A related-but-different PostgREST filter-injection issue got fixed instead (`postgrest-sanitize.ts`); the original type-erosion complaint is untouched.
+- **Bug #6/#7 — "New Assignment" and "Plan Shift" still open the same dialog**, `onClick={() => setDialogOpen(true)}` on both, no differentiation.
+- **Bug #9 — No max length on `chat_messages.body`.** Still inserted client-side with no cap, no CHECK constraint.
+- **Bug #10 / Partial #13 — Server-side 20-photo cap still missing.** Client-side cap now exists, but `damage.ts`'s Zod schema has no `.max(20)` and the DB column is still plain `text[]` — a direct action/API call bypasses the UI cap entirely.
+- **Partial #16 residual — hard-coded `"de-DE"` formatting** still present in `InvoiceDetail.tsx:344`, `InvoiceKpiPanel.tsx:10`, `ReportsPageHead.tsx:26`, `reports/alltagshilfe/page.tsx:73`.
+- **Bug #2 residual — one hard-coded mock chip remains**: `SchedulePage.tsx:478` — `` `${t("filterTeam")} 3 / 5` `` is static text, not wired to actual filter-selection counts.
+
+### New findings — Critical
+
+1. **Auto-generated monthly Lexware invoices bill every client at a hardcoded flat rate, ignoring their contracted rate.** `src/lib/lexware/monthly.ts:49,232` uses `DEFAULT_HOURLY_RATE_CENTS = 1720` unconditionally instead of calling `resolveRateCents()` (which the manual invoice flow correctly uses). A client contracted at, say, €40/h gets auto-invoiced at €17.20/h every month via the cron — silently undercharging by more than 50%.
+2. **Auto-generated invoices apply 0% VAT to VAT-liable clients.** `src/lib/lexware/monthly.ts:277-278,303,359` hardcodes `tax_rate: 0` and pushes that to Lexware. The job already excludes the one VAT-exempt client type (Alltagshilfe), so *every* client it processes is VAT-liable and should get 19% — the org under-collects tax and issues non-compliant German invoices.
+3. **The service worker intercepts Next.js Server Action POSTs, breaking the check-in flow the offline feature was built for.** `public/sw.js`'s catch-all mutation handler matches every same-origin non-GET request, including Server Action calls (which is how `CheckInButton.tsx` submits check-ins). On network failure it swaps in a `{queued:true}` JSON body that Next's client action runtime can't parse as its expected RSC wire format — the check-in button can hang or show a raw error instead of "queued for sync," even though the write is safely queued in IndexedDB.
+4. **Device "Revoke" in Settings → Sessions & Devices doesn't actually revoke anything.** The migration that introduced `user_devices` (`20260605_000048`) states as a hard requirement that revoked devices must be refused until re-login — no such check exists anywhere in the codebase (`requireActiveDevice` is referenced but never implemented; `middleware.ts` never queries `user_devices`). `revokeDeviceAction` only flips a DB flag; the underlying session/refresh token is untouched. A stolen, logged-in device stays fully authenticated indefinitely after the user "revokes" it in the UI.
+
+### New findings — High
+
+5. **Failed Lexware push permanently orphans the auto-generated draft invoice — no retry path ever recovers it.** `lexware/monthly.ts` inserts the invoice as `status:"draft"` *before* attempting the Lexware push. Both retry mechanisms (`retryLexwarePushSweep`, `bulkRetrySyncAction`) explicitly filter out `status='draft'`. A transient Lexware outage or a client missing a required field during the cron run means that client silently never gets billed for that month — and the unique index on `(client_id, period)` means the slot can't be retried by re-running the job either.
+6. **Race condition in manual invoice drafting can double-bill the same shifts.** `prepareDraftForRange` selects `billing_status='approved'` shifts with no locking; shifts are only flipped to `invoiced` at the very end of `createDraftInvoiceAction`, after the invoice is already inserted, and there's no unique constraint for manual invoices (deliberately, per a migration comment). Two concurrent requests for the same client+period (double-click, two tabs) both read the same approved shifts before either marks them invoiced — the client gets billed twice for the same hours.
+7. **`assignment_staff` has no org-membership check on `employee_id` — cross-tenant linkage is possible.** Neither the RLS write policy nor `upsertAssignmentAction` verifies the referenced employee belongs to the same org as the assignment. A dispatcher can (accidentally or otherwise) link another org's employee record into their own org's assignment, corrupting that employee's workload data across the tenant boundary.
+8. **No mutex around the offline outbox replay — concurrent triggers can double-submit non-idempotent mutations.** `replayOutbox()` in `public/sw.js` can be fired concurrently by the `sync` event, the `online` handler, and the manual "Retry Now" button, with no "already running" guard. Two concurrent replays can both read and submit the same queued mutation (e.g. a damage-report POST) before either removes it from the queue — creating a duplicate record. (Check-in is protected by a DB unique index; most other mutation types are not.)
+
+### New findings — Medium
+
+9. **`upsertAssignmentAction` never verifies the property belongs to the given client.** `org_id` is derived from `propertyId` alone; `clientId` is trusted independently and only filtered client-side in the form's `<select>`. A stale/crafted request can link a property to an unrelated client in the same org, corrupting the client↔property↔billing chain that invoices are built from.
+10. **Duplicate "send monthly report to management" email on concurrent trigger.** The cron and a manual "Send" button can both pass an insert check (only `status='sent'` rows are unique-constrained) within the same window, both send email — management gets the same billing report twice.
+11. **v1 API rate limiter is in-memory only, ineffective on serverless.** Unlike the main app's rate limiter, `v1-rate-limit.ts` has a `TODO` admitting it should share the Redis-backed limiter but doesn't. On Vercel (the stated target), concurrent requests can land on different warm instances, each with its own bucket — the documented 60 req/min limit is easily exceeded in practice.
+12. **`read:employees` API scope exposes salary data with no finer-grained scope.** `hourly_rate_eur` is returned in the v1 employee-detail payload under the general read scope — any integration partner given roster/scheduling access can also pull every employee's wage.
+13. **Import dry-run and commit share a single throttle, so a fast preview→commit flow can 429 on the user's actual first write.** The 5-second per-route throttle applies to both the preview request and the real commit; clicking "Commit" shortly after a fast preview reproduces this on essentially any normal usage.
+14. **`employee-overview.ts` silently drops org-scoping if `orgId` is falsy** instead of hard-failing like the rest of the codebase's convention — relies solely on RLS as a backstop across ~7 queries.
+15. **2FA enforcement is a page-render redirect, not a privilege-check boundary.** `DashboardLayout` gates rendered pages, but Server Actions and API routes called directly aren't gated by MFA/AAL status at the RBAC layer.
+16. **`forgot-password` and `register` are completely unthrottled** (call the Supabase client SDK directly, bypassing the new login rate-limiter pattern) — combined with the still-missing CAPTCHA (#18), both are open to scripted abuse.
+17. **API key `prefix` is always the literal string `"pk_live_"` for every key** (`fullKey.slice(0, 8)` where `"pk_live_".length === 8`) — the Settings → API Keys list can't visually distinguish between keys, defeating the purpose of showing a prefix.
+18. **Rounding drift between per-line amounts and the printed grand total on Alltagshilfe PDF invoices.** Line items are rounded independently while the total is rounded once after summing — can be off by ±1 cent on documents submitted to a Pflegekasse (care insurer), risking a manual query/rejection.
+19. **Offline outbox has no max-retry / dead-letter state.** A mutation that will permanently fail (e.g. a 409 conflict) retries forever on every reconnect, indistinguishable in the UI from "still offline" — the user believes their action succeeded.
+
+### New findings — Low
+
+20. **"Generate" button in the Lexware monthly panel is wired to the same handler as "Preview.**" Misleading but not harmful — the real one-shot action is only reachable from the confirm modal.
+21. **Dead `write:*` API scopes can be granted on a key but no write route handlers exist anywhere in `/api/v1/`** — not a security hole, but a partner can be issued a key that implies write access that doesn't exist.
+22. **Logo-upload rejection message still advertises SVG support**, which was deliberately removed by the recent MIME-hardening migration; copy wasn't updated to match.
+
+### Areas re-checked and found solid (no material issues)
+
+v1 API org-scoping/IDOR (all 6 resource loaders correctly `.eq("org_id", ...)`), v1 API-key auth validation (`v1-auth.ts` — hash lookup, revocation/expiry checks), `api_keys`/`user_devices` RLS policies, CSV import parser and the 5 named import routes (permission checks, server-derived org, formula-injection-safe export), `safe-next.ts` open-redirect guard (used correctly in both call sites), `postgrest-sanitize.ts`, upload MIME/size hardening.
+
+### Updated priority order
+
+**Fix immediately (money/security, all Critical + High above):**
+1. Fix auto-invoice hourly-rate resolution (#1) and VAT calculation (#2) in `lexware/monthly.ts` — highest $-impact bug in the codebase.
+2. Fix device revoke to actually invalidate the session/refresh token (#4), or remove the feature until it does — currently a false security promise.
+3. Exempt Server Action requests from the service worker's mutation-queue handler, or teach `CheckInButton.tsx` to handle the queued response correctly (#3) — the offline check-in flow is currently broken by the very feature meant to support it.
+4. Change draft-invoice status handling so failed Lexware pushes are retryable (#5), and add a lock/idempotency key to manual draft creation (#6).
+5. Add org-membership validation to `assignment_staff` writes (#7) and a mutex to `replayOutbox()` (#8).
+
+**Next tier (Medium):** items #9–19 above, particularly the v1 rate-limiter's serverless ineffectiveness (#11), CAPTCHA + rate-limiting on register/forgot-password (#16, reopens old #18), and the salary-exposure scope gap (#12).
+
+**Low priority / polish:** items #20–22, plus the residual old findings still open (mock schedule chip, chat message length cap, server-side photo cap, remaining hard-coded `de-DE` formatting).

@@ -106,9 +106,17 @@ function ipFromHeaders(h: Headers): string | null {
   return first || null;
 }
 
-export async function recordCurrentDeviceAction(): Promise<
-  { ok: true; deviceId: string } | { ok: false; error: string }
-> {
+export async function recordCurrentDeviceAction(opts?: {
+  /**
+   * Set only right after a successful password sign-in (see
+   * `loginAction` in actions/auth.ts). A fresh sign-in is the one
+   * event that should clear a prior revocation — the dashboard-layout
+   * heartbeat call (fired on every navigation) must NOT do this, or
+   * "Revoke" in Settings → Sessions & Devices would undo itself on the
+   * device's very next page load while its session cookie is still valid.
+   */
+  freshSignIn?: boolean;
+}): Promise<{ ok: true; deviceId: string } | { ok: false; error: string }> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -132,24 +140,26 @@ export async function recordCurrentDeviceAction(): Promise<
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const table = supabase.from("user_devices") as any;
+  const payload: Record<string, unknown> = {
+    user_id: user.id,
+    fingerprint: fp,
+    device_label: label,
+    device_kind: kind,
+    os,
+    browser,
+    ip_address: ip,
+    geo_label: geo,
+    last_seen_at: new Date().toISOString(),
+  };
+  if (opts?.freshSignIn) {
+    // Only a genuine new sign-in clears a prior revocation. Supabase's
+    // upsert only SETs the columns present in the payload on conflict,
+    // so omitting `revoked_at` on the routine heartbeat call below
+    // leaves an existing revocation untouched instead of clearing it.
+    payload.revoked_at = null;
+  }
   const { data, error } = await table
-    .upsert(
-      {
-        user_id: user.id,
-        fingerprint: fp,
-        device_label: label,
-        device_kind: kind,
-        os,
-        browser,
-        ip_address: ip,
-        geo_label: geo,
-        last_seen_at: new Date().toISOString(),
-        // Clear any stale revoked_at if the same device comes back —
-        // a fresh sign-in is the user's intent to re-allow.
-        revoked_at: null,
-      },
-      { onConflict: "user_id,fingerprint" },
-    )
+    .upsert(payload, { onConflict: "user_id,fingerprint" })
     .select("id")
     .single();
 

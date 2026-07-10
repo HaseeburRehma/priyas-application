@@ -69,6 +69,22 @@ self.addEventListener("fetch", (event) => {
   // Same-origin only. Cross-origin → default network.
   if (url.origin !== self.location.origin) return;
 
+  // Next.js Server Actions POST to the current page URL carrying a
+  // `Next-Action` header, and the client action-runtime expects the raw
+  // RSC-flight-encoded response back to resolve `await someAction(...)`.
+  // Our mutation-queue path (below) swaps in a plain `{queued:true}` JSON
+  // body on network failure, which that runtime can't parse — it doesn't
+  // throw a catchable network error, it throws a decode error, and the
+  // caller (e.g. CheckInButton's check-in call) hangs or crashes instead
+  // of surfacing "you're offline". Replaying an arbitrary Server Action
+  // body later is also unsafe in general (no idempotency guarantee, no
+  // stable action id across deploys), so the correct fix is to not
+  // intercept these at all — let a real offline attempt fail as a normal
+  // fetch rejection, which calling code can catch.
+  if (request.method !== "GET" && request.headers.get("Next-Action")) {
+    return;
+  }
+
   // 1) Navigation: network-first, fallback to cached /offline.
   if (request.mode === "navigate") {
     event.respondWith(handleNavigation(request));
@@ -318,7 +334,26 @@ self.addEventListener("sync", (event) => {
   }
 });
 
-async function replayOutbox() {
+// `replayOutbox()` can be triggered concurrently from three independent,
+// unsynchronized sources: the `sync` event, a `{type:"replay"}` message
+// (fired both by ServiceWorkerRegister's `online` handler and by
+// OutboxIndicator's "Retry Now" button), and potentially overlapping
+// invocations of any of those. Without a guard, two concurrent runs both
+// list the same still-queued entries before either deletes them and both
+// submit the same mutation — e.g. a queued damage-report POST gets created
+// twice. `replayPromise` makes concurrent callers share the one in-flight
+// run instead of starting a second one.
+let replayPromise = null;
+
+function replayOutbox() {
+  if (replayPromise) return replayPromise;
+  replayPromise = doReplayOutbox().finally(() => {
+    replayPromise = null;
+  });
+  return replayPromise;
+}
+
+async function doReplayOutbox() {
   let items;
   try {
     items = await listOutbox();

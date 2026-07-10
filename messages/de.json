@@ -60,6 +60,7 @@
     "errorWeakPassword": "Das Passwort ist zu schwach.",
     "errorInvalid": "E-Mail oder Passwort ist falsch.",
     "errorGeneric": "Anmeldung fehlgeschlagen. Bitte erneut versuchen.",
+    "deviceRevoked": "Dieses Gerät wurde für dein Konto gesperrt. Bitte melde dich erneut an, um fortzufahren.",
     "heroEyebrow": "Willkommen zurück",
     "heroTitle": "Den gesamten Reinigungsbetrieb an einem Ort steuern.",
     "heroBody": "Einsatzplanung, Zeiterfassung, Objektakten, Rechnungsstellung — alles, was dein Team braucht, vom Außendienst bis ins Büro.",

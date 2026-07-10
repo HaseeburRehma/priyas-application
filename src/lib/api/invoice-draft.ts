@@ -28,6 +28,17 @@ export type PrepareDraftResult = {
   };
   shiftCount: number;
   totalMinutes: number;
+  /**
+   * Every approved shift id that fed into this draft — NOT the same as
+   * `draft.items[].shiftId`. `buildDraftInvoice` merges same-property/
+   * employee/rate shifts into one line item and keeps only the *first*
+   * contributing shift id on it (for traceability), so deriving the
+   * "shifts to lock / mark billed" set from `draft.items` silently misses
+   * every other shift folded into a multi-shift line. Callers that need to
+   * claim or bill every underlying shift (createDraftInvoiceAction) must
+   * use this list instead.
+   */
+  allShiftIds: string[];
 };
 
 /**
@@ -114,5 +125,7 @@ export async function prepareDraftForRange(
     notes: null,
   });
 
-  return { draft, client, shiftCount: rows.length, totalMinutes };
+  const allShiftIds = Array.from(new Set(rows.map((r) => r.shiftId)));
+
+  return { draft, client, shiftCount: rows.length, totalMinutes, allShiftIds };
 }

@@ -22,6 +22,7 @@ export const onboardClientSchema = z.object({
   service_preferences: z
     .object({
       frequency: z
+
         .enum(["weekly", "biweekly", "monthly", "one_off"])
         .default("biweekly"),
       preferred_day: z
@@ -41,3 +42,4 @@ export const onboardClientSchema = z.object({
   }),
 });
 export type OnboardClientInput = z.infer<typeof onboardClientSchema>;
+

@@ -95,6 +95,54 @@ export async function createDraftInvoiceAction(
   const prefix = INVOICE_NUMBER_PREFIX[prepared.draft.invoiceKind];
   const year = Number(parsed.data.periodEnd.slice(0, 4));
 
+  // Claim every contributing shift BEFORE creating the invoice, via a
+  // conditional UPDATE scoped to billing_status='approved'. Postgres
+  // serializes concurrent UPDATEs on the same rows (the second waits for
+  // the first's row lock, then re-evaluates its WHERE clause against the
+  // now-committed 'invoiced' status and simply excludes that row) — so
+  // this is an atomic "claim" with no separate locking primitive needed.
+  // Without this, two concurrent requests for the same client+period both
+  // read the same approved shifts (in prepareDraftForRange above) before
+  // either marks them invoiced, and both go on to create a full invoice
+  // for the same hours — the client gets billed twice.
+  const wantShiftIds = prepared.allShiftIds;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: claimedRows, error: claimErr } = await ((supabase.from("shifts") as any))
+    .update({ billing_status: "invoiced" })
+    .eq("billing_status", "approved")
+    .in("id", wantShiftIds)
+    .select("id");
+  if (claimErr) return { ok: false, error: claimErr.message };
+  const claimedIds = ((claimedRows ?? []) as Array<{ id: string }>).map((r) => r.id);
+  if (claimedIds.length !== wantShiftIds.length) {
+    // Someone else claimed some of these shifts concurrently (or one
+    // changed state) between our read and this update. Release whatever
+    // we did manage to claim and abort — creating a partial invoice here
+    // would silently drop hours or double-bill whatever the other request
+    // is also invoicing.
+    if (claimedIds.length) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await ((supabase.from("shifts") as any))
+        .update({ billing_status: "approved" })
+        .in("id", claimedIds);
+    }
+    return {
+      ok: false,
+      error:
+        "Einige Zeiterfassungen wurden zwischenzeitlich bereits abgerechnet. Bitte Seite neu laden und erneut versuchen.",
+    };
+  }
+
+  // From here on, any failure must release the shifts we just claimed back
+  // to 'approved' — otherwise they'd be stuck marked 'invoiced' with no
+  // invoice actually attached to them, permanently unbillable.
+  async function releaseClaim(): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await ((supabase.from("shifts") as any))
+      .update({ billing_status: "approved" })
+      .in("id", wantShiftIds);
+  }
+
   // Draw a fresh invoice number atomically.
   // RPC isn't in the generated Database type yet — cast via unknown.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -102,7 +150,10 @@ export async function createDraftInvoiceAction(
     "next_invoice_number",
     { p_org_id: prepared.client.org_id, p_prefix: prefix, p_year: year },
   );
-  if (numErr) return { ok: false, error: (numErr as { message: string }).message };
+  if (numErr) {
+    await releaseClaim();
+    return { ok: false, error: (numErr as { message: string }).message };
+  }
   const invoiceNumber = numberRow as unknown as string;
 
   // Insert the invoice header.
@@ -130,11 +181,15 @@ export async function createDraftInvoiceAction(
     .select("id")
     .single();
   if (invErr || !invHeader) {
+    await releaseClaim();
     return { ok: false, error: invErr?.message ?? "insert_invoice_failed" };
   }
   const invoiceId = (invHeader as { id: string }).id;
 
-  // Persist items + back-link the included shifts so they can't be billed twice.
+  // Persist items. The contributing shifts are already claimed
+  // (billing_status='invoiced') from the atomic claim above — each item
+  // still carries its representative shift id (item.shiftId) purely for
+  // traceability/PDF rendering, not as the billing-lock mechanism.
   const itemRowsToInsert = prepared.draft.items.map((it, idx) => ({
     org_id: prepared.client.org_id,
     invoice_id: invoiceId,
@@ -150,19 +205,11 @@ export async function createDraftInvoiceAction(
     const { error: itemsErr } = await ((supabase.from("invoice_items") as any))
       .insert(itemRowsToInsert);
     if (itemsErr) {
+      await releaseClaim();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await ((supabase.from("invoices") as any)).delete().eq("id", invoiceId);
       return { ok: false, error: itemsErr.message };
     }
-  }
-
-  // Mark every contributing shift as 'invoiced' so it doesn't get re-billed.
-  const shiftIds = prepared.draft.items
-    .map((i) => i.shiftId)
-    .filter((x): x is string => typeof x === "string");
-  if (shiftIds.length) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await ((supabase.from("shifts") as any))
-      .update({ billing_status: "invoiced" })
-      .in("id", shiftIds);
   }
 
   await audit("draft_create", invoiceId, `Rechnungsentwurf ${invoiceNumber} erzeugt.`);

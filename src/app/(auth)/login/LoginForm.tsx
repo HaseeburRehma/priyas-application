@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import type { Route } from "next";
@@ -57,6 +57,16 @@ export function LoginForm() {
   });
 
   const remember = watch("rememberMe");
+
+  // Middleware bounces here with ?reason=device_revoked when the session's
+  // device fingerprint was revoked from Settings → Sessions & Devices. Show
+  // it once so the user understands why they were signed out.
+  useEffect(() => {
+    if (search.get("reason") === "device_revoked") {
+      toast.error(t("deviceRevoked"));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function onSubmit(values: LoginInput) {
     startTransition(async () => {

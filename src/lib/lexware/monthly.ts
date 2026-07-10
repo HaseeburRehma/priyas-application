@@ -3,6 +3,8 @@ import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { env } from "@/lib/constants/env";
 import { createLexwareClient } from "@/lib/integrations/lexware";
+import { resolveRateCents, vatRateFor, invoiceKindForClient } from "@/lib/billing/rates";
+import { summarize } from "@/lib/billing/money";
 
 /* ---------------------------------------------------------------------------
  * Public types — shared between the server action (UI) and cron route.
@@ -42,17 +44,13 @@ export type LastRunSummary = {
   month: number;
 } | null;
 
-/**
- * Hard fallback — matches the alltagshilfe loader so the rate the cron
- * bills at lines up with the rate users see in the monthly report.
- */
-const DEFAULT_HOURLY_RATE_CENTS = 1720; // €17.20/h
-
 type DbShift = {
   id: string;
   starts_at: string;
   ends_at: string;
   org_id: string;
+  override_rate_cents: number | null;
+  assignment: { hourly_rate_cents: number | null } | null;
   property: {
     client_id: string;
     client: {
@@ -60,6 +58,7 @@ type DbShift = {
       display_name: string;
       customer_type: string;
       export_target: string;
+      default_hourly_rate_cents: number | null;
     } | null;
   } | null;
 };
@@ -142,9 +141,10 @@ export async function runMonthlyInvoices(
     supabase.from("shifts") as any
   )
     .select(
-      `id, starts_at, ends_at, org_id,
+      `id, starts_at, ends_at, org_id, override_rate_cents,
+       assignment:assignments ( hourly_rate_cents ),
        property:properties ( client_id,
-                             client:clients ( id, display_name, customer_type, export_target ) )`,
+                             client:clients ( id, display_name, customer_type, export_target, default_hourly_rate_cents ) )`,
     )
     .eq("status", "completed")
     .gte("starts_at", monthStart.toISOString())
@@ -165,12 +165,16 @@ export async function runMonthlyInvoices(
 
   const shifts = (shiftsData ?? []) as unknown as DbShift[];
 
-  // 2) Bucket hours by client.
+  // 2) Bucket hours by client, then by effective rate within each client —
+  //    different shifts can carry different assignment/client rates, so a
+  //    client's auto-invoice may need more than one line item.
   type Bucket = {
     clientId: string;
     clientName: string;
     orgId: string;
-    hours: number;
+    customerType: string;
+    /** rateCents -> accumulated hours at that rate */
+    rates: Map<number, number>;
   };
   const byClient = new Map<string, Bucket>();
   for (const s of shifts) {
@@ -190,17 +194,27 @@ export async function runMonthlyInvoices(
         3_600_000,
     );
     if (hrs === 0) continue;
-    const existing = byClient.get(clientId);
-    if (existing) {
-      existing.hours += hrs;
-    } else {
-      byClient.set(clientId, {
+    // Walk the same shift-override -> assignment -> client-default -> system
+    // fallback chain the manual draft-invoice flow uses, so the cron never
+    // bills a client at a different rate than a manually-created invoice
+    // would for the same shifts.
+    const rateCents = resolveRateCents({
+      shiftOverrideCents: s.override_rate_cents,
+      assignmentRateCents: s.assignment?.hourly_rate_cents ?? null,
+      clientDefaultRateCents: c.default_hourly_rate_cents,
+    });
+    let bucket = byClient.get(clientId);
+    if (!bucket) {
+      bucket = {
         clientId,
         clientName: c.display_name,
         orgId: s.org_id,
-        hours: hrs,
-      });
+        customerType: c.customer_type,
+        rates: new Map(),
+      };
+      byClient.set(clientId, bucket);
     }
+    bucket.rates.set(rateCents, (bucket.rates.get(rateCents) ?? 0) + hrs);
   }
 
   if (byClient.size === 0) {
@@ -229,10 +243,24 @@ export async function runMonthlyInvoices(
   const lex = createLexwareClient();
 
   for (const bucket of byClient.values()) {
-    const rateCents = DEFAULT_HOURLY_RATE_CENTS;
-    const amountCents = Math.round(bucket.hours * rateCents);
+    const taxRatePercent = vatRateFor(invoiceKindForClient(bucket.customerType));
+    // One line item per distinct effective rate — most clients have a single
+    // rate and thus a single line, but mixed-rate months (rate changed
+    // mid-period, or per-assignment overrides) need separate lines so the
+    // printed price-per-hour on the invoice matches what was actually billed.
+    const lineItems = Array.from(bucket.rates.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([rateCents, hours], idx) => ({
+        description: `Pflegedienstleistungen ${periodLabel}`,
+        quantity: Math.round(hours * 100) / 100,
+        unitPriceCents: rateCents,
+        taxRatePercent,
+        position: idx + 1,
+      }));
+    const totals = summarize(lineItems);
+    const totalHours = Array.from(bucket.rates.values()).reduce((a, h) => a + h, 0);
 
-    if (amountCents === 0) {
+    if (totals.totalCents === 0) {
       skipped += 1;
       continue;
     }
@@ -241,7 +269,7 @@ export async function runMonthlyInvoices(
       continue;
     }
 
-    totalCents += amountCents;
+    totalCents += totals.totalCents;
     if (dryRun) {
       generated += 1;
       continue;
@@ -261,7 +289,17 @@ export async function runMonthlyInvoices(
         .toISOString()
         .slice(0, 10);
 
-      // 4a) INSERT draft invoice + line item.
+      // 4a) INSERT the invoice header as already 'sent', mirroring the
+      // manual issueInvoiceAction flow (invoice-draft.ts): this pipeline
+      // always pushes straight to Lexware in the same request (there's no
+      // manual-review step for auto-monthly invoices), so there's no real
+      // "draft" phase. Leaving it as 'draft' meant a failed push below
+      // orphaned the row forever — both retry surfaces
+      // (retryLexwarePushSweep and bulkRetrySyncAction) only ever look at
+      // status IN (sent, overdue, paid), by design, so a stuck 'draft' row
+      // was invisible to every retry path and that client silently never
+      // got billed for the period. lexware_sync_status starts 'pending'
+      // and gets corrected to 'synced'/'failed' below once we know which.
       const { data: insertedRow, error: insertErr } = await (
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         supabase.from("invoices") as any
@@ -270,15 +308,16 @@ export async function runMonthlyInvoices(
           org_id: bucket.orgId,
           client_id: bucket.clientId,
           invoice_number: invoiceNumber,
-          status: "draft",
+          status: "sent",
           issue_date: issueDate,
           due_date: dueDate,
-          subtotal_cents: amountCents,
-          tax_cents: 0,
-          total_cents: amountCents,
+          subtotal_cents: totals.subtotalCents,
+          tax_cents: totals.taxCents,
+          total_cents: totals.totalCents,
           period_year: year,
           period_month: month,
           source: "auto_monthly",
+          lexware_sync_status: "pending",
           notes: `Auto-generated monthly invoice ${periodLabel}`,
         })
         .select("id")
@@ -294,15 +333,17 @@ export async function runMonthlyInvoices(
       const newInvoiceId = (insertedRow as { id: string }).id;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await ((supabase.from("invoice_items") as any)).insert({
-        org_id: bucket.orgId,
-        invoice_id: newInvoiceId,
-        description: `Pflegedienstleistungen ${periodLabel}`,
-        quantity: Math.round(bucket.hours * 100) / 100,
-        unit_price_cents: rateCents,
-        tax_rate: 0,
-        position: 1,
-      });
+      await ((supabase.from("invoice_items") as any)).insert(
+        lineItems.map((it) => ({
+          org_id: bucket.orgId,
+          invoice_id: newInvoiceId,
+          description: it.description,
+          quantity: it.quantity,
+          unit_price_cents: it.unitPriceCents,
+          tax_rate: it.taxRatePercent,
+          position: it.position,
+        })),
+      );
 
       // 4b) Push to Lexware.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -335,7 +376,7 @@ export async function runMonthlyInvoices(
           dueDate,
           notes: `Pflegedienstleistungen ${periodLabel}`,
           customerEmail: client?.email ?? null,
-          totalCents: amountCents,
+          totalCents: totals.totalCents,
           client: client
             ? {
                 display_name: client.display_name,
@@ -351,19 +392,24 @@ export async function runMonthlyInvoices(
                 lexware_contact_id: client.lexware_contact_id,
               }
             : undefined,
-          items: [
-            {
-              description: `Pflegedienstleistungen ${periodLabel}`,
-              quantity: Math.round(bucket.hours * 100) / 100,
-              unit_price_cents: rateCents,
-              tax_rate_percent: 0,
-            },
-          ],
+          items: lineItems.map((it) => ({
+            description: it.description,
+            quantity: it.quantity,
+            unit_price_cents: it.unitPriceCents,
+            tax_rate_percent: it.taxRatePercent,
+          })),
         });
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await ((supabase.from("invoices") as any))
-          .update({ lexware_id: pushed.id, status: "sent" })
+          .update({
+            lexware_id: pushed.id,
+            status: "sent",
+            lexware_sync_status: "synced",
+            lexware_last_attempt_at: new Date().toISOString(),
+            lexware_last_error: null,
+            lexware_attempts: 1,
+          })
           .eq("id", newInvoiceId);
 
         if (pushed.contactId && client?.id) {
@@ -381,8 +427,9 @@ export async function runMonthlyInvoices(
           `Monatsrechnung ${periodLabel} an Lexware übertragen`,
           {
             client_id: bucket.clientId,
-            hours: bucket.hours,
-            amount_cents: amountCents,
+            hours: totalHours,
+            amount_cents: totals.totalCents,
+            tax_cents: totals.taxCents,
             lexware_id: pushed.id,
           },
         );
@@ -390,6 +437,21 @@ export async function runMonthlyInvoices(
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "lexware_push_failed";
+        // The invoice row already exists (status='sent', lexware_id=null) —
+        // record the failure on it so retryLexwarePushSweep / the "Retry
+        // failed syncs" button in the UI can find and re-attempt it. Before
+        // this fix, a failure here was reported only in the in-memory
+        // `errors` list for this one cron run and then lost — the row
+        // itself never showed as failed and nothing ever retried it.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await ((supabase.from("invoices") as any))
+          .update({
+            lexware_sync_status: "failed",
+            lexware_last_attempt_at: new Date().toISOString(),
+            lexware_last_error: message.slice(0, 500),
+            lexware_attempts: 1,
+          })
+          .eq("id", newInvoiceId);
         errors.push({
           clientId: bucket.clientId,
           clientName: bucket.clientName,

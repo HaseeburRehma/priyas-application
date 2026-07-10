@@ -13,20 +13,27 @@
 # The endpoint is idempotent (skips shifts that already got a
 # `missed_checkout:<shift_id>` notification), so overlapping runs are safe.
 #
-# Required GitHub secrets:
-#   APP_URL      — the deployed app's origin, e.g. https://app.priyas.de
-#                  (no trailing slash).
-#   CRON_SECRET  — same value as the Vercel project's CRON_SECRET env var;
-#                  the route checks this via a Bearer token either way.
+# ── Re-enabling the schedule ─────────────────────────────────────────────
+# The auto-schedule is currently OFF because the deployed URL + shared
+# secret are not yet configured in this repo — running it that way just
+# emails a failure every 15 minutes. To turn it back on:
 #
-# Manual trigger:
-#   GitHub UI → Actions → "Missed checkout sweep" → "Run workflow".
+#   1. Add repo secrets under Settings → Secrets and variables → Actions:
+#        APP_URL      — deployed origin, e.g. https://app.priyas.de
+#                       (no trailing slash)
+#        CRON_SECRET  — same value as the Vercel project's CRON_SECRET
+#                       env var; the route checks this via Bearer token
+#   2. Uncomment the `schedule:` block below.
+#   3. Verify with one manual dispatch from Actions → "Missed checkout
+#      sweep" → "Run workflow" before letting the cron take over.
+#
+# Manual dispatch keeps working with or without the auto-schedule.
 # =============================================================================
 name: Missed checkout sweep
 
 on:
-  schedule:
-    - cron: "*/15 * * * *" # every 15 minutes
+  # schedule:
+  #   - cron: "*/15 * * * *" # every 15 minutes — re-enable when APP_URL + CRON_SECRET are set
   workflow_dispatch:
 
 concurrency:
@@ -44,8 +51,8 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
-            echo "::error::APP_URL and/or CRON_SECRET repo secrets are not set."
-            exit 1
+            echo "::notice::Skipping sweep — APP_URL and/or CRON_SECRET repo secrets are not set. See the workflow file header for setup instructions."
+            exit 0
           fi
           status=$(curl -s -o /tmp/response.json -w "%{http_code}" \
             -X POST "$APP_URL/api/jobs/missed-checkout" \

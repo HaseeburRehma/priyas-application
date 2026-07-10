@@ -90,35 +90,56 @@ export function CheckInButton({
     }
     setLocating(false);
     start(async () => {
-      const r = await checkInAction({
-        shift_id: shiftId,
-        kind,
-        latitude: pos.latitude,
-        longitude: pos.longitude,
-        accuracy_m: pos.accuracy_m,
-      });
-      if (!r.ok) {
-        toast.error(r.error);
-        return;
+      // The service worker deliberately doesn't intercept Server Action
+      // calls (see public/sw.js) — offline/flaky network here surfaces as
+      // a normal fetch rejection, not a queued-for-later response, so we
+      // must catch it ourselves and tell the user plainly instead of
+      // leaving the button stuck on its pending state.
+      try {
+        const r = await checkInAction({
+          shift_id: shiftId,
+          kind,
+          latitude: pos.latitude,
+          longitude: pos.longitude,
+          accuracy_m: pos.accuracy_m,
+        });
+        if (!r.ok) {
+          toast.error(r.error);
+          return;
+        }
+        toast.success(
+          kind === "check_in"
+            ? t("checkedIn", { default: "Checked in." })
+            : t("checkedOut", { default: "Checked out." }),
+        );
+        router.refresh();
+      } catch {
+        toast.error(
+          t("offlineError", {
+            default: "No connection — please try again once you're back online.",
+          }),
+        );
       }
-      toast.success(
-        kind === "check_in"
-          ? t("checkedIn", { default: "Checked in." })
-          : t("checkedOut", { default: "Checked out." }),
-      );
-      router.refresh();
     });
   }
 
   function handleComplete() {
     start(async () => {
-      const r = await completeShiftAction(shiftId);
-      if (!r.ok) {
-        toast.error(r.error);
-        return;
+      try {
+        const r = await completeShiftAction(shiftId);
+        if (!r.ok) {
+          toast.error(r.error);
+          return;
+        }
+        toast.success(t("completed"));
+        router.refresh();
+      } catch {
+        toast.error(
+          t("offlineError", {
+            default: "No connection — please try again once you're back online.",
+          }),
+        );
       }
-      toast.success(t("completed"));
-      router.refresh();
     });
   }
 

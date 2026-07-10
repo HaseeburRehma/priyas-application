@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { consumeAsync } from "@/lib/rate-limit/limiter";
 import { loginSchema } from "@/lib/validators/auth";
+import { recordCurrentDeviceAction } from "./devices";
 
 type LoginResult =
   | { ok: true; data: { needsMfa: boolean; factorId: string | null } }
@@ -109,6 +110,12 @@ export async function loginAction(raw: unknown): Promise<LoginResult> {
     }
     return { ok: false, error: "auth.errorInvalid" };
   }
+
+  // A successful password check is exactly "the user signs in again" per
+  // the revoke-device contract (see user_devices migration comment) — clear
+  // any prior revocation for this browser's fingerprint now, before MFA.
+  // Best-effort: a failure here must never block an otherwise-valid login.
+  await recordCurrentDeviceAction({ freshSignIn: true }).catch(() => {});
 
   // After a successful primary auth, see whether MFA is required.
   const { data: aal } =

@@ -60,6 +60,7 @@
     "errorWeakPassword": "Password is too weak.",
     "errorInvalid": "Email or password is incorrect.",
     "errorGeneric": "Sign-in failed. Please try again.",
+    "deviceRevoked": "This device was revoked from your account. Please sign in again to continue.",
     "heroEyebrow": "Welcome back",
     "heroTitle": "Run your entire cleaning operation in one place.",
     "heroBody": "Scheduling, time tracking, property records, invoicing — everything your team needs, from field to office.",
