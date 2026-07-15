@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { loadEmployeeDetail } from "@/lib/api/employees";
 import { v1Guard, v1ItemResponse, v1ErrorResponse } from "@/lib/api/v1-respond";
-import { getServiceClient } from "@/lib/api/v1-auth";
+import { getServiceClient, hasScope } from "@/lib/api/v1-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +26,13 @@ export async function GET(
       orgId: guard.orgId,
     });
     if (!detail) return v1ErrorResponse(404, "employee_not_found");
+    // hourly_rate_eur is compensation data — only include it when the key
+    // was explicitly granted the extra scope, not just general employee
+    // read access. See the read:employees:compensation doc comment.
+    if (!hasScope(guard, "read:employees:compensation")) {
+      const { hourly_rate_eur: _hourly_rate_eur, ...rest } = detail;
+      return v1ItemResponse(rest);
+    }
     return v1ItemResponse(detail);
   } catch (err) {
     return v1ErrorResponse(

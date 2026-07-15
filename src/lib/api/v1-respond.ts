@@ -106,7 +106,7 @@ export async function v1Guard(
   if (scopeErr) {
     return v1ErrorResponse(scopeErr.status, scopeErr.error);
   }
-  const rl = consumeV1Token(auth.keyId);
+  const rl = await consumeV1Token(auth.keyId);
   if (!rl.ok) {
     return v1ErrorResponse(429, "rate_limited", {
       extraHeaders: { "retry-after": String(rl.retryAfterSeconds) },

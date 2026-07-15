@@ -11,6 +11,7 @@ import {
 import { can } from "@/lib/rbac/permissions";
 import {
   asAppLocale,
+  bcp47Of,
   type AppLocale,
   formatCurrencyCents,
   formatDateTime,
@@ -66,11 +67,11 @@ export default async function Page({
     formatPattern(new Date(y, m, 1), "MMM", locale);
   const monthLabel = `${monthShort(month)} ${year}`;
 
-  // Europe/Berlin alternates between CET (MEZ) and CEST (MESZ). Use
-  // Intl.DateTimeFormat's `timeZoneName: 'short'` rendered in German so
-  // the abbreviation matches what German users expect.
+  // Europe/Berlin alternates between CET (MEZ) and CEST (MESZ). Was
+  // hardcoded to "de-DE" regardless of the active locale — render the
+  // abbreviation in whichever locale the report is being viewed in.
   const tzAbbrev = (() => {
-    const parts = new Intl.DateTimeFormat("de-DE", {
+    const parts = new Intl.DateTimeFormat(bcp47Of(locale), {
       timeZone: "Europe/Berlin",
       timeZoneName: "short",
     }).formatToParts(new Date());

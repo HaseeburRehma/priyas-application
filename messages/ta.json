@@ -19,6 +19,13 @@
     "no": "இல்லை",
     "comingSoon": "விரைவில்"
   },
+  "errorBoundary": {
+    "title": "ஏதோ தவறு நடந்தது",
+    "body": "எதிர்பாராத பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கலாம் அல்லது டாஷ்போர்டுக்குத் திரும்பலாம்.",
+    "retry": "மீண்டும் முயற்சிக்க",
+    "goDashboard": "டாஷ்போர்டுக்குச் செல்ல",
+    "digestLabel": "பிழை குறிப்பு"
+  },
   "topbar": {
     "searchPlaceholder": "வாடிக்கையாளர்கள், சொத்துக்கள், விலைப்பட்டியல்களைத் தேடுங்கள்…",
     "openMenu": "மெனுவைத் திற",
@@ -179,7 +186,9 @@
         "assignments": "Assignments",
         "assignment_staff": "Assignment staff",
         "invoice_payments": "Payments",
-        "property_keys": "Property keys"
+        "property_keys": "Property keys",
+        "user_devices": "அமர்வுகள் & சாதனங்கள்",
+        "monthly_report_deliveries": "மாத அறிக்கை அனுப்புதல்"
       }
     },
     "team": {

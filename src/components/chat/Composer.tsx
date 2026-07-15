@@ -11,6 +11,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils/cn";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { CHAT_MESSAGE_MAX_LENGTH } from "@/hooks/chat/useSendMessage";
 import type { ChatAttachment } from "@/types/chat";
 
 type Props = {
@@ -331,6 +332,7 @@ export function Composer({
           ref={textareaRef}
           rows={1}
           value={value}
+          maxLength={CHAT_MESSAGE_MAX_LENGTH}
           disabled={disabled || busy}
           onChange={(e) => {
             setValue(e.target.value);

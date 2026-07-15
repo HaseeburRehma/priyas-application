@@ -4,11 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
 import { forgotPasswordSchema, type ForgotPasswordInput } from "@/lib/validators/auth";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { env } from "@/lib/constants/env";
 import { routes } from "@/lib/constants/routes";
+import { requestPasswordResetAction } from "@/app/actions/auth";
 
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
@@ -21,14 +19,16 @@ export default function ForgotPasswordPage() {
   });
 
   async function onSubmit(values: ForgotPasswordInput) {
-    const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-      redirectTo: `${env.NEXT_PUBLIC_APP_URL}${routes.resetPassword}`,
-    });
-    if (error) {
-      toast.error("Couldn't send the reset link. Try again.");
-      return;
-    }
+    // Routed through a server action (requestPasswordResetAction) so the
+    // request is rate-limited — calling resetPasswordForEmail() directly
+    // from the browser, as this used to, had no throttling at all, and
+    // combined with the missing CAPTCHA left this open to a reset-email
+    // bombing campaign against any real user's inbox.
+    await requestPasswordResetAction(values);
+    // Always show the same "if an account exists…" success state,
+    // regardless of whether the address is registered, the send
+    // succeeded, or the request got rate-limited — the action itself
+    // never reports which, on purpose (account-enumeration hardening).
     setSent(true);
   }
 

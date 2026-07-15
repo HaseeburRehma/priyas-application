@@ -19,6 +19,13 @@
     "no": "Nein",
     "comingSoon": "Bald verfügbar"
   },
+  "errorBoundary": {
+    "title": "Etwas ist schiefgelaufen",
+    "body": "Ein unerwarteter Fehler ist aufgetreten. Du kannst es erneut versuchen oder zur Übersicht zurückkehren.",
+    "retry": "Erneut versuchen",
+    "goDashboard": "Zur Übersicht",
+    "digestLabel": "Fehlerreferenz"
+  },
   "topbar": {
     "searchPlaceholder": "Kunden, Objekte, Rechnungen suchen…",
     "openMenu": "Menü öffnen",
@@ -179,7 +186,9 @@
         "assignments": "Aufträge",
         "assignment_staff": "Auftrags-Personal",
         "invoice_payments": "Zahlungen",
-        "property_keys": "Schlüssel"
+        "property_keys": "Schlüssel",
+        "user_devices": "Sitzungen & Geräte",
+        "monthly_report_deliveries": "Monatsbericht-Versand"
       }
     },
     "team": {

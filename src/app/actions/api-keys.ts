@@ -60,8 +60,13 @@ export async function createApiKeyAction(
   // Generate key material — 32 bytes of entropy is more than enough.
   const secret = randomBytes(32).toString("hex");
   const fullKey = `pk_live_${secret}`;
-  // `prefix` is the first 8 chars for display, e.g. "pk_live_".
-  const prefix = fullKey.slice(0, 8);
+  // `prefix` is for display in Settings → API Keys — "pk_live_" plus the
+  // first 8 chars of the actual secret, so different keys are visually
+  // distinguishable. Slicing the first 8 chars of `fullKey` instead (as
+  // this used to) always yields the literal string "pk_live_" for every
+  // key, since that literal is exactly 8 characters long — every row in
+  // the table showed an identical prefix.
+  const prefix = `pk_live_${secret.slice(0, 8)}`;
   const hash = hashApiKey(fullKey);
 
   const supabase = await createSupabaseServerClient();

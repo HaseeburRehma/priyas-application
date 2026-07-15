@@ -341,7 +341,7 @@ export function InvoiceDetail({
                   <div className="flex items-baseline justify-between gap-2">
                     <dt className="text-neutral-500">{tRec("lastAttempt")}</dt>
                     <dd className="font-mono text-neutral-700">
-                      {new Date(detail.lexware_last_attempt_at).toLocaleString("de-DE")}
+                      {f.dateTime(detail.lexware_last_attempt_at)}
                     </dd>
                   </div>
                 )}

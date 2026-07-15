@@ -1,0 +1,35 @@
+-- =============================================================================
+-- 20260713_000055_time_entries_relax_check_in_at.sql
+--
+-- `time_entries.check_in_at` is a leftover from the table's original
+-- design (migration 20260504_000002_domain.sql: one row per shift with
+-- both check_in_at and check_out_at columns). Migration
+-- 20260504_000018_time_entries.sql redesigned the table to one row per
+-- clock event (`kind` + `occurred_at`), but used `create table if not
+-- exists` — a no-op once 000002 had already created the table — so it
+-- only ever ADDED the new columns via `add column if not exists`. It
+-- never touched `check_in_at`, which is still `NOT NULL` with no
+-- default from the original design.
+--
+-- The application code (checkInAction / correctTimeEntryAction in
+-- src/app/actions/time-entries.ts) only ever writes the new shape
+-- (kind, occurred_at, ...) — it has never populated check_in_at. Every
+-- insert through the actual check-in feature has therefore been
+-- rejected with "null value in column check_in_at violates not-null
+-- constraint" (23502) once the unrelated ON CONFLICT bug (see the
+-- previous migration's sibling fix in application code) stopped
+-- masking it.
+--
+-- This migration only relaxes the constraint so inserts succeed again.
+-- It deliberately does NOT drop check_in_at/check_out_at/check_in_lat/
+-- check_in_lng/check_out_lat/check_out_lng/break_minutes — several
+-- read paths (src/lib/api/reports.ts, dashboard.ts, employees.ts,
+-- alltagshilfe.ts) still select check_in_at/check_out_at and compute
+-- hours from them, which is a separate, much larger problem (those
+-- reads expect a shape the write path hasn't produced since the 000018
+-- redesign) that needs its own decision before touching the reporting
+-- code — out of scope for "make check-in work again".
+-- =============================================================================
+
+alter table public.time_entries
+  alter column check_in_at drop not null;

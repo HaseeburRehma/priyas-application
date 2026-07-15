@@ -68,10 +68,6 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createSupabaseServerClient();
-  const throttle = checkImportThrottle(userId);
-  if (throttle) {
-    return NextResponse.json({ error: throttle }, { status: 429 });
-  }
 
   const parsed = await readImportRequest(request);
   if ("error" in parsed) {
@@ -79,6 +75,14 @@ export async function POST(request: NextRequest) {
       { error: parsed.error },
       { status: parsed.status },
     );
+  }
+
+  // Only the real commit is throttled — see clients/import/route.ts for why.
+  if (!parsed.dryRun) {
+    const throttle = checkImportThrottle(userId);
+    if (throttle) {
+      return NextResponse.json({ error: throttle }, { status: 429 });
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -2,8 +2,10 @@
 
 import { headers } from "next/headers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { consumeAsync } from "@/lib/rate-limit/limiter";
-import { loginSchema } from "@/lib/validators/auth";
+import { consumeAsync, LIMITS } from "@/lib/rate-limit/limiter";
+import { loginSchema, registerSchema, forgotPasswordSchema } from "@/lib/validators/auth";
+import { env } from "@/lib/constants/env";
+import { routes } from "@/lib/constants/routes";
 import { recordCurrentDeviceAction } from "./devices";
 
 type LoginResult =
@@ -134,4 +136,133 @@ export async function loginAction(raw: unknown): Promise<LoginResult> {
   }
 
   return { ok: true, data: { needsMfa: false, factorId: null } };
+}
+
+/* ---------------------------------------------------------------------------
+ * Register / forgot-password — moved server-side for rate limiting.
+ *
+ * Both used to call the Supabase browser SDK directly from the client
+ * component with no throttling at all (unlike login, which already went
+ * through loginAction). Combined with the app having no CAPTCHA on either
+ * flow, that left self-serve signup and password-reset open to scripted
+ * abuse — credential stuffing via mass account creation, or a reset-email
+ * bombing campaign against a real user's inbox. Real CAPTCHA needs a
+ * third-party provider (hCaptcha/Turnstile) account and site key that
+ * aren't part of this environment; rate limiting is the actionable
+ * mitigation available here, mirroring loginAction's (email|IP) + email
+ * two-tier pattern.
+ * ------------------------------------------------------------------------- */
+
+type ActionResult<T = void> =
+  | { ok: true; data: T }
+  | { ok: false; error: string };
+
+async function clientIp(): Promise<string> {
+  const xff = (await headers()).get("x-forwarded-for");
+  return xff?.split(",")[0]?.trim() ?? "unknown";
+}
+
+export async function registerAction(
+  raw: unknown,
+): Promise<ActionResult<{ needsEmailConfirm: boolean }>> {
+  const parsed = registerSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const { fullName, email, password } = parsed.data;
+  const emailKey = email.trim().toLowerCase();
+  const ip = await clientIp();
+
+  const pairLimit = await consumeAsync(`register:${emailKey}|${ip}`, LIMITS.register);
+  if (!pairLimit.ok) {
+    const sec = Math.ceil(pairLimit.retryAfterMs / 1000);
+    return {
+      ok: false,
+      error: `Zu viele Registrierungsversuche. Bitte in ${sec}s erneut versuchen.`,
+    };
+  }
+  const ipLimit = await consumeAsync(`register:${ip}`, {
+    max: LIMITS.register.max * 3,
+    windowMs: LIMITS.register.windowMs,
+  });
+  if (!ipLimit.ok) {
+    const sec = Math.ceil(ipLimit.retryAfterMs / 1000);
+    return {
+      ok: false,
+      error: `Zu viele Registrierungsversuche. Bitte in ${sec}s erneut versuchen.`,
+    };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      // SECURITY: never accept `role` or `org_id` from the client — see
+      // the comment this used to carry in RegisterForm.tsx. handle_new_user()
+      // (server-side, security definer) is the sole authority.
+      data: { full_name: fullName },
+      emailRedirectTo: `${env.NEXT_PUBLIC_APP_URL}/api/auth/callback?next=${encodeURIComponent(
+        routes.dashboard,
+      )}`,
+    },
+  });
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("[registerAction] supabase signUp failed:", {
+      code: error.code,
+      status: error.status,
+      message: error.message,
+    });
+    const msg = (error.message ?? "").toLowerCase();
+    if (msg.includes("already") || msg.includes("registered")) {
+      return { ok: false, error: "auth.errorEmailInUse" };
+    }
+    if (msg.includes("password")) {
+      return { ok: false, error: "auth.errorWeakPassword" };
+    }
+    return { ok: false, error: error.message || "auth.errorGeneric" };
+  }
+
+  return { ok: true, data: { needsEmailConfirm: true } };
+}
+
+export async function requestPasswordResetAction(
+  raw: unknown,
+): Promise<ActionResult<void>> {
+  const parsed = forgotPasswordSchema.safeParse(raw);
+  if (!parsed.success) {
+    // Same generic response either way — never confirm/deny whether the
+    // input was even well-formed enough to look up, matching the
+    // account-enumeration-safe behaviour the UI already had.
+    return { ok: true, data: undefined };
+  }
+  const emailKey = parsed.data.email.trim().toLowerCase();
+  const ip = await clientIp();
+
+  const pairLimit = await consumeAsync(
+    `pwreset:${emailKey}|${ip}`,
+    LIMITS.passwordReset,
+  );
+  const ipLimit = await consumeAsync(`pwreset:${ip}`, {
+    max: LIMITS.passwordReset.max * 3,
+    windowMs: LIMITS.passwordReset.windowMs,
+  });
+  if (!pairLimit.ok || !ipLimit.ok) {
+    // Rate-limited: still return ok:true with no email sent. Surfacing a
+    // distinct "too many attempts" error here would let an attacker use
+    // response timing/shape to enumerate which emails exist accounts for
+    // vs which are merely rate-limited — the UI already shows the same
+    // "if an account exists…" message regardless, so silently no-op.
+    return { ok: true, data: undefined };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+    redirectTo: `${env.NEXT_PUBLIC_APP_URL}${routes.resetPassword}`,
+  });
+  // Never surface Supabase's error here either, for the same
+  // account-enumeration reason — the UI shows one message regardless of
+  // whether the address is registered or the call failed.
+  return { ok: true, data: undefined };
 }

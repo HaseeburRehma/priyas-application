@@ -93,21 +93,23 @@ export function LexwareMonthlyPanel({ lastRun }: Props) {
           <p className="text-[12px] text-neutral-500">{t("subtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            disabled={pending}
-            onClick={runPreview}
-            className="rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-[12px] font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
-          >
-            {t("previewButton")}
-          </button>
+          {/*
+            Only one entry point on purpose: real generation must always go
+            through the dry-run confirm modal below (runGenerate is only
+            reachable from its "Confirm & Generate" button). This used to
+            render a second "Generate now" button here that also called
+            runPreview — identical to this one — so it silently reopened
+            the same preview instead of the immediate action its label
+            promised. Rather than add a second button that does the same
+            thing under a more urgent-sounding label, there's just the one.
+          */}
           <button
             type="button"
             disabled={pending}
             onClick={runPreview}
             className="rounded-md bg-primary-500 px-3 py-1.5 text-[12px] font-medium text-white hover:bg-primary-600 disabled:opacity-50"
           >
-            {t("generateButton")}
+            {t("previewButton")}
           </button>
         </div>
       </header>

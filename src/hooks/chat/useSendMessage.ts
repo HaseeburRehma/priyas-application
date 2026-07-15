@@ -5,6 +5,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { ChatAttachment, Message } from "@/types/chat";
 
+/**
+ * Hard cap on message body length. `chat_messages.body` had no length
+ * bound at all (client or DB) — a single message could be megabytes of
+ * text, bloating the table and the realtime payload every subscriber
+ * receives. Mirrored as a CHECK constraint in the
+ * `20260707_000054_chat_message_length.sql` migration for defense in
+ * depth (this hook isn't the only writer — a direct API/action call
+ * could bypass it).
+ */
+export const CHAT_MESSAGE_MAX_LENGTH = 8000;
+
 type SendArgs = {
   channelId: string;
   body: string;
@@ -44,6 +55,10 @@ export function useSendMessage() {
       const atts = attachments ?? [];
       // A message must have either text or at least one attachment.
       if (!trimmed && atts.length === 0) return null;
+      if (trimmed.length > CHAT_MESSAGE_MAX_LENGTH) {
+        setError(`Message too long (max ${CHAT_MESSAGE_MAX_LENGTH} characters)`);
+        return null;
+      }
 
       const {
         data: { user },

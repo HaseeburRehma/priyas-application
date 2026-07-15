@@ -1,6 +1,7 @@
 import "server-only";
 import { startOfYear, addMonths, format } from "date-fns";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { pairCheckInOutEvents } from "@/lib/api/time-entries-pairing";
 
 export type ReportRange = "30d" | "Q" | "YTD" | "12mo";
 
@@ -115,14 +116,16 @@ export async function loadReports(range: ReportRange = "YTD"): Promise<ReportsDa
       .is("deleted_at", null),
     supabase
       .from("time_entries")
-      .select("check_in_at, check_out_at, break_minutes, employee_id, shift_id")
-      .gte("check_in_at", start.toISOString())
-      .lte("check_in_at", end.toISOString()),
+      .select("shift_id, employee_id, kind, occurred_at")
+      .in("kind", ["check_in", "check_out"])
+      .gte("occurred_at", start.toISOString())
+      .lte("occurred_at", end.toISOString()),
     supabase
       .from("time_entries")
-      .select("check_in_at, check_out_at, break_minutes")
-      .gte("check_in_at", prevStart.toISOString())
-      .lte("check_in_at", prevEnd.toISOString()),
+      .select("shift_id, employee_id, kind, occurred_at")
+      .in("kind", ["check_in", "check_out"])
+      .gte("occurred_at", prevStart.toISOString())
+      .lte("occurred_at", prevEnd.toISOString()),
     supabase
       .from("shifts")
       .select("id, status, starts_at, property_id")
@@ -170,25 +173,33 @@ export async function loadReports(range: ReportRange = "YTD"): Promise<ReportsDa
   const revenueDeltaPct = pctDelta(revenueCents, revenuePrev);
 
   /* ---- Hours KPI ----- */
-  const teCur = (timeEntriesCurRes.data ?? []) as Array<{
-    check_in_at: string;
-    check_out_at: string | null;
-    break_minutes: number | null;
-    employee_id: string;
-    shift_id: string | null;
-  }>;
-  const tePrev = (timeEntriesPrevRes.data ?? []) as Array<{
-    check_in_at: string;
-    check_out_at: string | null;
-    break_minutes: number | null;
-  }>;
+  // teCur/tePrev are paired {check_in_at, check_out_at} records — see
+  // src/lib/api/time-entries-pairing.ts for why this can't just select
+  // check_in_at/check_out_at columns directly (that shape hasn't been
+  // written by the actual check-in flow since a schema redesign).
+  const teCur = pairCheckInOutEvents(
+    (timeEntriesCurRes.data ?? []) as Array<{
+      shift_id: string | null;
+      employee_id: string | null;
+      kind: string;
+      occurred_at: string;
+    }>,
+  );
+  const tePrev = pairCheckInOutEvents(
+    (timeEntriesPrevRes.data ?? []) as Array<{
+      shift_id: string | null;
+      employee_id: string | null;
+      kind: string;
+      occurred_at: string;
+    }>,
+  );
   const hoursOf = (
-    rows: Array<{ check_in_at: string; check_out_at: string | null; break_minutes: number | null }>,
+    rows: Array<{ check_in_at: string | null; check_out_at: string | null }>,
   ) =>
     rows.reduce((s, r) => {
-      if (!r.check_out_at) return s;
+      if (!r.check_out_at || !r.check_in_at) return s;
       const ms = new Date(r.check_out_at).getTime() - new Date(r.check_in_at).getTime();
-      return s + Math.max(0, ms / 3_600_000 - (r.break_minutes ?? 0) / 60);
+      return s + Math.max(0, ms / 3_600_000);
     }, 0);
   const hours = Math.round(hoursOf(teCur));
   const hoursPrev = Math.round(hoursOf(tePrev));
@@ -300,12 +311,11 @@ export async function loadReports(range: ReportRange = "YTD"): Promise<ReportsDa
     const clientId = propClient.get(propId);
     const svc = clientId ? scopeByClient.get(clientId) : undefined;
     const key = svc ?? "maintenance_cleaning";
-    if (!t.check_out_at) continue;
+    if (!t.check_out_at || !t.check_in_at) continue;
     const h = Math.max(
       0,
       (new Date(t.check_out_at).getTime() - new Date(t.check_in_at).getTime()) /
-        3_600_000 -
-        (t.break_minutes ?? 0) / 60,
+        3_600_000,
     );
     hoursByServiceMap.set(key, (hoursByServiceMap.get(key) ?? 0) + h);
   }
@@ -327,20 +337,21 @@ export async function loadReports(range: ReportRange = "YTD"): Promise<ReportsDa
   const revenueSpark = bucketSeries(invCur, "issue_date", buckets, start, end, (r) =>
     Number((r as { total_cents: number | null }).total_cents ?? 0),
   );
-  const hoursSpark = bucketSeries(teCur, "check_in_at", buckets, start, end, (r) => {
-    const tr = r as {
-      check_in_at: string;
-      check_out_at: string | null;
-      break_minutes: number | null;
-    };
-    if (!tr.check_out_at) return 0;
-    return Math.max(
-      0,
-      (new Date(tr.check_out_at).getTime() - new Date(tr.check_in_at).getTime()) /
-        3_600_000 -
-        (tr.break_minutes ?? 0) / 60,
-    );
-  });
+  const hoursSpark = bucketSeries(
+    teCur.filter((r) => r.check_in_at != null),
+    "check_in_at",
+    buckets,
+    start,
+    end,
+    (r) => {
+      if (!r.check_out_at || !r.check_in_at) return 0;
+      return Math.max(
+        0,
+        (new Date(r.check_out_at).getTime() - new Date(r.check_in_at).getTime()) /
+          3_600_000,
+      );
+    },
+  );
   const shiftsSpark = bucketSeries(
     shifts.filter((s) => s.status === "completed"),
     "starts_at",

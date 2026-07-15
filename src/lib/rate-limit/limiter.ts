@@ -217,4 +217,8 @@ export const LIMITS = {
   write: { max: 60, windowMs: 60_000 },
   /** Heavy actions (PDF, Lexware sync): 10 per minute per user. */
   heavy: { max: 10, windowMs: 60_000 },
+  /** Self-serve registration: 5 attempts per 10 minutes per (email|IP). */
+  register: { max: 5, windowMs: 10 * 60_000 },
+  /** Forgot-password: 5 requests per 10 minutes per (email|IP). */
+  passwordReset: { max: 5, windowMs: 10 * 60_000 },
 } as const;

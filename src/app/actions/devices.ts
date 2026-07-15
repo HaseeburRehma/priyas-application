@@ -17,10 +17,10 @@
  * Stable for the same browser-OS-locale combo, distinct per device.
  */
 
-import crypto from "node:crypto";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { computeDeviceFingerprint } from "@/lib/security/device-revocation";
 
 type DeviceRow = {
   id: string;
@@ -87,14 +87,6 @@ function parseUserAgent(ua: string): {
   return { label: `${device} · ${browser}`, kind, os, browser };
 }
 
-function fingerprintOf(userId: string, ua: string, lang: string): string {
-  return crypto
-    .createHash("sha256")
-    .update(`${userId}|${ua}|${lang}`)
-    .digest("hex")
-    .slice(0, 40);
-}
-
 function ipFromHeaders(h: Headers): string | null {
   // Vercel / typical reverse-proxy hop. Picks the first non-private IP
   // in the chain. `cf-connecting-ip` from Cloudflare wins if present.
@@ -128,7 +120,7 @@ export async function recordCurrentDeviceAction(opts?: {
   const lang = h.get("accept-language")?.split(",")[0] ?? "";
   const ip = ipFromHeaders(h);
 
-  const fp = fingerprintOf(user.id, ua, lang);
+  const fp = computeDeviceFingerprint(user.id, ua, lang);
   const { label, kind, os, browser } = parseUserAgent(ua);
 
   // Best-effort geo. We don't ship a GeoIP DB in this app — a
@@ -180,7 +172,7 @@ export async function listDevicesAction(): Promise<
   const h = await headers();
   const ua = h.get("user-agent") ?? "";
   const lang = h.get("accept-language")?.split(",")[0] ?? "";
-  const fp = fingerprintOf(user.id, ua, lang);
+  const fp = computeDeviceFingerprint(user.id, ua, lang);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const table = supabase.from("user_devices") as any;

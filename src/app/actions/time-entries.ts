@@ -154,37 +154,44 @@ export async function checkInAction(
     }
   }
 
-  // Idempotent insert via upsert + onConflict. Two concurrent clicks used
-  // to race the "does it already exist?" check vs the INSERT; we now lean
-  // on the unique index (shift_id, employee_id, kind) so the DB rejects
-  // the dup. `ignoreDuplicates: true` makes Supabase return no rows on a
-  // hit, so we re-select afterwards to grab the existing id.
+  // Idempotent insert: plain INSERT, catching a unique_violation (23505)
+  // rather than upsert(onConflict). Two concurrent clicks used to race
+  // the "does it already exist?" check vs the INSERT, producing
+  // duplicates — the unique index on (shift_id, employee_id, kind) still
+  // backstops that. But that index is now PARTIAL (kind IN ('check_in',
+  // 'check_out') only — see migration 20260605_000044_time_entries_breaks.sql,
+  // added so break_start/break_end can repeat per shift), and PostgREST's
+  // on_conflict= query param can't express a partial index's WHERE
+  // predicate, so upsert(onConflict:"shift_id,employee_id,kind") always
+  // fails with 42P10 ("no unique or exclusion constraint matching the ON
+  // CONFLICT specification") regardless of which columns are listed. A
+  // plain INSERT doesn't rely on ON CONFLICT inference at all — the
+  // partial index still rejects the second concurrent insert with a
+  // normal 23505, which we catch here exactly like the old
+  // ignoreDuplicates path did.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: upserted, error } = await ((supabase.from("time_entries") as any))
-    .upsert(
-      {
-        org_id: orgId,
-        shift_id: input.shift_id,
-        employee_id: employeeId,
-        property_id: shift.property_id,
-        kind: input.kind,
-        occurred_at: new Date().toISOString(),
-        latitude: input.latitude,
-        longitude: input.longitude,
-        accuracy_m: input.accuracy_m ?? null,
-        distance_m: distance,
-        manual: false,
-        created_by: user?.id ?? null,
-      },
-      { onConflict: "shift_id,employee_id,kind", ignoreDuplicates: true },
-    )
-    .select("id");
-  if (error) return { ok: false, error: error.message };
-  let resolvedId: string | null =
-    Array.isArray(upserted) && upserted.length > 0
-      ? (upserted[0] as { id: string }).id
-      : null;
-  if (!resolvedId) {
+  const { data: inserted, error } = await ((supabase.from("time_entries") as any))
+    .insert({
+      org_id: orgId,
+      shift_id: input.shift_id,
+      employee_id: employeeId,
+      property_id: shift.property_id,
+      kind: input.kind,
+      occurred_at: new Date().toISOString(),
+      latitude: input.latitude,
+      longitude: input.longitude,
+      accuracy_m: input.accuracy_m ?? null,
+      distance_m: distance,
+      manual: false,
+      created_by: user?.id ?? null,
+    })
+    .select("id")
+    .single();
+  let resolvedId: string | null = null;
+  if (error) {
+    if (error.code !== "23505") {
+      return { ok: false, error: error.message };
+    }
     // Conflict path: the row already existed. Fetch it so the caller still
     // gets a usable id.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -195,6 +202,8 @@ export async function checkInAction(
       .eq("kind", input.kind)
       .maybeSingle();
     resolvedId = (existing as { id: string } | null)?.id ?? null;
+  } else {
+    resolvedId = (inserted as { id: string } | null)?.id ?? null;
   }
   if (!resolvedId) {
     return { ok: false, error: "Time entry creation failed" };
@@ -495,40 +504,53 @@ export async function correctTimeEntryAction(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: existingRow } = await ((supabase.from("time_entries") as any))
     .select(
-      "occurred_at, latitude, longitude, accuracy_m, distance_m, manual, created_by",
+      "id, occurred_at, latitude, longitude, accuracy_m, distance_m, manual, created_by",
     )
     .eq("shift_id", input.shift_id)
     .eq("employee_id", input.employee_id)
     .eq("kind", input.kind)
     .maybeSingle();
+  const existing = existingRow as { id: string } | null;
 
-  // Upsert: a manual correction either creates the row or updates the
-  // existing one with the corrected timestamp + reason. GPS-specific
-  // fields are explicitly cleared — a manager-entered time has no real
+  // Explicit update-if-exists / insert-otherwise, rather than
+  // upsert(onConflict): the unique index on (shift_id, employee_id, kind)
+  // is now a PARTIAL index (only for kind IN ('check_in','check_out') —
+  // see migration 20260605_000044_time_entries_breaks.sql, which needed
+  // break_start/break_end to repeat per shift). PostgREST's `on_conflict=`
+  // can't express a partial index's WHERE predicate, so ON CONFLICT
+  // inference fails with 42P10 regardless of which columns are listed.
+  // We already fetched `existing` above (for the audit `before` snapshot),
+  // so branching on it costs nothing extra. GPS-specific fields are
+  // explicitly cleared either way — a manager-entered time has no real
   // location behind it, so leaving the previous event's coordinates in
   // place would misleadingly suggest the new timestamp was GPS-verified.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await ((supabase.from("time_entries") as any))
-    .upsert(
-      {
-        org_id: orgId,
-        shift_id: input.shift_id,
-        employee_id: input.employee_id,
-        property_id: propertyId,
-        kind: input.kind,
-        occurred_at: input.occurred_at,
-        latitude: null,
-        longitude: null,
-        accuracy_m: null,
-        distance_m: null,
-        manual: true,
-        manual_reason: input.reason,
-        created_by: user?.id ?? null,
-      },
-      { onConflict: "shift_id,employee_id,kind" },
-    )
-    .select("id")
-    .single();
+  const correctionFields = {
+    org_id: orgId,
+    shift_id: input.shift_id,
+    employee_id: input.employee_id,
+    property_id: propertyId,
+    kind: input.kind,
+    occurred_at: input.occurred_at,
+    latitude: null,
+    longitude: null,
+    accuracy_m: null,
+    distance_m: null,
+    manual: true,
+    manual_reason: input.reason,
+    created_by: user?.id ?? null,
+  };
+  const { data, error } = existing
+    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await ((supabase.from("time_entries") as any))
+        .update(correctionFields)
+        .eq("id", existing.id)
+        .select("id")
+        .single()
+    : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await ((supabase.from("time_entries") as any))
+        .insert(correctionFields)
+        .select("id")
+        .single();
   if (error) return { ok: false, error: error.message };
 
   await audit(

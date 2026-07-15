@@ -127,6 +127,16 @@ function toneFor(pct: number): WorkloadRow["tone"] {
 export async function loadEmployeeOverview(): Promise<EmployeeOverviewData> {
   const supabase = await createSupabaseServerClient();
   const { orgId } = await getCurrentRole();
+  // Every query below uses `if (orgId) q = q.eq("org_id", orgId)` — if
+  // orgId were ever falsy for an authenticated caller, all ~8 queries in
+  // this loader would silently run unscoped across every org, relying
+  // solely on RLS as the last line of defense instead of hard-failing
+  // like the rest of the codebase's loaders do. This should never happen
+  // for a real authenticated user (every profile has an org), so treat it
+  // as the same "not attached to an org" condition other actions surface.
+  if (!orgId) {
+    throw new Error("Profile is not attached to an organization yet");
+  }
   const now = new Date();
   const startOfDay = new Date(now);
   startOfDay.setHours(0, 0, 0, 0);
@@ -149,7 +159,7 @@ export async function loadEmployeeOverview(): Promise<EmployeeOverviewData> {
     .from("employees")
     .select("id, full_name, status, weekly_hours, system_unlocked_at, profile_id")
     .is("deleted_at", null);
-  if (orgId) empQuery = empQuery.eq("org_id", orgId);
+  empQuery = empQuery.eq("org_id", orgId);
   const { data: empRows } = await empQuery;
   const employees = ((empRows ?? []) as EmpRow[]).filter((e) => !!e.full_name);
 
@@ -175,7 +185,7 @@ export async function loadEmployeeOverview(): Promise<EmployeeOverviewData> {
     .is("deleted_at", null)
     .gte("starts_at", weekStart.toISOString())
     .lt("starts_at", new Date(endOfDay.getTime() + 3 * ISO_DAY).toISOString());
-  if (orgId) shiftQ = shiftQ.eq("org_id", orgId);
+  shiftQ = shiftQ.eq("org_id", orgId);
   const { data: shiftRows } = await shiftQ;
   const shifts = (shiftRows ?? []) as unknown as ShiftRow[];
 
@@ -217,7 +227,7 @@ export async function loadEmployeeOverview(): Promise<EmployeeOverviewData> {
     .eq("status", "approved")
     .lte("start_date", startOfDay.toISOString().slice(0, 10))
     .gte("end_date", startOfDay.toISOString().slice(0, 10));
-  if (orgId) vacQ = vacQ.eq("org_id", orgId);
+  vacQ = vacQ.eq("org_id", orgId);
   const { data: vacRows } = await vacQ;
   const onVacationToday = new Set(
     ((vacRows ?? []) as Array<{ employee_id: string }>).map((r) => r.employee_id),
@@ -251,7 +261,7 @@ export async function loadEmployeeOverview(): Promise<EmployeeOverviewData> {
     .is("deleted_at", null)
     .gte("starts_at", lastWeekStart.toISOString())
     .lt("starts_at", weekStart.toISOString());
-  if (orgId) lastQ = lastQ.eq("org_id", orgId);
+  lastQ = lastQ.eq("org_id", orgId);
   const { data: lastShifts } = await lastQ;
   let totalThisWeek = 0;
   for (const v of hoursThisWeekByEmployee.values()) totalThisWeek += v;
@@ -309,7 +319,7 @@ export async function loadEmployeeOverview(): Promise<EmployeeOverviewData> {
     .select("id, shift_id, occurred_at, kind, manual")
     .eq("kind", "check_in")
     .gte("occurred_at", monthStart.toISOString());
-  if (orgId) teQ = teQ.eq("org_id", orgId);
+  teQ = teQ.eq("org_id", orgId);
   const { data: teRows } = await teQ;
   const present = (teRows ?? []).length;
   const delayed = ((teRows ?? []) as Array<{ manual: boolean }>).filter(
@@ -321,7 +331,7 @@ export async function loadEmployeeOverview(): Promise<EmployeeOverviewData> {
     .select("id")
     .eq("status", "approved")
     .gte("start_date", monthStart.toISOString().slice(0, 10));
-  if (orgId) vacMonthQ = vacMonthQ.eq("org_id", orgId);
+  vacMonthQ = vacMonthQ.eq("org_id", orgId);
   const { data: vacMonthRows } = await vacMonthQ;
   const onHoliday = (vacMonthRows ?? []).length;
   // Sick reports — not modelled yet; surface as 0 until we add them.
@@ -351,7 +361,7 @@ export async function loadEmployeeOverview(): Promise<EmployeeOverviewData> {
        employee:employees ( full_name )`,
     )
     .not("completed_at", "is", null);
-  if (orgId) certQ = certQ.eq("org_id", orgId);
+  certQ = certQ.eq("org_id", orgId);
   const { data: certRows } = await certQ;
   const certificates: CertificateRow[] = ((certRows ?? []) as unknown as CertProgress[])
     .filter((r) => r.module && r.completed_at)
@@ -398,7 +408,7 @@ export async function loadEmployeeOverview(): Promise<EmployeeOverviewData> {
     .gte("created_at", new Date(now.getTime() - 7 * ISO_DAY).toISOString())
     .order("created_at", { ascending: false })
     .limit(20);
-  if (orgId) auditQ = auditQ.eq("org_id", orgId);
+  auditQ = auditQ.eq("org_id", orgId);
   const { data: auditRows } = await auditQ;
   const events: PersonnelEvent[] = ((auditRows ?? []) as unknown as AuditRow[]).map(
     (r) => {

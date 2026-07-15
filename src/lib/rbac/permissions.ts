@@ -1,5 +1,9 @@
 import "server-only";
+import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isCurrentDeviceRevoked } from "@/lib/security/device-revocation";
+
+type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
 export type Role = "admin" | "dispatcher" | "employee";
 
@@ -133,17 +137,38 @@ export class PermissionError extends Error {
   }
 }
 
-/** Returns the current user's role, or `null` if signed out / unattached. */
-export async function getCurrentRole(): Promise<{
+/**
+ * Returns the current user's role, or `null` if signed out / unattached /
+ * revoked. This is the one chokepoint `requireAuth()`, `requirePermission()`,
+ * `canReachRoute()` and `getAllowedRoutes()` all funnel through, so it's
+ * also where device-revocation enforcement lives — `middleware.ts`'s
+ * equivalent check only runs for page navigations/Server Actions (it
+ * explicitly skips all `/api/*` routes, which handle their own auth), so
+ * cookie-authenticated API routes like `/api/reports/export` previously
+ * never checked `user_devices` at all. A revoked device is treated exactly
+ * like "not signed in" — every caller already handles that shape correctly.
+ *
+ * Wrapped in React's `cache()` so the extra device-revocation lookup this
+ * adds only costs one Supabase round-trip per request even when several
+ * permission checks run during the same Server Action/page render.
+ */
+export const getCurrentRole = cache(async function getCurrentRole(): Promise<{
   userId: string | null;
   orgId: string | null;
   role: Role | null;
+  supabase: SupabaseServerClient;
 }> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { userId: null, orgId: null, role: null };
+  if (!user) return { userId: null, orgId: null, role: null, supabase };
+
+  if (await isCurrentDeviceRevoked(supabase, user.id)) {
+    await supabase.auth.signOut();
+    return { userId: null, orgId: null, role: null, supabase };
+  }
+
   const { data } = await supabase
     .from("profiles")
     .select("org_id, role")
@@ -154,8 +179,9 @@ export async function getCurrentRole(): Promise<{
     userId: user.id,
     orgId: profile?.org_id ?? null,
     role: profile?.role ?? null,
+    supabase,
   };
-}
+});
 
 /**
  * Lighter-weight check than `requirePermission`: just confirms the
@@ -173,9 +199,15 @@ export async function requireAuth(): Promise<
   return { userId, orgId };
 }
 
+/**
+ * Roles the spec requires mandatory 2FA for (Management + Project Manager).
+ * `employee` (Field Staff) is unaffected.
+ */
+const AAL2_REQUIRED_ROLES: Role[] = ["admin", "dispatcher"];
+
 /** Throws PermissionError if the current user can't perform the action. */
 export async function requirePermission(action: Action) {
-  const { userId, orgId, role } = await getCurrentRole();
+  const { userId, orgId, role, supabase } = await getCurrentRole();
   if (!userId) throw new PermissionError("Not signed in", action);
   if (!orgId) throw new PermissionError("No organisation attached", action);
   if (!role || !MATRIX[action].includes(role)) {
@@ -183,6 +215,20 @@ export async function requirePermission(action: Action) {
       `Role '${role ?? "anonymous"}' is not permitted to ${action}`,
       action,
     );
+  }
+  if (AAL2_REQUIRED_ROLES.includes(role)) {
+    // `getAuthenticatorAssuranceLevel()` with no argument reads the `aal`
+    // claim off the already-cached local session — no network call, so
+    // this is free to run on every write. The dashboard layout already
+    // redirects admin/dispatcher to /setup-2fa on page render, but that
+    // only covers page navigations; this closes the same gap for Server
+    // Actions and API routes called directly (curl, a future mobile
+    // client, a compromised/replayed session cookie hitting an action
+    // without ever rendering the dashboard).
+    const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (data?.currentLevel !== "aal2") {
+      throw new PermissionError("2FA verification required", action);
+    }
   }
   return { userId, orgId, role };
 }

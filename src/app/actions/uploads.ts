@@ -241,7 +241,7 @@ export async function uploadOrgLogoAction(
   if (!LOGO_MIME_ALLOW.includes(file.type)) {
     return {
       ok: false,
-      error: `Dateityp nicht erlaubt: ${file.type || "unbekannt"}. JPG, PNG, WebP oder SVG verwenden.`,
+      error: `Dateityp nicht erlaubt: ${file.type || "unbekannt"}. JPG, PNG oder WebP verwenden.`,
     };
   }
   if (file.size > LOGO_MAX_BYTES) {

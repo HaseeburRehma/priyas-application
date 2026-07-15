@@ -475,7 +475,10 @@ export function SchedulePage({
         </div>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <Chip label={`${t("filterTeam")} 3 / 5`} active />
+          <Chip
+            label={`${t("filterTeam")} ${employeeFilter.size} / ${allEmployeeIds.size}`}
+            active={employeeFilter.size !== allEmployeeIds.size}
+          />
           <Chip label={t("filterClient")} />
           <Chip label={t("filterStatus")} />
           <Chip label={t("filterMore")} />

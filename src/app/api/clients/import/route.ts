@@ -92,10 +92,6 @@ export async function POST(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const throttle = checkImportThrottle(user?.id ?? null);
-  if (throttle) {
-    return NextResponse.json({ error: throttle }, { status: 429 });
-  }
 
   const parsed = await readImportRequest(request);
   if ("error" in parsed) {
@@ -103,6 +99,17 @@ export async function POST(request: NextRequest) {
       { error: parsed.error },
       { status: parsed.status },
     );
+  }
+
+  // Only the real commit is throttled — a dry-run preview and its
+  // immediately-following commit used to share one throttle window, so
+  // clicking "Commit" right after a fast preview (the normal flow) could
+  // 429 on the user's actual first write.
+  if (!parsed.dryRun) {
+    const throttle = checkImportThrottle(user?.id ?? null);
+    if (throttle) {
+      return NextResponse.json({ error: throttle }, { status: 429 });
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -3,16 +3,9 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { routes } from "@/lib/constants/routes";
+import { useFormat } from "@/lib/utils/i18n-format";
 import type { InvoicesSummary } from "@/lib/api/invoices.types";
 import type { AgingTotals } from "@/lib/billing/types";
-
-function fmt(cents: number) {
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 0,
-  }).format(cents / 100);
-}
 
 export function InvoiceKpiPanel({
   summary,
@@ -22,6 +15,8 @@ export function InvoiceKpiPanel({
   aging: AgingTotals;
 }) {
   const t = useTranslations("dashboard.invoiceKpi");
+  const f = useFormat();
+  const fmt = (cents: number) => f.currencyCents(cents);
   const ageBuckets: { key: keyof AgingTotals; label: string }[] = [
     { key: "current", label: t("agingCurrent") },
     { key: "0_30", label: "1–30" },

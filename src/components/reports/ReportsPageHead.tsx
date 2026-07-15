@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
+import { useFormat } from "@/lib/utils/i18n-format";
 import type { ReportRange } from "@/lib/api/reports";
 
 type Props = {
@@ -19,11 +20,14 @@ const RANGES: ReportRange[] = ["30d", "Q", "YTD", "12mo"];
 export function ReportsPageHead({ range, rangeStart, rangeEnd }: Props) {
   const t = useTranslations("reports");
   const router = useRouter();
+  const f = useFormat();
 
-  const updatedAt = format(new Date(), "HH:mm");
-  // Locale-aware Berlin timezone short name (MEZ in winter, MESZ in summer).
+  const updatedAt = f.time(new Date());
+  // Locale-aware Berlin timezone short name (MEZ/MESZ in DE, EST/EDT-style
+  // abbreviations in EN, etc.) — was hardcoded to "de-DE" regardless of
+  // the active locale.
   const tzAbbrev = (() => {
-    const parts = new Intl.DateTimeFormat("de-DE", {
+    const parts = new Intl.DateTimeFormat(f.bcp47, {
       timeZone: "Europe/Berlin",
       timeZoneName: "short",
     }).formatToParts(new Date());
@@ -81,8 +85,8 @@ export function ReportsPageHead({ range, rangeStart, rangeEnd }: Props) {
               {t("period")}
             </span>
             <span className="font-medium text-neutral-700">
-              {format(new Date(rangeStart), "dd MMM")} –{" "}
-              {format(new Date(rangeEnd), "dd MMM yyyy")}
+              {format(new Date(rangeStart), "dd MMM", { locale: f.dateFnsLocale })} –{" "}
+              {format(new Date(rangeEnd), "dd MMM yyyy", { locale: f.dateFnsLocale })}
             </span>
             <div className="ml-2 flex gap-1 rounded-sm bg-neutral-50 p-1">
               {RANGES.map((r) => (

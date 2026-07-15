@@ -12,6 +12,7 @@ import { registerSchema, type RegisterInput } from "@/lib/validators/auth";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { env } from "@/lib/constants/env";
 import { routes } from "@/lib/constants/routes";
+import { registerAction } from "@/app/actions/auth";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 
 /**
@@ -49,61 +50,19 @@ export function RegisterForm() {
 
   async function onSubmit(values: RegisterInput) {
     startTransition(async () => {
-      const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.signUp({
-        email: values.email,
-        password: values.password,
-        options: {
-          // SECURITY: never send `role` or `org_id` from the client.
-          // handle_new_user() (server-side, security definer) is the sole
-          // authority on which org / role a new signup gets, otherwise
-          // anyone could promote themselves to admin by tampering with
-          // raw_user_meta_data.
-          data: {
-            full_name: values.fullName,
-          },
-          emailRedirectTo: `${env.NEXT_PUBLIC_APP_URL}/api/auth/callback?next=${encodeURIComponent(
-            routes.dashboard,
-          )}`,
-        },
-      });
-
-      if (error) {
-        // Log raw error to console so it shows up in Vercel function logs
-        // and the browser console — much faster to diagnose than the
-        // generic toast on its own.
-        // eslint-disable-next-line no-console
-        console.error("[register] supabase signUp failed:", {
-          code: error.code,
-          status: error.status,
-          message: error.message,
-        });
-        const msg = (error.message ?? "").toLowerCase();
-        if (msg.includes("already") || msg.includes("registered")) {
-          toast.error(t("errorEmailInUse"));
-          return;
-        }
-        if (msg.includes("password")) {
-          toast.error(t("errorWeakPassword"));
-          return;
-        }
-        if (msg.includes("redirect")) {
-          toast.error(
-            "Redirect-URL nicht zugelassen. Bitte die Vercel-Domain in Supabase → Authentication → URL Configuration eintragen.",
-          );
-          return;
-        }
-        if (msg.includes("fetch") || msg.includes("network")) {
-          toast.error(
-            "Supabase nicht erreichbar. NEXT_PUBLIC_SUPABASE_URL / ANON_KEY prüfen.",
-          );
-          return;
-        }
-        // Last resort: show the actual message instead of a useless generic.
-        toast.error(error.message || t("errorGeneric"));
+      // Routed through a server action (registerAction) so the attempt is
+      // rate-limited — calling supabase.auth.signUp() directly from the
+      // browser, as this used to, had no throttling at all.
+      const result = await registerAction(values);
+      if (!result.ok) {
+        // registerAction returns either an "auth.<key>" translation key or
+        // a raw Supabase message it already decided was safe to show.
+        const key = result.error.startsWith("auth.")
+          ? result.error.slice("auth.".length)
+          : null;
+        toast.error(key ? t(key) : result.error);
         return;
       }
-
       router.replace(routes.registerCheckEmail);
     });
   }

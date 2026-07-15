@@ -74,23 +74,29 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 2) Throttle.
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const throttle = checkImportThrottle(user?.id ?? null);
-  if (throttle) {
-    return NextResponse.json({ error: throttle }, { status: 429 });
-  }
 
-  // 3) Read multipart body.
+  // 2) Read multipart body.
   const parsed = await readImportRequest(request);
   if ("error" in parsed) {
     return NextResponse.json(
       { error: parsed.error },
       { status: parsed.status },
     );
+  }
+
+  // 3) Throttle — only the real commit, not the dry-run preview. See
+  // clients/import/route.ts for why: they used to share one window, so
+  // clicking "Commit" right after a fast preview could 429 on the user's
+  // actual first write.
+  if (!parsed.dryRun) {
+    const throttle = checkImportThrottle(user?.id ?? null);
+    if (throttle) {
+      return NextResponse.json({ error: throttle }, { status: 429 });
+    }
   }
 
   // 4) Resolve org_id (used for inserts + client lookups).

@@ -593,12 +593,15 @@ export async function loadEmployeeDetail(
     supabase
       .from("time_entries")
       .select(
-        `id, check_in_at, check_out_at,
+        `id, shift_id, kind, occurred_at,
          shift:shifts ( property:properties ( name ) )`,
       )
       .eq("employee_id", id)
-      .order("check_in_at", { ascending: false })
-      .limit(8),
+      .in("kind", ["check_in", "check_out"])
+      .order("occurred_at", { ascending: false })
+      // Two rows (check_in + check_out) per displayed entry once paired
+      // below, so fetch more raw rows than the final list size.
+      .limit(16),
   ]);
 
   const hoursOf = (
@@ -634,24 +637,60 @@ export async function loadEmployeeDetail(
       3_600_000,
   }));
 
+  // time_entries is one row per clock event (kind + occurred_at), not one
+  // row per shift with both check_in_at/check_out_at columns — that older
+  // shape hasn't been written since the schema redesign in migration
+  // 20260504_000018_time_entries.sql. Pair the check_in/check_out rows by
+  // shift_id (employee is already fixed by the query above) before
+  // building the display list. See src/lib/api/time-entries-pairing.ts
+  // for the same pairing used elsewhere.
   type TimeRow = {
     id: string;
-    check_in_at: string;
-    check_out_at: string | null;
+    shift_id: string | null;
+    kind: string;
+    occurred_at: string;
     shift: { property: { name: string } | null } | null;
   };
-  const recent = ((recentTimeRes.data ?? []) as unknown as TimeRow[]).map((t) => ({
-    id: t.id,
-    check_in_at: t.check_in_at,
-    check_out_at: t.check_out_at,
-    property_name: t.shift?.property?.name ?? "—",
-    hours:
-      t.check_out_at
-        ? (new Date(t.check_out_at).getTime() -
-            new Date(t.check_in_at).getTime()) /
+  type RecentPair = {
+    id: string;
+    check_in_at: string | null;
+    check_out_at: string | null;
+    property_name: string;
+  };
+  const pairsByShift = new Map<string, RecentPair>();
+  for (const t of (recentTimeRes.data ?? []) as unknown as TimeRow[]) {
+    if (t.kind !== "check_in" && t.kind !== "check_out") continue;
+    const key = t.shift_id ?? t.id;
+    let p = pairsByShift.get(key);
+    if (!p) {
+      p = {
+        id: key,
+        check_in_at: null,
+        check_out_at: null,
+        property_name: t.shift?.property?.name ?? "—",
+      };
+      pairsByShift.set(key, p);
+    }
+    if (t.kind === "check_in") p.check_in_at = t.occurred_at;
+    else p.check_out_at = t.occurred_at;
+  }
+  const recent = Array.from(pairsByShift.values())
+    .filter((p): p is RecentPair & { check_in_at: string } => p.check_in_at != null)
+    .sort(
+      (a, b) => new Date(b.check_in_at).getTime() - new Date(a.check_in_at).getTime(),
+    )
+    .slice(0, 8)
+    .map((p) => ({
+      id: p.id,
+      check_in_at: p.check_in_at,
+      check_out_at: p.check_out_at,
+      property_name: p.property_name,
+      hours: p.check_out_at
+        ? (new Date(p.check_out_at).getTime() -
+            new Date(p.check_in_at).getTime()) /
           3_600_000
         : 0,
-  }));
+    }));
 
   return {
     id: r.id,

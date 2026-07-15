@@ -2,6 +2,7 @@ import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentRole } from "@/lib/rbac/permissions";
+import { pairCheckInOutEvents } from "@/lib/api/time-entries-pairing";
 import {
   startOfDay,
   endOfDay,
@@ -215,14 +216,16 @@ export async function loadDashboardData(): Promise<DashboardData> {
         .lte("starts_at", lastWeekEnd.toISOString()),
       supabase
         .from("time_entries")
-        .select("check_in_at, check_out_at, break_minutes")
-        .gte("check_in_at", weekStart.toISOString())
-        .lte("check_in_at", weekEnd.toISOString()),
+        .select("shift_id, employee_id, kind, occurred_at")
+        .in("kind", ["check_in", "check_out"])
+        .gte("occurred_at", weekStart.toISOString())
+        .lte("occurred_at", weekEnd.toISOString()),
       supabase
         .from("time_entries")
-        .select("check_in_at, check_out_at, break_minutes")
-        .gte("check_in_at", lastWeekStart.toISOString())
-        .lte("check_in_at", lastWeekEnd.toISOString()),
+        .select("shift_id, employee_id, kind, occurred_at")
+        .in("kind", ["check_in", "check_out"])
+        .gte("occurred_at", lastWeekStart.toISOString())
+        .lte("occurred_at", lastWeekEnd.toISOString()),
     ]);
 
   const labels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
@@ -250,16 +253,18 @@ export async function loadDashboardData(): Promise<DashboardData> {
 
   const hoursOf = (
     rows: Array<{
-      check_in_at: string;
-      check_out_at: string | null;
-      break_minutes: number | null;
+      shift_id: string | null;
+      employee_id: string | null;
+      kind: string;
+      occurred_at: string;
     }>,
   ) =>
-    rows.reduce((sum, r) => {
-      if (!r.check_out_at) return sum;
+    pairCheckInOutEvents(rows).reduce((sum, pair) => {
+      if (!pair.check_out_at || !pair.check_in_at) return sum;
       const ms =
-        new Date(r.check_out_at).getTime() - new Date(r.check_in_at).getTime();
-      return sum + Math.max(0, ms / 3_600_000 - (r.break_minutes ?? 0) / 60);
+        new Date(pair.check_out_at).getTime() -
+        new Date(pair.check_in_at).getTime();
+      return sum + Math.max(0, ms / 3_600_000);
     }, 0);
   const hoursThis = hoursOf(
     (thisWeekHoursRes.data ?? []) as Parameters<typeof hoursOf>[0],

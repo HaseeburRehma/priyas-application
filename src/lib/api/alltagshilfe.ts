@@ -5,6 +5,7 @@ import {
   type AppLocale,
   formatDayMonth,
 } from "@/lib/utils/i18n-format";
+import { pairCheckInOutEvents } from "@/lib/api/time-entries-pairing";
 
 export type AlltagshilfeMonthlySummary = {
   totalHours: number;
@@ -124,9 +125,10 @@ export async function loadAlltagshilfeMonthly(
     .is("deleted_at", null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let timeEntriesQuery = (supabase.from("time_entries") as any)
-    .select("check_in_at, check_out_at, break_minutes, shift_id")
-    .gte("check_in_at", prevStart.toISOString())
-    .lt("check_in_at", prevEnd.toISOString())
+    .select("shift_id, employee_id, kind, occurred_at")
+    .in("kind", ["check_in", "check_out"])
+    .gte("occurred_at", prevStart.toISOString())
+    .lt("occurred_at", prevEnd.toISOString())
     .limit(10000);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let employeesQuery = (supabase.from("employees") as any)
@@ -337,17 +339,18 @@ export async function loadAlltagshilfeMonthly(
   const totalAmount = rows.reduce((s, r) => s + r.totalAmountCents, 0);
 
   // Previous-month hours for the delta.
-  const prevHours = (
+  const prevHours = pairCheckInOutEvents(
     (prevHoursRes.data ?? []) as Array<{
-      check_in_at: string;
-      check_out_at: string | null;
-      break_minutes: number | null;
-    }>
-  ).reduce((sum, r) => {
-    if (!r.check_out_at) return sum;
+      shift_id: string | null;
+      employee_id: string | null;
+      kind: string;
+      occurred_at: string;
+    }>,
+  ).reduce((sum, pair) => {
+    if (!pair.check_out_at || !pair.check_in_at) return sum;
     const ms =
-      new Date(r.check_out_at).getTime() - new Date(r.check_in_at).getTime();
-    return sum + Math.max(0, ms / 3_600_000 - (r.break_minutes ?? 0) / 60);
+      new Date(pair.check_out_at).getTime() - new Date(pair.check_in_at).getTime();
+    return sum + Math.max(0, ms / 3_600_000);
   }, 0);
   const hoursDeltaPctVsPrev =
     prevHours === 0 ? (totalHours > 0 ? 100 : 0) : ((totalHours - prevHours) / prevHours) * 100;
