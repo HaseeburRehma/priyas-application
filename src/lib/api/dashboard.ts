@@ -95,106 +95,47 @@ export async function loadDashboardData(): Promise<DashboardData> {
   const lastWeekStart = subWeeks(weekStart, 1);
   const lastWeekEnd = subWeeks(weekEnd, 1);
 
-  // Fire all the simple counts in parallel.
-  const [
-    activeClientsRes,
-    activeClientsLastMonthRes,
-    activeClientsAddedRes,
-    propsRes,
-    propsLastMonthRes,
-    propsAddedRes,
-    todayShiftsRes,
-    todayPendingCheckinsRes,
-    openInvoicesRes,
-    overdueInvoicesRes,
-  ] = await Promise.all([
-    supabase
-      .from("clients")
-      .select("id", { count: "exact", head: true })
-      .is("deleted_at", null),
-    supabase
-      .from("clients")
-      .select("id", { count: "exact", head: true })
-      .is("deleted_at", null)
-      .lt("created_at", monthStart.toISOString()),
-    supabase
-      .from("clients")
-      .select("id", { count: "exact", head: true })
-      .is("deleted_at", null)
-      .gte("created_at", monthStart.toISOString()),
-
-    supabase
-      .from("properties")
-      .select("id", { count: "exact", head: true })
-      .is("deleted_at", null),
-    supabase
-      .from("properties")
-      .select("id", { count: "exact", head: true })
-      .is("deleted_at", null)
-      .lt("created_at", monthStart.toISOString()),
-    supabase
-      .from("properties")
-      .select("id", { count: "exact", head: true })
-      .is("deleted_at", null)
-      .gte("created_at", monthStart.toISOString()),
-
-    supabase
-      .from("shifts")
-      .select("id", { count: "exact", head: true })
-      .is("deleted_at", null)
-      .gte("starts_at", todayStart.toISOString())
-      .lte("starts_at", todayEnd.toISOString()),
-    supabase
-      .from("shifts")
-      .select("id", { count: "exact", head: true })
-      .is("deleted_at", null)
-      .gte("starts_at", todayStart.toISOString())
-      .lte("starts_at", todayEnd.toISOString())
-      .in("status", ["scheduled"]),
-
-    supabase
-      .from("invoices")
-      .select("total_cents")
-      .is("deleted_at", null)
-      .in("status", ["sent", "overdue"]),
-    supabase
-      .from("invoices")
-      .select("id", { count: "exact", head: true })
-      .is("deleted_at", null)
-      .eq("status", "overdue"),
-  ]);
-
-  const activeClients = activeClientsRes.count ?? 0;
-  const activeClientsLastMonth = activeClientsLastMonthRes.count ?? 0;
-  const propsCount = propsRes.count ?? 0;
-  const propsLastMonth = propsLastMonthRes.count ?? 0;
-
-  const invoiceRows =
-    (openInvoicesRes.data ?? []) as ReadonlyArray<{ total_cents: number | null }>;
-  const openInvoiceCents = invoiceRows.reduce(
-    (sum, r) => sum + Number(r.total_cents ?? 0),
-    0,
+  // Single-round-trip KPI aggregation. All 10 counts + the open-invoice
+  // sum are computed server-side by the `dashboard_kpis` SQL function
+  // (see migration 000054) and returned as one JSON blob. Replaces
+  // 10 separate count() queries — cuts DB round-trips proportional to
+  // network latency (huge win on cross-region deployments).
+  const { data: kpiRaw, error: kpiErr } = await supabase.rpc(
+    "dashboard_kpis" as never,
+    {
+      p_month_start: monthStart.toISOString(),
+      p_today_start: todayStart.toISOString(),
+      p_today_end: todayEnd.toISOString(),
+    } as never,
   );
+  if (kpiErr) throw kpiErr;
+  type KpiJson = {
+    clients: { active: number; active_last_month: number; added_this_month: number };
+    properties: { total: number; total_last_month: number; added_this_month: number };
+    shifts_today: { scheduled: number; pending_checkins: number };
+    invoices: { open_cents: number; pending_count: number; overdue_count: number };
+  };
+  const k = kpiRaw as unknown as KpiJson;
 
   const kpis: KpiSet = {
     activeClients: {
-      value: activeClients,
-      deltaPct: pctDelta(activeClients, activeClientsLastMonth),
-      addedThisMonth: activeClientsAddedRes.count ?? 0,
+      value: k.clients.active,
+      deltaPct: pctDelta(k.clients.active, k.clients.active_last_month),
+      addedThisMonth: k.clients.added_this_month,
     },
     managedProperties: {
-      value: propsCount,
-      deltaPct: pctDelta(propsCount, propsLastMonth),
-      addedThisMonth: propsAddedRes.count ?? 0,
+      value: k.properties.total,
+      deltaPct: pctDelta(k.properties.total, k.properties.total_last_month),
+      addedThisMonth: k.properties.added_this_month,
     },
     todayShifts: {
-      value: todayShiftsRes.count ?? 0,
-      pendingCheckins: todayPendingCheckinsRes.count ?? 0,
+      value: k.shifts_today.scheduled,
+      pendingCheckins: k.shifts_today.pending_checkins,
     },
     openInvoices: {
-      valueCents: openInvoiceCents,
-      pendingCount: invoiceRows.length,
-      overdueCount: overdueInvoicesRes.count ?? 0,
+      valueCents: Number(k.invoices.open_cents),
+      pendingCount: k.invoices.pending_count,
+      overdueCount: k.invoices.overdue_count,
     },
   };
 
