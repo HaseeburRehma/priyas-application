@@ -8,6 +8,7 @@ import {
   pullLexwarePaymentsForOrg,
   retryLexwarePushForInvoice,
 } from "@/lib/lexware/reconcile";
+import { getCachedUser } from "@/lib/api/current-user";
 
 type ActionResult<T = void> =
   | { ok: true; data: T }
@@ -15,9 +16,7 @@ type ActionResult<T = void> =
 
 async function audit(action: string, recordId: string, message: string) {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profile } = await ((supabase.from("profiles") as any))

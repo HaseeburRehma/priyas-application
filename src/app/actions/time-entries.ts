@@ -13,6 +13,7 @@ import {
 } from "@/lib/rbac/permissions";
 import { distanceMeters } from "@/lib/utils/geo";
 import { routes } from "@/lib/constants/routes";
+import { getCachedUser } from "@/lib/api/current-user";
 
 type ActionResult<T = void> =
   | { ok: true; data: T }
@@ -26,9 +27,7 @@ async function audit(
   before?: Record<string, unknown> | null,
 ) {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profile } = await ((supabase.from("profiles") as any))
@@ -82,9 +81,7 @@ export async function checkInAction(
   }
   const input = parsed.data;
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profile } = await ((supabase.from("profiles") as any))
     .select("org_id")
@@ -291,9 +288,7 @@ export async function getShiftLifecycleAction(
   | { ok: false; error: string }
 > {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return { ok: false, error: "Not signed in" };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: empRow } = await ((supabase.from("employees") as any))
@@ -348,9 +343,7 @@ export async function breakAction(
   const input = parsed.data;
 
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return { ok: false, error: "Not signed in" };
 
   // Resolve the employee row owned by this user. Same lookup the
@@ -473,9 +466,7 @@ export async function correctTimeEntryAction(
   }
   const input = parsed.data;
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profile } = await ((supabase.from("profiles") as any))
     .select("org_id")

@@ -1,0 +1,16 @@
+# pnpm workspace root
+#
+# The existing Next.js web app stays at the repo root for now — its
+# Vercel deploy + `.env.local` conventions all assume this. The mobile
+# app lives in a sibling workspace under `apps/mobile`.
+#
+# A future refactor will move the web app to `apps/web` so both live
+# under `apps/*` uniformly. Doing that now would break the deployment
+# in the same commit as introducing mobile, so it is deferred.
+#
+# Shared code (i18n messages, RBAC matrix, Supabase types) is duplicated
+# under `apps/mobile/src/messages` for the first delivery. When the web
+# app moves to `apps/web`, both apps will consume a shared
+# `packages/messages` package instead.
+packages:
+  - "apps/*"

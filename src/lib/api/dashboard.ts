@@ -2,6 +2,7 @@ import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentRole } from "@/lib/rbac/permissions";
+import { getCachedProfile, getCachedUser } from "@/lib/api/current-user";
 import { pairCheckInOutEvents } from "@/lib/api/time-entries-pairing";
 import {
   startOfDay,
@@ -74,18 +75,16 @@ export async function loadDashboardData(): Promise<DashboardData> {
   const { userId: roleUserId, orgId } = await getCurrentRole();
   void roleUserId;
 
-  // Get the signed-in user's first name for the greeting.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: profileRow } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", user?.id ?? "")
-    .maybeSingle();
-  const fullName = (profileRow as { full_name: string | null } | null)
-    ?.full_name;
-  const greetingName = (fullName ?? user?.email ?? "—").split(" ")[0] ?? "—";
+  // Cached user + profile — reused across every loader in this request,
+  // so this pair collapses to zero extra round-trips when other loaders
+  // have already primed them.
+  const [cachedUser, cachedProfile] = await Promise.all([
+    getCachedUser(),
+    getCachedProfile(),
+  ]);
+  const greetingName = (
+    cachedProfile?.fullName ?? cachedUser?.email ?? "—"
+  ).split(" ")[0] ?? "—";
 
   const now = new Date();
   const todayStart = startOfDay(now);

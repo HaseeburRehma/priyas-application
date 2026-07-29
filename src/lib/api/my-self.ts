@@ -6,6 +6,7 @@ import {
   endOfWeek,
 } from "date-fns";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCachedUser } from "@/lib/api/current-user";
 
 /**
  * Self-service data for field staff — drives the "My hours" /
@@ -46,9 +47,7 @@ export type MySelfData = {
 
 export async function loadMySelf(): Promise<MySelfData | null> {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return null;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,14 +70,50 @@ export async function loadMySelf(): Promise<MySelfData | null> {
   const ms = startOfMonth(now);
   const me_ = endOfMonth(now);
 
-  // Hours from time_entries paired to shifts. We sum durations from
-  // (check_in.occurred_at, check_out.occurred_at) per (shift, employee).
-  const monthEntries = await supabase
-    .from("time_entries")
-    .select("shift_id, kind, occurred_at")
-    .eq("employee_id", me.id)
-    .gte("occurred_at", ms.toISOString())
-    .lte("occurred_at", me_.toISOString());
+  // First fan-out: 4 independent queries can all run in parallel. Serial
+  // waterfall was ~4 round-trips (~200ms on Vercel↔Supabase). Now one.
+  //   1) month time_entries → drives week/month hour totals
+  //   2) approved vacation days YTD
+  //   3) mandatory training module list
+  //   4) upcoming assigned shifts (next 5)
+  const yearStart = new Date(now.getFullYear(), 0, 1).toISOString();
+  const todayStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ).toISOString();
+
+  const [monthEntries, vacRes, modsRes, shiftsRes] = await Promise.all([
+    supabase
+      .from("time_entries")
+      .select("shift_id, kind, occurred_at")
+      .eq("employee_id", me.id)
+      .gte("occurred_at", ms.toISOString())
+      .lte("occurred_at", me_.toISOString()),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ((supabase.from("vacation_requests") as any))
+      .select("days, status")
+      .eq("employee_id", me.id)
+      .eq("status", "approved")
+      .gte("start_date", yearStart),
+    supabase
+      .from("training_modules")
+      .select("id, title")
+      .eq("is_mandatory", true)
+      .is("deleted_at", null),
+    supabase
+      .from("shifts")
+      .select(
+        `id, starts_at, ends_at, status,
+         property:properties ( id, name, client:clients ( id, display_name ) )`,
+      )
+      .eq("employee_id", me.id)
+      .is("deleted_at", null)
+      .gte("starts_at", todayStart)
+      .not("status", "in", '("completed","cancelled","no_show")')
+      .order("starts_at", { ascending: true })
+      .limit(5),
+  ]);
 
   type Pair = { in?: number; out?: number };
   const byShift = new Map<string, Pair>();
@@ -103,27 +138,15 @@ export async function loadMySelf(): Promise<MySelfData | null> {
     if (p.in >= ws.getTime() && p.in <= we.getTime()) hours_this_week += h;
   }
 
-  // Approved vacation days used this year.
-  const yearStart = new Date(now.getFullYear(), 0, 1).toISOString();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: vacRows } = await ((supabase.from("vacation_requests") as any))
-    .select("days, status")
-    .eq("employee_id", me.id)
-    .eq("status", "approved")
-    .gte("start_date", yearStart);
-  const vacation_used = ((vacRows ?? []) as Array<{ days: number }>).reduce(
+  // Approved vacation days used this year (came from the fan-out above).
+  const vacation_used = ((vacRes.data ?? []) as Array<{ days: number }>).reduce(
     (s, r) => s + Number(r.days ?? 0),
     0,
   );
 
   // Outstanding mandatory training. Reuse the same logic that
   // src/lib/training/lock.ts does for a single employee.
-  const { data: mods } = await supabase
-    .from("training_modules")
-    .select("id, title")
-    .eq("is_mandatory", true)
-    .is("deleted_at", null);
-  const mandatory = ((mods ?? []) as Array<{ id: string; title: string }>);
+  const mandatory = ((modsRes.data ?? []) as Array<{ id: string; title: string }>);
   let outstanding_mandatory: Array<{ id: string; title: string }> = [];
   if (mandatory.length > 0) {
     const moduleIds = mandatory.map((m) => m.id);
@@ -161,21 +184,8 @@ export async function loadMySelf(): Promise<MySelfData | null> {
     }
   }
 
-  // Today's + next upcoming shifts. We start from beginning of today so
-  // in-progress shifts (started earlier today) also appear with clock-out buttons.
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-  const { data: shiftRows } = await supabase
-    .from("shifts")
-    .select(
-      `id, starts_at, ends_at, status,
-       property:properties ( id, name, client:clients ( id, display_name ) )`,
-    )
-    .eq("employee_id", me.id)
-    .is("deleted_at", null)
-    .gte("starts_at", todayStart)
-    .not("status", "in", '("completed","cancelled","no_show")')
-    .order("starts_at", { ascending: true })
-    .limit(5);
+  // Today's + upcoming shifts came from the fan-out above.
+  const shiftRows = shiftsRes.data;
   type ShiftRow = {
     id: string;
     starts_at: string;

@@ -2,6 +2,7 @@
 
 import { pushSubscriptionSchema } from "@/lib/validators/push";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCachedUser } from "@/lib/api/current-user";
 
 type ActionResult<T = void> =
   | { ok: true; data: T }
@@ -20,9 +21,7 @@ export async function registerPushSubscriptionAction(
   const sub = parsed.data;
 
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return { ok: false, error: "Not signed in" };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -63,9 +62,7 @@ export async function unregisterPushSubscriptionAction(
   endpoint: string,
 ): Promise<ActionResult> {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return { ok: false, error: "Not signed in" };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await ((supabase.from("push_subscriptions") as any))

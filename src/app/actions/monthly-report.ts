@@ -28,6 +28,7 @@ import {
 } from "@/lib/alltagshilfe/monthly-report-core";
 import { routes } from "@/lib/constants/routes";
 import { asAppLocale } from "@/lib/utils/i18n-format";
+import { getCachedUser } from "@/lib/api/current-user";
 
 type ActionResult = MonthlyReportResult;
 
@@ -45,9 +46,7 @@ export async function sendMonthlyReportToManagementAction(args: {
   }
 
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return { ok: false, error: "not_authenticated" };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -98,9 +97,7 @@ export async function resendMonthlyReportAction(args: {
     };
   }
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return { ok: false, error: "not_authenticated" };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profile } = await ((supabase.from("profiles") as any))

@@ -81,16 +81,9 @@ export async function loadTrainingHub(): Promise<TrainingHubData> {
     };
   }
 
-  const { data: emp } = await supabase
-    .from("employees")
-    .select("id")
-    .eq("profile_id", userId)
-    .maybeSingle();
-  const myEmployeeId = (emp as { id: string } | null)?.id ?? null;
-
-  // Explicit org_id filter — defence-in-depth on top of RLS plus it
-  // gives the planner the leading column. Caps + limit defend against
-  // a stray seed adding thousands of modules.
+  // Batch 1: emp, modules, assignments, and (if manager) the roster
+  // all depend only on ids we already have (userId + orgId). Fan out.
+  // Was 4 sequential Supabase hops, now 1.
   let modulesQuery = supabase
     .from("training_modules")
     .select(
@@ -101,23 +94,41 @@ export async function loadTrainingHub(): Promise<TrainingHubData> {
     .order("created_at", { ascending: true })
     .limit(1000);
   if (orgId) modulesQuery = modulesQuery.eq("org_id", orgId);
-  const { data: rows } = await modulesQuery;
 
-  let modules = ((rows ?? []) as unknown as TrainingModule[]).map((m) => ({
-    ...m,
-    is_mandatory: !!m.is_mandatory,
-  }));
-
-  // Pull all assignments. Managers want them all; employees only need to
-  // know which modules apply to them so we can filter the list.
   let assignmentsQuery = supabase
     .from("training_assignments")
     .select("module_id, employee_id, due_date, assigned_at")
     .limit(1000);
   if (orgId) assignmentsQuery = assignmentsQuery.eq("org_id", orgId);
-  const { data: assignmentRows } = await assignmentsQuery;
+
+  const employeesRosterPromise = canManage
+    ? supabase
+        .from("employees")
+        .select("id, full_name, status, profile_id")
+        .is("deleted_at", null)
+        .order("status", { ascending: true })
+        .order("full_name", { ascending: true })
+    : Promise.resolve({ data: [] as unknown[] });
+
+  const [empRes, modulesRes, assignmentsRes, rosterRes] = await Promise.all([
+    supabase
+      .from("employees")
+      .select("id")
+      .eq("profile_id", userId)
+      .maybeSingle(),
+    modulesQuery,
+    assignmentsQuery,
+    employeesRosterPromise,
+  ]);
+
+  const myEmployeeId = (empRes.data as { id: string } | null)?.id ?? null;
+
+  let modules = ((modulesRes.data ?? []) as unknown as TrainingModule[]).map(
+    (m) => ({ ...m, is_mandatory: !!m.is_mandatory }),
+  );
+
   const assignments =
-    (assignmentRows ?? []) as unknown as TrainingAssignment[];
+    (assignmentsRes.data ?? []) as unknown as TrainingAssignment[];
 
   // Index by module → employee.
   const assignmentsByModule: Record<
@@ -150,7 +161,7 @@ export async function loadTrainingHub(): Promise<TrainingHubData> {
     );
   }
 
-  // Manager-only: roster for the assignment picker.
+  // Manager-only: roster came from the fan-out above.
   //
   // Important: do NOT filter by status='active'. An employee on leave
   // can still be pre-assigned a module to complete on return, and an
@@ -160,27 +171,20 @@ export async function loadTrainingHub(): Promise<TrainingHubData> {
   //
   // Soft-deleted rows ARE excluded — those represent employees who
   // have been removed from the system entirely.
-  let employees: AssignableEmployee[] = [];
-  if (canManage) {
-    const { data: empRows } = await supabase
-      .from("employees")
-      .select("id, full_name, status, profile_id")
-      .is("deleted_at", null)
-      .order("status", { ascending: true }) // active first
-      .order("full_name", { ascending: true });
-    type EmployeeRow = {
-      id: string;
-      full_name: string;
-      status: "active" | "on_leave" | "inactive";
-      profile_id: string | null;
-    };
-    employees = ((empRows ?? []) as unknown as EmployeeRow[]).map((r) => ({
-      id: r.id,
-      full_name: r.full_name,
-      status: r.status ?? "active",
-      has_profile: !!r.profile_id,
-    }));
-  }
+  type EmployeeRow = {
+    id: string;
+    full_name: string;
+    status: "active" | "on_leave" | "inactive";
+    profile_id: string | null;
+  };
+  const employees: AssignableEmployee[] = canManage
+    ? ((rosterRes.data ?? []) as unknown as EmployeeRow[]).map((r) => ({
+        id: r.id,
+        full_name: r.full_name,
+        status: r.status ?? "active",
+        has_profile: !!r.profile_id,
+      }))
+    : [];
 
   return {
     myEmployeeId,

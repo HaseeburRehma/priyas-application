@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<title>Priya's Reinigungsservice — Bedienungsanleitung</title>
+<style>
+  /* Druck-optimierte Typografie. In einem Browser öffnen und mit
+     Cmd/Strg-P → "Als PDF speichern" eine portable Datei erzeugen. */
+  :root {
+    --primary: #72A94F;
+    --primary-50: #F1F7EB;
+    --primary-700: #588843;
+    --secondary: #16587C;
+    --secondary-50: #EEF4F8;
+    --neutral-800: #1D201B;
+    --neutral-700: #2E322C;
+    --neutral-600: #454B41;
+    --neutral-500: #5F675A;
+    --neutral-400: #8B9483;
+    --neutral-300: #BDC5B4;
+    --neutral-200: #DFE4DA;
+    --neutral-100: #EEF1EA;
+    --neutral-50: #F8FAF7;
+    --tertiary: #F6FAF3;
+    --warning-50: #FFF6E5;
+    --warning-500: #F4A261;
+    --warning-700: #B26319;
+    --success-50: #EBF7EE;
+    --success-500: #4BAF63;
+    --success-700: #2E7A45;
+    --error-50: #FDECEC;
+    --error-500: #C74848;
+    --error-700: #8B2A2A;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--neutral-800);
+    background: white;
+    line-height: 1.55;
+    font-size: 12pt;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 32px 40px 60px; }
+
+  /* Titelseite */
+  .cover {
+    min-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 60px 40px;
+    background: linear-gradient(180deg, var(--tertiary) 0%, white 80%);
+    page-break-after: always;
+  }
+  .cover-logo {
+    width: 68px; height: 68px;
+    background: var(--primary); color: white;
+    border-radius: 14px;
+    display: grid; place-items: center;
+    font-weight: 800; font-size: 40px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(114,169,79,0.35);
+  }
+  .cover h1 {
+    font-size: 44px; line-height: 1.1; margin: 0 0 10px;
+    color: var(--secondary); letter-spacing: -1px;
+  }
+  .cover .brand-name { font-size: 18px; color: var(--primary-700); font-weight: 700; margin: 0 0 40px; text-transform: uppercase; letter-spacing: 2px; }
+  .cover .sub { font-size: 16px; color: var(--neutral-600); max-width: 480px; margin: 0 0 30px; }
+  .cover .meta { font-size: 12px; color: var(--neutral-500); margin-top: 60px; }
+
+  h1, h2, h3, h4 { color: var(--secondary); }
+  h2 {
+    font-size: 26px;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 8px;
+    margin: 48px 0 20px;
+    page-break-after: avoid;
+  }
+  h2 .num {
+    display: inline-block; background: var(--primary); color: white;
+    border-radius: 999px; padding: 2px 12px; font-size: 14px;
+    margin-right: 12px; vertical-align: middle;
+  }
+  h3 { font-size: 18px; margin: 32px 0 10px; page-break-after: avoid; }
+  h4 { font-size: 15px; margin: 20px 0 6px; color: var(--neutral-700); page-break-after: avoid; }
+  p { margin: 0 0 12px; }
+
+  /* Inhaltsverzeichnis */
+  .toc { background: var(--neutral-50); border: 1px solid var(--neutral-100); border-radius: 12px; padding: 24px 28px; margin-bottom: 40px; page-break-after: always; }
+  .toc h2 { margin-top: 0; border: none; padding: 0; font-size: 22px; }
+  .toc ol { padding-left: 20px; }
+  .toc li { padding: 6px 0; color: var(--neutral-700); }
+  .toc li b { color: var(--secondary); }
+
+  /* Hinweiskästen */
+  .note, .tip, .warn {
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 12pt;
+    border-left: 4px solid;
+  }
+  .note { background: var(--secondary-50); border-color: var(--secondary); }
+  .tip { background: var(--success-50); border-color: var(--success-500); color: var(--success-700); }
+  .warn { background: var(--warning-50); border-color: var(--warning-500); color: var(--warning-700); }
+  .note b, .tip b, .warn b { display: block; margin-bottom: 4px; font-size: 11pt; text-transform: uppercase; letter-spacing: .5px; }
+
+  /* Schritte */
+  ol.steps { list-style: none; counter-reset: s; padding: 0; }
+  ol.steps > li {
+    counter-increment: s;
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 14px;
+    padding: 12px 0;
+    align-items: start;
+    page-break-inside: avoid;
+  }
+  ol.steps > li::before {
+    content: counter(s);
+    background: var(--primary); color: white;
+    border-radius: 999px;
+    width: 30px; height: 30px;
+    display: grid; place-items: center;
+    font-weight: 800; font-size: 14px;
+  }
+  ol.steps > li > div { padding-top: 3px; }
+
+  /* Inline-UI-Elemente */
+  kbd, .ui {
+    font-family: -apple-system, sans-serif;
+    background: var(--primary-50);
+    color: var(--primary-700);
+    padding: 1px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 11pt;
+    border: 1px solid var(--primary);
+  }
+  .path {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    background: var(--neutral-100);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 11pt;
+  }
+  .chip {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 10pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin: 0 2px;
+  }
+  .chip-primary { background: var(--primary-50); color: var(--primary-700); }
+  .chip-secondary { background: var(--secondary-50); color: var(--secondary); }
+  .chip-success { background: var(--success-50); color: var(--success-700); }
+  .chip-warning { background: var(--warning-50); color: var(--warning-700); }
+  .chip-error { background: var(--error-50); color: var(--error-700); }
+
+  /* Bildschirm-Mockups */
+  .mockup {
+    border: 1px solid var(--neutral-200);
+    border-radius: 10px;
+    background: var(--neutral-50);
+    padding: 12px;
+    margin: 20px 0;
+    page-break-inside: avoid;
+  }
+  .mockup .caption {
+    font-size: 10pt;
+    color: var(--neutral-500);
+    text-align: center;
+    margin-top: 8px;
+    font-style: italic;
+  }
+  .mockup svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+
+  /* Referenztabellen */
+  .ref-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+  .ref-table th, .ref-table td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--neutral-100); font-size: 11pt; }
+  .ref-table th { background: var(--neutral-50); color: var(--neutral-700); text-transform: uppercase; letter-spacing: .5px; font-size: 10pt; }
+  .ref-table td.role { font-weight: 700; }
+
+  /* Rollen-Badges */
+  .role-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 10pt; font-weight: 700; }
+  .role-admin { background: var(--primary-50); color: var(--primary-700); }
+  .role-dispatcher { background: var(--secondary-50); color: var(--secondary); }
+  .role-employee { background: var(--success-50); color: var(--success-700); }
+
+  /* Druckregeln */
+  @media print {
+    body { font-size: 11pt; }
+    main { padding: 20px 30px; }
+    h2 { page-break-before: always; }
+    h2:first-of-type { page-break-before: avoid; }
+    .toc { page-break-after: always; }
+    .mockup, .steps > li, .note, .tip, .warn { page-break-inside: avoid; }
+    a { color: var(--secondary); text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ TITELSEITE -->
+<section class="cover">
+  <div class="cover-logo">P</div>
+  <div class="brand-name">Priya's Reinigungsservice</div>
+  <h1>Bedienungsanleitung</h1>
+  <p class="sub">Eine Schritt-für-Schritt-Einführung in deine Operations-App —
+    anmelden, Kunden und Objekte verwalten, den Einsatzplan führen,
+    Rechnungen erstellen und das Team im Bild halten.</p>
+  <p class="meta">Version 1.0 · Deutsche Ausgabe · Für den täglichen Einsatz</p>
+</section>
+
+<main>
+
+<!-- ==================================================================== TOC -->
+<section class="toc">
+  <h2>Was in dieser Anleitung steht</h2>
+  <ol>
+    <li><b>Willkommen + Rollen</b> — wer macht was in der App</li>
+    <li><b>Anmelden</b> — Passwort, 2FA, Passwort vergessen</li>
+    <li><b>Dein Dashboard</b> — die Startseite lesen</li>
+    <li><b>Kunden</b> — anlegen, bearbeiten, Status setzen</li>
+    <li><b>Objekte (Gebäude)</b> — ein Kunde kann viele haben</li>
+    <li><b>Einsatzplan</b> — Schichten Mitarbeitenden zuweisen</li>
+    <li><b>Mitarbeitende</b> — Team-Mitglieder + Rollen</li>
+    <li><b>Rechnungen erstellen</b> — pro Kunde gesammelt oder pro Objekt</li>
+    <li><b>Monatsbericht (Alltagshilfe)</b> — Abrechnung mit der Krankenkasse</li>
+    <li><b>Chat + Benachrichtigungen</b> — im Bilde bleiben</li>
+    <li><b>Einstellungen</b> — Firmenprofil, Integrationen, Sicherheit</li>
+    <li><b>Häufige Fragen</b> — schnelle Antworten für den Alltag</li>
+  </ol>
+</section>
+
+<!-- ============================================================ 1. WILLKOMMEN -->
+<h2><span class="num">01</span>Willkommen + Rollen</h2>
+<p>Priya's ist deine Zentrale für den gesamten Reinigungsbetrieb — Kunden, Objekte, Mitarbeitende, Schichten, Rechnungen und Kommunikation. Jede Ansicht, die du je brauchst, erreichst du mit einem Klick in der linken Seitenleiste.</p>
+
+<h3>Drei Rollen</h3>
+<p>Die App zeigt unterschiedlichen Personen unterschiedliche Inhalte — abhängig von ihrer Rolle. Jede Person hat genau eine Rolle:</p>
+
+<table class="ref-table">
+  <thead>
+    <tr><th>Rolle</th><th>Wer</th><th>Kann</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="role"><span class="role-badge role-admin">Geschäftsleitung</span></td>
+      <td>Priya, Geschäftspartner</td>
+      <td>Alles — Einstellungen, Abrechnung, Team ändern, Berichte</td>
+    </tr>
+    <tr>
+      <td class="role"><span class="role-badge role-dispatcher">Projektleitung</span></td>
+      <td>Vorgesetzte, die den Einsatzplan steuern</td>
+      <td>Kunden + Objekte pflegen, Schichten planen, Stunden freigeben, Berichte ansehen</td>
+    </tr>
+    <tr>
+      <td class="role"><span class="role-badge role-employee">Feld-Personal</span></td>
+      <td>Reinigungskräfte vor Ort</td>
+      <td>Eigenen Plan sehen, ein- und ausstempeln, Pausen erfassen, Urlaub beantragen</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="tip"><b>Gut zu wissen</b>
+Fehlt ein Menüpunkt auf deinem Bildschirm, hat deine Rolle keinen Zugriff. Bitte die Geschäftsleitung, die Rolle anzupassen, falls du mehr Rechte brauchst.</div>
+
+<!-- ============================================================ 2. ANMELDEN -->
+<h2><span class="num">02</span>Anmelden</h2>
+
+<h3>Jeden Tag</h3>
+<ol class="steps">
+  <li><div>Öffne die Web-App im Browser. Setze ein Lesezeichen — dann musst du die Adresse nicht jedes Mal tippen.</div></li>
+  <li><div>Trage deine <b>E-Mail</b> und dein <b>Passwort</b> ein. Klicke <kbd>Anmelden</kbd>.</div></li>
+  <li><div>Wenn du Geschäftsleitung oder Projektleitung bist, gib den sechsstelligen Code aus deiner Authenticator-App ein.</div></li>
+</ol>
+
+<div class="mockup">
+  <svg viewBox="0 0 500 320" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="500" height="320" fill="#F6FAF3"/>
+    <rect x="0" y="0" width="200" height="320" fill="#16587C"/>
+    <circle cx="100" cy="120" r="34" fill="#72A94F"/>
+    <text x="100" y="132" text-anchor="middle" fill="white" font-family="sans-serif" font-size="38" font-weight="800">P</text>
+    <text x="100" y="180" text-anchor="middle" fill="white" font-family="sans-serif" font-size="18" font-weight="700">Priya's</text>
+    <text x="100" y="200" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="sans-serif" font-size="10">Leistung mit Herz</text>
+    <text x="230" y="60" font-family="sans-serif" font-size="18" font-weight="700" fill="#16587C">Anmelden</text>
+    <rect x="230" y="80" width="240" height="34" fill="white" stroke="#DFE4DA" rx="6"/>
+    <text x="240" y="102" fill="#8B9483" font-family="sans-serif" font-size="11">E-Mail</text>
+    <rect x="230" y="126" width="240" height="34" fill="white" stroke="#DFE4DA" rx="6"/>
+    <text x="240" y="148" fill="#8B9483" font-family="sans-serif" font-size="11">Passwort</text>
+    <rect x="230" y="180" width="240" height="38" fill="#72A94F" rx="6"/>
+    <text x="350" y="204" fill="white" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700">Anmelden</text>
+    <text x="230" y="245" fill="#5F675A" font-family="sans-serif" font-size="11">Passwort vergessen?</text>
+  </svg>
+  <div class="caption">Der Anmeldebildschirm. E-Mail + Passwort eingeben, dann Anmelden drücken.</div>
+</div>
+
+<h3>Nur beim ersten Mal — 2FA einrichten (Geschäftsleitung + Projektleitung)</h3>
+<p>Aus Sicherheitsgründen benötigen Geschäftsleitung und Projektleitung eine Zwei-Faktor-Authentifizierung. Es dauert etwa 60 Sekunden und du machst es nur einmal.</p>
+
+<ol class="steps">
+  <li><div>Nach der ersten Anmeldung landest du auf einer Seite mit dem Titel <b>„Konto mit 2FA absichern"</b>.</div></li>
+  <li><div>Öffne auf deinem Handy die App <b>Google Authenticator</b> (kostenlos — im App Store oder Play Store installieren, falls noch nicht vorhanden). Auch 1Password, Authy oder ähnliche Apps funktionieren.</div></li>
+  <li><div>In der App auf „+" tippen, „QR-Code scannen" wählen, und die Kamera auf den QR-Code am Bildschirm richten.</div></li>
+  <li><div>Die App zeigt jetzt einen sechsstelligen Code, der sich alle 30 Sekunden ändert. Tippe den aktuellen Code ins Feld ein und klicke <kbd>Bestätigen</kbd>.</div></li>
+  <li><div>Fertig. Bei der nächsten Anmeldung fragt die App nach einem frischen Code aus dem Authenticator.</div></li>
+</ol>
+
+<div class="warn"><b>Sicher aufbewahren</b>
+Wenn du dein Handy verlierst, kontaktiere den Support zum Zurücksetzen der 2FA. 2FA nicht deaktivieren — Geschäftsleitungs-Konten haben Zugriff auf das Geld.</div>
+
+<h3>Passwort vergessen?</h3>
+<ol class="steps">
+  <li><div>Auf der Anmeldeseite <kbd>Passwort vergessen?</kbd> klicken.</div></li>
+  <li><div>E-Mail-Adresse eingeben und <kbd>Reset-Link senden</kbd> drücken.</div></li>
+  <li><div>Postfach prüfen. Auf den Link klicken, neues Passwort wählen, neu anmelden.</div></li>
+</ol>
+
+<!-- ============================================================ 3. DASHBOARD -->
+<h2><span class="num">03</span>Dein Dashboard</h2>
+<p>Die <b>Übersicht</b>-Seite ist das Erste, was du siehst. Sie ist dein tägliches Briefing.</p>
+
+<div class="mockup">
+  <svg viewBox="0 0 520 340" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="520" height="340" fill="#F6FAF3"/>
+    <rect x="0" y="0" width="120" height="340" fill="#1D201B"/>
+    <text x="14" y="24" fill="white" font-family="sans-serif" font-size="11" font-weight="800">PRIYA'S</text>
+    <rect x="10" y="52" width="100" height="26" fill="#72A94F" rx="4"/>
+    <text x="20" y="70" fill="white" font-family="sans-serif" font-size="11" font-weight="700">Übersicht</text>
+    <text x="20" y="100" fill="#BDC5B4" font-family="sans-serif" font-size="10">Kunden</text>
+    <text x="20" y="120" fill="#BDC5B4" font-family="sans-serif" font-size="10">Objekte</text>
+    <text x="20" y="140" fill="#BDC5B4" font-family="sans-serif" font-size="10">Einsatzplan</text>
+    <text x="20" y="160" fill="#BDC5B4" font-family="sans-serif" font-size="10">Rechnungen</text>
+    <text x="20" y="180" fill="#BDC5B4" font-family="sans-serif" font-size="10">Mitarbeitende</text>
+    <text x="20" y="220" fill="#BDC5B4" font-family="sans-serif" font-size="10">Berichte</text>
+    <text x="20" y="240" fill="#BDC5B4" font-family="sans-serif" font-size="10">Team-Chat</text>
+    <text x="20" y="260" fill="#BDC5B4" font-family="sans-serif" font-size="10">Benachrichtigungen</text>
+    <text x="20" y="300" fill="#BDC5B4" font-family="sans-serif" font-size="10">Einstellungen</text>
+
+    <text x="140" y="30" fill="#16587C" font-family="sans-serif" font-size="17" font-weight="800">Guten Tag, Priya</text>
+    <g font-family="sans-serif">
+      <rect x="140" y="50" width="88" height="60" fill="white" stroke="#EEF1EA" rx="6"/>
+      <rect x="140" y="50" width="88" height="3" fill="#72A94F"/>
+      <text x="148" y="72" fill="#5F675A" font-size="7" font-weight="800">AKTIVE KUNDEN</text>
+      <text x="148" y="92" fill="#16587C" font-size="16" font-weight="800">21</text>
+
+      <rect x="236" y="50" width="88" height="60" fill="white" stroke="#EEF1EA" rx="6"/>
+      <rect x="236" y="50" width="88" height="3" fill="#16587C"/>
+      <text x="244" y="72" fill="#5F675A" font-size="7" font-weight="800">OBJEKTE</text>
+      <text x="244" y="92" fill="#16587C" font-size="16" font-weight="800">42</text>
+
+      <rect x="332" y="50" width="88" height="60" fill="white" stroke="#EEF1EA" rx="6"/>
+      <rect x="332" y="50" width="88" height="3" fill="#F4A261"/>
+      <text x="340" y="72" fill="#5F675A" font-size="7" font-weight="800">HEUTE</text>
+      <text x="340" y="92" fill="#16587C" font-size="16" font-weight="800">8</text>
+
+      <rect x="428" y="50" width="88" height="60" fill="white" stroke="#EEF1EA" rx="6"/>
+      <rect x="428" y="50" width="88" height="3" fill="#C74848"/>
+      <text x="436" y="72" fill="#5F675A" font-size="7" font-weight="800">OFFEN</text>
+      <text x="436" y="92" fill="#16587C" font-size="16" font-weight="800">€2.341</text>
+    </g>
+    <rect x="140" y="122" width="240" height="130" fill="white" stroke="#EEF1EA" rx="6"/>
+    <text x="150" y="140" fill="#16587C" font-family="sans-serif" font-size="10" font-weight="700">Schichten pro Woche</text>
+    <g stroke="#72A94F" stroke-width="1.5" fill="none">
+      <polyline points="160,225 190,205 220,215 250,195 280,180 310,190 340,170 370,175" />
+    </g>
+    <rect x="388" y="122" width="128" height="130" fill="white" stroke="#EEF1EA" rx="6"/>
+    <text x="398" y="140" fill="#16587C" font-family="sans-serif" font-size="10" font-weight="700">Heutige Einsätze</text>
+    <text x="398" y="158" fill="#5F675A" font-family="sans-serif" font-size="8">08:00 · Beckmann</text>
+    <text x="398" y="172" fill="#5F675A" font-family="sans-serif" font-size="8">10:00 · Schäfer</text>
+    <text x="398" y="186" fill="#5F675A" font-family="sans-serif" font-size="8">14:00 · Wagner</text>
+  </svg>
+  <div class="caption">Das Dashboard mit der schwarzen Seitenleiste links und den KPI-Kacheln oben.</div>
+</div>
+
+<h3>Was jede Kachel bedeutet (Geschäftsleitung + Projektleitung)</h3>
+<table class="ref-table">
+  <tbody>
+    <tr><td><b>Aktive Kunden</b></td><td>Kunden, die aktuell Service erhalten.</td></tr>
+    <tr><td><b>Objekte</b></td><td>Gebäude insgesamt über alle Kunden hinweg.</td></tr>
+    <tr><td><b>Heutige Einsätze</b></td><td>Für heute geplante Schichten und wie viele noch auf Einchecken warten.</td></tr>
+    <tr><td><b>Offene Rechnungen</b></td><td>Summe der noch nicht bezahlten Kundenrechnungen.</td></tr>
+    <tr><td><b>Schichten pro Woche</b></td><td>Erledigt vs. geplant. Grüne Linie oberhalb der roten = im Plan.</td></tr>
+    <tr><td><b>Heutige Einsätze</b></td><td>Alle Schichten heute in Reihenfolge. Klick öffnet Details.</td></tr>
+    <tr><td><b>Team-Auslastung</b></td><td>Wieviele Stunden jede Person diese Woche gearbeitet hat vs. Zielstunden.</td></tr>
+    <tr><td><b>Letzte Aktivitäten</b></td><td>Was zuletzt im System passiert ist — Rechnungen versendet, Personal eingecheckt usw.</td></tr>
+    <tr><td><b>Schnellaktionen</b></td><td>Große Buttons für häufige Aufgaben: Kunde anlegen, Schicht planen, Rechnung erstellen, Bericht exportieren.</td></tr>
+  </tbody>
+</table>
+
+<div class="note"><b>Feld-Personal-Dashboard</b>
+Reinigungskräfte sehen eine schlankere Version: nur eigene Stunden, verbleibenden Urlaub, Pflichtschulungen und die nächsten Einsätze. Geschäfts-KPIs bleiben bei Geschäftsleitung und Projektleitung.</div>
+
+<!-- ============================================================ 4. KUNDEN -->
+<h2><span class="num">04</span>Kunden</h2>
+<p>Ein <b>Kunde</b> ist jeder, der für Reinigung zahlt. Jeder Kunde kann eine Adresse haben (Privathaushalt) oder viele Gebäude (Gewerbe). Das ist der Ausgangspunkt für alles Weitere — ohne Kunde keine Rechnung und kein Einsatz.</p>
+
+<h3>Kundenliste ansehen</h3>
+<ol class="steps">
+  <li><div>Klicke <kbd>Kunden</kbd> in der linken Seitenleiste.</div></li>
+  <li><div>Die Liste zeigt jeden Kunden mit Status, Kontakt und Anzahl der Objekte.</div></li>
+  <li><div>Nutze das Suchfeld oben, um einen bestimmten Kunden nach Namen zu finden.</div></li>
+  <li><div>Filtere nach Status (Aktiv / Urlaub / Pausiert / Kündigung / Inaktiv) über die Pillen oben.</div></li>
+</ol>
+
+<h3>Einen neuen Kunden anlegen</h3>
+<ol class="steps">
+  <li><div>Auf der Kundenseite oben rechts den grünen Button <kbd>+ Neuer Kunde</kbd> klicken.</div></li>
+  <li><div>Kundentyp wählen:
+    <ul>
+      <li><b>Privathaushalt</b> — private Person</li>
+      <li><b>Gewerbe</b> — Firma mit einer oder mehreren Adressen</li>
+      <li><b>Alltagshilfe</b> — pflegebedürftige Person, abgerechnet mit einer deutschen Krankenkasse (§45b SGB XI)</li>
+    </ul>
+  </div></li>
+  <li><div>Kundendaten Schritt für Schritt ausfüllen. Felder mit einem roten Stern sind Pflicht — die App lässt sie nicht überspringen.</div></li>
+  <li><div>Für <b>Alltagshilfe</b> zusätzlich: Pflegegrad (1–5), Krankenkasse und Datum der Abtretungserklärung eintragen.</div></li>
+  <li><div>Wähle das <b>Rechnungs-Exportziel</b>:
+    <span class="chip chip-secondary">Intern</span> = Priya's verwaltet die Rechnung in der App,
+    <span class="chip chip-primary">Lexware</span> = Rechnungen gehen automatisch in die Buchhaltung.
+  </div></li>
+  <li><div>Klicke <kbd>Kunde speichern</kbd>.</div></li>
+</ol>
+
+<div class="mockup">
+  <svg viewBox="0 0 500 240" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="500" height="240" fill="white"/>
+    <text x="20" y="30" fill="#16587C" font-family="sans-serif" font-size="16" font-weight="800">Kundentyp wählen</text>
+    <g font-family="sans-serif">
+      <rect x="20" y="50" width="150" height="150" fill="#F1F7EB" stroke="#72A94F" stroke-width="1.5" rx="10"/>
+      <circle cx="95" cy="90" r="18" fill="#72A94F"/>
+      <text x="95" y="96" text-anchor="middle" fill="white" font-size="14">🏠</text>
+      <text x="95" y="140" text-anchor="middle" fill="#16587C" font-size="12" font-weight="800">Privathaushalt</text>
+      <text x="95" y="160" text-anchor="middle" fill="#5F675A" font-size="9">Privater Kunde</text>
+
+      <rect x="180" y="50" width="150" height="150" fill="white" stroke="#DFE4DA" rx="10"/>
+      <circle cx="255" cy="90" r="18" fill="#16587C"/>
+      <text x="255" y="96" text-anchor="middle" fill="white" font-size="14">🏢</text>
+      <text x="255" y="140" text-anchor="middle" fill="#16587C" font-size="12" font-weight="800">Gewerbe</text>
+      <text x="255" y="160" text-anchor="middle" fill="#5F675A" font-size="9">Mehrere Objekte</text>
+
+      <rect x="340" y="50" width="150" height="150" fill="white" stroke="#DFE4DA" rx="10"/>
+      <circle cx="415" cy="90" r="18" fill="#C74848"/>
+      <text x="415" y="96" text-anchor="middle" fill="white" font-size="14">💗</text>
+      <text x="415" y="140" text-anchor="middle" fill="#16587C" font-size="12" font-weight="800">Alltagshilfe</text>
+      <text x="415" y="160" text-anchor="middle" fill="#5F675A" font-size="9">Krankenkassen-Abrechnung</text>
+    </g>
+  </svg>
+  <div class="caption">Schritt 1 des Neu-Kunde-Assistenten — Kundentyp wählen.</div>
+</div>
+
+<h3>Kundenstatus setzen</h3>
+<p>Auf der Kunden-Detailseite über das Status-Dropdown die tatsächliche Situation abbilden:</p>
+<ul>
+  <li><span class="chip chip-success">Aktiv</span> — normaler laufender Service.</li>
+  <li><span class="chip chip-warning">Urlaub</span> — Kunde ist verreist; Einsätze vorübergehend pausiert.</li>
+  <li><span class="chip chip-warning">Pausiert durch Kunde</span> — Kunde möchte aktuell keinen Service.</li>
+  <li><span class="chip chip-error">Vertrag endet in 60 Tagen</span> — Kündigung ausgesprochen.</li>
+  <li><span class="chip chip-error">Inaktiv</span> — kein Kunde mehr.</li>
+</ul>
+
+<div class="tip"><b>Warum der Status wichtig ist</b>
+Urlaub und Pausiert blenden den Kunden aus der automatischen Tagesplanung aus, damit nicht versehentlich Personal in ein leeres Haus geschickt wird.</div>
+
+<h3>Einen Kunden bearbeiten</h3>
+<ol class="steps">
+  <li><div>Kunden aus der Liste öffnen.</div></li>
+  <li><div>Oben rechts auf der Detailseite <kbd>Bearbeiten</kbd> klicken.</div></li>
+  <li><div>Alles Nötige anpassen. Auf <kbd>Speichern</kbd> klicken.</div></li>
+</ol>
+
+<!-- ============================================================ 5. OBJEKTE -->
+<h2><span class="num">05</span>Objekte (Gebäude)</h2>
+<p>Ein <b>Objekt</b> ist ein physisches Gebäude oder eine Adresse, an der gereinigt wird. Ein Kunde kann viele Objekte haben (eine Firma mit drei Standorten) oder nur eines (ein Privathaushalt).</p>
+
+<h3>Objekt zu einem Kunden anlegen</h3>
+<ol class="steps">
+  <li><div>Die Kunden-Detailseite öffnen.</div></li>
+  <li><div>Zum Abschnitt <b>Objekte</b> nach unten scrollen.</div></li>
+  <li><div><kbd>+ Objekt hinzufügen</kbd> klicken.</div></li>
+  <li><div>Ausfüllen:
+    <ul>
+      <li><b>Name</b> — z. B. „Hauptbüro" oder „Wohnung Wilmersdorf"</li>
+      <li><b>Straße, PLZ, Stadt</b> — wird für den GPS-Check-in der Mobil-App verwendet</li>
+      <li><b>Zugangsinformationen</b> — Türcode, Klingel, Parkhinweise</li>
+      <li><b>Reinigungsrhythmus</b> — wie oft (wöchentlich, zweiwöchentlich, bei Bedarf)</li>
+    </ul>
+  </div></li>
+  <li><div><kbd>Speichern</kbd> drücken.</div></li>
+</ol>
+
+<div class="note"><b>Warum die Adresse wichtig ist</b>
+Wenn Reinigungskräfte per Handy einchecken, prüft die App den GPS-Standort gegen die Objekt-Adresse. Bei mehr als 500 Metern Abstand kommt eine Warnung, bevor die Person fortfährt. Adresse gleich beim ersten Mal korrekt eintragen.</div>
+
+<h3>Fotos, Schlüssel und Dokumente</h3>
+<p>Auf der Objekt-Detailseite kannst du:</p>
+<ul>
+  <li>Fotos vom Eingang, der Schlüsselübergabe oder Schäden hochladen.</li>
+  <li>Physische Schlüssel dokumentieren — wer sie hat, wann übergeben.</li>
+  <li>Vertrags-PDFs, Sicherheits-Checklisten oder Objekt-Pläne anhängen.</li>
+</ul>
+
+<!-- ============================================================ 6. EINSATZPLAN -->
+<h2><span class="num">06</span>Einsatzplan</h2>
+<p>Auf der Einsatzplan-Seite entscheidest du, wer wo und wann reinigt.</p>
+
+<h3>Eine Schicht zuweisen</h3>
+<ol class="steps">
+  <li><div>Klicke <kbd>Einsatzplan</kbd> in der Seitenleiste.</div></li>
+  <li><div>Wechsle in die Ansicht <b>Woche</b> oder <b>Tag</b>, je nachdem wie weit du planst.</div></li>
+  <li><div>Klicke in ein freies Feld im Kalender (oder auf <kbd>+ Neue Schicht</kbd>).</div></li>
+  <li><div>Wähle <b>Objekt</b>, <b>Mitarbeitende:r</b> und <b>Anfang</b>/<b>Ende</b>.</div></li>
+  <li><div>Optional als <b>wiederkehrend</b> markieren (jede Woche, alle zwei Wochen), damit du nicht immer wieder alles neu machst.</div></li>
+  <li><div><kbd>Zuweisen</kbd> drücken.</div></li>
+</ol>
+
+<div class="mockup">
+  <svg viewBox="0 0 500 220" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="500" height="220" fill="white"/>
+    <text x="20" y="25" fill="#16587C" font-family="sans-serif" font-size="14" font-weight="800">Diese Woche · KW 27</text>
+    <g font-family="sans-serif" font-size="9" fill="#5F675A">
+      <text x="20" y="55">MO</text><text x="90" y="55">DI</text><text x="160" y="55">MI</text>
+      <text x="230" y="55">DO</text><text x="300" y="55">FR</text><text x="370" y="55">SA</text><text x="440" y="55">SO</text>
+    </g>
+    <g font-family="sans-serif">
+      <rect x="20" y="65" width="60" height="30" fill="#F1F7EB" stroke="#72A94F" rx="4"/>
+      <text x="25" y="79" fill="#588843" font-size="8" font-weight="700">Beckmann</text>
+      <text x="25" y="90" fill="#588843" font-size="8">08–10</text>
+
+      <rect x="90" y="65" width="60" height="30" fill="#F1F7EB" stroke="#72A94F" rx="4"/>
+      <text x="95" y="79" fill="#588843" font-size="8" font-weight="700">Schäfer</text>
+      <text x="95" y="90" fill="#588843" font-size="8">10–13</text>
+
+      <rect x="160" y="65" width="60" height="30" fill="#F1F7EB" stroke="#72A94F" rx="4"/>
+      <text x="165" y="79" fill="#588843" font-size="8" font-weight="700">Wagner</text>
+      <text x="165" y="90" fill="#588843" font-size="8">14–17</text>
+
+      <rect x="20" y="105" width="60" height="30" fill="#EEF4F8" stroke="#16587C" rx="4"/>
+      <text x="25" y="119" fill="#16587C" font-size="8" font-weight="700">Baumann</text>
+      <text x="25" y="130" fill="#16587C" font-size="8">09–12</text>
+    </g>
+    <rect x="380" y="20" width="100" height="26" fill="#72A94F" rx="4"/>
+    <text x="430" y="38" text-anchor="middle" fill="white" font-family="sans-serif" font-size="10" font-weight="700">+ Neue Schicht</text>
+  </svg>
+  <div class="caption">Wochenansicht des Einsatzplans. Grüne Blöcke = Priya-Schichten. In freies Feld klicken für eine neue Schicht.</div>
+</div>
+
+<h3>Erledigte Schichten freigeben</h3>
+<p>Nachdem eine Person ausgecheckt hat, wechselt die Schicht in den Status <span class="chip chip-warning">Wartet auf Freigabe</span>. Als Projektleitung oder Geschäftsleitung:</p>
+<ol class="steps">
+  <li><div>Schicht öffnen.</div></li>
+  <li><div>Tatsächliche Check-in-/Check-out-Zeiten mit dem Plan abgleichen.</div></li>
+  <li><div><kbd>Freigeben</kbd> klicken. Damit sind die Stunden abrechenbar.</div></li>
+</ol>
+
+<div class="warn"><b>Wichtig</b>
+Nur <b>freigegebene</b> Schichten können in eine Rechnung übernommen werden. Wenn du Stunden im Rechnungs-Generator vermisst, prüfe, ob die Schichten noch auf Freigabe warten.</div>
+
+<!-- ============================================================ 7. MITARBEITENDE -->
+<h2><span class="num">07</span>Mitarbeitende</h2>
+
+<h3>Neue Person hinzufügen</h3>
+<ol class="steps">
+  <li><div>Seitenleiste → <kbd>Einstellungen</kbd> → <kbd>Team &amp; Rollen</kbd> → <kbd>+ Person einladen</kbd>.</div></li>
+  <li><div><b>E-Mail</b>, <b>vollständiger Name</b> und <b>Rolle</b> eintragen:
+    <span class="role-badge role-admin">Geschäftsleitung</span>
+    <span class="role-badge role-dispatcher">Projektleitung</span>
+    <span class="role-badge role-employee">Feld-Personal</span>
+  </div></li>
+  <li><div><kbd>Einladung senden</kbd> klicken. Die Person erhält eine E-Mail mit einem Link zur Passwort-Vergabe.</div></li>
+  <li><div>Nach der Anmeldung öffnest du die <b>Mitarbeitende</b>-Seite und ergänzt: Telefon, Wochenstunden-Ziel, Einstellungsdatum, Zertifikate, Sprachen.</div></li>
+</ol>
+
+<h3>Onboarding-Video-Reihe</h3>
+<p>Neues Feld-Personal muss vor der ersten Nutzung eine Pflicht-Schulungsvideo-Reihe ansehen. Beim ersten Anmelden wird die Person automatisch zur Onboarding-Video-Seite geleitet.</p>
+
+<h3>Zertifikate + Ablauf-Warnungen</h3>
+<p>Auf der Personen-Detailseite Kopien von Erste-Hilfe-Schein, Arbeitserlaubnis oder Führerschein hochladen. Ein Ablaufdatum setzen — die App schickt 30 Tage vor Ablauf eine Erinnerung.</p>
+
+<!-- ============================================================ 8. RECHNUNGEN -->
+<h2><span class="num">08</span>Rechnungen erstellen</h2>
+<p>Die häufigste Frage: <b>Kann ich einem Kunden alle Gebäude auf einmal berechnen oder muss ich pro Gebäude eine Rechnung machen?</b> Die Antwort: <b>beides</b> — du entscheidest je Rechnung.</p>
+
+<h3>Sammelrechnung — alle Objekte auf einer Rechnung</h3>
+<p>Nutze das, wenn der Kunde eine große Monatsrechnung bevorzugt.</p>
+<ol class="steps">
+  <li><div>Seitenleiste → <kbd>Rechnungen</kbd> → oben rechts <kbd>+ Neue Rechnung</kbd>.</div></li>
+  <li><div><b>Kunde</b> wählen.</div></li>
+  <li><div><b>Zeitraum</b> wählen (z. B. 1.–30. Juni).</div></li>
+  <li><div>Den <b>Objekt</b>-Selektor auf <b>Alle Objekte</b> lassen.</div></li>
+  <li><div>Die App zieht jede freigegebene Schicht aller Objekte dieses Kunden im Zeitraum und gruppiert die Rechnungspositionen nach Gebäude.</div></li>
+  <li><div><kbd>Entwurf speichern</kbd> klicken.</div></li>
+</ol>
+
+<h3>Getrennte Rechnungen — eine Rechnung pro Objekt</h3>
+<p>Nutze das, wenn jedes Gebäude eine eigene Kostenstelle hat oder einen eigenen Rechnungsempfänger.</p>
+<ol class="steps">
+  <li><div>Schritte 1–3 wie oben.</div></li>
+  <li><div>Im <b>Objekt</b>-Selektor nur <b>ein</b> Gebäude wählen.</div></li>
+  <li><div>Entwurf speichern, dann für das nächste Gebäude wiederholen.</div></li>
+</ol>
+
+<div class="tip"><b>Was ist Priyas Standardeinstellung?</b>
+Das System merkt sich, was du zuletzt für diesen Kunden gewählt hast. Wenn du immer sammeln willst, lass den Selektor auf „Alle Objekte" — das wird dein Muster.</div>
+
+<h3>Einen Entwurf bearbeiten</h3>
+<p>Jede Rechnung startet als <span class="chip chip-secondary">Entwurf</span>. Nur Entwürfe sind bearbeitbar.</p>
+<ol class="steps">
+  <li><div>Rechnung aus der Liste öffnen.</div></li>
+  <li><div>Oben auf der Detailseite <kbd>Rechnung bearbeiten</kbd> klicken.</div></li>
+  <li><div>Mengen, Einzelpreis oder Beschreibung ändern. Positionen hinzufügen oder entfernen.</div></li>
+  <li><div>Rechnungsdatum, Fälligkeit oder eine Notiz an den Kunden anpassen.</div></li>
+  <li><div><kbd>Speichern</kbd> klicken. Die Summen berechnen sich automatisch neu.</div></li>
+</ol>
+
+<div class="warn"><b>Nach dem Klick auf „Als versendet markieren" ist keine Bearbeitung mehr möglich</b>
+Denn ab diesem Moment ist die Rechnung ein rechtsverbindliches Dokument, das mit dem Kunden geteilt wurde. Vor dem Versenden alles doppelt prüfen.</div>
+
+<h3>An Lexware übertragen</h3>
+<p>Wenn beim Kunden <span class="chip chip-primary">Lexware</span> als Exportziel gesetzt ist, erscheint nach dem Versand ein zusätzlicher Button:</p>
+<ol class="steps">
+  <li><div>Die versendete Rechnung öffnen.</div></li>
+  <li><div><kbd>Lexware-Sync jetzt</kbd> klicken.</div></li>
+  <li><div>Die Rechnung wird an Lexware Office übertragen. Nach Erfolg erscheint ein grüner <span class="chip chip-success">Synchronisiert</span>-Chip.</div></li>
+</ol>
+
+<p>Um viele auf einmal zu übertragen: In der Rechnungsliste in der Werkzeugleiste <kbd>Lexware Sync</kbd> klicken. Alles <span class="chip chip-error">Fehlgeschlagen</span> oder <span class="chip chip-warning">Ausstehend</span> wird auf einen Schlag neu versucht.</p>
+
+<h3>Als bezahlt markieren</h3>
+<p>Zwei Wege:</p>
+<ul>
+  <li><b>Manuell</b> — Rechnung öffnen, <kbd>Als bezahlt markieren</kbd> klicken, Betrag und Datum eingeben.</li>
+  <li><b>Automatisch aus Lexware</b> — auf einer Rechnung <kbd>Lexware-Zahlungen abrufen</kbd> klicken. Die App holt neue Zahlungen aus Lexware und verbucht sie auf die passenden Rechnungen.</li>
+</ul>
+
+<h3>Überfällige verfolgen</h3>
+<p>Das System setzt Rechnungen am Tag nach Fälligkeit automatisch auf <span class="chip chip-error">Überfällig</span>. In der Rechnungsliste nach <b>Überfällig</b> filtern — älteste zuerst. Eine Erinnerungs-E-Mail geht 3 Tage nach Fälligkeit automatisch raus, wenn die Einstellung aktiv ist (Einstellungen → Steuer &amp; Abrechnung → Zahlungserinnerung).</p>
+
+<!-- ============================================================ 9. MONATSBERICHT -->
+<h2><span class="num">09</span>Monatsbericht (Alltagshilfe)</h2>
+<p>Bei Alltagshilfe-Kunden gehen die Rechnungen an die <b>Krankenkasse</b> der pflegebedürftigen Person, nicht direkt an den Kunden. Die App erzeugt einen Monatsbericht, mit dem du diese Rechnungen manuell erstellst.</p>
+
+<h3>Den Bericht lesen</h3>
+<ol class="steps">
+  <li><div>Seitenleiste → <kbd>Berichte</kbd> → <kbd>Monatsbericht</kbd>.</div></li>
+  <li><div>Über die Monats-Pillen (Jan / Feb / Mär / Apr) oben den Zeitraum wechseln.</div></li>
+  <li><div>Der Bericht zeigt jede Alltagshilfe-Kundschaft als rosa Kopfzeile mit den Stunden der einzelnen Reinigungskräfte darunter.</div></li>
+  <li><div>Gesamtstunden, Gesamtbetrag und Aufschlüsselung pro Kunde aktualisieren sich automatisch.</div></li>
+</ol>
+
+<h3>An Geschäftsleitung senden</h3>
+<p>In der Werkzeugleiste <kbd>An Geschäftsleitung senden</kbd> klicken. Eine E-Mail mit dem PDF-Bericht geht an die Adresse aus Einstellungen → Firmenprofil. Damit erstellst du (oder Priya) die manuellen Rechnungen an die Krankenkassen.</p>
+
+<div class="tip"><b>Warum nicht automatisch?</b>
+Deutsche Krankenkassen-Rechnungen müssen je Kasse individuell zugeschnitten sein (Format, Empfänger, Aktenzeichen unterscheiden sich). Die App übernimmt die Fleißarbeit — Stunden sammeln, Beträge rechnen — den letzten Schritt machst du manuell, damit das Papier exakt zu dem passt, was jede Kasse erwartet.</div>
+
+<!-- ============================================================ 10. CHAT + BENACHRICHTIGUNGEN -->
+<h2><span class="num">10</span>Chat + Benachrichtigungen</h2>
+
+<h3>Team-Chat</h3>
+<ol class="steps">
+  <li><div>Seitenleiste → <kbd>Team-Chat</kbd>.</div></li>
+  <li><div>Du siehst alle Kanäle, in denen du Mitglied bist (meist einer pro Team oder pro Objekt).</div></li>
+  <li><div>Kanal öffnen, Nachricht tippen, <kbd>Senden</kbd> drücken.</div></li>
+  <li><div>Eine Schicht- oder Objekt-Karte an eine Nachricht hängen über das Büroklammer-Symbol — gut für „Kann jemand einspringen?"-Momente.</div></li>
+</ol>
+
+<h3>Benachrichtigungen</h3>
+<p>Seitenleiste → <kbd>Benachrichtigungen</kbd> zeigt alle Meldungen, die das System für dich erzeugt hat: Schicht-Änderungen, Rechnung bezahlt, Check-in vergessen, Urlaubsantrag usw. Mit den Pillen oben filtern. Das Glocken-Symbol in der Kopfleiste zeigt einen roten Punkt, wenn etwas ungelesen ist.</p>
+
+<p>Kategorien in Einstellungen → Benachrichtigungen an- und abschalten. Jede Kategorie hat 3 Kanäle: <b>In-App</b>, <b>E-Mail</b>, <b>SMS/WhatsApp</b>.</p>
+
+<!-- ============================================================ 11. EINSTELLUNGEN -->
+<h2><span class="num">11</span>Einstellungen</h2>
+<p>Seitenleiste → <kbd>Einstellungen</kbd>. Zweigeteilt: <b>Geschäftsleitung</b> (Firmen-Themen) und <b>Persönlich</b> (dich betreffend).</p>
+
+<h3>Bereich Geschäftsleitung</h3>
+<table class="ref-table">
+  <thead><tr><th>Karte</th><th>Steuert</th></tr></thead>
+  <tbody>
+    <tr><td><b>01 · Firmenprofil</b></td><td>Logo, Firmenname, USt-ID, Branche, Markenfarben, Standorte (Hauptsitz + Depots).</td></tr>
+    <tr><td><b>02 · Team &amp; Rollen</b></td><td>Liste aller Zugriffs­berechtigten. Rollen ändern, einladen, entfernen.</td></tr>
+    <tr><td><b>03 · Steuer &amp; Abrechnung</b></td><td>Zahlungsziele, USt-Satz, IBAN, Rechnungs-Fußzeile, Zahlungserinnerungs-Schalter, Tarif-Info.</td></tr>
+    <tr><td><b>04 · Integrationen</b></td><td>Lexware, Stripe, Google Kalender, Slack, QuickBooks, DATEV, DSGVO. API-Schlüssel.</td></tr>
+    <tr><td><b>05 · Benachrichtigungen</b></td><td>Welche Ereignisse dich auf welchem Kanal erreichen. Ruhezeiten.</td></tr>
+  </tbody>
+</table>
+
+<h3>Bereich Persönlich</h3>
+<table class="ref-table">
+  <thead><tr><th>Karte</th><th>Steuert</th></tr></thead>
+  <tbody>
+    <tr><td><b>06 · Mein Konto</b></td><td>Name, Anzeigename, Telefon, E-Mail, Zeitzone, Datumsformat, Sprache.</td></tr>
+    <tr><td><b>07 · Sicherheit</b></td><td>Passwort ändern, 2FA aktivieren/deaktivieren, Anmelde-Warnungen per E-Mail.</td></tr>
+    <tr><td><b>08 · Sitzungen &amp; Geräte</b></td><td>Alle Geräte sehen, die mit deinem Konto angemeldet sind. Fremde Geräte abmelden.</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ 12. FAQ -->
+<h2><span class="num">12</span>Häufige Fragen</h2>
+
+<h3>Wie sehe ich, wer heute im Einsatz ist?</h3>
+<p>Dashboard → die Karte „Heutige Einsätze" rechts zeigt jede Schicht in zeitlicher Reihenfolge. Klick auf eine Zeile öffnet Details.</p>
+
+<h3>Wie sehe ich, was überfällig ist?</h3>
+<p>Seitenleiste → Rechnungen → auf die Filter-Pille <b>Überfällig</b> klicken. Sortiert nach ältester zuerst.</p>
+
+<h3>Wie exportiere ich eine Liste nach Excel?</h3>
+<p>Die meisten Listenseiten (Kunden, Rechnungen, Mitarbeitende, Berichte) haben in der Werkzeugleiste einen <kbd>Export</kbd>-Button. Es wird eine CSV-Datei geladen, die direkt in Excel öffnet.</p>
+
+<h3>Wie setze ich das Passwort von jemandem zurück?</h3>
+<p>Die Person bittet, auf der Anmeldeseite „Passwort vergessen" zu klicken. Wenn kein E-Mail-Zugriff besteht, geht die Geschäftsleitung in Einstellungen → Team &amp; Rollen, klickt die Zeile der Person und drückt <kbd>Passwort zurücksetzen</kbd>.</p>
+
+<h3>Warum sehe ich das Menü Einstellungen nicht?</h3>
+<p>Die meisten Einstellungen sehen nur Geschäftsleitung + Projektleitung. Feld-Personal sieht nur <b>Mein Konto</b>, <b>Sicherheit</b> und <b>Sitzungen</b>.</p>
+
+<h3>Warum kann ich diese Rechnung nicht bearbeiten?</h3>
+<p>Sie wurde bereits als Versendet markiert. Nur Entwürfe sind bearbeitbar. Wenn etwas auf einer versendeten Rechnung korrigiert werden muss, eine Gutschrift oder korrigierte Rechnung erstellen.</p>
+
+<h3>Der QR-Code beim 2FA-Setup lässt sich nicht scannen</h3>
+<p>Unter dem QR steht ein Text-Code (eine lange Zeichenkette wie <span class="path">JBSWY3DPEHPK3PXP</span>). In der Authenticator-App statt „QR scannen" die Option „Setup-Schlüssel eingeben" wählen und den Code einfügen. Gleicher Effekt.</p>
+
+<h3>Habe ich einen Fehler gemacht — geht das rückgängig?</h3>
+<p>Die meisten Änderungen erzeugen eine Version im Audit-Log. Die Geschäftsleitung kann in <b>Einstellungen → Audit-Log</b> nachsehen, was wann geändert wurde. Gelöschte Kunden / Objekte lassen sich in der Regel innerhalb von 30 Tagen wieder aktivieren.</p>
+
+<hr style="margin: 48px 0 24px; border: none; border-top: 1px solid var(--neutral-200);" />
+
+<p style="text-align: center; color: var(--neutral-500); font-size: 11pt;">
+  Brauchst du Hilfe? Schreib an <a href="mailto:support@priyas-cleaning.de">support@priyas-cleaning.de</a>. Antwort innerhalb von 15 Minuten während der Geschäftszeiten.
+</p>
+
+</main>
+</body>
+</html>

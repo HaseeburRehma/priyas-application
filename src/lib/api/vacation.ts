@@ -77,7 +77,22 @@ export async function loadVacation(): Promise<VacationData> {
     query = query.eq("employee_id", myEmployeeId);
   }
 
-  const { data } = await query;
+  // Fan out the list query and the balance query — both depend only
+  // on values already resolved. Was 2 sequential hops, now 1.
+  const yearStart = new Date(new Date().getFullYear(), 0, 1)
+    .toISOString()
+    .slice(0, 10);
+  const balancePromise = myEmployeeId
+    ? supabase
+        .from("vacation_requests")
+        .select("days")
+        .eq("employee_id", myEmployeeId)
+        .eq("status", "approved")
+        .eq("kind", "vacation")
+        .gte("start_date", yearStart)
+    : Promise.resolve({ data: [] as Array<{ days: number }> });
+
+  const [{ data }, balRes] = await Promise.all([query, balancePromise]);
   type Row = {
     id: string;
     employee_id: string;
@@ -117,24 +132,11 @@ export async function loadVacation(): Promise<VacationData> {
 
   // My balance: sum approved *vacation* days for this calendar year — sick
   // days are tracked separately and must not eat into the annual vacation
-  // allowance.
-  const yearStart = new Date(new Date().getFullYear(), 0, 1)
-    .toISOString()
-    .slice(0, 10);
-  let used = 0;
-  if (myEmployeeId) {
-    const { data: balRows } = await supabase
-      .from("vacation_requests")
-      .select("days")
-      .eq("employee_id", myEmployeeId)
-      .eq("status", "approved")
-      .eq("kind", "vacation")
-      .gte("start_date", yearStart);
-    used = ((balRows ?? []) as Array<{ days: number }>).reduce(
-      (s, r) => s + Number(r.days),
-      0,
-    );
-  }
+  // allowance. Query already fired above in the Promise.all — read result.
+  const used = ((balRes.data ?? []) as Array<{ days: number }>).reduce(
+    (s, r) => s + Number(r.days),
+    0,
+  );
 
   return {
     myEmployeeId,

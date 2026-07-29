@@ -2,6 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCachedUser } from "@/lib/api/current-user";
 
 type ActionResult<T = void> =
   | { ok: true; data: T }
@@ -15,9 +16,7 @@ export async function ensureCalendarTokenAction(): Promise<
   ActionResult<{ token: string }>
 > {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return { ok: false, error: "Not signed in" };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -77,9 +76,7 @@ export async function rotateCalendarTokenAction(): Promise<
   ActionResult<{ token: string }>
 > {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return { ok: false, error: "Not signed in" };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -113,9 +110,7 @@ export async function rotateCalendarTokenAction(): Promise<
 
 export async function revokeCalendarTokenAction(): Promise<ActionResult> {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return { ok: false, error: "Not signed in" };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await ((supabase.from("calendar_tokens") as any))

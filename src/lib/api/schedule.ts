@@ -260,19 +260,56 @@ export async function loadScheduleWeek(
   };
   const rows = (data ?? []) as unknown as Row[];
 
-  // Load time_entries for this week's shifts so the detail panel can
-  // show "Actual: Xh Ym" alongside the scheduled window.
+  // Fan out: time_entries (depends on shift IDs from above) + closures
+  // + vacations (depend only on week dates) are all independent of
+  // each other. Was 2 sequential hops here; now everything runs in the
+  // single Promise.all below alongside the closures/vacations query.
   const shiftIds = rows.map((r) => r.id);
   type EntryRow = { shift_id: string; kind: string; occurred_at: string };
+  const timeEntriesPromise =
+    shiftIds.length > 0
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ((supabase.from("time_entries") as any))
+          .select("shift_id, kind, occurred_at")
+          .in("shift_id", shiftIds)
+          .in("kind", ["check_in", "check_out"])
+      : Promise.resolve({ data: [] as EntryRow[] });
+
+  const days = Array.from({ length: 7 }, (_, i) =>
+    format(addDays(weekStart, i), "yyyy-MM-dd"),
+  );
+
+  // Closures + vacations that intersect this week — used for inline overlays.
+  const weekStartIso = format(weekStart, "yyyy-MM-dd");
+  const weekEndIso = format(weekEnd, "yyyy-MM-dd");
+
+  // Fire time_entries + closures + vacations in parallel BEFORE we
+  // materialise events, so `actual_minutes` can be filled in during
+  // the map instead of a second pass.
+  const [entryRes, closuresRes, vacationsRes] = await Promise.all([
+    timeEntriesPromise,
+    supabase
+      .from("property_closures")
+      .select(
+        "id, property_id, start_date, end_date, reason, property:properties ( id, name )",
+      )
+      .lte("start_date", weekEndIso)
+      .gte("end_date", weekStartIso),
+    supabase
+      .from("vacation_requests")
+      .select(
+        "id, employee_id, kind, start_date, end_date, status, employee:employees ( id, full_name )",
+      )
+      .eq("status", "approved")
+      .lte("start_date", weekEndIso)
+      .gte("end_date", weekStartIso),
+  ]);
+
+  // Materialise actual-minutes map from the time_entries result.
   const actualMinutesByShift = new Map<string, number>();
-  if (shiftIds.length > 0) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: entryData } = await ((supabase.from("time_entries") as any))
-      .select("shift_id, kind, occurred_at")
-      .in("shift_id", shiftIds)
-      .in("kind", ["check_in", "check_out"]);
+  {
     const byShift = new Map<string, { in?: number; out?: number }>();
-    for (const e of ((entryData ?? []) as EntryRow[])) {
+    for (const e of ((entryRes.data ?? []) as EntryRow[])) {
       const p = byShift.get(e.shift_id) ?? {};
       const t = new Date(e.occurred_at).getTime();
       if (e.kind === "check_in") p.in = t;
@@ -317,32 +354,6 @@ export async function loadScheduleWeek(
       actual_minutes: actualMinutesByShift.get(r.id) ?? null,
     };
   });
-
-  const days = Array.from({ length: 7 }, (_, i) =>
-    format(addDays(weekStart, i), "yyyy-MM-dd"),
-  );
-
-  // Closures + vacations that intersect this week — used for inline overlays.
-  const weekStartIso = format(weekStart, "yyyy-MM-dd");
-  const weekEndIso = format(weekEnd, "yyyy-MM-dd");
-
-  const [closuresRes, vacationsRes] = await Promise.all([
-    supabase
-      .from("property_closures")
-      .select(
-        "id, property_id, start_date, end_date, reason, property:properties ( id, name )",
-      )
-      .lte("start_date", weekEndIso)
-      .gte("end_date", weekStartIso),
-    supabase
-      .from("vacation_requests")
-      .select(
-        "id, employee_id, kind, start_date, end_date, status, employee:employees ( id, full_name )",
-      )
-      .eq("status", "approved")
-      .lte("start_date", weekEndIso)
-      .gte("end_date", weekStartIso),
-  ]);
 
   type ClosureRow = {
     id: string;

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { routes } from "@/lib/constants/routes";
+import { getCachedUser } from "@/lib/api/current-user";
 
 type ActionResult<T = void> =
   | { ok: true; data: T }
@@ -28,9 +29,7 @@ export async function toggleChatReactionAction(
   if (!parsed.success) return { ok: false, error: "Validation failed" };
   const input = parsed.data;
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return { ok: false, error: "Not signed in" };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

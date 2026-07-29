@@ -26,6 +26,7 @@ import {
   requirePermission,
 } from "@/lib/rbac/permissions";
 import { routes } from "@/lib/constants/routes";
+import { getCachedUser } from "@/lib/api/current-user";
 
 type Result =
   | { ok: true; url: string; path: string }
@@ -102,9 +103,7 @@ export async function uploadProfileAvatarAction(
   formData: FormData,
 ): Promise<Result> {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return { ok: false, error: "not_authenticated" };
 
   const file = formData.get("file");
@@ -176,9 +175,7 @@ export async function removeProfileAvatarAction(): Promise<
   { ok: true } | { ok: false; error: string }
 > {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return { ok: false, error: "not_authenticated" };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -219,9 +216,7 @@ export async function uploadOrgLogoAction(
   }
 
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return { ok: false, error: "not_authenticated" };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -309,9 +304,7 @@ export async function removeOrgLogoAction(): Promise<
   }
 
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return { ok: false, error: "not_authenticated" };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

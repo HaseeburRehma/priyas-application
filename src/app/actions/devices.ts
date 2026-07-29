@@ -17,10 +17,51 @@
  * Stable for the same browser-OS-locale combo, distinct per device.
  */
 
+import crypto from "node:crypto";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { computeDeviceFingerprint } from "@/lib/security/device-revocation";
+import { getCachedUser } from "@/lib/api/current-user";
+
+/**
+ * In-memory heartbeat throttle. Lives for the process lifetime, which
+ * on Vercel means "this warm instance" — for the same visitor served by
+ * the same warm instance (the common case), the second and subsequent
+ * `recordCurrentDeviceAction` calls in a 5-minute window short-circuit
+ * before any Supabase round-trip.
+ *
+ * Cold instances still fire once (as they should — that's the first
+ * sighting of the device on that instance). Fresh sign-ins bypass the
+ * throttle so revocation-clearing still works immediately.
+ *
+ * Keyed by a hash of (user-agent + IP + accept-language) so we don't
+ * need an authenticated user lookup to consult it. The key is derived
+ * from public request headers only — safe to keep in RAM.
+ */
+const HEARTBEAT_TTL_MS = 5 * 60_000;
+const heartbeatSeen = new Map<string, number>();
+
+function heartbeatKey(ua: string, ip: string | null, lang: string): string {
+  return crypto
+    .createHash("sha256")
+    .update(`${ua}|${ip ?? ""}|${lang}`)
+    .digest("hex")
+    .slice(0, 32);
+}
+
+/** Best-effort periodic sweep so the Map doesn't grow unbounded on
+ *  long-running warm instances. Cheap: only inspects entries older
+ *  than the TTL, no timer needed. */
+function pruneHeartbeatMap(now: number) {
+  // Amortised prune — every ~200 calls we sweep expired keys. Cheap
+  // enough to run inline; avoids scheduling a setInterval that would
+  // outlive an aborted request.
+  if (heartbeatSeen.size < 200) return;
+  for (const [k, v] of heartbeatSeen) {
+    if (now - v > HEARTBEAT_TTL_MS) heartbeatSeen.delete(k);
+  }
+}
 
 type DeviceRow = {
   id: string;
@@ -108,17 +149,29 @@ export async function recordCurrentDeviceAction(opts?: {
    * device's very next page load while its session cookie is still valid.
    */
   freshSignIn?: boolean;
-}): Promise<{ ok: true; deviceId: string } | { ok: false; error: string }> {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "not_authenticated" };
-
+}): Promise<{ ok: true; deviceId: string; throttled?: boolean } | { ok: false; error: string }> {
   const h = await headers();
   const ua = h.get("user-agent") ?? "";
   const lang = h.get("accept-language")?.split(",")[0] ?? "";
   const ip = ipFromHeaders(h);
+
+  // Throttle: skip everything if this instance saw the same request
+  // signature within HEARTBEAT_TTL_MS. Fresh sign-ins bypass the
+  // throttle — those must clear revoked_at immediately.
+  if (!opts?.freshSignIn) {
+    const key = heartbeatKey(ua, ip, lang);
+    const now = Date.now();
+    const last = heartbeatSeen.get(key);
+    if (last != null && now - last < HEARTBEAT_TTL_MS) {
+      return { ok: true, deviceId: "", throttled: true };
+    }
+    heartbeatSeen.set(key, now);
+    pruneHeartbeatMap(now);
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const user = await getCachedUser();
+  if (!user) return { ok: false, error: "not_authenticated" };
 
   const fp = computeDeviceFingerprint(user.id, ua, lang);
   const { label, kind, os, browser } = parseUserAgent(ua);
@@ -164,9 +217,7 @@ export async function listDevicesAction(): Promise<
   | { ok: false; error: string }
 > {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return { ok: false, error: "not_authenticated" };
 
   const h = await headers();
@@ -213,9 +264,7 @@ export async function revokeDeviceAction(
   deviceId: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return { ok: false, error: "not_authenticated" };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

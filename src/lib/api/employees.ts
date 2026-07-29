@@ -76,48 +76,47 @@ export async function loadEmployeesSummary(): Promise<EmployeesSummary> {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [totalRes, monthRes, leaveRes] = await Promise.all([
-    supabase
-      .from("employees")
-      .select("id", { count: "exact", head: true })
-      .is("deleted_at", null),
-    supabase
-      .from("employees")
-      .select("id", { count: "exact", head: true })
-      .is("deleted_at", null)
-      .gte("created_at", monthStart.toISOString()),
-    supabase
-      .from("employees")
-      .select("id", { count: "exact", head: true })
-      .is("deleted_at", null)
-      .eq("status", "on_leave"),
-  ]);
-
-  // Active today = employees with a shift starting today.
   const today = new Date(now);
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const { data: shiftsToday } = await supabase
-    .from("shifts")
-    .select("employee_id")
-    .gte("starts_at", today.toISOString())
-    .lt("starts_at", tomorrow.toISOString())
-    .is("deleted_at", null)
-    // Defensive cap — single day shouldn't exceed this in practice.
-    .limit(1000);
+
+  // Everything the summary needs is independent — fan out all five
+  // queries in one Promise.all instead of the old three-then-one-then-N
+  // waterfall. `countEmployeesPendingOnboarding` internally parallelises
+  // its own four queries (see below).
+  const [totalRes, monthRes, leaveRes, shiftsTodayRes, pendingOnboarding] =
+    await Promise.all([
+      supabase
+        .from("employees")
+        .select("id", { count: "exact", head: true })
+        .is("deleted_at", null),
+      supabase
+        .from("employees")
+        .select("id", { count: "exact", head: true })
+        .is("deleted_at", null)
+        .gte("created_at", monthStart.toISOString()),
+      supabase
+        .from("employees")
+        .select("id", { count: "exact", head: true })
+        .is("deleted_at", null)
+        .eq("status", "on_leave"),
+      supabase
+        .from("shifts")
+        .select("employee_id")
+        .gte("starts_at", today.toISOString())
+        .lt("starts_at", tomorrow.toISOString())
+        .is("deleted_at", null)
+        // Defensive cap — single day shouldn't exceed this in practice.
+        .limit(1000),
+      countEmployeesPendingOnboarding(supabase),
+    ]);
+
   const activeIds = new Set(
-    ((shiftsToday ?? []) as Array<{ employee_id: string | null }>).flatMap((r) =>
-      r.employee_id ? [r.employee_id] : [],
+    ((shiftsTodayRes.data ?? []) as Array<{ employee_id: string | null }>).flatMap(
+      (r) => (r.employee_id ? [r.employee_id] : []),
     ),
   );
-
-  // "Pending onboarding" — spec §4.9 — employees who haven't yet
-  // completed every mandatory training module that applies to them.
-  // We compute this by finding active employees with at least one
-  // mandatory module that isn't marked complete in
-  // employee_training_progress.
-  const pendingOnboarding = await countEmployeesPendingOnboarding(supabase);
 
   return {
     total: totalRes.count ?? 0,
@@ -139,42 +138,49 @@ async function countEmployeesPendingOnboarding(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
 ): Promise<{ count: number; preview: string | null }> {
-  // 1) Mandatory modules.
-  const { data: modulesRows } = await supabase
-    .from("training_modules")
-    .select("id")
-    .eq("is_mandatory", true)
-    .is("deleted_at", null);
-  const mandatoryIds = ((modulesRows ?? []) as Array<{ id: string }>).map(
+  // Steps 1 + 2 don't depend on each other — mandatory modules and
+  // active employees can load in parallel.
+  const [modulesRes, employeesRes] = await Promise.all([
+    supabase
+      .from("training_modules")
+      .select("id")
+      .eq("is_mandatory", true)
+      .is("deleted_at", null),
+    supabase
+      .from("employees")
+      .select("id")
+      .is("deleted_at", null)
+      .eq("status", "active")
+      .limit(500),
+  ]);
+
+  const mandatoryIds = ((modulesRes.data ?? []) as Array<{ id: string }>).map(
     (m) => m.id,
   );
-  if (mandatoryIds.length === 0) {
-    return { count: 0, preview: null };
-  }
+  if (mandatoryIds.length === 0) return { count: 0, preview: null };
 
-  // 2) Active employees. We only need IDs up-front — the count below
-  //    doesn't need names. Names + hire_date are resolved later for the
-  //    single preview row, killing the wide select that would otherwise
-  //    pull every active employee's full profile.
-  const { data: employees } = await supabase
-    .from("employees")
-    .select("id")
-    .is("deleted_at", null)
-    .eq("status", "active")
-    .limit(500);
   type Emp = { id: string };
-  const empList = (employees ?? []) as Emp[];
+  const empList = (employeesRes.data ?? []) as Emp[];
   if (empList.length === 0) return { count: 0, preview: null };
 
-  // 3) Completed-progress rows for these employees and these modules.
   const empIds = empList.map((e) => e.id);
-  const { data: progress } = await supabase
-    .from("employee_training_progress")
-    .select("employee_id, module_id, completed_at")
-    .in("employee_id", empIds)
-    .in("module_id", mandatoryIds);
+
+  // Steps 3 + 4 both consume mandatoryIds; #3 additionally consumes
+  // empIds. Independent of each other → parallel again.
+  const [progressRes, assignmentsRes] = await Promise.all([
+    supabase
+      .from("employee_training_progress")
+      .select("employee_id, module_id, completed_at")
+      .in("employee_id", empIds)
+      .in("module_id", mandatoryIds),
+    supabase
+      .from("training_assignments")
+      .select("module_id, employee_id")
+      .in("module_id", mandatoryIds),
+  ]);
+
   const completedSet = new Set(
-    ((progress ?? []) as Array<{
+    ((progressRes.data ?? []) as Array<{
       employee_id: string;
       module_id: string;
       completed_at: string | null;
@@ -183,16 +189,11 @@ async function countEmployeesPendingOnboarding(
       .map((p) => `${p.employee_id}|${p.module_id}`),
   );
 
-  // 4) Optional: training_assignments narrows which modules apply to
-  //    which employees. Modules without any assignments are "shared"
-  //    (apply to everyone); modules with assignments only apply to
-  //    listed employees.
-  const { data: assignments } = await supabase
-    .from("training_assignments")
-    .select("module_id, employee_id")
-    .in("module_id", mandatoryIds);
+  // Assignments narrow which modules apply to which employees. Modules
+  // without any assignments are "shared" (apply to everyone); modules
+  // with assignments only apply to listed employees.
   type Assign = { module_id: string; employee_id: string };
-  const assignmentList = (assignments ?? []) as Assign[];
+  const assignmentList = (assignmentsRes.data ?? []) as Assign[];
   const hasAnyAssignment = new Set(assignmentList.map((a) => a.module_id));
   const assignedToByModule = new Map<string, Set<string>>();
   for (const a of assignmentList) {
@@ -462,12 +463,23 @@ async function computeOutstandingMandatoryByEmployee(
   );
   if (mandatoryIds.length === 0) return new Set();
 
-  const { data: assignments } = await supabase
-    .from("training_assignments")
-    .select("module_id, employee_id")
-    .in("module_id", mandatoryIds);
+  // Assignments + progress both depend only on mandatoryIds (and, for
+  // progress, employeeIds — both known already). They're independent of
+  // each other → parallel. Was 2 sequential hops here, now 1.
+  const [assignmentsRes, progressRes] = await Promise.all([
+    supabase
+      .from("training_assignments")
+      .select("module_id, employee_id")
+      .in("module_id", mandatoryIds),
+    supabase
+      .from("employee_training_progress")
+      .select("employee_id, module_id, completed_at")
+      .in("employee_id", employeeIds)
+      .in("module_id", mandatoryIds),
+  ]);
+
   type Assign = { module_id: string; employee_id: string };
-  const assignList = (assignments ?? []) as Assign[];
+  const assignList = (assignmentsRes.data ?? []) as Assign[];
   const hasAnyAssignment = new Set(assignList.map((a) => a.module_id));
   const assignedToByModule = new Map<string, Set<string>>();
   for (const a of assignList) {
@@ -479,13 +491,8 @@ async function computeOutstandingMandatoryByEmployee(
     s.add(a.employee_id);
   }
 
-  const { data: progress } = await supabase
-    .from("employee_training_progress")
-    .select("employee_id, module_id, completed_at")
-    .in("employee_id", employeeIds)
-    .in("module_id", mandatoryIds);
   const completedSet = new Set(
-    ((progress ?? []) as Array<{
+    ((progressRes.data ?? []) as Array<{
       employee_id: string;
       module_id: string;
       completed_at: string | null;

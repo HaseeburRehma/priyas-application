@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isCurrentDeviceRevoked } from "@/lib/security/device-revocation";
+import { getCachedProfile, getCachedUser } from "@/lib/api/current-user";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
@@ -159,26 +160,26 @@ export const getCurrentRole = cache(async function getCurrentRole(): Promise<{
   supabase: SupabaseServerClient;
 }> {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { userId: null, orgId: null, role: null, supabase };
+  // Funnel through the shared cached user + profile helpers so every
+  // path — dashboard loaders, my-self, per-action RBAC checks, greeting
+  // — collapses to a single Supabase auth round-trip and a single
+  // profiles query per request. Without this dedup a dashboard render
+  // hit `/auth/v1/user` 3-5 times.
+  const [cachedUser, cachedProfile] = await Promise.all([
+    getCachedUser(),
+    getCachedProfile(),
+  ]);
+  if (!cachedUser) return { userId: null, orgId: null, role: null, supabase };
 
-  if (await isCurrentDeviceRevoked(supabase, user.id)) {
+  if (await isCurrentDeviceRevoked(supabase, cachedUser.id)) {
     await supabase.auth.signOut();
     return { userId: null, orgId: null, role: null, supabase };
   }
 
-  const { data } = await supabase
-    .from("profiles")
-    .select("org_id, role")
-    .eq("id", user.id)
-    .maybeSingle();
-  const profile = data as { org_id: string | null; role: Role | null } | null;
   return {
-    userId: user.id,
-    orgId: profile?.org_id ?? null,
-    role: profile?.role ?? null,
+    userId: cachedUser.id,
+    orgId: cachedProfile?.orgId ?? null,
+    role: (cachedProfile?.role as Role | null) ?? null,
     supabase,
   };
 });

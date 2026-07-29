@@ -1,0 +1,22 @@
+# Expo / RN artifacts
+node_modules/
+.expo/
+dist/
+web-build/
+ios/
+android/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+.env
+.env.local
+.env.*.local
+
+# Metro cache
+.metro-health-check*
+
+# System
+.DS_Store

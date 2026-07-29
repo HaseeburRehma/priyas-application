@@ -11,6 +11,7 @@ import {
   requirePermission,
 } from "@/lib/rbac/permissions";
 import { routes } from "@/lib/constants/routes";
+import { getCachedUser } from "@/lib/api/current-user";
 
 type ActionResult<T = void> =
   | { ok: true; data: T }
@@ -18,9 +19,7 @@ type ActionResult<T = void> =
 
 async function audit(action: string, recordId: string, message: string) {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profile } = await ((supabase.from("profiles") as any))
@@ -66,9 +65,7 @@ export async function upsertTrainingModuleAction(
   }
   const input = parsed.data;
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profile } = await ((supabase.from("profiles") as any))
     .select("org_id")
@@ -162,9 +159,7 @@ export async function setTrainingAssignmentsAction(
     };
   }
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profile } = await ((supabase.from("profiles") as any))
     .select("org_id")
@@ -337,9 +332,7 @@ export async function updateTrainingProgressAction(
   if (!parsed.success) return { ok: false, error: "Validation failed" };
   const input = parsed.data;
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profile } = await ((supabase.from("profiles") as any))
     .select("org_id")

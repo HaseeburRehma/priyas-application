@@ -8,6 +8,7 @@ import {
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requirePermission, PermissionError } from "@/lib/rbac/permissions";
 import { routes } from "@/lib/constants/routes";
+import { getCachedUser } from "@/lib/api/current-user";
 
 type ActionResult<T = void> =
   | { ok: true; data: T }
@@ -21,9 +22,7 @@ async function audit(
   extra: Record<string, unknown> = {},
 ) {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profile } = await ((supabase.from("profiles") as any))
@@ -65,9 +64,7 @@ export async function createPropertyAction(
   }
 
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profile } = await ((supabase.from("profiles") as any))
     .select("org_id")

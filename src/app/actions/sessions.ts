@@ -15,14 +15,13 @@
  */
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCachedUser } from "@/lib/api/current-user";
 
 type Result = { ok: true } | { ok: false; error: string };
 
 export async function signOutOtherDevicesAction(): Promise<Result> {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   if (!user) return { ok: false, error: "not_authenticated" };
 
   // `scope: 'others'` invalidates every other refresh token while

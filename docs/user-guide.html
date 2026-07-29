@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Priya's Reinigungsservice — User Guide</title>
+<style>
+  /* Print-optimised typography. Open in any browser and use
+     Cmd/Ctrl-P → "Save as PDF" for a portable file. */
+  :root {
+    --primary: #72A94F;
+    --primary-50: #F1F7EB;
+    --primary-700: #588843;
+    --secondary: #16587C;
+    --secondary-50: #EEF4F8;
+    --neutral-800: #1D201B;
+    --neutral-700: #2E322C;
+    --neutral-600: #454B41;
+    --neutral-500: #5F675A;
+    --neutral-400: #8B9483;
+    --neutral-300: #BDC5B4;
+    --neutral-200: #DFE4DA;
+    --neutral-100: #EEF1EA;
+    --neutral-50: #F8FAF7;
+    --tertiary: #F6FAF3;
+    --warning-50: #FFF6E5;
+    --warning-500: #F4A261;
+    --warning-700: #B26319;
+    --success-50: #EBF7EE;
+    --success-500: #4BAF63;
+    --success-700: #2E7A45;
+    --error-50: #FDECEC;
+    --error-500: #C74848;
+    --error-700: #8B2A2A;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--neutral-800);
+    background: white;
+    line-height: 1.55;
+    font-size: 12pt;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 32px 40px 60px; }
+
+  /* Cover page */
+  .cover {
+    min-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 60px 40px;
+    background: linear-gradient(180deg, var(--tertiary) 0%, white 80%);
+    page-break-after: always;
+  }
+  .cover-logo {
+    width: 68px; height: 68px;
+    background: var(--primary); color: white;
+    border-radius: 14px;
+    display: grid; place-items: center;
+    font-weight: 800; font-size: 40px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(114,169,79,0.35);
+  }
+  .cover h1 {
+    font-size: 44px; line-height: 1.1; margin: 0 0 10px;
+    color: var(--secondary); letter-spacing: -1px;
+  }
+  .cover .brand-name { font-size: 18px; color: var(--primary-700); font-weight: 700; margin: 0 0 40px; text-transform: uppercase; letter-spacing: 2px; }
+  .cover .sub { font-size: 16px; color: var(--neutral-600); max-width: 480px; margin: 0 0 30px; }
+  .cover .meta { font-size: 12px; color: var(--neutral-500); margin-top: 60px; }
+
+  h1, h2, h3, h4 { color: var(--secondary); }
+  h2 {
+    font-size: 26px;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 8px;
+    margin: 48px 0 20px;
+    page-break-after: avoid;
+  }
+  h2 .num {
+    display: inline-block; background: var(--primary); color: white;
+    border-radius: 999px; padding: 2px 12px; font-size: 14px;
+    margin-right: 12px; vertical-align: middle;
+  }
+  h3 { font-size: 18px; margin: 32px 0 10px; page-break-after: avoid; }
+  h4 { font-size: 15px; margin: 20px 0 6px; color: var(--neutral-700); page-break-after: avoid; }
+  p { margin: 0 0 12px; }
+
+  /* Table of contents */
+  .toc { background: var(--neutral-50); border: 1px solid var(--neutral-100); border-radius: 12px; padding: 24px 28px; margin-bottom: 40px; page-break-after: always; }
+  .toc h2 { margin-top: 0; border: none; padding: 0; font-size: 22px; }
+  .toc ol { padding-left: 20px; }
+  .toc li { padding: 6px 0; color: var(--neutral-700); }
+  .toc li b { color: var(--secondary); }
+
+  /* Callouts */
+  .note, .tip, .warn {
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 12pt;
+    border-left: 4px solid;
+  }
+  .note { background: var(--secondary-50); border-color: var(--secondary); }
+  .tip { background: var(--success-50); border-color: var(--success-500); color: var(--success-700); }
+  .warn { background: var(--warning-50); border-color: var(--warning-500); color: var(--warning-700); }
+  .note b, .tip b, .warn b { display: block; margin-bottom: 4px; font-size: 11pt; text-transform: uppercase; letter-spacing: .5px; }
+
+  /* Steps */
+  ol.steps { list-style: none; counter-reset: s; padding: 0; }
+  ol.steps > li {
+    counter-increment: s;
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 14px;
+    padding: 12px 0;
+    align-items: start;
+    page-break-inside: avoid;
+  }
+  ol.steps > li::before {
+    content: counter(s);
+    background: var(--primary); color: white;
+    border-radius: 999px;
+    width: 30px; height: 30px;
+    display: grid; place-items: center;
+    font-weight: 800; font-size: 14px;
+  }
+  ol.steps > li > div { padding-top: 3px; }
+
+  /* Inline UI elements */
+  kbd, .ui {
+    font-family: -apple-system, sans-serif;
+    background: var(--primary-50);
+    color: var(--primary-700);
+    padding: 1px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 11pt;
+    border: 1px solid var(--primary);
+  }
+  .path {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    background: var(--neutral-100);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 11pt;
+  }
+  .chip {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 10pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin: 0 2px;
+  }
+  .chip-primary { background: var(--primary-50); color: var(--primary-700); }
+  .chip-secondary { background: var(--secondary-50); color: var(--secondary); }
+  .chip-success { background: var(--success-50); color: var(--success-700); }
+  .chip-warning { background: var(--warning-50); color: var(--warning-700); }
+  .chip-error { background: var(--error-50); color: var(--error-700); }
+
+  /* Screen mockup boxes */
+  .mockup {
+    border: 1px solid var(--neutral-200);
+    border-radius: 10px;
+    background: var(--neutral-50);
+    padding: 12px;
+    margin: 20px 0;
+    page-break-inside: avoid;
+  }
+  .mockup .caption {
+    font-size: 10pt;
+    color: var(--neutral-500);
+    text-align: center;
+    margin-top: 8px;
+    font-style: italic;
+  }
+  .mockup svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+
+  /* Section reference tables */
+  .ref-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+  .ref-table th, .ref-table td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--neutral-100); font-size: 11pt; }
+  .ref-table th { background: var(--neutral-50); color: var(--neutral-700); text-transform: uppercase; letter-spacing: .5px; font-size: 10pt; }
+  .ref-table td.role { font-weight: 700; }
+
+  /* Role badges */
+  .role-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 10pt; font-weight: 700; }
+  .role-admin { background: var(--primary-50); color: var(--primary-700); }
+  .role-dispatcher { background: var(--secondary-50); color: var(--secondary); }
+  .role-employee { background: var(--success-50); color: var(--success-700); }
+
+  /* Print rules */
+  @media print {
+    body { font-size: 11pt; }
+    main { padding: 20px 30px; }
+    h2 { page-break-before: always; }
+    h2:first-of-type { page-break-before: avoid; }
+    .toc { page-break-after: always; }
+    .mockup, .steps > li, .note, .tip, .warn { page-break-inside: avoid; }
+    a { color: var(--secondary); text-decoration: none; }
+  }
+
+  /* Simple screen mockup helpers used inside SVGs */
+  .kv { display: grid; grid-template-columns: 130px 1fr; gap: 6px 14px; font-size: 11pt; margin: 10px 0; }
+  .kv dt { font-weight: 700; color: var(--neutral-700); }
+  .kv dd { margin: 0; color: var(--neutral-800); }
+</style>
+</head>
+<body>
+
+<!-- ================================================================ COVER -->
+<section class="cover">
+  <div class="cover-logo">P</div>
+  <div class="brand-name">Priya's Reinigungsservice</div>
+  <h1>User Guide</h1>
+  <p class="sub">A step-by-step walkthrough of your operations app —
+    signing in, managing clients and buildings, running the schedule,
+    creating invoices, and keeping the team in sync.</p>
+  <p class="meta">Version 1.0 · English edition · For daily use</p>
+</section>
+
+<main>
+
+<!-- ==================================================================== TOC -->
+<section class="toc">
+  <h2>What's in this guide</h2>
+  <ol>
+    <li><b>Welcome + roles</b> — who does what in the app</li>
+    <li><b>Signing in</b> — password, 2FA, forgot-password</li>
+    <li><b>Your dashboard</b> — reading the home screen</li>
+    <li><b>Clients (customers)</b> — adding, editing, status</li>
+    <li><b>Properties (buildings)</b> — one client can have many</li>
+    <li><b>Schedule</b> — assigning shifts to employees</li>
+    <li><b>Employees</b> — team members + roles</li>
+    <li><b>Creating invoices</b> — combined per customer or per building</li>
+    <li><b>Monthly report (Alltagshilfe)</b> — health-insurance billing</li>
+    <li><b>Chat + notifications</b> — staying in the loop</li>
+    <li><b>Settings</b> — company profile, integrations, security</li>
+    <li><b>Common questions</b> — quick answers to the everyday stuff</li>
+  </ol>
+</section>
+
+<!-- =============================================================== 1. WELCOME -->
+<h2><span class="num">01</span>Welcome + roles</h2>
+<p>Priya's is your one place for the whole cleaning operation — customers, buildings, staff, shifts, invoices, and communication. Every screen you'll ever need is one click away in the left sidebar.</p>
+
+<h3>Three roles</h3>
+<p>The app shows different things to different people, based on their role. Each user has exactly one role:</p>
+
+<table class="ref-table">
+  <thead>
+    <tr><th>Role</th><th>Who</th><th>Can do</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="role"><span class="role-badge role-admin">Management</span></td>
+      <td>Priya, business partners</td>
+      <td>Everything — settings, billing, team changes, reports</td>
+    </tr>
+    <tr>
+      <td class="role"><span class="role-badge role-dispatcher">Project Manager</span></td>
+      <td>Supervisors who run the schedule</td>
+      <td>Manage customers + buildings, assign shifts, approve hours, view reports</td>
+    </tr>
+    <tr>
+      <td class="role"><span class="role-badge role-employee">Field Staff</span></td>
+      <td>Cleaners on the ground</td>
+      <td>See own schedule, clock in/out, log breaks, request vacation</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="tip"><b>Good to know</b>
+If a menu item is missing on your screen, it's because your role doesn't have access. Ask a Management user to change your role if you need more.</div>
+
+<!-- =============================================================== 2. SIGN IN -->
+<h2><span class="num">02</span>Signing in</h2>
+
+<h3>Every day</h3>
+<ol class="steps">
+  <li><div>Open the web app in your browser. Bookmark the address so you don't have to type it every time.</div></li>
+  <li><div>Type your <b>email</b> and <b>password</b>. Press <kbd>Sign in</kbd>.</div></li>
+  <li><div>If you're a Management or Project Manager account, type the 6-digit code from your authenticator app.</div></li>
+</ol>
+
+<div class="mockup">
+  <svg viewBox="0 0 500 320" xmlns="http://www.w3.org/2000/svg">
+    <!-- Panel -->
+    <rect x="0" y="0" width="500" height="320" fill="#F6FAF3"/>
+    <!-- Left brand panel -->
+    <rect x="0" y="0" width="200" height="320" fill="#16587C"/>
+    <circle cx="100" cy="120" r="34" fill="#72A94F"/>
+    <text x="100" y="132" text-anchor="middle" fill="white" font-family="sans-serif" font-size="38" font-weight="800">P</text>
+    <text x="100" y="180" text-anchor="middle" fill="white" font-family="sans-serif" font-size="18" font-weight="700">Priya's</text>
+    <text x="100" y="200" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="sans-serif" font-size="10">Leistung mit Herz</text>
+    <!-- Form -->
+    <text x="230" y="60" font-family="sans-serif" font-size="18" font-weight="700" fill="#16587C">Sign in</text>
+    <rect x="230" y="80" width="240" height="34" fill="white" stroke="#DFE4DA" rx="6"/>
+    <text x="240" y="102" fill="#8B9483" font-family="sans-serif" font-size="11">Email</text>
+    <rect x="230" y="126" width="240" height="34" fill="white" stroke="#DFE4DA" rx="6"/>
+    <text x="240" y="148" fill="#8B9483" font-family="sans-serif" font-size="11">Password</text>
+    <rect x="230" y="180" width="240" height="38" fill="#72A94F" rx="6"/>
+    <text x="350" y="204" fill="white" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700">Sign in</text>
+    <text x="230" y="245" fill="#5F675A" font-family="sans-serif" font-size="11">Forgot your password?</text>
+  </svg>
+  <div class="caption">The sign-in screen. Type email + password, then press Sign in.</div>
+</div>
+
+<h3>First time only — setting up 2FA (Management + Project Manager)</h3>
+<p>For safety, Management and Project Manager accounts must use two-factor authentication. It takes about 60 seconds and you only do it once.</p>
+
+<ol class="steps">
+  <li><div>After your first sign-in you'll be sent to a page called <b>"Secure your account with 2FA"</b>.</div></li>
+  <li><div>On your phone, open the <b>Google Authenticator</b> app (free — install from App Store or Play Store if you don't have it). Any other authenticator app like 1Password or Authy also works.</div></li>
+  <li><div>In the app, tap the "+" button, choose "Scan QR code", and point the camera at the QR shown on the screen.</div></li>
+  <li><div>The app will now show a 6-digit code that changes every 30 seconds. Type the current code into the box and press <kbd>Verify</kbd>.</div></li>
+  <li><div>You're done. Next time you sign in, the app will ask for a fresh 6-digit code from Authenticator.</div></li>
+</ol>
+
+<div class="warn"><b>Keep it safe</b>
+If you lose your phone, contact support to reset your 2FA. Don't turn 2FA off — Management accounts control the money.</div>
+
+<h3>Forgot your password?</h3>
+<ol class="steps">
+  <li><div>On the sign-in page, click <kbd>Forgot your password?</kbd>.</div></li>
+  <li><div>Type your email address and press <kbd>Send reset link</kbd>.</div></li>
+  <li><div>Check your inbox. Click the link, choose a new password, and sign in again.</div></li>
+</ol>
+
+<!-- =============================================================== 3. DASHBOARD -->
+<h2><span class="num">03</span>Your dashboard</h2>
+<p>The <b>Overview</b> page is the first thing you see. It's your daily briefing.</p>
+
+<div class="mockup">
+  <svg viewBox="0 0 520 340" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="520" height="340" fill="#F6FAF3"/>
+    <rect x="0" y="0" width="120" height="340" fill="#1D201B"/>
+    <text x="14" y="24" fill="white" font-family="sans-serif" font-size="11" font-weight="800">PRIYA'S</text>
+    <rect x="10" y="52" width="100" height="26" fill="#72A94F" rx="4"/>
+    <text x="20" y="70" fill="white" font-family="sans-serif" font-size="11" font-weight="700">Overview</text>
+    <text x="20" y="100" fill="#BDC5B4" font-family="sans-serif" font-size="10">Clients</text>
+    <text x="20" y="120" fill="#BDC5B4" font-family="sans-serif" font-size="10">Properties</text>
+    <text x="20" y="140" fill="#BDC5B4" font-family="sans-serif" font-size="10">Schedule</text>
+    <text x="20" y="160" fill="#BDC5B4" font-family="sans-serif" font-size="10">Invoices</text>
+    <text x="20" y="180" fill="#BDC5B4" font-family="sans-serif" font-size="10">Employees</text>
+    <text x="20" y="220" fill="#BDC5B4" font-family="sans-serif" font-size="10">Reports</text>
+    <text x="20" y="240" fill="#BDC5B4" font-family="sans-serif" font-size="10">Team chat</text>
+    <text x="20" y="260" fill="#BDC5B4" font-family="sans-serif" font-size="10">Notifications</text>
+    <text x="20" y="300" fill="#BDC5B4" font-family="sans-serif" font-size="10">Settings</text>
+
+    <!-- Main content -->
+    <text x="140" y="30" fill="#16587C" font-family="sans-serif" font-size="17" font-weight="800">Good afternoon, Priya</text>
+    <!-- 4 KPI tiles -->
+    <g font-family="sans-serif">
+      <rect x="140" y="50" width="88" height="60" fill="white" stroke="#EEF1EA" rx="6"/>
+      <rect x="140" y="50" width="88" height="3" fill="#72A94F"/>
+      <text x="148" y="72" fill="#5F675A" font-size="7" font-weight="800">ACTIVE CLIENTS</text>
+      <text x="148" y="92" fill="#16587C" font-size="16" font-weight="800">21</text>
+
+      <rect x="236" y="50" width="88" height="60" fill="white" stroke="#EEF1EA" rx="6"/>
+      <rect x="236" y="50" width="88" height="3" fill="#16587C"/>
+      <text x="244" y="72" fill="#5F675A" font-size="7" font-weight="800">PROPERTIES</text>
+      <text x="244" y="92" fill="#16587C" font-size="16" font-weight="800">42</text>
+
+      <rect x="332" y="50" width="88" height="60" fill="white" stroke="#EEF1EA" rx="6"/>
+      <rect x="332" y="50" width="88" height="3" fill="#F4A261"/>
+      <text x="340" y="72" fill="#5F675A" font-size="7" font-weight="800">TODAY'S SHIFTS</text>
+      <text x="340" y="92" fill="#16587C" font-size="16" font-weight="800">8</text>
+
+      <rect x="428" y="50" width="88" height="60" fill="white" stroke="#EEF1EA" rx="6"/>
+      <rect x="428" y="50" width="88" height="3" fill="#C74848"/>
+      <text x="436" y="72" fill="#5F675A" font-size="7" font-weight="800">OPEN INVOICES</text>
+      <text x="436" y="92" fill="#16587C" font-size="16" font-weight="800">€2,341</text>
+    </g>
+    <!-- Chart placeholder -->
+    <rect x="140" y="122" width="240" height="130" fill="white" stroke="#EEF1EA" rx="6"/>
+    <text x="150" y="140" fill="#16587C" font-family="sans-serif" font-size="10" font-weight="700">Shifts per week</text>
+    <g stroke="#72A94F" stroke-width="1.5" fill="none">
+      <polyline points="160,225 190,205 220,215 250,195 280,180 310,190 340,170 370,175" />
+    </g>
+    <!-- Today's schedule -->
+    <rect x="388" y="122" width="128" height="130" fill="white" stroke="#EEF1EA" rx="6"/>
+    <text x="398" y="140" fill="#16587C" font-family="sans-serif" font-size="10" font-weight="700">Today's schedule</text>
+    <text x="398" y="158" fill="#5F675A" font-family="sans-serif" font-size="8">08:00 · Beckmann</text>
+    <text x="398" y="172" fill="#5F675A" font-family="sans-serif" font-size="8">10:00 · Schäfer</text>
+    <text x="398" y="186" fill="#5F675A" font-family="sans-serif" font-size="8">14:00 · Wagner</text>
+  </svg>
+  <div class="caption">The dashboard, with the black sidebar on the left and the KPI tiles up top.</div>
+</div>
+
+<h3>What each tile means (Management + Project Manager view)</h3>
+<table class="ref-table">
+  <tbody>
+    <tr><td><b>Active clients</b></td><td>Customers currently receiving service.</td></tr>
+    <tr><td><b>Properties</b></td><td>Total buildings across all customers.</td></tr>
+    <tr><td><b>Today's shifts</b></td><td>Shifts scheduled to happen today, and how many are still waiting for check-in.</td></tr>
+    <tr><td><b>Open invoices</b></td><td>Total money not yet paid by customers.</td></tr>
+    <tr><td><b>Shifts per week chart</b></td><td>Completed vs planned shifts. Green line above red = ahead of target.</td></tr>
+    <tr><td><b>Today's schedule</b></td><td>Every shift today, in order. Click any row for details.</td></tr>
+    <tr><td><b>Team utilization</b></td><td>How many hours each employee has worked this week vs their target.</td></tr>
+    <tr><td><b>Recent activity</b></td><td>Latest things that happened in the system — invoices sent, employees clocked in, etc.</td></tr>
+    <tr><td><b>Quick actions</b></td><td>Big buttons for the most common tasks: Add client, Plan shift, Generate invoice, Export report.</td></tr>
+  </tbody>
+</table>
+
+<div class="note"><b>Field Staff dashboard</b>
+Cleaners see a simpler version: only their own hours, vacation left, mandatory training, and their next few shifts. The business KPIs stay private to Management + Project Managers.</div>
+
+<!-- =============================================================== 4. CLIENTS -->
+<h2><span class="num">04</span>Clients (customers)</h2>
+<p>A <b>client</b> is anyone who pays for cleaning. Each client can have one address (for residential) or many buildings (for commercial). This is the starting point for everything else — you can't create an invoice or plan a shift without a client first.</p>
+
+<h3>Seeing the customer list</h3>
+<ol class="steps">
+  <li><div>Click <kbd>Clients</kbd> in the left sidebar.</div></li>
+  <li><div>The list shows every client with their status, contact, and the number of buildings.</div></li>
+  <li><div>Use the search box at the top to find a specific one by name.</div></li>
+  <li><div>Filter by status (Active / Vacation / Paused / Contract ending / Inactive) using the pills across the top.</div></li>
+</ol>
+
+<h3>Adding a new client</h3>
+<ol class="steps">
+  <li><div>On the Clients page, click the green <kbd>+ New client</kbd> button in the top-right.</div></li>
+  <li><div>Choose the customer type:
+    <ul>
+      <li><b>Residential</b> — a private household</li>
+      <li><b>Commercial</b> — a business with one or more locations</li>
+      <li><b>Alltagshilfe</b> — a care recipient billed to a German health-insurance fund (§45b SGB XI)</li>
+    </ul>
+  </div></li>
+  <li><div>Fill in the client details step by step. Fields with a red asterisk are required — the app will not let you skip them.</div></li>
+  <li><div>For <b>Alltagshilfe</b>, also fill in: care level (Pflegegrad 1–5), health insurance name, and the assignment agreement (Abtretungserklärung) date.</div></li>
+  <li><div>Choose <b>invoice export target</b>:
+    <span class="chip chip-secondary">Internal</span> means Priya's manages the invoice inside the app,
+    <span class="chip chip-primary">Lexware</span> means invoices push automatically to your accounting.
+  </div></li>
+  <li><div>Press <kbd>Save client</kbd>.</div></li>
+</ol>
+
+<div class="mockup">
+  <svg viewBox="0 0 500 240" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="500" height="240" fill="white"/>
+    <text x="20" y="30" fill="#16587C" font-family="sans-serif" font-size="16" font-weight="800">Choose customer type</text>
+    <g font-family="sans-serif">
+      <rect x="20" y="50" width="150" height="150" fill="#F1F7EB" stroke="#72A94F" stroke-width="1.5" rx="10"/>
+      <circle cx="95" cy="90" r="18" fill="#72A94F"/>
+      <text x="95" y="96" text-anchor="middle" fill="white" font-size="14">🏠</text>
+      <text x="95" y="140" text-anchor="middle" fill="#16587C" font-size="12" font-weight="800">Residential</text>
+      <text x="95" y="160" text-anchor="middle" fill="#5F675A" font-size="9">Private household</text>
+
+      <rect x="180" y="50" width="150" height="150" fill="white" stroke="#DFE4DA" rx="10"/>
+      <circle cx="255" cy="90" r="18" fill="#16587C"/>
+      <text x="255" y="96" text-anchor="middle" fill="white" font-size="14">🏢</text>
+      <text x="255" y="140" text-anchor="middle" fill="#16587C" font-size="12" font-weight="800">Commercial</text>
+      <text x="255" y="160" text-anchor="middle" fill="#5F675A" font-size="9">Multiple buildings</text>
+
+      <rect x="340" y="50" width="150" height="150" fill="white" stroke="#DFE4DA" rx="10"/>
+      <circle cx="415" cy="90" r="18" fill="#C74848"/>
+      <text x="415" y="96" text-anchor="middle" fill="white" font-size="14">💗</text>
+      <text x="415" y="140" text-anchor="middle" fill="#16587C" font-size="12" font-weight="800">Alltagshilfe</text>
+      <text x="415" y="160" text-anchor="middle" fill="#5F675A" font-size="9">Health-insurance billed</text>
+    </g>
+  </svg>
+  <div class="caption">Step 1 of the New Client wizard — pick the customer type.</div>
+</div>
+
+<h3>Setting a client's status</h3>
+<p>On the client detail page, use the status dropdown to reflect what's really happening:</p>
+<ul>
+  <li><span class="chip chip-success">Active</span> — normal ongoing service.</li>
+  <li><span class="chip chip-warning">Vacation</span> — client is away; shifts paused temporarily.</li>
+  <li><span class="chip chip-warning">Paused by client</span> — client has asked to stop for now.</li>
+  <li><span class="chip chip-error">Contract ending in 60 days</span> — final notice given.</li>
+  <li><span class="chip chip-error">Inactive</span> — no longer a customer.</li>
+</ul>
+
+<div class="tip"><b>Why status matters</b>
+Vacation and Paused hide the client from the "Today's shifts" auto-planner so you don't accidentally send a cleaner to an empty house.</div>
+
+<h3>Editing a client</h3>
+<ol class="steps">
+  <li><div>Open the client from the list.</div></li>
+  <li><div>Press <kbd>Edit</kbd> at the top-right of the detail page.</div></li>
+  <li><div>Change anything you need. Press <kbd>Save</kbd>.</div></li>
+</ol>
+
+<!-- =============================================================== 5. PROPERTIES -->
+<h2><span class="num">05</span>Properties (buildings)</h2>
+<p>A <b>property</b> is a physical building or address where cleaning happens. One client can have many properties (a company with three offices), or just one (a private house).</p>
+
+<h3>Adding a property under a client</h3>
+<ol class="steps">
+  <li><div>Open the client detail page.</div></li>
+  <li><div>Scroll down to the <b>Properties</b> section.</div></li>
+  <li><div>Click <kbd>+ Add property</kbd>.</div></li>
+  <li><div>Fill in:
+    <ul>
+      <li><b>Name</b> — e.g. "Head office" or "Wilmersdorf apartment"</li>
+      <li><b>Street, postal code, city</b> — used for GPS check-in on the mobile app</li>
+      <li><b>Access instructions</b> — key code, buzzer, parking notes</li>
+      <li><b>Cleaning rhythm</b> — how often (weekly, bi-weekly, on demand)</li>
+    </ul>
+  </div></li>
+  <li><div>Press <kbd>Save</kbd>.</div></li>
+</ol>
+
+<div class="note"><b>Why the address matters</b>
+When a cleaner clocks in from their phone, the app checks their GPS location against the property's address. If they're more than 500 metres away, it warns them before letting them proceed. Get the address right the first time.</div>
+
+<h3>Photos, keys, and documents</h3>
+<p>On the property detail page you can:</p>
+<ul>
+  <li>Upload photos of the entrance, key handover, or damage.</li>
+  <li>Track physical keys — who has them, when they were handed over.</li>
+  <li>Attach contract PDFs, safety checklists, or property maps.</li>
+</ul>
+
+<!-- =============================================================== 6. SCHEDULE -->
+<h2><span class="num">06</span>Schedule</h2>
+<p>The Schedule page is where you decide who cleans what, and when.</p>
+
+<h3>Assigning a shift</h3>
+<ol class="steps">
+  <li><div>Click <kbd>Schedule</kbd> in the sidebar.</div></li>
+  <li><div>Switch to <b>Week</b> or <b>Day</b> view depending on how far ahead you're planning.</div></li>
+  <li><div>Click an empty slot on the calendar (or click <kbd>+ New shift</kbd>).</div></li>
+  <li><div>Choose the <b>property</b>, the <b>employee</b>, the <b>start</b> and <b>end</b> times.</div></li>
+  <li><div>Optionally set it as <b>recurring</b> (every week, every two weeks) so you don't have to redo it.</div></li>
+  <li><div>Press <kbd>Assign</kbd>.</div></li>
+</ol>
+
+<div class="mockup">
+  <svg viewBox="0 0 500 220" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="500" height="220" fill="white"/>
+    <text x="20" y="25" fill="#16587C" font-family="sans-serif" font-size="14" font-weight="800">This week · KW 27</text>
+    <g font-family="sans-serif" font-size="9" fill="#5F675A">
+      <text x="20" y="55">MO</text><text x="90" y="55">DI</text><text x="160" y="55">MI</text>
+      <text x="230" y="55">DO</text><text x="300" y="55">FR</text><text x="370" y="55">SA</text><text x="440" y="55">SO</text>
+    </g>
+    <!-- Sample shifts -->
+    <g font-family="sans-serif">
+      <rect x="20" y="65" width="60" height="30" fill="#F1F7EB" stroke="#72A94F" rx="4"/>
+      <text x="25" y="79" fill="#588843" font-size="8" font-weight="700">Beckmann</text>
+      <text x="25" y="90" fill="#588843" font-size="8">08–10</text>
+
+      <rect x="90" y="65" width="60" height="30" fill="#F1F7EB" stroke="#72A94F" rx="4"/>
+      <text x="95" y="79" fill="#588843" font-size="8" font-weight="700">Schäfer</text>
+      <text x="95" y="90" fill="#588843" font-size="8">10–13</text>
+
+      <rect x="160" y="65" width="60" height="30" fill="#F1F7EB" stroke="#72A94F" rx="4"/>
+      <text x="165" y="79" fill="#588843" font-size="8" font-weight="700">Wagner</text>
+      <text x="165" y="90" fill="#588843" font-size="8">14–17</text>
+
+      <rect x="20" y="105" width="60" height="30" fill="#EEF4F8" stroke="#16587C" rx="4"/>
+      <text x="25" y="119" fill="#16587C" font-size="8" font-weight="700">Baumann</text>
+      <text x="25" y="130" fill="#16587C" font-size="8">09–12</text>
+    </g>
+    <!-- New shift button -->
+    <rect x="380" y="20" width="100" height="26" fill="#72A94F" rx="4"/>
+    <text x="430" y="38" text-anchor="middle" fill="white" font-family="sans-serif" font-size="10" font-weight="700">+ New shift</text>
+  </svg>
+  <div class="caption">Week view of the schedule. Green blocks = Priya's shifts. Click any empty area to add a new one.</div>
+</div>
+
+<h3>Approving completed shifts</h3>
+<p>After a cleaner clocks out, the shift moves to <span class="chip chip-warning">Awaiting approval</span>. As Project Manager or Management:</p>
+<ol class="steps">
+  <li><div>Open the shift.</div></li>
+  <li><div>Check the actual check-in / check-out times against the schedule.</div></li>
+  <li><div>Press <kbd>Approve</kbd>. This unlocks the hours for invoicing.</div></li>
+</ol>
+
+<div class="warn"><b>Important</b>
+Only <b>approved</b> shifts can be included in an invoice. If you can't find hours in the invoice generator, check whether the shifts are still awaiting approval.</div>
+
+<!-- =============================================================== 7. EMPLOYEES -->
+<h2><span class="num">07</span>Employees</h2>
+
+<h3>Adding a new employee</h3>
+<ol class="steps">
+  <li><div>Sidebar → <kbd>Settings</kbd> → <kbd>Team &amp; roles</kbd> → <kbd>+ Invite member</kbd>.</div></li>
+  <li><div>Enter their <b>email</b>, <b>full name</b>, and pick a <b>role</b>:
+    <span class="role-badge role-admin">Management</span>
+    <span class="role-badge role-dispatcher">Project Manager</span>
+    <span class="role-badge role-employee">Field Staff</span>
+  </div></li>
+  <li><div>Press <kbd>Send invite</kbd>. The person gets an email with a link to set their password.</div></li>
+  <li><div>Once they've signed in, open the <b>Employees</b> page to fill in the rest: phone, weekly hours target, hire date, certifications, spoken languages.</div></li>
+</ol>
+
+<h3>Onboarding video sequence</h3>
+<p>New Field Staff must watch a mandatory training video series before the app unlocks for them. They're bounced to the Onboarding videos page automatically on first sign-in.</p>
+
+<h3>Certificates + expiry alerts</h3>
+<p>On the employee detail page, upload copies of first-aid certificate, work permit, or driving licence. Set an expiry date and the app will send a notification 30 days before it lapses.</p>
+
+<!-- =============================================================== 8. INVOICES -->
+<h2><span class="num">08</span>Creating invoices</h2>
+<p>The most-asked question: <b>can I bill one customer for all their buildings at once, or should I make one invoice per building?</b> The answer is <b>both</b> — you choose per invoice.</p>
+
+<h3>Combined bill — all buildings on one invoice</h3>
+<p>Use this when the customer prefers one big invoice per month.</p>
+<ol class="steps">
+  <li><div>Sidebar → <kbd>Invoices</kbd> → <kbd>+ New invoice</kbd> (top-right).</div></li>
+  <li><div>Choose the <b>client</b>.</div></li>
+  <li><div>Choose the <b>date range</b> (e.g. 1–30 June).</div></li>
+  <li><div>Leave the <b>property</b> selector as <b>All buildings</b>.</div></li>
+  <li><div>The app draws every approved shift for every building of that client in the period, and groups the line items by building.</div></li>
+  <li><div>Press <kbd>Save draft</kbd>.</div></li>
+</ol>
+
+<h3>Separate bills — one invoice per building</h3>
+<p>Use this when each building is a separate cost centre or has its own invoice recipient.</p>
+<ol class="steps">
+  <li><div>Same steps 1–3 as above.</div></li>
+  <li><div>In the <b>property</b> selector, pick just <b>one</b> building.</div></li>
+  <li><div>Save the draft, then repeat for the next building.</div></li>
+</ol>
+
+<div class="tip"><b>Which one does Priya want by default?</b>
+The system remembers what you picked last time for that client. If you always want combined, always leave the selector on "All buildings" and it becomes the pattern.</div>
+
+<h3>Editing a draft</h3>
+<p>Every invoice starts as <span class="chip chip-secondary">Draft</span>. Only drafts can be edited.</p>
+<ol class="steps">
+  <li><div>Open the invoice from the list.</div></li>
+  <li><div>Press <kbd>Edit invoice</kbd> at the top of the detail page.</div></li>
+  <li><div>Change line item quantity, unit price, or description. Add or remove lines.</div></li>
+  <li><div>Change the invoice date, due date, or add a note to the customer.</div></li>
+  <li><div>Press <kbd>Save</kbd>. The totals recalculate automatically.</div></li>
+</ol>
+
+<div class="warn"><b>Once you press "Mark Sent" you cannot edit any more</b>
+Because at that point the invoice is a legal document that has been shared with the customer. Double-check everything before you send.</div>
+
+<h3>Sending to Lexware</h3>
+<p>If the client has <span class="chip chip-primary">Lexware</span> as their export target, an extra button appears once the invoice is marked sent:</p>
+<ol class="steps">
+  <li><div>Open the sent invoice.</div></li>
+  <li><div>Press <kbd>Lexware-Sync jetzt</kbd> (Sync to Lexware now).</div></li>
+  <li><div>The invoice pushes to Lexware Office. You'll see a green <span class="chip chip-success">Synced</span> chip once it lands.</div></li>
+</ol>
+
+<p>To sync many at once: on the Invoices list, click <kbd>Sync Lexware</kbd> in the toolbar. Anything <span class="chip chip-error">Failed</span> or <span class="chip chip-warning">Pending</span> gets retried in one go.</p>
+
+<h3>Marking as paid</h3>
+<p>Two ways:</p>
+<ul>
+  <li><b>Manually</b> — open the invoice, press <kbd>Mark paid</kbd>, enter the amount and date.</li>
+  <li><b>Automatically from Lexware</b> — press <kbd>Lexware-Zahlungen abrufen</kbd> (Pull payments) on any invoice. The app checks Lexware for any new payments and books them against the matching invoices.</li>
+</ul>
+
+<h3>Overdue chasing</h3>
+<p>The system automatically flips invoices to <span class="chip chip-error">Overdue</span> the day after the due date. On the Invoices list, filter by <b>Overdue</b> to see everything past due, oldest first. A reminder email is sent automatically 3 days after due date if the setting is on (Settings → Tax &amp; billing → Late-payment reminder).</p>
+
+<!-- =============================================================== 9. MONTHLY REPORT -->
+<h2><span class="num">09</span>Monthly report (Alltagshilfe)</h2>
+<p>For Alltagshilfe customers, invoices go to the customer's <b>health-insurance fund</b>, not the customer directly. The app generates a monthly report you use to create those invoices manually.</p>
+
+<h3>Reading the report</h3>
+<ol class="steps">
+  <li><div>Sidebar → <kbd>Reports</kbd> → <kbd>Monthly Report</kbd>.</div></li>
+  <li><div>Use the month pills (Jan / Feb / Mar / Apr) at the top to switch periods.</div></li>
+  <li><div>The report shows every Alltagshilfe customer as a pink header row, with each cleaner's hours grouped underneath.</div></li>
+  <li><div>Total hours, total amount, and per-customer breakdown all update automatically.</div></li>
+</ol>
+
+<h3>Sending to management</h3>
+<p>Press <kbd>Send to Management</kbd> in the toolbar. An email with the PDF report goes to the address in Settings → Company. This is what you or Priya use to create the manual invoices for each health-insurance fund.</p>
+
+<div class="tip"><b>Why not automatic?</b>
+German health-insurance invoices need to be tailored per fund (their format, addressee, and reference numbers differ). The app does the heavy lifting — gathering hours, calculating amounts — you finish the last step manually so the paperwork is exactly what each Kasse expects.</div>
+
+<!-- =============================================================== 10. CHAT + NOTIFICATIONS -->
+<h2><span class="num">10</span>Chat + notifications</h2>
+
+<h3>Team chat</h3>
+<ol class="steps">
+  <li><div>Sidebar → <kbd>Team chat</kbd>.</div></li>
+  <li><div>You'll see all channels you're a member of (usually one per team or one per property).</div></li>
+  <li><div>Click a channel, type a message, press <kbd>Send</kbd>.</div></li>
+  <li><div>Attach a shift or property card to a message using the paperclip icon — good for "Can someone cover this?" moments.</div></li>
+</ol>
+
+<h3>Notifications</h3>
+<p>Sidebar → <kbd>Notifications</kbd> shows every alert the system generated for you: shift changes, invoice paid, missed check-in, vacation request, etc. Filter with the pills at the top. Bell icon in the topbar shows a red dot when there's something unread.</p>
+
+<p>Turn categories on/off in Settings → Notifications. Each category has 3 channels: <b>in-app</b>, <b>email</b>, <b>SMS/WhatsApp</b>.</p>
+
+<!-- =============================================================== 11. SETTINGS -->
+<h2><span class="num">11</span>Settings</h2>
+<p>Sidebar → <kbd>Settings</kbd>. Split into two groups: <b>Management</b> (things about the business) and <b>Personal</b> (things about you).</p>
+
+<h3>Management section</h3>
+<table class="ref-table">
+  <thead><tr><th>Card</th><th>What it controls</th></tr></thead>
+  <tbody>
+    <tr><td><b>01 · Company profile</b></td><td>Logo, legal name, VAT ID, industry, brand colours, operational locations (HQ + depots).</td></tr>
+    <tr><td><b>02 · Team &amp; roles</b></td><td>List of everyone with access. Change roles, invite new members, revoke access.</td></tr>
+    <tr><td><b>03 · Tax &amp; billing</b></td><td>Payment terms, VAT rate, IBAN, invoice footer text, late-payment reminder toggle, plan info.</td></tr>
+    <tr><td><b>04 · Integrations</b></td><td>Lexware, Stripe, Google Calendar, Slack, QuickBooks, DATEV, GDPR compliance. API keys.</td></tr>
+    <tr><td><b>05 · Notifications</b></td><td>Which events reach you on which channel. Quiet hours.</td></tr>
+  </tbody>
+</table>
+
+<h3>Personal section</h3>
+<table class="ref-table">
+  <thead><tr><th>Card</th><th>What it controls</th></tr></thead>
+  <tbody>
+    <tr><td><b>06 · My account</b></td><td>Your name, display name, phone, email, timezone, date format, interface language.</td></tr>
+    <tr><td><b>07 · Security</b></td><td>Change password, enable/disable 2FA, get login alerts by email.</td></tr>
+    <tr><td><b>08 · Sessions &amp; devices</b></td><td>See every device signed in with your account. Revoke any that shouldn't be there.</td></tr>
+  </tbody>
+</table>
+
+<!-- =============================================================== 12. FAQ -->
+<h2><span class="num">12</span>Common questions</h2>
+
+<h3>How do I see who's on shift today?</h3>
+<p>Dashboard → the "Today's schedule" card on the right shows every shift in time order. Click a row for details.</p>
+
+<h3>How do I see what's overdue?</h3>
+<p>Sidebar → Invoices → click the <b>Overdue</b> filter pill. Sorted oldest first.</p>
+
+<h3>How do I export a list to Excel?</h3>
+<p>Most list pages (Clients, Invoices, Employees, Reports) have an <kbd>Export</kbd> button in the toolbar. Downloads a CSV file which opens directly in Excel.</p>
+
+<h3>How do I reset an employee's password?</h3>
+<p>Ask them to click "Forgot password" on the sign-in page. If they can't access their email, Management can go to Settings → Team &amp; roles, click the person's row, and press <kbd>Send password reset</kbd>.</p>
+
+<h3>Why can't I see the Settings menu?</h3>
+<p>Only Management + Project Manager roles see most Settings. Field Staff sees only <b>My account</b>, <b>Security</b>, and <b>Sessions</b>.</p>
+
+<h3>Why can't I edit this invoice?</h3>
+<p>It's already been marked Sent. Only drafts can be edited. If something needs fixing on a sent invoice, create a credit note or a corrected invoice.</p>
+
+<h3>The QR code on 2FA setup doesn't scan</h3>
+<p>Below the QR is a text code (a long string like <span class="path">JBSWY3DPEHPK3PXP</span>). In your Authenticator app, choose "Enter setup key" instead of "Scan QR" and paste the code. Same effect.</p>
+
+<h3>I made a mistake — can I undo?</h3>
+<p>Most edits create a version in the audit log. Ask Management to check <b>Settings → Audit log</b> to see what changed and when. Deleted clients / properties can usually be un-archived within 30 days.</p>
+
+<hr style="margin: 48px 0 24px; border: none; border-top: 1px solid var(--neutral-200);" />
+
+<p style="text-align: center; color: var(--neutral-500); font-size: 11pt;">
+  Need help? Email <a href="mailto:support@priyas-cleaning.de">support@priyas-cleaning.de</a>. Responses within 15 minutes during business hours.
+</p>
+
+</main>
+</body>
+</html>

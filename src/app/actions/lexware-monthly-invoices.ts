@@ -11,7 +11,7 @@ import {
   type GenerateMonthlyResult,
   type LastRunSummary,
 } from "@/lib/lexware/monthly";
-
+import { getCachedUser } from "@/lib/api/current-user";
 /**
  * Admin / UI entry-point for the monthly Lexware billing run.
  *
@@ -40,9 +40,7 @@ export async function generateMonthlyInvoicesAction(
     };
   }
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
   const result = await runMonthlyInvoices(
     supabase as unknown as SupabaseClient,
     args,

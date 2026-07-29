@@ -7,6 +7,7 @@ import { routes } from "@/lib/constants/routes";
 import { updateTrainingProgressAction } from "@/app/actions/training";
 import { unlockSystemAction } from "@/app/actions/onboard-videos";
 import type { OnboardingState, OnboardingVideo } from "@/lib/api/onboard-videos";
+import { classifyVideoUrl } from "@/lib/utils/video-embed";
 import { SignaturePad } from "./SignaturePad";
 
 /**
@@ -53,6 +54,35 @@ export function OnboardVideos({ initial }: { initial: OnboardingState }) {
   const allMandatoryDone = mandatory.length > 0 && mandatoryDone === mandatory.length;
 
   const current = videos[cursor];
+
+  // Classify the current module's URL up-front. `direct` → <video src>,
+  // `embed` → YouTube/Vimeo/Loom iframe, `invalid` → clear error state
+  // instead of a black rectangle that fails silently.
+  const classified = current
+    ? classifyVideoUrl(current.video_url)
+    : { kind: "invalid" as const };
+
+  // For iframe embeds we can't observe `onEnded` cross-origin. Give the
+  // user an explicit "I watched it" toggle that flips `watchedThisSession`
+  // the same way the <video onEnded> would.
+  function markManuallyWatched(id: string) {
+    setWatchedThisSession((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }
+
+  // <video> onError — the src returned an HTTP error or was not a valid
+  // media container. We toast a helpful message so the field-staff user
+  // knows to flag it, and drop out of the "watched required" gate so
+  // they aren't stuck (managers can re-upload afterwards).
+  function markUnplayable(id: string) {
+    toast.error(
+      "Video konnte nicht geladen werden. Bitte an die Geschäftsleitung melden.",
+    );
+    markManuallyWatched(id);
+  }
 
   function markCompleteThenAdvance(video: OnboardingVideo) {
     start(async () => {
@@ -196,27 +226,77 @@ export function OnboardVideos({ initial }: { initial: OnboardingState }) {
               </header>
 
               <div className="aspect-video w-full overflow-hidden rounded-lg bg-neutral-900">
-                {current.video_url ? (
+                {classified.kind === "direct" && (
                   <video
                     key={current.id}
-                    src={current.video_url}
+                    src={classified.src}
                     controls
                     controlsList="nodownload"
-                    onEnded={() =>
-                      setWatchedThisSession((prev) => {
-                        const next = new Set(prev);
-                        next.add(current.id);
-                        return next;
-                      })
-                    }
+                    preload="metadata"
+                    onEnded={() => markManuallyWatched(current.id)}
+                    onError={() => markUnplayable(current.id)}
                     className="h-full w-full"
                   />
-                ) : (
-                  <div className="grid h-full w-full place-items-center text-[13px] text-neutral-400">
-                    Kein Video hinterlegt – bitte Inhalt prüfen.
+                )}
+                {classified.kind === "embed" && (
+                  <iframe
+                    key={current.id}
+                    src={classified.src}
+                    title={current.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="h-full w-full"
+                  />
+                )}
+                {classified.kind === "invalid" && (
+                  <div className="grid h-full w-full place-items-center px-6 text-center text-[13px] text-neutral-400">
+                    {current.video_url
+                      ? "Video-URL ist ungültig oder nicht abspielbar. Bitte die Geschäftsleitung informieren."
+                      : "Kein Video hinterlegt – bitte Inhalt prüfen."}
                   </div>
                 )}
               </div>
+
+              {/* Iframe embeds can't fire `onEnded` cross-origin, so we
+                  give the user an explicit "I watched it" checkbox.
+                  Direct <video> renders don't need this — the onEnded
+                  event handles it automatically. */}
+              {classified.kind === "embed" && !current.completed_at && (
+                <label className="mt-3 flex cursor-pointer items-center gap-2 text-[12px] text-neutral-700">
+                  <input
+                    type="checkbox"
+                    checked={watchedThisSession.has(current.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        markManuallyWatched(current.id);
+                      } else {
+                        setWatchedThisSession((prev) => {
+                          const next = new Set(prev);
+                          next.delete(current.id);
+                          return next;
+                        });
+                      }
+                    }}
+                    className="h-4 w-4 accent-primary-500"
+                  />
+                  Ich habe das Video vollständig angesehen.
+                </label>
+              )}
+
+              {/* Invalid URL — let the user complete the module anyway
+                  so they aren't blocked from unlocking the system. */}
+              {classified.kind === "invalid" &&
+                current.video_url &&
+                !current.completed_at &&
+                !watchedThisSession.has(current.id) && (
+                  <button
+                    type="button"
+                    onClick={() => markManuallyWatched(current.id)}
+                    className="mt-3 rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-[12px] font-medium text-neutral-700 hover:bg-neutral-50"
+                  >
+                    Video ist bei mir kaputt — trotzdem fortfahren
+                  </button>
+                )}
 
               {/* Signature pad — shown after the video is watched for mandatory modules */}
               {current.is_mandatory &&
