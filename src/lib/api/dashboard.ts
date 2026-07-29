@@ -53,6 +53,108 @@ function pctDelta(curr: number, prev: number): number {
   return ((curr - prev) / prev) * 100;
 }
 
+/**
+ * Try the single-round-trip `dashboard_kpis` RPC first. If the function
+ * isn't in the DB yet (PostgREST returns PGRST202 "not found in schema
+ * cache"), fall back to the classic 10-query fan-out. Keeps the app
+ * shippable even if the migration hasn't been applied to a given
+ * environment yet.
+ */
+async function loadKpis(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  window: {
+    monthStart: Date;
+    todayStart: Date;
+    todayEnd: Date;
+  },
+): Promise<KpiSet> {
+  type KpiJson = {
+    clients: { active: number; active_last_month: number; added_this_month: number };
+    properties: { total: number; total_last_month: number; added_this_month: number };
+    shifts_today: { scheduled: number; pending_checkins: number };
+    invoices: { open_cents: number; pending_count: number; overdue_count: number };
+  };
+
+  const rpc = await supabase.rpc("dashboard_kpis", {
+    p_month_start: window.monthStart.toISOString(),
+    p_today_start: window.todayStart.toISOString(),
+    p_today_end: window.todayEnd.toISOString(),
+  });
+
+  if (!rpc.error && rpc.data) {
+    const k = rpc.data as KpiJson;
+    return {
+      activeClients: {
+        value: k.clients.active,
+        deltaPct: pctDelta(k.clients.active, k.clients.active_last_month),
+        addedThisMonth: k.clients.added_this_month,
+      },
+      managedProperties: {
+        value: k.properties.total,
+        deltaPct: pctDelta(k.properties.total, k.properties.total_last_month),
+        addedThisMonth: k.properties.added_this_month,
+      },
+      todayShifts: {
+        value: k.shifts_today.scheduled,
+        pendingCheckins: k.shifts_today.pending_checkins,
+      },
+      openInvoices: {
+        valueCents: Number(k.invoices.open_cents),
+        pendingCount: k.invoices.pending_count,
+        overdueCount: k.invoices.overdue_count,
+      },
+    };
+  }
+
+  // Fallback path — RPC not deployed yet. Fan-out of the same counts.
+  // Logged as a warning so we notice migration lag in production logs
+  // but no user-visible break.
+  console.warn(
+    "[dashboard] dashboard_kpis RPC missing, using fallback fan-out. " +
+      "Apply migration 20260726_000054_dashboard_kpis_rpc.sql.",
+  );
+  const ms = window.monthStart.toISOString();
+  const ts = window.todayStart.toISOString();
+  const te = window.todayEnd.toISOString();
+  const [ac, acLast, acAdded, pr, prLast, prAdded, shift, pending, openInv, over] =
+    await Promise.all([
+      supabase.from("clients").select("id", { count: "exact", head: true }).is("deleted_at", null),
+      supabase.from("clients").select("id", { count: "exact", head: true }).is("deleted_at", null).lt("created_at", ms),
+      supabase.from("clients").select("id", { count: "exact", head: true }).is("deleted_at", null).gte("created_at", ms),
+      supabase.from("properties").select("id", { count: "exact", head: true }).is("deleted_at", null),
+      supabase.from("properties").select("id", { count: "exact", head: true }).is("deleted_at", null).lt("created_at", ms),
+      supabase.from("properties").select("id", { count: "exact", head: true }).is("deleted_at", null).gte("created_at", ms),
+      supabase.from("shifts").select("id", { count: "exact", head: true }).is("deleted_at", null).gte("starts_at", ts).lte("starts_at", te),
+      supabase.from("shifts").select("id", { count: "exact", head: true }).is("deleted_at", null).gte("starts_at", ts).lte("starts_at", te).in("status", ["scheduled"]),
+      supabase.from("invoices").select("total_cents").is("deleted_at", null).in("status", ["sent", "overdue"]),
+      supabase.from("invoices").select("id", { count: "exact", head: true }).is("deleted_at", null).eq("status", "overdue"),
+    ]);
+  const invRows = (openInv.data ?? []) as Array<{ total_cents: number | null }>;
+  const openCents = invRows.reduce((s, r) => s + Number(r.total_cents ?? 0), 0);
+  return {
+    activeClients: {
+      value: ac.count ?? 0,
+      deltaPct: pctDelta(ac.count ?? 0, acLast.count ?? 0),
+      addedThisMonth: acAdded.count ?? 0,
+    },
+    managedProperties: {
+      value: pr.count ?? 0,
+      deltaPct: pctDelta(pr.count ?? 0, prLast.count ?? 0),
+      addedThisMonth: prAdded.count ?? 0,
+    },
+    todayShifts: {
+      value: shift.count ?? 0,
+      pendingCheckins: pending.count ?? 0,
+    },
+    openInvoices: {
+      valueCents: openCents,
+      pendingCount: invRows.length,
+      overdueCount: over.count ?? 0,
+    },
+  };
+}
+
 /* ============================================================================
  * Loader
  * ========================================================================== */
@@ -95,49 +197,20 @@ export async function loadDashboardData(): Promise<DashboardData> {
   const lastWeekStart = subWeeks(weekStart, 1);
   const lastWeekEnd = subWeeks(weekEnd, 1);
 
-  // Single-round-trip KPI aggregation. All 10 counts + the open-invoice
-  // sum are computed server-side by the `dashboard_kpis` SQL function
-  // (see migration 000054) and returned as one JSON blob. Replaces
-  // 10 separate count() queries — cuts DB round-trips proportional to
-  // network latency (huge win on cross-region deployments).
-  const { data: kpiRaw, error: kpiErr } = await supabase.rpc(
-    "dashboard_kpis" as never,
-    {
-      p_month_start: monthStart.toISOString(),
-      p_today_start: todayStart.toISOString(),
-      p_today_end: todayEnd.toISOString(),
-    } as never,
-  );
-  if (kpiErr) throw kpiErr;
-  type KpiJson = {
-    clients: { active: number; active_last_month: number; added_this_month: number };
-    properties: { total: number; total_last_month: number; added_this_month: number };
-    shifts_today: { scheduled: number; pending_checkins: number };
-    invoices: { open_cents: number; pending_count: number; overdue_count: number };
-  };
-  const k = kpiRaw as unknown as KpiJson;
-
-  const kpis: KpiSet = {
-    activeClients: {
-      value: k.clients.active,
-      deltaPct: pctDelta(k.clients.active, k.clients.active_last_month),
-      addedThisMonth: k.clients.added_this_month,
-    },
-    managedProperties: {
-      value: k.properties.total,
-      deltaPct: pctDelta(k.properties.total, k.properties.total_last_month),
-      addedThisMonth: k.properties.added_this_month,
-    },
-    todayShifts: {
-      value: k.shifts_today.scheduled,
-      pendingCheckins: k.shifts_today.pending_checkins,
-    },
-    openInvoices: {
-      valueCents: Number(k.invoices.open_cents),
-      pendingCount: k.invoices.pending_count,
-      overdueCount: k.invoices.overdue_count,
-    },
-  };
+  // Single-round-trip KPI aggregation. The `dashboard_kpis` SQL function
+  // (see migration 000054) returns every KPI count + the open-invoice
+  // sum as one JSON blob — replaces 10 separate count() queries and
+  // cuts network round-trips (big win on cross-region deployments).
+  //
+  // Defensive fallback: if the RPC hasn't been applied to the DB yet
+  // (fresh clone, migration lag), we fall back to the old count-query
+  // fan-out so the dashboard keeps rendering. The fallback is one
+  // round-trip fatter but functionally identical.
+  const kpis = await loadKpis(supabase, {
+    monthStart,
+    todayStart,
+    todayEnd,
+  });
 
   /* ----- Weekly chart: Mon–Sun completed + scheduled counts -------------- */
   const [thisWeekShiftsRes, lastWeekShiftsRes, thisWeekHoursRes, lastWeekHoursRes] =
