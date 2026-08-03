@@ -2063,7 +2063,7 @@
     "breadcrumbDashboard": "Overview",
     "breadcrumbCurrent": "Notifications",
     "title": "Notifications",
-    "subtitle": "All system events, reminders and schedule changes.",
+    "subtitle": "Everything the system flagged for you.",
     "actions": {
       "markAllRead": "Mark all read",
       "settings": "Settings"
@@ -2114,14 +2114,30 @@
     },
     "olderCollapsed": "{n} older notifications are collapsed.",
     "olderCollapsedRich": "{n} older notifications are collapsed — <link>show all</link>",
-    "footerNote": "Notifications are stored for 90 days. Who receives notifications and how (email · push · in-app · SMS) can be controlled in the <link>settings</link> for each category."
+    "footerNote": "Notifications are stored for 90 days. Who receives notifications and how (email · push · in-app · SMS) can be controlled in the <link>settings</link> for each category.",
+    "allCaughtUp": "You're all caught up.",
+    "markAll": "Mark all read",
+    "emptyTitle": "Nothing here",
+    "emptyBody": "No notifications match this filter.",
+    "filter": {
+      "all": "All",
+      "unread": "Unread",
+      "shift": "Shifts",
+      "invoice": "Invoices",
+      "vacation": "Vacation",
+      "training": "Training",
+      "damage": "Damage",
+      "chat": "Chat",
+      "system": "System",
+      "other": "Other"
+    }
   },
   "vacation": {
     "breadcrumbDashboard": "Overview",
     "breadcrumbCurrent": "Vacation",
-    "title": "Vacation",
-    "subtitle": "Request, review and approve time off.",
-    "newRequest": "New request",
+    "title": "My time off",
+    "subtitle": "Vacation, sick days and unpaid leave.",
+    "newRequest": "Request time off",
     "balance": "{used} / {total} days used · {remaining} available",
     "tabs": {
       "all": "All",
@@ -2185,7 +2201,35 @@
       "submit": "Send suggestion",
       "saving": "Sending…",
       "saveError": "Failed to send suggestion."
-    }
+    },
+    "pending": "Awaiting approval",
+    "history": "History",
+    "emptyTitle": "No requests yet",
+    "emptyBody": "Submit your first request with the button above.",
+    "day": "day",
+    "days": "days",
+    "reviewerNote": "Manager note",
+    "kind": {
+      "vacation": "Vacation",
+      "sick": "Sick day",
+      "unpaid": "Unpaid leave"
+    },
+    "newTitle": "New request",
+    "newSubtitle": "Your manager gets notified when you submit.",
+    "kindLabel": "Type",
+    "startDate": "From",
+    "endDate": "To",
+    "totalDays": "Total",
+    "reasonLabel": "Reason (optional)",
+    "reasonPlaceholder": "Family event, appointment, etc.",
+    "submit": "Submit request",
+    "submitFailed": "Could not submit",
+    "notLinkedTitle": "No employee profile",
+    "notLinkedBody": "Your account isn't linked to a staff record yet. Ask your manager.",
+    "invalidDateTitle": "Invalid date",
+    "invalidDateBody": "Please enter dates in YYYY-MM-DD format.",
+    "invalidRangeTitle": "Invalid range",
+    "invalidRangeBody": "The end date must be on or after the start date."
   },
   "chat": {
     "composer": {

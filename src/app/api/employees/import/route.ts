@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
         phone: row.phone ?? null,
         hire_date: row.hire_date || null,
         weekly_hours: row.weekly_hours,
-        hourly_rate_eur:
+        hourly_rate_eur: 
           typeof row.hourly_rate_eur === "number" ? row.hourly_rate_eur : null,
         status: row.status,
         notes: row.notes ?? null,

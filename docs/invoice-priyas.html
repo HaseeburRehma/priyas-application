@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Invoice — Priya's Reinigungsservice — Tylo Tech</title>
+<style>
+  :root {
+    --primary: #72A94F;
+    --primary-50: #F1F7EB;
+    --primary-700: #588843;
+    --secondary: #16587C;
+    --secondary-50: #EEF4F8;
+    --neutral-800: #1D201B;
+    --neutral-700: #2E322C;
+    --neutral-600: #454B41;
+    --neutral-500: #5F675A;
+    --neutral-400: #8B9483;
+    --neutral-200: #DFE4DA;
+    --neutral-100: #EEF1EA;
+    --neutral-50: #F8FAF7;
+    --tertiary: #F6FAF3;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--neutral-800);
+    background: white;
+    line-height: 1.5;
+    font-size: 11.5pt;
+  }
+  main { max-width: 780px; margin: 0 auto; padding: 40px 44px 60px; }
+
+  /* ── Masthead ──────────────────────────────────────────────────── */
+  .mast {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding-bottom: 26px;
+    border-bottom: 2px solid var(--primary);
+    margin-bottom: 32px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .brand-logo {
+    width: 50px; height: 50px;
+    background: var(--primary);
+    color: white;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 26px;
+    box-shadow: 0 3px 10px rgba(114,169,79,0.3);
+  }
+  .brand-info h2 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--secondary);
+    letter-spacing: -0.3px;
+  }
+  .brand-info p {
+    margin: 2px 0 0;
+    font-size: 11pt;
+    color: var(--neutral-500);
+  }
+  .doc-title {
+    text-align: right;
+  }
+  .doc-title h1 {
+    margin: 0;
+    font-size: 32px;
+    letter-spacing: 6px;
+    color: var(--secondary);
+    text-transform: uppercase;
+    font-weight: 800;
+  }
+  .doc-title p {
+    margin: 4px 0 0;
+    font-size: 11pt;
+    color: var(--neutral-500);
+    letter-spacing: 1px;
+  }
+
+  /* ── From / To panels ─────────────────────────────────────────── */
+  .parties {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    margin-bottom: 26px;
+  }
+  .party h3 {
+    font-size: 9.5pt;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--neutral-500);
+    margin: 0 0 8px;
+    font-weight: 700;
+  }
+  .party b { color: var(--neutral-800); font-size: 12pt; display: block; margin-bottom: 4px; }
+  .party p { margin: 2px 0; color: var(--neutral-700); font-size: 10.5pt; }
+
+  /* ── Meta grid (invoice #, date, due, ref) ─────────────────────── */
+  .meta {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 16px 20px;
+    background: var(--neutral-50);
+    border: 1px solid var(--neutral-100);
+    border-radius: 10px;
+    margin-bottom: 32px;
+  }
+  .meta .cell strong {
+    display: block;
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--neutral-500);
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .meta .cell span {
+    font-size: 11.5pt;
+    color: var(--neutral-800);
+    font-weight: 600;
+  }
+
+  /* ── Line-item table ──────────────────────────────────────────── */
+  .items {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 26px;
+  }
+  .items thead th {
+    text-align: left;
+    padding: 12px 14px;
+    background: var(--secondary);
+    color: white;
+    font-size: 10pt;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-weight: 700;
+  }
+  .items thead th.num { text-align: right; }
+  .items tbody td {
+    padding: 16px 14px;
+    border-bottom: 1px solid var(--neutral-100);
+    vertical-align: top;
+    font-size: 10.5pt;
+  }
+  .items tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .items tbody tr:nth-child(even) { background: var(--neutral-50); }
+
+  .part-num {
+    display: inline-block;
+    background: var(--primary);
+    color: white;
+    font-weight: 700;
+    font-size: 10pt;
+    padding: 2px 9px;
+    border-radius: 999px;
+    margin-right: 8px;
+  }
+  .part-title {
+    font-weight: 700;
+    color: var(--secondary);
+    font-size: 12pt;
+    display: inline-block;
+  }
+  .part-desc {
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 10pt;
+    color: var(--neutral-600);
+    line-height: 1.55;
+  }
+  .part-desc li {
+    padding: 2px 0 2px 14px;
+    position: relative;
+  }
+  .part-desc li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: var(--primary);
+    font-weight: 700;
+  }
+
+  /* ── Totals ───────────────────────────────────────────────────── */
+  .totals {
+    display: grid;
+    justify-content: end;
+    margin-bottom: 30px;
+  }
+  .totals table {
+    border-collapse: collapse;
+    min-width: 300px;
+  }
+  .totals td {
+    padding: 8px 14px;
+    font-size: 11pt;
+  }
+  .totals td.label { text-align: right; color: var(--neutral-600); }
+  .totals td.num {
+    text-align: right;
+    font-weight: 600;
+    color: var(--neutral-800);
+    font-variant-numeric: tabular-nums;
+  }
+  .totals tr.grand td {
+    border-top: 2px solid var(--secondary);
+    font-size: 15pt;
+    font-weight: 800;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    color: var(--secondary);
+  }
+
+  /* ── Payment block ────────────────────────────────────────────── */
+  .payment {
+    background: var(--primary-50);
+    border-left: 4px solid var(--primary);
+    padding: 18px 22px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+  }
+  .payment h3 {
+    margin: 0 0 8px;
+    font-size: 11pt;
+    color: var(--primary-700);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .payment .row {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 6px 20px;
+    font-size: 10.5pt;
+    margin: 3px 0;
+  }
+  .payment .row b { color: var(--neutral-700); font-weight: 600; }
+
+  /* ── Footer ───────────────────────────────────────────────────── */
+  footer {
+    border-top: 1px solid var(--neutral-100);
+    padding-top: 18px;
+    text-align: center;
+    color: var(--neutral-500);
+    font-size: 9pt;
+    line-height: 1.6;
+  }
+  footer b { color: var(--neutral-700); }
+
+  /* Print rules */
+  @media print {
+    body { font-size: 10.5pt; }
+    main { padding: 24px 30px; }
+    a { color: var(--secondary); text-decoration: none; }
+    .items tbody tr { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<main>
+
+  <!-- ─────────────────────────── Masthead ─────────────────────────── -->
+  <div class="mast">
+    <div class="brand">
+      <div class="brand-logo">T</div>
+      <div class="brand-info">
+        <h2>Tylo Tech</h2>
+        <p>Software Development &amp; Design</p>
+      </div>
+    </div>
+    <div class="doc-title">
+      <h1>Invoice</h1>
+      <p>Project delivery</p>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────── Line items ─────────────────────────── -->
+  <table class="items">
+    <thead>
+      <tr>
+        <th>Deliverable</th>
+        <th class="num" style="width: 130px;">Amount (EUR)</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <!-- ── Part 1 ── -->
+      <tr>
+        <td>
+          <span class="part-num">Part 1</span>
+          <span class="part-title">Frontend Design</span>
+          <ul class="part-desc">
+            <li>Complete design system: brand palette, typography scale, spacing tokens, radius + shadow scale</li>
+            <li>20+ screens designed pixel-perfect against approved prototypes: Dashboard, Clients, Properties, Schedule, Employees, Employee Overview, Invoices, Reports, Monthly Report, Notifications, Chat, Settings, Client Statement, Auth flows, Onboarding wizard</li>
+            <li>Full responsive layouts across mobile, tablet, desktop</li>
+            <li>3-language interface with 2,485 strings per locale (German, English, Tamil) — strict parity</li>
+            <li>Component library: buttons, cards, chips, forms, toggles, tables, modals, avatars, sidebars, dialogs</li>
+            <li>WCAG 2.1 AA accessibility: keyboard navigation, ARIA labels, focus states, colour contrast</li>
+            <li>Brand asset production: logo variants, iconography, empty states, splash screens</li>
+          </ul>
+        </td>
+        <td class="num">€ __________</td>
+      </tr>
+
+      <!-- ── Part 2 ── -->
+      <tr>
+        <td>
+          <span class="part-num">Part 2</span>
+          <span class="part-title">Frontend Development</span>
+          <ul class="part-desc">
+            <li>Next.js 14 App Router with TypeScript (strict mode) and Tailwind CSS 3.4</li>
+            <li>Server-rendered pages with streaming and per-request caching</li>
+            <li>Full CRUD flows for Clients, Properties, Employees, Shifts, Invoices, Vacation, Training, Damage reports</li>
+            <li>Realtime features: team chat with typing indicator, live notifications, presence</li>
+            <li>File upload flows: user avatars, org logo, damage photos, training videos, invoice PDF viewer</li>
+            <li>Multi-step wizards: new-client intake (Residential / Commercial / Alltagshilfe), employee onboarding, invoice draft editor</li>
+            <li>Form validation with Zod schemas at both client and server boundaries</li>
+            <li>Performance optimisation: React cache() for cross-loader deduplication, parallelised data-fetch waterfalls, request-scoped device heartbeat throttle</li>
+            <li>Mobile app foundation (Expo SDK 52) with Auth + 2FA, MyProfile, Schedule with GPS clock-in / clock-out / break</li>
+          </ul>
+        </td>
+        <td class="num">€ __________</td>
+      </tr>
+
+      <!-- ── Part 3 ── -->
+      <tr>
+        <td>
+          <span class="part-num">Part 3</span>
+          <span class="part-title">Security &amp; Compliance</span>
+          <ul class="part-desc">
+            <li>Multi-factor authentication (TOTP) — mandatory for Management + Project Manager roles per spec §6.2</li>
+            <li>Three-tier Role-Based Access Control (Admin / Project Manager / Field Staff) enforced at UI, server-action, and database layers</li>
+            <li>Row-Level Security policies on every table (org boundary, per-user scope, soft-delete guards)</li>
+            <li>Session management with per-device tracking, revocation, and login-alert emails</li>
+            <li>Audit log of every state-changing action (who / what / when / from where)</li>
+            <li>GPS-verified check-in and check-out for field staff — haversine distance check against property location</li>
+            <li>Password strength requirements, secure signup trigger, and orphan-account repair migrations</li>
+            <li>DSGVO / GDPR-compliant data handling: consent tracking, data-subject-request-ready audit trail, secure storage</li>
+            <li>Rate limiting on heavy actions (Lexware sync, payment pull, invoice generation)</li>
+            <li>Security review pipeline: automated permission checks, cross-role access-matrix verification</li>
+          </ul>
+        </td>
+        <td class="num">€ __________</td>
+      </tr>
+
+      <!-- ── Part 4 ── -->
+      <tr>
+        <td>
+          <span class="part-num">Part 4</span>
+          <span class="part-title">Backend Development</span>
+          <ul class="part-desc">
+            <li>Supabase Postgres schema across 54+ migrations covering the full data model — organisations, profiles, employees, clients, properties, shifts, time entries, invoices, invoice items, invoice payments, vacation, training modules, damage reports, chat channels, chat members, chat messages, notifications, audit log, settings, user devices, api keys, monthly report deliveries</li>
+            <li>30+ server actions with permission gating, Zod-validated inputs, and audit-log side-writes</li>
+            <li>Lexware Office API integration: contact upsert with dedup, invoice push, payment pull, reconciliation of paid vouchers, retry sweep with 30-min cooldown</li>
+            <li>Cron jobs: nightly monthly-Alltagshilfe report to Management, missed-checkout sweep (every 15 min), Lexware retry sweep, payment sync from Lexware, DB backup</li>
+            <li>Transactional email delivery via Resend: monthly report, invoice notifications, password reset, invitation emails</li>
+            <li>Web Push notifications with VAPID for shift changes and urgent alerts</li>
+            <li>Realtime channels for team chat, typing indicators, and dashboard KPI freshness</li>
+            <li>PDF generation (pdf-lib) for invoices, client statements, monthly reports, working-hours exports</li>
+            <li>Trigger-based signup flow with placeholder employee auto-attach and bulletproof error handling</li>
+            <li>Performance: single-round-trip dashboard KPI RPC, request-scoped user caching, Vercel Frankfurt region colocation with Supabase</li>
+            <li>Full-text search RPC, aging report RPC, monthly report aggregation</li>
+          </ul>
+        </td>
+        <td class="num">€ __________</td>
+      </tr>
+
+    </tbody>
+  </table>
+
+</main>
+
+</body>
+</html>

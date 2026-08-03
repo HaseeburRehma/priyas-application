@@ -80,6 +80,7 @@ export default function HomeTab() {
                 label={t("dashboard.mySelf.vacation")}
                 value={`${data.vacation_total - data.vacation_used} / ${data.vacation_total}`}
                 sub={t("dashboard.mySelf.vacationRemaining")}
+                onPress={() => router.push("/vacation")}
               />
               <Kpi
                 label={t("dashboard.mySelf.training")}
@@ -184,11 +185,13 @@ function Kpi({
   value,
   sub,
   tone = "primary",
+  onPress,
 }: {
   label: string;
   value: string;
   sub: string;
   tone?: "primary" | "warning" | "success";
+  onPress?: () => void;
 }) {
   const stripe =
     tone === "warning"
@@ -196,12 +199,30 @@ function Kpi({
       : tone === "success"
         ? colors.success[500]
         : colors.primary[500];
-  return (
-    <View style={[styles.kpi, { borderTopColor: stripe }]}>
+  const body = (
+    <>
       <Text style={styles.kpiLabel}>{label.toUpperCase()}</Text>
       <Text style={styles.kpiValue}>{value}</Text>
       <Text style={styles.kpiSub}>{sub}</Text>
-    </View>
+    </>
+  );
+  // When tappable, render as Pressable so flexBasis keeps the tile
+  // sized correctly in the 2-col grid. Non-tappable stays a View.
+  if (onPress) {
+    return (
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.kpi,
+          { borderTopColor: stripe, opacity: pressed ? 0.85 : 1 },
+        ]}
+      >
+        {body}
+      </Pressable>
+    );
+  }
+  return (
+    <View style={[styles.kpi, { borderTopColor: stripe }]}>{body}</View>
   );
 }
 

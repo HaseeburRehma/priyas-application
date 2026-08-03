@@ -2063,7 +2063,7 @@
     "breadcrumbDashboard": "Übersicht",
     "breadcrumbCurrent": "Benachrichtigungen",
     "title": "Benachrichtigungen",
-    "subtitle": "Alle System-Ereignisse, Mahnungen und Schichtänderungen.",
+    "subtitle": "Alles, was das System für dich markiert hat.",
     "actions": {
       "markAllRead": "Alle als gelesen",
       "settings": "Einstellungen"
@@ -2114,14 +2114,30 @@
     },
     "olderCollapsed": "{n} ältere Benachrichtigungen sind eingeklappt.",
     "olderCollapsedRich": "{n} ältere Benachrichtigungen sind eingeklappt — <link>alle anzeigen</link>",
-    "footerNote": "Benachrichtigungen werden 90 Tage aufbewahrt. Wer benachrichtigt wird und wie (E-Mail · Push · In-App · SMS) lässt sich in den <link>Einstellungen</link> pro Kategorie steuern."
+    "footerNote": "Benachrichtigungen werden 90 Tage aufbewahrt. Wer benachrichtigt wird und wie (E-Mail · Push · In-App · SMS) lässt sich in den <link>Einstellungen</link> pro Kategorie steuern.",
+    "allCaughtUp": "Alles gelesen.",
+    "markAll": "Alle als gelesen",
+    "emptyTitle": "Nichts hier",
+    "emptyBody": "Keine Benachrichtigung passt zu diesem Filter.",
+    "filter": {
+      "all": "Alle",
+      "unread": "Ungelesen",
+      "shift": "Schichten",
+      "invoice": "Rechnungen",
+      "vacation": "Urlaub",
+      "training": "Schulung",
+      "damage": "Schaden",
+      "chat": "Chat",
+      "system": "System",
+      "other": "Sonstiges"
+    }
   },
   "vacation": {
     "breadcrumbDashboard": "Übersicht",
     "breadcrumbCurrent": "Urlaub",
-    "title": "Urlaub",
-    "subtitle": "Beantragen, prüfen und freigeben — pro Mitarbeiter:in.",
-    "newRequest": "Antrag stellen",
+    "title": "Meine Abwesenheit",
+    "subtitle": "Urlaub, Krankheit und unbezahlter Urlaub.",
+    "newRequest": "Abwesenheit beantragen",
     "balance": "{used} / {total} Tage genutzt · {remaining} verfügbar",
     "tabs": {
       "all": "Alle",
@@ -2147,7 +2163,7 @@
       "suggested": "Alternativvorschlag",
       "approved": "Genehmigt",
       "rejected": "Abgelehnt",
-      "cancelled": "Zurückgezogen"
+      "cancelled": "Storniert"
     },
     "approve": "Genehmigen",
     "reject": "Ablehnen",
@@ -2185,7 +2201,35 @@
       "submit": "Vorschlag senden",
       "saving": "Wird gesendet…",
       "saveError": "Senden fehlgeschlagen."
-    }
+    },
+    "pending": "Wartet auf Freigabe",
+    "history": "Verlauf",
+    "emptyTitle": "Noch keine Anträge",
+    "emptyBody": "Reiche deinen ersten Antrag mit dem Button oben ein.",
+    "day": "Tag",
+    "days": "Tage",
+    "reviewerNote": "Notiz der Leitung",
+    "kind": {
+      "vacation": "Urlaub",
+      "sick": "Krankheitstag",
+      "unpaid": "Unbezahlt"
+    },
+    "newTitle": "Neuer Antrag",
+    "newSubtitle": "Deine Leitung wird bei Absenden benachrichtigt.",
+    "kindLabel": "Art",
+    "startDate": "Von",
+    "endDate": "Bis",
+    "totalDays": "Gesamt",
+    "reasonLabel": "Grund (optional)",
+    "reasonPlaceholder": "Familienereignis, Termin, usw.",
+    "submit": "Antrag absenden",
+    "submitFailed": "Konnte nicht abgesendet werden",
+    "notLinkedTitle": "Kein Mitarbeiter-Profil",
+    "notLinkedBody": "Dein Konto ist noch nicht mit einem Personal-Datensatz verknüpft. Bitte die Leitung.",
+    "invalidDateTitle": "Ungültiges Datum",
+    "invalidDateBody": "Bitte Daten im Format YYYY-MM-DD eingeben.",
+    "invalidRangeTitle": "Ungültiger Bereich",
+    "invalidRangeBody": "Das Enddatum muss am oder nach dem Startdatum liegen."
   },
   "chat": {
     "composer": {
