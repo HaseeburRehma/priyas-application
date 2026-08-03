@@ -156,6 +156,33 @@ export default function HomeTab() {
                 ))}
               </Card>
             )}
+
+            {/* Quick actions — reach the deep flows without hunting. */}
+            <Card style={styles.card}>
+              <Text style={styles.cardTitle}>
+                {t("dashboard.mySelf.quickActionsTitle")}
+              </Text>
+              <View style={styles.actionRow}>
+                <Pressable
+                  onPress={() => router.push("/damage/new")}
+                  style={styles.actionBtn}
+                >
+                  <Text style={styles.actionEmoji}>⚠</Text>
+                  <Text style={styles.actionLabel}>
+                    {t("dashboard.mySelf.reportDamage")}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => router.push("/vacation/new")}
+                  style={styles.actionBtn}
+                >
+                  <Text style={styles.actionEmoji}>✈</Text>
+                  <Text style={styles.actionLabel}>
+                    {t("dashboard.mySelf.requestTimeOff")}
+                  </Text>
+                </Pressable>
+              </View>
+            </Card>
           </>
         )}
 
@@ -358,5 +385,29 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: typography.size.md,
     color: colors.neutral[800],
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: spacing[3],
+    marginTop: spacing[1],
+  },
+  actionBtn: {
+    flex: 1,
+    padding: spacing[3],
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    alignItems: "center",
+    backgroundColor: colors.white,
+    gap: 6,
+  },
+  actionEmoji: {
+    fontSize: 22,
+  },
+  actionLabel: {
+    fontSize: typography.size.sm,
+    fontWeight: "600",
+    color: colors.neutral[700],
+    textAlign: "center",
   },
 });

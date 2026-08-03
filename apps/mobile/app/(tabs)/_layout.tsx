@@ -59,6 +59,9 @@ export default function TabsLayout() {
   const { profile } = useAuth();
   const role = profile?.role ?? null;
   const showClients = can(role, "client.read") && role !== "employee";
+  // Same permission the web app uses to gate the org-scope dashboard —
+  // Field Staff never see it. Admin + dispatcher do.
+  const showDashboard = can(role, "time.read_all");
 
   return (
     <Tabs
@@ -112,6 +115,14 @@ export default function TabsLayout() {
           title: t("nav.clients"),
           tabBarIcon: ({ color, size }) => <Icons.clients color={color} size={size} />,
           href: showClients ? undefined : null,
+        }}
+      />
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: t("dashboardTab.tabLabel"),
+          tabBarIcon: ({ color, size }) => <Icons.home color={color} size={size} />,
+          href: showDashboard ? undefined : null,
         }}
       />
       <Tabs.Screen

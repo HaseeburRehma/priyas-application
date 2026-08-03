@@ -270,7 +270,10 @@
       "trainingTitle": "Pflichtschulungen",
       "mandatory": "Pflicht",
       "notLinkedTitle": "Kein Mitarbeiter-Profil",
-      "notLinkedBody": "Dein Konto ist angemeldet, aber noch nicht mit einem Feld-Mitarbeiter-Datensatz verknüpft. Bitte deine Leitung um die Freischaltung."
+      "notLinkedBody": "Dein Konto ist angemeldet, aber noch nicht mit einem Feld-Mitarbeiter-Datensatz verknüpft. Bitte deine Leitung um die Freischaltung.",
+      "quickActionsTitle": "Schnellzugriff",
+      "reportDamage": "Schaden melden",
+      "requestTimeOff": "Urlaub beantragen"
     }
   },
   "clients": {
@@ -1672,7 +1675,7 @@
     "title": "Einstellungen",
     "subtitle": "Workspace, Team, Steuer, Integrationen und Lokalisierung.",
     "save": "Speichern",
-    "saved": "Gespeichert",
+    "saved": "Gespeichert.",
     "saveError": "Speichern fehlgeschlagen.",
     "nav": {
       "company": "Firmenprofil",
@@ -1955,14 +1958,14 @@
       "bodyOff": "Aktivieren, um auf diesem Gerät benachrichtigt zu werden."
     },
     "security": {
-      "title": "07 · Sicherheit",
-      "subtitle": "Zwei-Faktor-Authentifizierung (TOTP) und Sitzungs-Schutz.",
+      "title": "Sicherheit",
+      "subtitle": "Zwei-Faktor-Authentifizierung und Sitzungsschutz.",
       "twoFactorTitle": "Zwei-Faktor-Authentifizierung",
       "twoFactorBody": "Erhöht den Schutz für Konten mit Management- oder Projektleitungs-Rechten.",
       "enabled": "Aktiviert",
       "disabled": "Deaktiviert",
       "enable": "TOTP einrichten",
-      "disable": "Deaktivieren",
+      "disable": "2FA deaktivieren",
       "scanCode": "Scanne den QR-Code mit deiner Authenticator-App (1Password, Authy, Google Authenticator).",
       "secret": "Geheimnis",
       "verifyTitle": "6-stelligen Code aus der App eingeben",
@@ -1977,7 +1980,15 @@
       "badge": "07 · Persönlich",
       "strongScore": "Stark · 92 / 100",
       "loginAlerts": "Anmelde-Benachrichtigungen",
-      "loginAlertsHint": "E-Mail bei Anmeldung von einem neuen Gerät."
+      "loginAlertsHint": "E-Mail bei Anmeldung von einem neuen Gerät.",
+      "twoFactor": "Zwei-Faktor-Authentifizierung",
+      "twoFactorOn": "TOTP ist aktiv — Codes werden beim Anmelden abgefragt.",
+      "twoFactorOff": "Kein zweiter Faktor eingerichtet.",
+      "cannotDisable": "Kann nicht deaktiviert werden",
+      "cannotDisableBody": "Zwei-Faktor-Authentifizierung ist für deine Rolle Pflicht und lässt sich nicht aus der App abschalten.",
+      "disableFailed": "Konnte 2FA nicht deaktivieren",
+      "mandatoryNote": "2FA ist für deine Rolle vorgeschrieben — durch Richtlinie erforderlich.",
+      "enrolOnWeb": "TOTP einmalig aus der Web-App einrichten; danach kannst du dich in der Mobil-App anmelden."
     },
     "locale": {
       "title": "06 · Lokalisierung",
@@ -2020,9 +2031,9 @@
     "sessions": {
       "badge": "08 · Persönlich",
       "title": "Sitzungen & Geräte",
-      "subtitle": "4 aktive Sitzungen · jedes Gerät widerrufen, um eine erneute Anmeldung zu erzwingen.",
+      "subtitle": "Geräte, die mit diesem Konto angemeldet sind.",
       "revokeAll": "Alle anderen Geräte abmelden",
-      "revoke": "Widerrufen",
+      "revoke": "Abmelden",
       "thisDevice": "Dieses Gerät",
       "activeNow": "Gerade aktiv",
       "currentDevice": "Aktueller Browser",
@@ -2031,18 +2042,31 @@
       "revokeAllConfirm": "Auf allen anderen Geräten abmelden? Du bleibst auf diesem Gerät angemeldet.",
       "revokeAllSuccess": "Alle anderen Geräte wurden abgemeldet.",
       "revokeAllPending": "Wird abgemeldet…",
-      "loading": "Sitzungen werden geladen…",
+      "loading": "Geräte werden geladen…",
       "noDevices": "Keine aktiven Geräte.",
       "geoUnknown": "Unbekannter Standort",
       "footerCount": "{count, plural, =0 {Keine Sitzungen} one {1 Sitzung} other {# Sitzungen}} auf diesem Konto.",
-      "revoked": "Gerät abgemeldet."
+      "revoked": "Gerät abgemeldet.",
+      "none": "Keine weiteren aktiven Geräte.",
+      "revokeFailed": "Konnte nicht abmelden",
+      "signOutOthers": "Andere abmelden",
+      "signOutOthersTitle": "Andere Geräte abmelden?",
+      "signOutOthersBody": "Jedes andere Gerät wird abgemeldet. Dieses Gerät bleibt angemeldet.",
+      "signOutOthersConfirm": "Abmelden"
     },
     "bulkSaved": "Alle Änderungen gespeichert.",
     "bulkSaveError": "Einige Änderungen konnten nicht gespeichert werden.",
     "unsavedCount": "{count} ungespeicherte Änderung{count, plural, one {} other {en}}",
     "discard": "Verwerfen",
     "saveAll": "Änderungen speichern",
-    "savingAll": "Speichern…"
+    "savingAll": "Speichern…",
+    "saveFailed": "Konnte nicht speichern",
+    "myAccount": {
+      "title": "Mein Konto",
+      "subtitle": "Persönliche Daten, die dein Team sieht.",
+      "fullName": "Vollständiger Name",
+      "phone": "Telefon"
+    }
   },
   "lexware": {
     "title": "Monatliche Lexware-Rechnungen",
@@ -2299,11 +2323,7 @@
       "course": "Schulung",
       "shareShift": "Schicht teilen"
     },
-    "typing": {
-      "one": "{name} schreibt…",
-      "two": "{a} und {b} schreiben…",
-      "many": "{a}, {b} und {n} weitere schreiben…"
-    },
+    "typing": "schreibt…",
     "shiftCard": {
       "shiftLabel": "Schicht #{id}",
       "visitLabel": "Einsatz #{id}",
@@ -2314,30 +2334,51 @@
       "emptyBody": "Nachrichten erscheinen sofort für alle Mitglieder.",
       "loading": "Wird geladen…",
       "loadError": "Fehler beim Laden: {error}"
-    }
+    },
+    "title": "Team-Chat",
+    "subtitle": "Kanäle und Direktnachrichten.",
+    "emptyTitle": "Noch keine Kanäle",
+    "emptyBody": "Du bist noch in keinem Kanal. Frag deine Leitung.",
+    "noMessages": "Noch keine Nachrichten.",
+    "dm": "Direktnachricht",
+    "channel": "Kanal",
+    "back": "Zurück",
+    "messagePlaceholder": "Nachricht…",
+    "send": "Senden"
   },
   "damage": {
-    "title": "Schadens- & Vorfallmeldungen",
-    "subtitle": "Erfasse Auffälligkeiten an diesem Objekt — Notizen, Probleme und Schäden.",
+    "title": "Schadensmeldungen",
+    "subtitle": "Schäden, Notizen und Sicherheitsprobleme vor Ort erfassen.",
     "logReport": "Meldung erfassen",
     "modalTitle": "Neue Meldung erfassen",
     "modalSubtitle": "Beschreibe, was du beobachtet hast. Füge bei Bedarf Fotos hinzu.",
-    "category": "Typ",
+    "category": {
+      "normal": "Alles in Ordnung",
+      "note": "Hinweis",
+      "problem": "Problem",
+      "damage": "Schaden"
+    },
     "catNormal": "Normal",
     "catNote": "Notiz",
     "catProblem": "Problem",
     "catDamage": "Schaden",
-    "severity": "Schweregrad",
+    "severity": {
+      "1": "Sehr gering",
+      "2": "Gering",
+      "3": "Mittel",
+      "4": "Schwer",
+      "5": "Kritisch"
+    },
     "severityLow": "Niedrig",
     "severityHigh": "Hoch",
     "description": "Beschreibung",
-    "descriptionPlaceholder": "Was hast du gesehen? Wo? Wann?",
+    "descriptionPlaceholder": "Kaputte Scheibe im Flur…",
     "descriptionTooShort": "Bitte eine kurze Beschreibung hinzufügen.",
     "photos": "Fotos",
-    "uploading": "Wird hochgeladen…",
+    "uploading": "Fotos werden hochgeladen…",
     "photosAttached": "{n} Foto(s) angehängt",
     "cancel": "Abbrechen",
-    "submit": "Senden",
+    "submit": "Meldung absenden",
     "submitted": "Meldung erfasst.",
     "empty": "Noch keine Meldungen.",
     "markResolved": "Als erledigt markieren",
@@ -2353,7 +2394,29 @@
       "open": "Offen",
       "resolved": "Erledigt"
     },
-    "limitReached": "Höchstens 20 Fotos pro Bericht — {dropped} wurde(n) verworfen."
+    "limitReached": "Höchstens 20 Fotos pro Bericht — {dropped} wurde(n) verworfen.",
+    "newReport": "Neue Meldung",
+    "emptyTitle": "Noch keine Meldungen",
+    "emptyBody": "Melde alles, was du im Einsatz findest, mit dem Button oben.",
+    "newTitle": "Vorfall melden",
+    "newSubtitle": "Die Leitung wird sofort nach dem Absenden benachrichtigt.",
+    "propertyLabel": "Objekt",
+    "pickPropertyFirst": "Bitte zuerst das Objekt wählen.",
+    "noProperties": "Keine Objekte verfügbar.",
+    "categoryLabel": "Kategorie",
+    "severityLabel": "Schweregrad",
+    "descriptionLabel": "Was ist passiert?",
+    "descriptionRequired": "Bitte beschreib, was passiert ist.",
+    "photosLabel": "Fotos (optional)",
+    "takePhoto": "Foto aufnehmen",
+    "chooseFromLibrary": "Aus Galerie",
+    "uploadPartial": "Einige Fotos konnten nicht hochgeladen werden — bitte erneut versuchen.",
+    "cameraPermTitle": "Kamera erforderlich",
+    "cameraPermBody": "Priya's benötigt Kamerazugriff, um ein Foto des Vorfalls zu machen.",
+    "libraryPermTitle": "Foto-Galerie erforderlich",
+    "libraryPermBody": "Priya's benötigt Galeriezugriff, um vorhandene Fotos anzuhängen.",
+    "submitFailed": "Konnte nicht absenden",
+    "resolvedLabel": "Erledigt"
   },
   "onboarding": {
     "kioskTag": "Neukunden-Onboarding",
@@ -3030,5 +3093,21 @@
     "missingFields": "E-Mail und Passwort eingeben.",
     "failed": "Anmeldung fehlgeschlagen",
     "wrongCode": "Falscher 2FA-Code"
+  },
+  "dashboardTab": {
+    "tabLabel": "Übersicht",
+    "title": "Überblick",
+    "subtitle": "Was heute im Betrieb passiert.",
+    "activeClients": "Aktive Kunden",
+    "managedProperties": "Objekte",
+    "todayShifts": "Heutige Einsätze",
+    "openInvoices": "Offene Rechnungen",
+    "pendingCheckins": "{n} noch nicht eingecheckt",
+    "allCheckedIn": "Alle eingecheckt",
+    "overdueCount": "{n} überfällig",
+    "noneOverdue": "Keine überfällig",
+    "teamUtilTitle": "Team-Auslastung diese Woche",
+    "teamUtilSubtitle": "Stunden gearbeitet vs. Zielstunden.",
+    "teamUtilEmpty": "Noch keine aktiven Team-Mitglieder."
   }
 }

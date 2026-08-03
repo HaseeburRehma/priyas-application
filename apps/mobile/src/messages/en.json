@@ -270,7 +270,10 @@
       "trainingTitle": "Mandatory training",
       "mandatory": "Mandatory",
       "notLinkedTitle": "No employee profile yet",
-      "notLinkedBody": "Your account is signed in but hasn't been linked to a field-staff record. Ask your manager to complete onboarding so you can see your schedule and hours."
+      "notLinkedBody": "Your account is signed in but hasn't been linked to a field-staff record. Ask your manager to complete onboarding so you can see your schedule and hours.",
+      "quickActionsTitle": "Quick actions",
+      "reportDamage": "Report damage",
+      "requestTimeOff": "Request time off"
     }
   },
   "clients": {
@@ -1671,8 +1674,8 @@
     "breadcrumbCurrent": "Settings",
     "title": "Settings",
     "subtitle": "Workspace, team, tax, integrations and localization.",
-    "save": "Save",
-    "saved": "Saved",
+    "save": "Save changes",
+    "saved": "Saved.",
     "saveError": "Save failed.",
     "nav": {
       "company": "Company profile",
@@ -1955,14 +1958,14 @@
       "bodyOff": "Turn on to receive notifications from this device's browser."
     },
     "security": {
-      "title": "07 · Security",
-      "subtitle": "Two-factor authentication (TOTP) and session protection.",
+      "title": "Security",
+      "subtitle": "Two-factor authentication and session controls.",
       "twoFactorTitle": "Two-factor authentication",
       "twoFactorBody": "Adds protection for management and project-manager accounts.",
       "enabled": "Enabled",
       "disabled": "Disabled",
       "enable": "Set up TOTP",
-      "disable": "Disable",
+      "disable": "Disable 2FA",
       "scanCode": "Scan the QR code with your authenticator app (1Password, Authy, Google Authenticator).",
       "secret": "Secret",
       "verifyTitle": "Enter the 6-digit code from your app",
@@ -1977,7 +1980,15 @@
       "badge": "07 · Personal",
       "strongScore": "Strong · 92 / 100",
       "loginAlerts": "Login alerts",
-      "loginAlertsHint": "Email me whenever a new device signs in to my account."
+      "loginAlertsHint": "Email me whenever a new device signs in to my account.",
+      "twoFactor": "Two-factor authentication",
+      "twoFactorOn": "TOTP is enabled — codes required at sign-in.",
+      "twoFactorOff": "No second factor set up yet.",
+      "cannotDisable": "Cannot disable",
+      "cannotDisableBody": "Two-factor authentication is required for your role and cannot be turned off from the app.",
+      "disableFailed": "Could not disable 2FA",
+      "mandatoryNote": "2FA is mandatory for your role — required by policy.",
+      "enrolOnWeb": "Set up TOTP once from the web app; the mobile app can be signed in afterwards."
     },
     "locale": {
       "title": "06 · Localization",
@@ -2020,7 +2031,7 @@
     "sessions": {
       "badge": "08 · Personal",
       "title": "Sessions & devices",
-      "subtitle": "4 active sessions · revoke any device to force re-authentication.",
+      "subtitle": "Devices signed into this account.",
       "revokeAll": "Sign out all other devices",
       "revoke": "Revoke",
       "thisDevice": "This device",
@@ -2031,18 +2042,31 @@
       "revokeAllConfirm": "Sign out of all other devices? You'll stay signed in on this device.",
       "revokeAllSuccess": "All other devices have been signed out.",
       "revokeAllPending": "Signing out…",
-      "loading": "Loading sessions…",
+      "loading": "Loading devices…",
       "noDevices": "No active devices.",
       "geoUnknown": "Unknown location",
       "footerCount": "{count, plural, =0 {No sessions} one {1 session} other {# sessions}} across this account.",
-      "revoked": "Device revoked."
+      "revoked": "Device revoked.",
+      "none": "No other active devices.",
+      "revokeFailed": "Could not revoke",
+      "signOutOthers": "Sign out others",
+      "signOutOthersTitle": "Sign out other devices?",
+      "signOutOthersBody": "Every other device signed into this account will be logged out. This device stays signed in.",
+      "signOutOthersConfirm": "Sign them out"
     },
     "bulkSaved": "All changes saved.",
     "bulkSaveError": "Some changes could not be saved.",
     "unsavedCount": "{count} unsaved change{count, plural, one {} other {s}}",
     "discard": "Discard",
     "saveAll": "Save changes",
-    "savingAll": "Saving…"
+    "savingAll": "Saving…",
+    "saveFailed": "Could not save",
+    "myAccount": {
+      "title": "My account",
+      "subtitle": "Personal details visible to your team.",
+      "fullName": "Full name",
+      "phone": "Phone"
+    }
   },
   "lexware": {
     "title": "Monthly Lexware billing",
@@ -2299,11 +2323,7 @@
       "course": "Course",
       "shareShift": "Share shift"
     },
-    "typing": {
-      "one": "{name} is typing…",
-      "two": "{a} and {b} are typing…",
-      "many": "{a}, {b} and {n} others are typing…"
-    },
+    "typing": "is typing…",
     "shiftCard": {
       "shiftLabel": "Shift #{id}",
       "visitLabel": "Visit #{id}",
@@ -2314,30 +2334,51 @@
       "emptyBody": "Messages appear instantly for all members.",
       "loading": "Loading…",
       "loadError": "Failed to load: {error}"
-    }
+    },
+    "title": "Team chat",
+    "subtitle": "Channels and direct messages.",
+    "emptyTitle": "No channels yet",
+    "emptyBody": "You're not a member of any channel yet. Ask your manager.",
+    "noMessages": "No messages yet.",
+    "dm": "Direct message",
+    "channel": "Channel",
+    "back": "Back",
+    "messagePlaceholder": "Message…",
+    "send": "Send"
   },
   "damage": {
-    "title": "Damage & incident reports",
-    "subtitle": "Track issues observed on this property — notes, problems and damages.",
+    "title": "Damage reports",
+    "subtitle": "Log damage, notes and safety issues from the field.",
     "logReport": "Log report",
     "modalTitle": "Log a new report",
     "modalSubtitle": "Describe what you found. Add photos when helpful.",
-    "category": "Type",
+    "category": {
+      "normal": "All good",
+      "note": "Note",
+      "problem": "Problem",
+      "damage": "Damage"
+    },
     "catNormal": "Normal",
     "catNote": "Note",
     "catProblem": "Problem",
     "catDamage": "Damage",
-    "severity": "Severity",
+    "severity": {
+      "1": "Very minor",
+      "2": "Minor",
+      "3": "Moderate",
+      "4": "Serious",
+      "5": "Critical"
+    },
     "severityLow": "Low",
     "severityHigh": "High",
     "description": "Description",
-    "descriptionPlaceholder": "What did you see? Where? When?",
+    "descriptionPlaceholder": "Broken window in the hallway…",
     "descriptionTooShort": "Please add a short description.",
     "photos": "Photos",
-    "uploading": "Uploading…",
+    "uploading": "Uploading photos…",
     "photosAttached": "{n} photo(s) attached",
     "cancel": "Cancel",
-    "submit": "Submit",
+    "submit": "Submit report",
     "submitted": "Report logged.",
     "empty": "No reports yet.",
     "markResolved": "Mark resolved",
@@ -2353,7 +2394,29 @@
       "open": "Open",
       "resolved": "Resolved"
     },
-    "limitReached": "Limit is 20 photos per report — {dropped} were dropped."
+    "limitReached": "Limit is 20 photos per report — {dropped} were dropped.",
+    "newReport": "New report",
+    "emptyTitle": "No reports yet",
+    "emptyBody": "Report anything you find while on-site with the button above.",
+    "newTitle": "Report an issue",
+    "newSubtitle": "The manager gets notified as soon as you submit.",
+    "propertyLabel": "Property",
+    "pickPropertyFirst": "Choose the property first.",
+    "noProperties": "No properties available.",
+    "categoryLabel": "Category",
+    "severityLabel": "Severity",
+    "descriptionLabel": "What happened?",
+    "descriptionRequired": "Please describe what happened.",
+    "photosLabel": "Photos (optional)",
+    "takePhoto": "Take photo",
+    "chooseFromLibrary": "From library",
+    "uploadPartial": "Some photos failed to upload — try again for those.",
+    "cameraPermTitle": "Camera needed",
+    "cameraPermBody": "Priya's needs camera access to take a photo of the issue.",
+    "libraryPermTitle": "Photo library needed",
+    "libraryPermBody": "Priya's needs photo library access to attach existing photos.",
+    "submitFailed": "Could not submit",
+    "resolvedLabel": "Resolved"
   },
   "onboarding": {
     "kioskTag": "New client onboarding",
@@ -3030,5 +3093,21 @@
     "missingFields": "Enter your email and password.",
     "failed": "Sign-in failed",
     "wrongCode": "Wrong 2FA code"
+  },
+  "dashboardTab": {
+    "tabLabel": "Dashboard",
+    "title": "Overview",
+    "subtitle": "Everything happening across the org today.",
+    "activeClients": "Active clients",
+    "managedProperties": "Managed properties",
+    "todayShifts": "Today's shifts",
+    "openInvoices": "Open invoices",
+    "pendingCheckins": "{n} pending check-in{n, plural, one {} other {s}}",
+    "allCheckedIn": "All checked in",
+    "overdueCount": "{n} overdue",
+    "noneOverdue": "None overdue",
+    "teamUtilTitle": "Team utilisation this week",
+    "teamUtilSubtitle": "Hours worked vs weekly target.",
+    "teamUtilEmpty": "No active team members yet."
   }
 }
