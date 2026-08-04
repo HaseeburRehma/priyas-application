@@ -7,7 +7,52 @@
 -- Supersedes the placeholder inserts in 20260804_000055_alltagshelfer_intake.sql
 -- (display_name = '—', all fields NULL, customer_number NULL). Those stubs
 -- are removed first so the real rows can take their place.
+--
+-- SELF-CONTAINED: the schema-prep block below adds the columns the import
+-- needs if they don't already exist, so this migration works stand-alone
+-- when 000055 hasn't run yet.
 -- ============================================================================
+
+-- Schema prep — idempotent. Ensures the columns the import references
+-- exist even if 000055 hasn't been applied yet.
+alter table public.clients
+  add column if not exists first_name              text,
+  add column if not exists last_name               text,
+  add column if not exists address_line1           text,
+  add column if not exists address_line2           text,
+  add column if not exists postal_code             text,
+  add column if not exists city                    text,
+  add column if not exists country                 text,
+  add column if not exists date_of_birth           date,
+  add column if not exists insurance_provider      text,
+  add column if not exists insurance_number        text,
+  add column if not exists abtretungserklaerung    boolean,
+  add column if not exists salutation              text,
+  add column if not exists customer_number         text,
+  add column if not exists payer_type              text;
+
+-- Payer-type check: constrain to the four values we recognise. Guarded by
+-- pg_constraint so re-runs don't blow up on already-present constraint.
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'clients_payer_type_check'
+      and conrelid = 'public.clients'::regclass
+  ) then
+    alter table public.clients
+      add constraint clients_payer_type_check
+      check (payer_type is null or payer_type in (
+        'care_fund', 'private_pay', 'insurance', 'commercial'
+      ));
+  end if;
+end $$;
+
+-- Customer number unique per org (nullable — legacy clients have none).
+-- Required for the ON CONFLICT target below to resolve.
+create unique index if not exists uniq_clients_customer_number_per_org
+  on public.clients (org_id, customer_number)
+  where customer_number is not null and deleted_at is null;
 
 do $$
 declare
