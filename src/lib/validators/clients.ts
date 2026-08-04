@@ -85,7 +85,11 @@ const priyaExtras = {
   contract_start: isoDate,
 };
 
-/** Alltagshilfe extras — different list per the client's spec. */
+/** Alltagshilfe extras — different list per the client's spec.
+ *  The block below the core fields captures the tablet-friendly intake
+ *  wizard fields Priya asked for on 4 Aug 2026 (Alltagshelfer roll-out) —
+ *  all optional so existing rows and older callers keep working.
+ */
 const alltagshilfeExtras = {
   date_of_birth: isoDate,
   insurance_provider: z.string().min(1, "Pflegekasse erforderlich").max(80),
@@ -102,6 +106,27 @@ const alltagshilfeExtras = {
     .positive()
     .max(24),
   contract_docs_signed: z.boolean(),
+  // --- New intake-wizard fields (all optional) --------------------------
+  salutation: z.enum(["herr", "frau", ""]).optional(),
+  customer_number: optionalText(40),
+  payer_type: z
+    .enum(["care_fund", "private_pay", "insurance", "commercial"])
+    .optional(),
+  legal_rep_name: optionalText(120),
+  legal_rep_phone: optionalText(40),
+  desired_services: z.array(z.string().max(80)).max(20).optional(),
+  billing_type: z.enum(["paragraph_45b", "paragraph_39", "both"]).optional(),
+  preferred_hours_per_week: z
+    .number({ invalid_type_error: "Stunden pro Woche" })
+    .min(0)
+    .max(168)
+    .optional(),
+  preferred_days: z
+    .array(z.enum(["mon", "tue", "wed", "thu", "fri", "sat", "sun"]))
+    .max(7)
+    .optional(),
+  preferred_times: optionalText(200),
+  conversation_notes: optionalText(4000),
 };
 
 export const createClientSchema = z.discriminatedUnion("customer_type", [

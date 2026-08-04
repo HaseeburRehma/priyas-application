@@ -6,6 +6,7 @@ import { useFormat } from "@/lib/utils/i18n-format";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
 import { ClientDetailActions } from "./ClientDetailActions";
+import { PayerChip } from "./PayerChip";
 
 type Props = {
   detail: Detail;
@@ -96,6 +97,7 @@ export function ClientDetail({ detail, canUpdate, canArchive }: Props) {
                   {t("alltagshilfeBadge")}
                 </span>
               )}
+              <PayerChip payer={detail.payer_type} size="sm" />
               {isNew && (
                 <span
                   className={`inline-flex rounded-full bg-primary-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.04em] text-white`}

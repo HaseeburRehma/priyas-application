@@ -6,11 +6,20 @@
 
 export type ClientCustomerType = "residential" | "commercial" | "alltagshilfe";
 export type ClientStatus = "active" | "review" | "onboarding" | "ended";
+/** How this client's invoices get paid. Drives the colour-coded chip
+ *  Priya's team asked for on 4 Aug 2026 so managers can eyeball the
+ *  payer breakdown from the client list. */
+export type ClientPayerType =
+  | "care_fund"
+  | "private_pay"
+  | "insurance"
+  | "commercial";
 
 export type ClientRow = {
   id: string;
   display_name: string;
   customer_type: ClientCustomerType;
+  payer_type: ClientPayerType | null;
   email: string | null;
   phone: string | null;
   property_count: number;
@@ -63,6 +72,7 @@ export type ClientDetail = {
   id: string;
   display_name: string;
   customer_type: ClientCustomerType;
+  payer_type: ClientPayerType | null;
   contact_name: string | null;
   email: string | null;
   phone: string | null;

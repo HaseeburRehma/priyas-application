@@ -8,6 +8,7 @@ import { routes } from "@/lib/constants/routes";
 import { useFormat } from "@/lib/utils/i18n-format";
 import type { ClientRow, ClientsSortField } from "@/lib/api/clients.types";
 import { ClientStatusDropdown } from "./ClientStatusDropdown";
+import { PayerChip } from "./PayerChip";
 
 type Props = {
   rows: ClientRow[];
@@ -203,7 +204,10 @@ export function ClientsTable({
                       </Link>
                     </td>
                     <td className="px-5 py-3.5 align-middle">
-                      <TypeChip type={r.customer_type} />
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <TypeChip type={r.customer_type} />
+                        <PayerChip payer={r.payer_type} size="sm" />
+                      </div>
                     </td>
                     <td className="px-5 py-3.5 align-middle">
                       <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700">

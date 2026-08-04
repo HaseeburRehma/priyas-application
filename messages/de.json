@@ -309,7 +309,9 @@
         "servicePlan": "Reinigungsplan",
         "other": "Sonstiges",
         "careInsurance": "Pflege & Krankenversicherung",
-        "careInsuranceSub": "Pflicht für die monatliche Leistungsabrechnung"
+        "careInsuranceSub": "Pflicht für die monatliche Leistungsabrechnung",
+        "intakeAlltagshelfer": "Aufnahme-Assistent",
+        "intakeAlltagshelferSub": "Angaben aus dem Erstgespräch (Erfassungsbogen)"
       },
       "fields": {
         "vorname": "Vorname",
@@ -364,7 +366,50 @@
           "3": "Schwer",
           "4": "Schwerst",
           "5": "Schwerst + Härtefall"
-        }
+        },
+        "salutation": "Anrede",
+        "salutation_herr": "Herr",
+        "salutation_frau": "Frau",
+        "customerNumber": "Kundennummer",
+        "customerNumberHint": "Optional · interne Referenz",
+        "payerType": "Kostenträger",
+        "payerTypePlaceholder": "bitte wählen",
+        "billingType": "Abrechnungsart",
+        "billingTypeHint": "SGB XI § 45b, § 39 oder beides",
+        "billingType_paragraph_45b": "§ 45b",
+        "billingType_paragraph_39": "§ 39",
+        "billingType_both": "Beides",
+        "legalRepName": "Gesetzliche/r Vertreter/in",
+        "legalRepNamePlaceholder": "Name der Betreuungsperson",
+        "legalRepHint": "Optional · z. B. Betreuer/in oder Angehörige/r",
+        "legalRepPhone": "Telefon Vertretung",
+        "desiredServices": "Gewünschte Leistungen",
+        "desiredServicesHint": "Mehrfachauswahl · aus dem Erstgespräch",
+        "desiredServices_shopping": "Einkaufen",
+        "desiredServices_cooking": "Kochen",
+        "desiredServices_cleaning": "Reinigen",
+        "desiredServices_laundry": "Wäsche",
+        "desiredServices_companionship": "Begleitung",
+        "desiredServices_walks": "Spaziergänge",
+        "desiredServices_doctor_visits": "Arztbesuche",
+        "desiredServices_authority_visits": "Behördengänge",
+        "desiredServices_reading": "Vorlesen",
+        "desiredServices_conversation": "Gespräche",
+        "preferredHoursPerWeek": "Wunsch-Stunden pro Woche",
+        "preferredHoursHint": "Basis für die Einsatzplanung",
+        "preferredTimes": "Wunsch-Uhrzeiten",
+        "preferredTimesPlaceholder": "z. B. Vormittags 9–12 Uhr",
+        "preferredDays": "Wunsch-Tage",
+        "day_mon": "Mo",
+        "day_tue": "Di",
+        "day_wed": "Mi",
+        "day_thu": "Do",
+        "day_fri": "Fr",
+        "day_sat": "Sa",
+        "day_sun": "So",
+        "conversationNotes": "Gesprächsnotizen",
+        "conversationNotesHint": "Ausführliche Notizen aus dem Erstgespräch",
+        "conversationNotesPlaceholder": "z. B. Familie möchte, dass primär die Tochter kontaktiert wird; Hausschlüssel liegt bei der Nachbarin; Kunde spricht wenig Deutsch…"
       },
       "sectionTitles": {
         "contact": "Kontaktdaten",
@@ -450,7 +495,21 @@
         "priyasShort": "Priya's",
         "alltagshilfeShort": "Alltagshilfe"
       },
-      "abtretungWarning": "<b>Wichtig:</b> Ohne unterschriebene Abtretungserklärung können wir die Pflegeleistungen nicht direkt mit der Krankenkasse abrechnen. Die Person erhält bei der Erstberatung eine <b>Willkommensmappe</b> mit allen Unterlagen."
+      "abtretungWarning": "<b>Wichtig:</b> Ohne unterschriebene Abtretungserklärung können wir die Pflegeleistungen nicht direkt mit der Krankenkasse abrechnen. Die Person erhält bei der Erstberatung eine <b>Willkommensmappe</b> mit allen Unterlagen.",
+      "payer": {
+        "care_fund": {
+          "label": "Pflegekasse"
+        },
+        "insurance": {
+          "label": "Krankenkasse"
+        },
+        "private_pay": {
+          "label": "Selbstzahler"
+        },
+        "commercial": {
+          "label": "Gewerblich"
+        }
+      }
     },
     "edit": {
       "title": "Kunde bearbeiten",
@@ -640,6 +699,50 @@
         "paused_by_client": "Auf Kundenwunsch pausiert · keine neuen Einsätze.",
         "contract_ending_60d": "Vertrag endet in 60 Tagen · Kündigungsfrist beachten.",
         "inactive": "Beziehung beendet · keine aktiven Schichten mehr."
+      }
+    },
+    "payer": {
+      "care_fund": {
+        "label": "Pflegekasse",
+        "hint": "Abrechnung über die Pflegekasse (§ 45b)"
+      },
+      "insurance": {
+        "label": "Krankenkasse",
+        "hint": "Abrechnung über die Krankenkasse"
+      },
+      "private_pay": {
+        "label": "Selbstzahler",
+        "hint": "Rechnung geht an die Person selbst"
+      },
+      "commercial": {
+        "label": "Gewerblich",
+        "hint": "Rechnung an ein Unternehmen"
+      }
+    },
+    "documents": {
+      "title": "Dokumente",
+      "subtitle": "{n, plural, =0 {Keine Dokumente} =1 {1 Dokument} other {# Dokumente}}",
+      "empty": "Noch keine Dokumente hochgeladen.",
+      "uploadCta": "Datei hochladen",
+      "uploading": "Wird hochgeladen…",
+      "uploaded": "„{name}\" hochgeladen.",
+      "uploadFailed": "Upload fehlgeschlagen: {msg}",
+      "openCta": "Öffnen",
+      "openingCta": "Öffne…",
+      "openFailed": "Öffnen fehlgeschlagen.",
+      "deleteCta": "Löschen",
+      "deleteConfirm": "„{name}\" wirklich löschen?",
+      "deleteFailed": "Löschen fehlgeschlagen.",
+      "deleted": "Dokument gelöscht.",
+      "notesPlaceholder": "Notiz (optional)",
+      "category": {
+        "contract": "Vertrag",
+        "form": "Formular",
+        "decision": "Bescheid",
+        "id_card": "Ausweis",
+        "invoice": "Rechnung",
+        "photo": "Foto",
+        "other": "Sonstiges"
       }
     }
   },

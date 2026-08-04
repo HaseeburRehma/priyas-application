@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { loadClientDetail } from "@/lib/api/clients";
 import { loadContactsForClient } from "@/lib/api/client-contacts";
+import { loadClientDocuments } from "@/lib/api/client-documents";
 import { loadAlltagshilfeBudget } from "@/lib/api/invoices";
 import { ClientDetail } from "@/components/clients/ClientDetail";
 import { ContactsCard } from "@/components/clients/ContactsCard";
+import { DocumentsCard } from "@/components/clients/DocumentsCard";
 import { AlltagshilfeBudgetCard } from "@/components/invoices/AlltagshilfeBudgetCard";
 import { can, requireRoute } from "@/lib/rbac/permissions";
 
@@ -20,9 +22,10 @@ export default async function Page({
 }) {
   await requireRoute("client");
   const { id } = await params;
-  const [detail, contacts, canUpdate, canArchive] = await Promise.all([
+  const [detail, contacts, documents, canUpdate, canArchive] = await Promise.all([
     loadClientDetail(id),
     loadContactsForClient(id),
+    loadClientDocuments(id),
     can("client.update"),
     can("client.archive"),
   ]);
@@ -51,6 +54,13 @@ export default async function Page({
         <ContactsCard
           clientId={detail.id}
           contacts={contacts}
+          canEdit={canUpdate}
+        />
+      </div>
+      <div className="mt-5">
+        <DocumentsCard
+          clientId={detail.id}
+          documents={documents}
           canEdit={canUpdate}
         />
       </div>

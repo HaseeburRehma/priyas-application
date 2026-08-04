@@ -21,7 +21,7 @@ import type { InvoiceDetail as Detail } from "@/lib/api/invoices.types";
 
 const statusStyles: Record<Detail["status"], string> = {
   draft: "bg-neutral-100 text-neutral-700",
-  sent: "bg-secondary-50 text-secondary-700",
+  sent: "bg-warning-50 text-warning-700",
   paid: "bg-success-50 text-success-700",
   overdue: "bg-error-50 text-error-700",
   cancelled: "bg-neutral-100 text-neutral-500",

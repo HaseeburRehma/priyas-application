@@ -309,7 +309,9 @@
         "servicePlan": "Service plan",
         "other": "Other",
         "careInsurance": "பராமரிப்பு & சுகாதார காப்பீடு",
-        "careInsuranceSub": "மாதாந்திர செயல்திறன் கட்டணத்திற்கு கட்டாயம்"
+        "careInsuranceSub": "மாதாந்திர செயல்திறன் கட்டணத்திற்கு கட்டாயம்",
+        "intakeAlltagshelfer": "பதிவு பயன்பாடு",
+        "intakeAlltagshelferSub": "முதல் சந்திப்பில் பெறப்பட்ட விவரங்கள்"
       },
       "fields": {
         "vorname": "First name",
@@ -364,7 +366,50 @@
           "3": "Difficult",
           "4": "Severe",
           "5": "Severe + hardship case"
-        }
+        },
+        "salutation": "விளிச்சொல்",
+        "salutation_herr": "திரு",
+        "salutation_frau": "திருமதி",
+        "customerNumber": "வாடிக்கையாளர் எண்",
+        "customerNumberHint": "விருப்பம் · உள் குறிப்பு",
+        "payerType": "செலுத்துபவர்",
+        "payerTypePlaceholder": "தேர்ந்தெடுக்கவும்",
+        "billingType": "பட்டியல் வகை",
+        "billingTypeHint": "SGB XI § 45b, § 39 அல்லது இரண்டும்",
+        "billingType_paragraph_45b": "§ 45b",
+        "billingType_paragraph_39": "§ 39",
+        "billingType_both": "இரண்டும்",
+        "legalRepName": "சட்டப்பூர்வ பிரதிநிதி",
+        "legalRepNamePlaceholder": "பராமரிப்பாளர் பெயர்",
+        "legalRepHint": "விருப்பம் · பாதுகாவலர் அல்லது குடும்ப தொடர்பு",
+        "legalRepPhone": "பிரதிநிதி தொலைபேசி",
+        "desiredServices": "தேவையான சேவைகள்",
+        "desiredServicesHint": "பல தேர்வு · சந்திப்பிலிருந்து",
+        "desiredServices_shopping": "பொருள் வாங்குதல்",
+        "desiredServices_cooking": "சமையல்",
+        "desiredServices_cleaning": "சுத்தம் செய்தல்",
+        "desiredServices_laundry": "துணி துவைத்தல்",
+        "desiredServices_companionship": "துணை",
+        "desiredServices_walks": "நடைப்பயிற்சி",
+        "desiredServices_doctor_visits": "மருத்துவர் சந்திப்பு",
+        "desiredServices_authority_visits": "அதிகார அலுவலகம்",
+        "desiredServices_reading": "படித்துக் காட்டுதல்",
+        "desiredServices_conversation": "உரையாடல்",
+        "preferredHoursPerWeek": "வாராந்திர மணிநேரங்கள்",
+        "preferredHoursHint": "திட்டமிடலுக்கான அடிப்படை",
+        "preferredTimes": "விரும்பும் நேரங்கள்",
+        "preferredTimesPlaceholder": "எ.கா. காலை 9–12",
+        "preferredDays": "விரும்பும் நாட்கள்",
+        "day_mon": "திங்",
+        "day_tue": "செவ்",
+        "day_wed": "புத",
+        "day_thu": "வியா",
+        "day_fri": "வெள்",
+        "day_sat": "சனி",
+        "day_sun": "ஞாயி",
+        "conversationNotes": "உரையாடல் குறிப்புகள்",
+        "conversationNotesHint": "முதல் சந்திப்பிலிருந்து விரிவான குறிப்புகள்",
+        "conversationNotesPlaceholder": "எ.கா. குடும்பம் மகள் மூலம் தொடர்பு விரும்புகிறது; சாவி அண்டை வீட்டாரிடம்; வாடிக்கையாளர் அரிதாக ஜெர்மன் பேசுகிறார்…"
       },
       "sectionTitles": {
         "contact": "Contact details",
@@ -450,7 +495,21 @@
         "priyasShort": "Priya's",
         "alltagshilfeShort": "Everyday assistance"
       },
-      "abtretungWarning": "<b>முக்கியம்:</b> கையெழுத்திட்ட ஒதுக்கீட்டு பிரகடனம் இல்லாமல், சுகாதார காப்பீட்டுடன் பராமரிப்பு சேவைகளை நேரடியாக பணம் வசூலிக்க முடியாது. தொடக்க ஆலோசனையில் அந்த நபர் அனைத்து ஆவணங்களுடன் <b>வரவேற்பு தொகுப்பை</b> பெறுவார்."
+      "abtretungWarning": "<b>முக்கியம்:</b> கையெழுத்திட்ட ஒதுக்கீட்டு பிரகடனம் இல்லாமல், சுகாதார காப்பீட்டுடன் பராமரிப்பு சேவைகளை நேரடியாக பணம் வசூலிக்க முடியாது. தொடக்க ஆலோசனையில் அந்த நபர் அனைத்து ஆவணங்களுடன் <b>வரவேற்பு தொகுப்பை</b> பெறுவார்.",
+      "payer": {
+        "care_fund": {
+          "label": "பராமரிப்பு நிதி"
+        },
+        "insurance": {
+          "label": "காப்பீடு"
+        },
+        "private_pay": {
+          "label": "தனிநபர் செலுத்துபவர்"
+        },
+        "commercial": {
+          "label": "வர்த்தக"
+        }
+      }
     },
     "edit": {
       "title": "வாடிக்கையாளரைத் திருத்து",
@@ -640,6 +699,50 @@
         "paused_by_client": "வாடிக்கையாளர் கோரிக்கையின்படி நிறுத்தம் · புதிய வருகைகள் இல்லை.",
         "contract_ending_60d": "ஒப்பந்தம் 60 நாட்களில் முடிகிறது · அறிவிப்பு காலத்தை கவனிக்கவும்.",
         "inactive": "உறவு முடிந்தது · செயலில் உள்ள ஷிப்ட்கள் இல்லை."
+      }
+    },
+    "payer": {
+      "care_fund": {
+        "label": "பராமரிப்பு நிதி",
+        "hint": "பராமரிப்பு நிதி மூலம் (§ 45b)"
+      },
+      "insurance": {
+        "label": "காப்பீடு",
+        "hint": "காப்பீடு மூலம் பட்டியல்"
+      },
+      "private_pay": {
+        "label": "தனிநபர் செலுத்துபவர்",
+        "hint": "வாடிக்கையாளருக்கு நேரடி பட்டியல்"
+      },
+      "commercial": {
+        "label": "வர்த்தக",
+        "hint": "நிறுவனத்திற்கு பட்டியல்"
+      }
+    },
+    "documents": {
+      "title": "ஆவணங்கள்",
+      "subtitle": "{n, plural, =0 {ஆவணங்கள் இல்லை} one {1 ஆவணம்} other {# ஆவணங்கள்}}",
+      "empty": "இதுவரை ஆவணங்கள் இல்லை.",
+      "uploadCta": "கோப்பு பதிவேற்று",
+      "uploading": "பதிவேற்றுகிறது…",
+      "uploaded": "\"{name}\" பதிவேற்றப்பட்டது.",
+      "uploadFailed": "பதிவேற்றம் தோல்வி: {msg}",
+      "openCta": "திற",
+      "openingCta": "திறக்கிறது…",
+      "openFailed": "திறக்க முடியவில்லை.",
+      "deleteCta": "நீக்கு",
+      "deleteConfirm": "\"{name}\" நீக்கவா?",
+      "deleteFailed": "நீக்க முடியவில்லை.",
+      "deleted": "ஆவணம் நீக்கப்பட்டது.",
+      "notesPlaceholder": "குறிப்பு (விருப்பம்)",
+      "category": {
+        "contract": "ஒப்பந்தம்",
+        "form": "படிவம்",
+        "decision": "தீர்ப்பு",
+        "id_card": "அடையாள அட்டை",
+        "invoice": "பட்டியல்",
+        "photo": "புகைப்படம்",
+        "other": "பிற"
       }
     }
   },

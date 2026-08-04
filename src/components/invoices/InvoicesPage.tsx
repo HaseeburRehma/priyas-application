@@ -25,9 +25,13 @@ const FILTERS: Array<InvoiceStatus | "all"> = [
   "overdue",
 ];
 
+// Colour progression matches the spec Priya's team signed off on:
+// draft (grey, nothing to do) → sent (amber, awaiting payment) →
+// overdue (red, needs chasing) → paid (green, done).
+// cancelled reads as inert so we keep it neutral.
 const statusStyles: Record<InvoiceStatus, string> = {
   draft: "bg-neutral-100 text-neutral-600",
-  sent: "bg-secondary-50 text-secondary-700",
+  sent: "bg-warning-50 text-warning-700",
   paid: "bg-success-50 text-success-700",
   overdue: "bg-error-50 text-error-700",
   cancelled: "bg-neutral-100 text-neutral-500",

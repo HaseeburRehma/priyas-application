@@ -309,7 +309,9 @@
         "servicePlan": "Service plan",
         "other": "Other",
         "careInsurance": "Care & health insurance",
-        "careInsuranceSub": "Required for monthly performance billing"
+        "careInsuranceSub": "Required for monthly performance billing",
+        "intakeAlltagshelfer": "Intake wizard",
+        "intakeAlltagshelferSub": "Details captured during the first meeting"
       },
       "fields": {
         "vorname": "First name",
@@ -364,7 +366,50 @@
           "3": "Difficult",
           "4": "Severe",
           "5": "Severe + hardship case"
-        }
+        },
+        "salutation": "Salutation",
+        "salutation_herr": "Mr",
+        "salutation_frau": "Mrs",
+        "customerNumber": "Customer number",
+        "customerNumberHint": "Optional · internal reference",
+        "payerType": "Payer",
+        "payerTypePlaceholder": "please choose",
+        "billingType": "Billing type",
+        "billingTypeHint": "SGB XI § 45b, § 39 or both",
+        "billingType_paragraph_45b": "§ 45b",
+        "billingType_paragraph_39": "§ 39",
+        "billingType_both": "Both",
+        "legalRepName": "Legal representative",
+        "legalRepNamePlaceholder": "Name of the caregiver contact",
+        "legalRepHint": "Optional · legal guardian or family contact",
+        "legalRepPhone": "Rep. phone",
+        "desiredServices": "Desired services",
+        "desiredServicesHint": "Multi-select · from the intake meeting",
+        "desiredServices_shopping": "Shopping",
+        "desiredServices_cooking": "Cooking",
+        "desiredServices_cleaning": "Cleaning",
+        "desiredServices_laundry": "Laundry",
+        "desiredServices_companionship": "Companionship",
+        "desiredServices_walks": "Walks",
+        "desiredServices_doctor_visits": "Doctor visits",
+        "desiredServices_authority_visits": "Authority visits",
+        "desiredServices_reading": "Reading aloud",
+        "desiredServices_conversation": "Conversation",
+        "preferredHoursPerWeek": "Preferred hours per week",
+        "preferredHoursHint": "Baseline for schedule planning",
+        "preferredTimes": "Preferred times",
+        "preferredTimesPlaceholder": "e.g. mornings 9–12",
+        "preferredDays": "Preferred days",
+        "day_mon": "Mon",
+        "day_tue": "Tue",
+        "day_wed": "Wed",
+        "day_thu": "Thu",
+        "day_fri": "Fri",
+        "day_sat": "Sat",
+        "day_sun": "Sun",
+        "conversationNotes": "Conversation notes",
+        "conversationNotesHint": "Longer notes from the first meeting",
+        "conversationNotesPlaceholder": "e.g. family prefers to be contacted through the daughter; key is with the neighbour; customer speaks limited German…"
       },
       "sectionTitles": {
         "contact": "Contact details",
@@ -450,7 +495,21 @@
         "priyasShort": "Priya's",
         "alltagshilfeShort": "Everyday assistance"
       },
-      "abtretungWarning": "<b>Important:</b> Without a signed assignment declaration we cannot bill care services directly to the health insurance. The person receives a <b>welcome package</b> with all documents at the initial consultation."
+      "abtretungWarning": "<b>Important:</b> Without a signed assignment declaration we cannot bill care services directly to the health insurance. The person receives a <b>welcome package</b> with all documents at the initial consultation.",
+      "payer": {
+        "care_fund": {
+          "label": "Care fund"
+        },
+        "insurance": {
+          "label": "Health insurance"
+        },
+        "private_pay": {
+          "label": "Private pay"
+        },
+        "commercial": {
+          "label": "Commercial"
+        }
+      }
     },
     "edit": {
       "title": "Edit client",
@@ -640,6 +699,50 @@
         "paused_by_client": "Paused per customer request · no new visits.",
         "contract_ending_60d": "Contract ends in 60 days · honour notice period.",
         "inactive": "Relationship ended · no active shifts."
+      }
+    },
+    "payer": {
+      "care_fund": {
+        "label": "Care fund",
+        "hint": "Billed via the care fund (§ 45b)"
+      },
+      "insurance": {
+        "label": "Health insurance",
+        "hint": "Billed via the health insurance"
+      },
+      "private_pay": {
+        "label": "Private pay",
+        "hint": "Invoice sent to the customer directly"
+      },
+      "commercial": {
+        "label": "Commercial",
+        "hint": "Invoice sent to a company"
+      }
+    },
+    "documents": {
+      "title": "Documents",
+      "subtitle": "{n, plural, =0 {No documents} =1 {1 document} other {# documents}}",
+      "empty": "No documents uploaded yet.",
+      "uploadCta": "Upload file",
+      "uploading": "Uploading…",
+      "uploaded": "\"{name}\" uploaded.",
+      "uploadFailed": "Upload failed: {msg}",
+      "openCta": "Open",
+      "openingCta": "Opening…",
+      "openFailed": "Failed to open.",
+      "deleteCta": "Delete",
+      "deleteConfirm": "Delete \"{name}\"?",
+      "deleteFailed": "Delete failed.",
+      "deleted": "Document deleted.",
+      "notesPlaceholder": "Note (optional)",
+      "category": {
+        "contract": "Contract",
+        "form": "Form",
+        "decision": "Decision",
+        "id_card": "ID card",
+        "invoice": "Invoice",
+        "photo": "Photo",
+        "other": "Other"
       }
     }
   },

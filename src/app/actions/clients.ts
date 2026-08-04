@@ -111,6 +111,26 @@ export async function createClientAction(
     insertRow.contract_docs_signed = input.contract_docs_signed;
     insertRow.cleaning_rhythm = input.cleaning_rhythm;
     insertRow.estimated_hours_per_visit = input.estimated_hours_per_visit;
+    // New intake-wizard fields (all optional — only write when present).
+    if (input.salutation) insertRow.salutation = input.salutation;
+    if (input.customer_number) insertRow.customer_number = input.customer_number;
+    if (input.payer_type) insertRow.payer_type = input.payer_type;
+    if (input.legal_rep_name) insertRow.legal_rep_name = input.legal_rep_name;
+    if (input.legal_rep_phone) insertRow.legal_rep_phone = input.legal_rep_phone;
+    if (input.desired_services && input.desired_services.length > 0) {
+      insertRow.desired_services = input.desired_services;
+    }
+    if (input.billing_type) insertRow.billing_type = input.billing_type;
+    if (typeof input.preferred_hours_per_week === "number") {
+      insertRow.preferred_hours_per_week = input.preferred_hours_per_week;
+    }
+    if (input.preferred_days && input.preferred_days.length > 0) {
+      insertRow.preferred_days = input.preferred_days;
+    }
+    if (input.preferred_times) insertRow.preferred_times = input.preferred_times;
+    if (input.conversation_notes) {
+      insertRow.conversation_notes = input.conversation_notes;
+    }
   } else {
     // Priya regular (residential + commercial): billing address (optional),
     // cleaning rhythm, estimated hours, agreed rate, contract start.

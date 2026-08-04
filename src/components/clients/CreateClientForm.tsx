@@ -82,8 +82,43 @@ export function CreateClientForm({ type }: Props) {
     abtretungserklaerung: false,
     contract_docs_signed: false,
 
+    // Alltagshelfer intake wizard fields (Priya spec, 4 Aug 2026).
+    // All UI-optional; only sent when populated.
+    salutation: "" as "" | "herr" | "frau",
+    customer_number: "",
+    payer_type: (isAlltags ? "care_fund" : "") as
+      | ""
+      | "care_fund"
+      | "private_pay"
+      | "insurance"
+      | "commercial",
+    legal_rep_name: "",
+    legal_rep_phone: "",
+    desired_services: [] as string[],
+    billing_type: (isAlltags ? "paragraph_45b" : "") as
+      | ""
+      | "paragraph_45b"
+      | "paragraph_39"
+      | "both",
+    preferred_hours_per_week: "",
+    preferred_days: [] as Array<
+      "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun"
+    >,
+    preferred_times: "",
+    conversation_notes: "",
+
     notes: "",
   });
+
+  function toggleArrayItem<T extends string>(key: keyof typeof form, item: T) {
+    setForm((f) => {
+      const arr = (f[key] as unknown as T[]) ?? [];
+      const next = arr.includes(item)
+        ? arr.filter((x) => x !== item)
+        : [...arr, item];
+      return { ...f, [key]: next };
+    });
+  }
 
   function setField<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -135,6 +170,22 @@ export function CreateClientForm({ type }: Props) {
             cleaning_rhythm: form.cleaning_rhythm,
             estimated_hours_per_visit: Number(form.estimated_hours_per_visit),
             contract_docs_signed: form.contract_docs_signed,
+            // --- New intake fields (only sent when set) ------------------
+            salutation: form.salutation || undefined,
+            customer_number: form.customer_number || undefined,
+            payer_type: form.payer_type || undefined,
+            legal_rep_name: form.legal_rep_name || undefined,
+            legal_rep_phone: form.legal_rep_phone || undefined,
+            desired_services:
+              form.desired_services.length > 0 ? form.desired_services : undefined,
+            billing_type: form.billing_type || undefined,
+            preferred_hours_per_week: form.preferred_hours_per_week
+              ? Number(form.preferred_hours_per_week)
+              : undefined,
+            preferred_days:
+              form.preferred_days.length > 0 ? form.preferred_days : undefined,
+            preferred_times: form.preferred_times || undefined,
+            conversation_notes: form.conversation_notes || undefined,
           }
         : {
             ...sharedBase,
@@ -349,12 +400,48 @@ export function CreateClientForm({ type }: Props) {
               </div>
             </header>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {isAlltags && (
+                <>
+                  <Field label={t("fields.salutation")} className="md:col-span-2">
+                    <div className="flex gap-2">
+                      {(["herr", "frau"] as const).map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setField("salutation", s)}
+                          className={cn(
+                            "flex-1 rounded-md border px-3 py-2 text-[13px] font-medium transition",
+                            form.salutation === s
+                              ? "border-error-500 bg-error-50 text-error-700 ring-1 ring-error-200"
+                              : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50",
+                          )}
+                        >
+                          {t(`fields.salutation_${s}` as never)}
+                        </button>
+                      ))}
+                    </div>
+                  </Field>
+                </>
+              )}
               <Field label={t("fields.vorname")} required error={errors.first_name}>
                 <input className="input" required {...input("first_name")} />
               </Field>
               <Field label={t("fields.name")} required error={errors.last_name}>
                 <input className="input" required {...input("last_name")} />
               </Field>
+              {isAlltags && (
+                <Field
+                  label={t("fields.customerNumber")}
+                  hint={t("fields.customerNumberHint")}
+                  error={errors.customer_number}
+                >
+                  <input
+                    className="input font-mono"
+                    placeholder="z. B. K-2026-001"
+                    {...input("customer_number")}
+                  />
+                </Field>
+              )}
               <Field
                 label={t("fields.address")}
                 required
@@ -555,6 +642,212 @@ export function CreateClientForm({ type }: Props) {
                     </div>
                   </div>
                 )}
+              </div>
+            </section>
+          )}
+
+          {/* --- Section 2c: Alltagshelfer intake wizard fields -------- */}
+          {isAlltags && (
+            <section className="rounded-lg border border-neutral-100 bg-white p-5 shadow-xs">
+              <header className="mb-4 flex items-start gap-2.5">
+                <div className="grid h-8 w-8 place-items-center rounded-md bg-error-50 text-error-700">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                    <rect x={3} y={4} width={18} height={18} rx={2} />
+                    <path d="M16 2v4M8 2v4M3 10h18" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-[15px] font-semibold text-neutral-800">
+                    {t("section.intakeAlltagshelfer")}
+                  </h2>
+                  <p className="text-[12px] text-neutral-500">
+                    {t("section.intakeAlltagshelferSub")}
+                  </p>
+                </div>
+              </header>
+
+              {/* Payer + billing type row */}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Field label={t("fields.payerType")} error={errors.payer_type}>
+                  <select className="input" {...input("payer_type")}>
+                    <option value="">— {t("fields.payerTypePlaceholder")} —</option>
+                    <option value="care_fund">{t("payer.care_fund.label")}</option>
+                    <option value="insurance">{t("payer.insurance.label")}</option>
+                    <option value="private_pay">{t("payer.private_pay.label")}</option>
+                    <option value="commercial">{t("payer.commercial.label")}</option>
+                  </select>
+                </Field>
+                <Field
+                  label={t("fields.billingType")}
+                  hint={t("fields.billingTypeHint")}
+                  error={errors.billing_type}
+                >
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    {(
+                      [
+                        "paragraph_45b",
+                        "paragraph_39",
+                        "both",
+                      ] as const
+                    ).map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setField("billing_type", v)}
+                        className={cn(
+                          "rounded-md border px-2 py-2 text-[12px] font-medium transition",
+                          form.billing_type === v
+                            ? "border-error-500 bg-error-50 text-error-700 ring-1 ring-error-200"
+                            : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50",
+                        )}
+                      >
+                        {t(`fields.billingType_${v}` as never)}
+                      </button>
+                    ))}
+                  </div>
+                </Field>
+              </div>
+
+              {/* Legal representative */}
+              <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Field
+                  label={t("fields.legalRepName")}
+                  hint={t("fields.legalRepHint")}
+                  error={errors.legal_rep_name}
+                >
+                  <input
+                    className="input"
+                    placeholder={t("fields.legalRepNamePlaceholder")}
+                    {...input("legal_rep_name")}
+                  />
+                </Field>
+                <Field label={t("fields.legalRepPhone")} error={errors.legal_rep_phone}>
+                  <input
+                    className="input"
+                    placeholder="+49 30 …"
+                    {...input("legal_rep_phone")}
+                  />
+                </Field>
+              </div>
+
+              {/* Desired services multi-select — chips */}
+              <div className="mt-5">
+                <div className="mb-2 flex items-baseline justify-between gap-3">
+                  <span className="text-[13px] font-medium text-neutral-700">
+                    {t("fields.desiredServices")}
+                  </span>
+                  <span className="text-[11px] text-neutral-500">
+                    {t("fields.desiredServicesHint")}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(
+                    [
+                      "shopping",
+                      "cooking",
+                      "cleaning",
+                      "laundry",
+                      "companionship",
+                      "walks",
+                      "doctor_visits",
+                      "authority_visits",
+                      "reading",
+                      "conversation",
+                    ] as const
+                  ).map((svc) => {
+                    const active = form.desired_services.includes(svc);
+                    return (
+                      <button
+                        key={svc}
+                        type="button"
+                        onClick={() => toggleArrayItem("desired_services", svc)}
+                        className={cn(
+                          "rounded-full border px-3 py-1.5 text-[12px] font-medium transition",
+                          active
+                            ? "border-error-500 bg-error-50 text-error-700"
+                            : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50",
+                        )}
+                      >
+                        {t(`fields.desiredServices_${svc}` as never)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Preferred plan: hours per week + preferred days + times */}
+              <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Field
+                  label={t("fields.preferredHoursPerWeek")}
+                  hint={t("fields.preferredHoursHint")}
+                  error={errors.preferred_hours_per_week}
+                >
+                  <div className="flex items-stretch gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max="168"
+                      step="0.5"
+                      className="input flex-1"
+                      placeholder="z. B. 4"
+                      {...input("preferred_hours_per_week")}
+                    />
+                    <span className="inline-flex items-center rounded-sm border border-neutral-200 bg-neutral-50 px-3 text-[12px] text-neutral-600">
+                      h / Woche
+                    </span>
+                  </div>
+                </Field>
+                <Field label={t("fields.preferredTimes")} error={errors.preferred_times}>
+                  <input
+                    className="input"
+                    placeholder={t("fields.preferredTimesPlaceholder")}
+                    {...input("preferred_times")}
+                  />
+                </Field>
+              </div>
+
+              <div className="mt-5">
+                <div className="mb-2 text-[13px] font-medium text-neutral-700">
+                  {t("fields.preferredDays")}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(
+                    ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const
+                  ).map((day) => {
+                    const active = form.preferred_days.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => toggleArrayItem("preferred_days", day)}
+                        className={cn(
+                          "grid h-9 w-11 place-items-center rounded-md border text-[12px] font-semibold uppercase tracking-[0.04em] transition",
+                          active
+                            ? "border-error-500 bg-error-50 text-error-700"
+                            : "border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50",
+                        )}
+                      >
+                        {t(`fields.day_${day}` as never)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Conversation notes (intake meeting record) */}
+              <div className="mt-5">
+                <Field
+                  label={t("fields.conversationNotes")}
+                  hint={t("fields.conversationNotesHint")}
+                  error={errors.conversation_notes}
+                >
+                  <textarea
+                    rows={4}
+                    className="input min-h-[110px]"
+                    placeholder={t("fields.conversationNotesPlaceholder")}
+                    {...input("conversation_notes")}
+                  />
+                </Field>
               </div>
             </section>
           )}

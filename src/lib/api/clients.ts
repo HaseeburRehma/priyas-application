@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sanitizeQ } from "@/lib/utils/postgrest-sanitize";
 import type {
   ClientCustomerType,
+  ClientPayerType,
   ClientRow,
   ClientStatus,
   ClientsSummary,
@@ -15,6 +16,7 @@ import type {
 // Re-export so existing imports continue to work.
 export type {
   ClientCustomerType,
+  ClientPayerType,
   ClientRow,
   ClientStatus,
   ClientsSummary,
@@ -111,7 +113,7 @@ export async function loadClientsList(
   let query = supabase
     .from("clients")
     .select(
-      "id, display_name, customer_type, email, phone, created_at, archived",
+      "id, display_name, customer_type, payer_type, email, phone, created_at, archived",
       { count: "exact" },
     )
     .is("deleted_at", null);
@@ -168,6 +170,7 @@ export async function loadClientsList(
     id: string;
     display_name: string;
     customer_type: ClientCustomerType;
+    payer_type: ClientPayerType | null;
     email: string | null;
     phone: string | null;
     created_at: string;
@@ -228,6 +231,7 @@ export async function loadClientsList(
     id: r.id,
     display_name: r.display_name,
     customer_type: r.customer_type,
+    payer_type: r.payer_type,
     email: r.email,
     phone: r.phone,
     property_count: propsByClient.get(r.id) ?? 0,
@@ -256,7 +260,7 @@ export async function loadClientDetail(
   let detailQuery = supabase
     .from("clients")
     .select(
-      `id, display_name, customer_type, contact_name, email, phone, tax_id,
+      `id, display_name, customer_type, payer_type, contact_name, email, phone, tax_id,
        insurance_provider, insurance_number, care_level, notes, archived,
        created_at, updated_at, export_target, address_line1, city, postal_code, country`,
     )
@@ -405,6 +409,7 @@ export async function loadClientDetail(
     id: String(client.id),
     display_name: String(client.display_name),
     customer_type: client.customer_type as ClientCustomerType,
+    payer_type: (client.payer_type as ClientPayerType | null) ?? null,
     contact_name: (client.contact_name as string | null) ?? null,
     email: (client.email as string | null) ?? null,
     phone: (client.phone as string | null) ?? null,
