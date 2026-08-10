@@ -3153,6 +3153,147 @@
       "pendingBanner": "{n} action(s) waiting to sync",
       "syncingNow": "Syncing now…",
       "syncedToast": "{n} action(s) synced."
+    },
+    "more": {
+      "tabLabel": "More",
+      "title": "More",
+      "subtitle": "Every screen you didn't put on the main tab bar.",
+      "employees": "Employees",
+      "employeesHint": "Full team roster",
+      "properties": "Properties",
+      "propertiesHint": "All workplaces",
+      "invoices": "Invoices",
+      "invoicesHint": "Draft · Sent · Paid · Overdue",
+      "reports": "Alltagshilfe monthly report",
+      "reportsHint": "Hours per client + care fund",
+      "training": "Training",
+      "trainingHint": "Onboarding videos",
+      "damage": "Damage reports",
+      "damageHint": "Camera-first issue logging",
+      "vacation": "Vacation",
+      "vacationHint": "Request time off"
+    },
+    "employees": {
+      "title": "Employees",
+      "searchPlaceholder": "Search by name, email or phone…",
+      "filter": {
+        "all": "All",
+        "priya": "Priya",
+        "alltagshilfe": "Alltagshilfe"
+      },
+      "emptyTitle": "No employees found",
+      "emptyBody": "Adjust the filter or search.",
+      "errorTitle": "Failed to load",
+      "errorBody": "Please check your connection and try again.",
+      "notFoundTitle": "Employee not found",
+      "notFoundBody": "The employee may have been removed.",
+      "status": {
+        "active": "Active",
+        "on_leave": "On leave",
+        "inactive": "Inactive"
+      },
+      "role": {
+        "admin": "Admin",
+        "dispatcher": "Dispatcher",
+        "employee": "Field staff",
+        "auditor": "Auditor",
+        "customer_contact": "Customer contact"
+      },
+      "service": {
+        "priya": "Priya",
+        "alltagshilfe": "Alltagshilfe"
+      },
+      "detail": {
+        "contactSection": "Contact",
+        "email": "Email",
+        "phone": "Phone",
+        "employmentSection": "Employment",
+        "employmentType": "Employment type",
+        "weeklyHoursTarget": "Weekly hours target",
+        "contractStart": "Contract start",
+        "skillsSection": "Skills",
+        "notesSection": "Notes"
+      }
+    },
+    "properties": {
+      "title": "Properties",
+      "searchPlaceholder": "Search name, address or city…",
+      "emptyTitle": "No properties found",
+      "emptyBody": "Adjust the search.",
+      "notFoundTitle": "Property not found",
+      "notFoundBody": "The property may have been removed.",
+      "detail": {
+        "locationSection": "Location",
+        "address": "Address",
+        "client": "Client",
+        "kind": "Kind",
+        "weeklyFrequency": "Weekly frequency",
+        "freqEveryWeeks": "Every {n} week(s)",
+        "accessSection": "Access",
+        "keyHolder": "Key holder",
+        "alarmNotes": "Alarm / access notes",
+        "notesSection": "Notes"
+      }
+    },
+    "invoices": {
+      "title": "Invoices",
+      "filter": {
+        "all": "All",
+        "draft": "Draft",
+        "sent": "Sent",
+        "paid": "Paid",
+        "overdue": "Overdue"
+      },
+      "status": {
+        "draft": "Draft",
+        "sent": "Sent",
+        "paid": "Paid",
+        "overdue": "Overdue",
+        "cancelled": "Cancelled"
+      },
+      "due": "Due",
+      "emptyTitle": "No invoices",
+      "emptyBody": "Try a different status filter.",
+      "notFoundTitle": "Invoice not found",
+      "notFoundBody": "The invoice may have been deleted.",
+      "detail": {
+        "metaSection": "Details",
+        "issueDate": "Issue date",
+        "dueDate": "Due date",
+        "period": "Billing period",
+        "paidAt": "Paid at",
+        "lexwareSynced": "Lexware sync",
+        "notSynced": "Not synced",
+        "itemsSection": "Line items ({n})",
+        "itemsEmpty": "No line items on this invoice."
+      }
+    },
+    "reports": {
+      "alltagshilfeTitle": "Monthly report · Alltagshilfe",
+      "totalHours": "Total hours",
+      "totalVisits": "Total visits",
+      "clientsCount": "Clients",
+      "byClient": "By client",
+      "visitsCount": "{n} visit(s)",
+      "emptyTitle": "No approved shifts this month",
+      "emptyBody": "Approve some shifts first to see them here."
+    },
+    "training": {
+      "title": "Training",
+      "progressLabel": "Mandatory videos completed",
+      "allDoneHint": "You're up to date — no mandatory videos pending.",
+      "notDoneHint": "Complete every mandatory video to unlock scheduling.",
+      "emptyTitle": "No training modules yet",
+      "emptyBody": "Your manager will assign videos when they're ready.",
+      "mandatory": "Mandatory",
+      "status": {
+        "notStarted": "Not started",
+        "inProgress": "In progress",
+        "done": "Completed"
+      },
+      "watchCta": "Watch video",
+      "noVideoUrl": "No video URL",
+      "markCompletedCta": "Mark completed"
     }
   }
 }

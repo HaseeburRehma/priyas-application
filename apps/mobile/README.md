@@ -32,6 +32,20 @@ are literal copies of the web app's `messages/`).
 - **Clients tab** — full roster with search + type filter (all / private /
   company / Alltagshilfe), payer-source chip, drill-down to detail
   (contact, care & insurance for Alltagshilfe, properties list, notes).
+- **More tab** — hub for admin-only surfaces:
+  - **Employees** — full team roster with service-line filter, status
+    chips (Active / On leave / Inactive), drill-down (contact,
+    employment, skills, notes).
+  - **Properties** — list every workplace with search, drill-down opens
+    the address in the native maps app on tap.
+  - **Invoices** — status-filtered list (all / draft / sent / paid /
+    overdue), read-only detail with line items, Lexware sync timestamp.
+  - **Alltagshilfe monthly report** — hours per client × care fund with
+    month-picker (previous / next); matches the web /reports view.
+  - **Training** — my onboarding videos, "Watch video" (opens URL in
+    system browser) + "Mark completed" (writes to the same
+    employee_training_progress table the web app reads for the schedule
+    gate).
 
 **Infrastructure**
 - **Push notifications** — Expo push tokens registered on sign-in and

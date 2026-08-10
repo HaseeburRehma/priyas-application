@@ -3153,6 +3153,147 @@
       "pendingBanner": "{n} Aktion(en) warten auf Synchronisation",
       "syncingNow": "Synchronisation läuft…",
       "syncedToast": "{n} Aktion(en) synchronisiert."
+    },
+    "more": {
+      "tabLabel": "Mehr",
+      "title": "Mehr",
+      "subtitle": "Alle Bildschirme, die nicht in die Hauptleiste passen.",
+      "employees": "Mitarbeitende",
+      "employeesHint": "Vollständige Teamliste",
+      "properties": "Objekte",
+      "propertiesHint": "Alle Einsatzorte",
+      "invoices": "Rechnungen",
+      "invoicesHint": "Entwurf · Gesendet · Bezahlt · Überfällig",
+      "reports": "Alltagshilfe Monatsbericht",
+      "reportsHint": "Stunden pro Kunde + Pflegekasse",
+      "training": "Schulung",
+      "trainingHint": "Onboarding-Videos",
+      "damage": "Schadensberichte",
+      "damageHint": "Fotobasierte Meldung",
+      "vacation": "Urlaub",
+      "vacationHint": "Freizeit beantragen"
+    },
+    "employees": {
+      "title": "Mitarbeitende",
+      "searchPlaceholder": "Nach Name, E-Mail oder Telefon suchen…",
+      "filter": {
+        "all": "Alle",
+        "priya": "Priya",
+        "alltagshilfe": "Alltagshilfe"
+      },
+      "emptyTitle": "Keine Mitarbeitenden gefunden",
+      "emptyBody": "Filter oder Suche anpassen.",
+      "errorTitle": "Laden fehlgeschlagen",
+      "errorBody": "Bitte Verbindung prüfen und erneut versuchen.",
+      "notFoundTitle": "Mitarbeiter nicht gefunden",
+      "notFoundBody": "Der Mitarbeiter wurde möglicherweise entfernt.",
+      "status": {
+        "active": "Aktiv",
+        "on_leave": "Beurlaubt",
+        "inactive": "Inaktiv"
+      },
+      "role": {
+        "admin": "Admin",
+        "dispatcher": "Disposition",
+        "employee": "Mitarbeiter",
+        "auditor": "Prüfer",
+        "customer_contact": "Kundenkontakt"
+      },
+      "service": {
+        "priya": "Priya",
+        "alltagshilfe": "Alltagshilfe"
+      },
+      "detail": {
+        "contactSection": "Kontakt",
+        "email": "E-Mail",
+        "phone": "Telefon",
+        "employmentSection": "Anstellung",
+        "employmentType": "Anstellungsart",
+        "weeklyHoursTarget": "Wochenstunden",
+        "contractStart": "Vertragsbeginn",
+        "skillsSection": "Qualifikationen",
+        "notesSection": "Notizen"
+      }
+    },
+    "properties": {
+      "title": "Objekte",
+      "searchPlaceholder": "Name, Adresse oder Stadt suchen…",
+      "emptyTitle": "Keine Objekte gefunden",
+      "emptyBody": "Suche anpassen.",
+      "notFoundTitle": "Objekt nicht gefunden",
+      "notFoundBody": "Das Objekt wurde möglicherweise entfernt.",
+      "detail": {
+        "locationSection": "Standort",
+        "address": "Adresse",
+        "client": "Kunde",
+        "kind": "Art",
+        "weeklyFrequency": "Wochenrhythmus",
+        "freqEveryWeeks": "Alle {n} Woche(n)",
+        "accessSection": "Zugang",
+        "keyHolder": "Schlüsselträger",
+        "alarmNotes": "Alarm / Zugangshinweise",
+        "notesSection": "Notizen"
+      }
+    },
+    "invoices": {
+      "title": "Rechnungen",
+      "filter": {
+        "all": "Alle",
+        "draft": "Entwurf",
+        "sent": "Gesendet",
+        "paid": "Bezahlt",
+        "overdue": "Überfällig"
+      },
+      "status": {
+        "draft": "Entwurf",
+        "sent": "Gesendet",
+        "paid": "Bezahlt",
+        "overdue": "Überfällig",
+        "cancelled": "Storniert"
+      },
+      "due": "Fällig",
+      "emptyTitle": "Keine Rechnungen",
+      "emptyBody": "Anderen Statusfilter probieren.",
+      "notFoundTitle": "Rechnung nicht gefunden",
+      "notFoundBody": "Die Rechnung wurde möglicherweise gelöscht.",
+      "detail": {
+        "metaSection": "Details",
+        "issueDate": "Rechnungsdatum",
+        "dueDate": "Fälligkeitsdatum",
+        "period": "Abrechnungszeitraum",
+        "paidAt": "Bezahlt am",
+        "lexwareSynced": "Lexware-Sync",
+        "notSynced": "Nicht synchronisiert",
+        "itemsSection": "Positionen ({n})",
+        "itemsEmpty": "Keine Positionen auf dieser Rechnung."
+      }
+    },
+    "reports": {
+      "alltagshilfeTitle": "Monatsbericht · Alltagshilfe",
+      "totalHours": "Stunden gesamt",
+      "totalVisits": "Besuche gesamt",
+      "clientsCount": "Kunden",
+      "byClient": "Nach Kunde",
+      "visitsCount": "{n} Besuch(e)",
+      "emptyTitle": "Keine freigegebenen Schichten in diesem Monat",
+      "emptyBody": "Erst Schichten freigeben, dann erscheinen sie hier."
+    },
+    "training": {
+      "title": "Schulung",
+      "progressLabel": "Pflichtvideos abgeschlossen",
+      "allDoneHint": "Alles auf Stand — keine Pflichtvideos offen.",
+      "notDoneHint": "Alle Pflichtvideos abschließen, um Planung freizuschalten.",
+      "emptyTitle": "Noch keine Schulungsmodule",
+      "emptyBody": "Ihr Vorgesetzter weist Videos zu, sobald verfügbar.",
+      "mandatory": "Pflicht",
+      "status": {
+        "notStarted": "Nicht begonnen",
+        "inProgress": "Läuft",
+        "done": "Abgeschlossen"
+      },
+      "watchCta": "Video ansehen",
+      "noVideoUrl": "Keine Video-URL",
+      "markCompletedCta": "Als abgeschlossen markieren"
     }
   }
 }

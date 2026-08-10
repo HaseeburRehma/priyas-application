@@ -143,6 +143,17 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => <Icons.settings color={color} size={size} />,
         }}
       />
+      <Tabs.Screen
+        name="more"
+        options={{
+          title: t("mobile.more.tabLabel"),
+          tabBarIcon: ({ color, size }) => (
+            <View>
+              <Icons.settings color={color} size={size} />
+            </View>
+          ),
+        }}
+      />
     </Tabs>
   );
 }

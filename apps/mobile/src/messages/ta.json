@@ -3153,6 +3153,147 @@
       "pendingBanner": "{n} செயல்(கள்) ஒத்திசைவுக்காக காத்திருக்கின்றன",
       "syncingNow": "ஒத்திசைக்கிறது…",
       "syncedToast": "{n} செயல்(கள்) ஒத்திசைக்கப்பட்டன."
+    },
+    "more": {
+      "tabLabel": "மேலும்",
+      "title": "மேலும்",
+      "subtitle": "பிரதான தாவல் பட்டியில் இல்லாத அனைத்து திரைகள்.",
+      "employees": "பணியாளர்கள்",
+      "employeesHint": "முழு அணி பட்டியல்",
+      "properties": "சொத்துகள்",
+      "propertiesHint": "அனைத்து பணியிடங்கள்",
+      "invoices": "பட்டியல்கள்",
+      "invoicesHint": "வரைவு · அனுப்பப்பட்டது · கட்டப்பட்டது · தாமதம்",
+      "reports": "அல்டாக்ஷில்பே மாதாந்திர அறிக்கை",
+      "reportsHint": "வாடிக்கையாளர் × பராமரிப்பு நிதி",
+      "training": "பயிற்சி",
+      "trainingHint": "ஆரம்ப வீடியோக்கள்",
+      "damage": "சேத அறிக்கைகள்",
+      "damageHint": "புகைப்படம் முதலிடம்",
+      "vacation": "விடுமுறை",
+      "vacationHint": "விடுமுறை கோரிக்கை"
+    },
+    "employees": {
+      "title": "பணியாளர்கள்",
+      "searchPlaceholder": "பெயர், மின்னஞ்சல் அல்லது தொலைபேசி…",
+      "filter": {
+        "all": "அனைத்தும்",
+        "priya": "பிரியா",
+        "alltagshilfe": "அல்டாக்ஷில்பே"
+      },
+      "emptyTitle": "பணியாளர்கள் இல்லை",
+      "emptyBody": "வடிகட்டி அல்லது தேடலை மாற்றவும்.",
+      "errorTitle": "ஏற்ற முடியவில்லை",
+      "errorBody": "இணைப்பை சரிபார்த்து மீண்டும் முயற்சிக்கவும்.",
+      "notFoundTitle": "பணியாளர் இல்லை",
+      "notFoundBody": "பணியாளர் அகற்றப்பட்டிருக்கலாம்.",
+      "status": {
+        "active": "செயலில்",
+        "on_leave": "விடுமுறையில்",
+        "inactive": "செயலற்ற"
+      },
+      "role": {
+        "admin": "நிர்வாகி",
+        "dispatcher": "விடையாளர்",
+        "employee": "பணியாளர்",
+        "auditor": "தணிக்கையாளர்",
+        "customer_contact": "வாடிக்கையாளர் தொடர்பு"
+      },
+      "service": {
+        "priya": "பிரியா",
+        "alltagshilfe": "அல்டாக்ஷில்பே"
+      },
+      "detail": {
+        "contactSection": "தொடர்பு",
+        "email": "மின்னஞ்சல்",
+        "phone": "தொலைபேசி",
+        "employmentSection": "வேலைவாய்ப்பு",
+        "employmentType": "வகை",
+        "weeklyHoursTarget": "வாராந்திர மணிநேரம்",
+        "contractStart": "ஒப்பந்த ஆரம்பம்",
+        "skillsSection": "திறன்கள்",
+        "notesSection": "குறிப்புகள்"
+      }
+    },
+    "properties": {
+      "title": "சொத்துகள்",
+      "searchPlaceholder": "பெயர், முகவரி அல்லது நகரம்…",
+      "emptyTitle": "சொத்துகள் இல்லை",
+      "emptyBody": "தேடலை மாற்றவும்.",
+      "notFoundTitle": "சொத்து இல்லை",
+      "notFoundBody": "சொத்து அகற்றப்பட்டிருக்கலாம்.",
+      "detail": {
+        "locationSection": "இடம்",
+        "address": "முகவரி",
+        "client": "வாடிக்கையாளர்",
+        "kind": "வகை",
+        "weeklyFrequency": "வாராந்திர அதிர்வெண்",
+        "freqEveryWeeks": "ஒவ்வொரு {n} வாரம்",
+        "accessSection": "அணுகல்",
+        "keyHolder": "சாவி வைத்திருப்பவர்",
+        "alarmNotes": "அலாரம் / அணுகல் குறிப்புகள்",
+        "notesSection": "குறிப்புகள்"
+      }
+    },
+    "invoices": {
+      "title": "பட்டியல்கள்",
+      "filter": {
+        "all": "அனைத்தும்",
+        "draft": "வரைவு",
+        "sent": "அனுப்பப்பட்டது",
+        "paid": "கட்டப்பட்டது",
+        "overdue": "தாமதம்"
+      },
+      "status": {
+        "draft": "வரைவு",
+        "sent": "அனுப்பப்பட்டது",
+        "paid": "கட்டப்பட்டது",
+        "overdue": "தாமதம்",
+        "cancelled": "ரத்து"
+      },
+      "due": "காலாவதி",
+      "emptyTitle": "பட்டியல்கள் இல்லை",
+      "emptyBody": "வேறு நிலை வடிகட்டி முயற்சிக்கவும்.",
+      "notFoundTitle": "பட்டியல் இல்லை",
+      "notFoundBody": "பட்டியல் நீக்கப்பட்டிருக்கலாம்.",
+      "detail": {
+        "metaSection": "விவரங்கள்",
+        "issueDate": "வெளியிட்ட தேதி",
+        "dueDate": "காலாவதி தேதி",
+        "period": "பட்டியல் காலம்",
+        "paidAt": "கட்டப்பட்ட நேரம்",
+        "lexwareSynced": "Lexware ஒத்திசைவு",
+        "notSynced": "ஒத்திசைக்கப்படவில்லை",
+        "itemsSection": "வரிகள் ({n})",
+        "itemsEmpty": "இந்த பட்டியலில் வரிகள் இல்லை."
+      }
+    },
+    "reports": {
+      "alltagshilfeTitle": "மாதாந்திர அறிக்கை · அல்டாக்ஷில்பே",
+      "totalHours": "மொத்த மணிநேரம்",
+      "totalVisits": "மொத்த வருகைகள்",
+      "clientsCount": "வாடிக்கையாளர்கள்",
+      "byClient": "வாடிக்கையாளர்படி",
+      "visitsCount": "{n} வருகை(கள்)",
+      "emptyTitle": "இந்த மாதம் அங்கீகரிக்கப்பட்ட ஷிப்ட்கள் இல்லை",
+      "emptyBody": "முதலில் ஷிப்ட்களை அங்கீகரிக்கவும்."
+    },
+    "training": {
+      "title": "பயிற்சி",
+      "progressLabel": "கட்டாய வீடியோக்கள் நிறைவு",
+      "allDoneHint": "எல்லாம் புதுப்பிக்கப்பட்டது.",
+      "notDoneHint": "திட்டமிடலை திறக்க அனைத்தையும் நிறைவு செய்யவும்.",
+      "emptyTitle": "பயிற்சி தொகுதிகள் இல்லை",
+      "emptyBody": "மேலாளர் ஒதுக்கும் வரை காத்திருக்கவும்.",
+      "mandatory": "கட்டாயம்",
+      "status": {
+        "notStarted": "தொடங்கவில்லை",
+        "inProgress": "நடந்து கொண்டிருக்கிறது",
+        "done": "நிறைவு"
+      },
+      "watchCta": "வீடியோ பார்",
+      "noVideoUrl": "வீடியோ URL இல்லை",
+      "markCompletedCta": "நிறைவு எனக் குறி"
     }
   }
 }
