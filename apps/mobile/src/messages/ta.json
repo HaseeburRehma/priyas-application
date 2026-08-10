@@ -3109,5 +3109,50 @@
     "teamUtilTitle": "இந்த வார குழு பயன்பாடு",
     "teamUtilSubtitle": "வேலை மணிநேரம் vs இலக்கு.",
     "teamUtilEmpty": "செயலில் குழு உறுப்பினர்கள் இல்லை."
+  },
+  "mobile": {
+    "clients": {
+      "headerSummary": "{total} வாடிக்கையாளர்கள் · {priya} பிரியா · {alltags} அல்டாக்ஷில்பே",
+      "searchPlaceholder": "பெயர், மின்னஞ்சல் அல்லது தொலைபேசி…",
+      "filter": {
+        "all": "அனைத்தும்",
+        "residential": "தனிநபர்",
+        "commercial": "நிறுவனம்",
+        "alltagshilfe": "அல்டாக்ஷில்பே"
+      },
+      "rowProperties": "{n} சொத்து",
+      "tagPriya": "பிரியா",
+      "tagAlltagshilfe": "அல்டாக்ஷில்பே",
+      "payer": {
+        "care_fund": "பராமரிப்பு நிதி",
+        "insurance": "காப்பீடு",
+        "private_pay": "தனிநபர் செலுத்துபவர்",
+        "commercial": "வர்த்தக"
+      },
+      "emptyTitle": "வாடிக்கையாளர்கள் இல்லை",
+      "emptyBody": "வடிகட்டி அல்லது தேடலை மாற்றவும்.",
+      "errorTitle": "ஏற்ற முடியவில்லை",
+      "errorBody": "இணைப்பை சரிபார்த்து மீண்டும் முயற்சிக்கவும்.",
+      "notFoundTitle": "வாடிக்கையாளர் இல்லை",
+      "notFoundBody": "வாடிக்கையாளர் காப்பகப்படுத்தப்பட்டிருக்கலாம்.",
+      "detail": {
+        "contactSection": "தொடர்பு",
+        "address": "முகவரி",
+        "email": "மின்னஞ்சல்",
+        "phone": "தொலைபேசி",
+        "careSection": "பராமரிப்பு & காப்பீடு",
+        "insuranceProvider": "காப்பீடு",
+        "insuranceNumber": "காப்பீட்டு எண்",
+        "careLevel": "பராமரிப்பு நிலை",
+        "propertiesSection": "சொத்துக்கள் ({n})",
+        "propertiesEmpty": "இதுவரை சொத்துக்கள் இல்லை.",
+        "notesSection": "குறிப்புகள்"
+      }
+    },
+    "outbox": {
+      "pendingBanner": "{n} செயல்(கள்) ஒத்திசைவுக்காக காத்திருக்கின்றன",
+      "syncingNow": "ஒத்திசைக்கிறது…",
+      "syncedToast": "{n} செயல்(கள்) ஒத்திசைக்கப்பட்டன."
+    }
   }
 }

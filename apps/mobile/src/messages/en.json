@@ -3109,5 +3109,50 @@
     "teamUtilTitle": "Team utilisation this week",
     "teamUtilSubtitle": "Hours worked vs weekly target.",
     "teamUtilEmpty": "No active team members yet."
+  },
+  "mobile": {
+    "clients": {
+      "headerSummary": "{total} clients · {priya} Priya · {alltags} Alltagshilfe",
+      "searchPlaceholder": "Search name, email or phone…",
+      "filter": {
+        "all": "All",
+        "residential": "Private",
+        "commercial": "Company",
+        "alltagshilfe": "Alltagshilfe"
+      },
+      "rowProperties": "{n} property(ies)",
+      "tagPriya": "Priya",
+      "tagAlltagshilfe": "Alltagshilfe",
+      "payer": {
+        "care_fund": "Care fund",
+        "insurance": "Health insurance",
+        "private_pay": "Private pay",
+        "commercial": "Commercial"
+      },
+      "emptyTitle": "No clients found",
+      "emptyBody": "Adjust the filter or search.",
+      "errorTitle": "Failed to load",
+      "errorBody": "Please check your connection and try again.",
+      "notFoundTitle": "Client not found",
+      "notFoundBody": "The client may have been archived.",
+      "detail": {
+        "contactSection": "Contact",
+        "address": "Address",
+        "email": "Email",
+        "phone": "Phone",
+        "careSection": "Care & insurance",
+        "insuranceProvider": "Health insurance",
+        "insuranceNumber": "Insurance number",
+        "careLevel": "Care level",
+        "propertiesSection": "Properties ({n})",
+        "propertiesEmpty": "No properties on file yet.",
+        "notesSection": "Notes"
+      }
+    },
+    "outbox": {
+      "pendingBanner": "{n} action(s) waiting to sync",
+      "syncingNow": "Syncing now…",
+      "syncedToast": "{n} action(s) synced."
+    }
   }
 }

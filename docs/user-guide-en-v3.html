@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Priya's Reinigungsservice — Operator Guide (v3)</title>
+<style>
+  @page { size: A4; margin: 20mm 18mm 22mm 18mm; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    color: #1e293b;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    margin: 0;
+  }
+  h1, h2, h3, h4 { color: #16587C; font-weight: 700; letter-spacing: -0.01em; }
+  h1 { font-size: 26pt; margin: 0 0 4pt 0; }
+  h2 {
+    font-size: 16pt;
+    margin: 22pt 0 6pt 0;
+    padding-bottom: 5pt;
+    border-bottom: 2px solid #72A94F;
+    page-break-after: avoid;
+  }
+  h3 { font-size: 12.5pt; margin: 14pt 0 4pt 0; color: #0f172a; page-break-after: avoid; }
+  h4 { font-size: 11pt; margin: 10pt 0 3pt 0; color: #334155; page-break-after: avoid; }
+  p { margin: 0 0 7pt 0; }
+  ul, ol { margin: 0 0 8pt 20pt; padding: 0; }
+  li { margin: 0 0 3pt 0; }
+  code {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 9.5pt;
+    background: #f1f5f9;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #0f172a;
+  }
+  .cover {
+    background: linear-gradient(135deg, #16587C 0%, #0f4661 100%);
+    color: #f8fafc;
+    padding: 42pt 34pt;
+    border-radius: 8pt;
+    margin-bottom: 20pt;
+  }
+  .cover h1 { color: #ffffff; font-size: 32pt; margin: 0 0 6pt 0; }
+  .cover .sub { color: #cbd5e1; font-size: 12pt; font-weight: 500; }
+  .cover .meta { color: #94a3b8; font-size: 9pt; margin-top: 20pt; }
+  .badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    padding: 3pt 9pt;
+    border-radius: 999px;
+    font-size: 9pt;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-right: 6pt;
+  }
+  .callout {
+    border-left: 4px solid #72A94F;
+    background: #f0fdf4;
+    padding: 8pt 12pt;
+    border-radius: 0 4pt 4pt 0;
+    margin: 10pt 0;
+    font-size: 10pt;
+  }
+  .callout-blue { border-left-color: #16587C; background: #eff6ff; }
+  .callout-amber { border-left-color: #d97706; background: #fffbeb; }
+  .callout-red { border-left-color: #dc2626; background: #fef2f2; }
+  .callout strong { color: #0f172a; }
+  .tag {
+    display: inline-block;
+    padding: 1pt 6pt;
+    font-size: 8.5pt;
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .tag-priya { background: #f0fdf4; color: #166534; }
+  .tag-alltags { background: #fef2f2; color: #991b1b; }
+  .tag-blue { background: #eff6ff; color: #1e40af; }
+  .tag-amber { background: #fffbeb; color: #92400e; }
+  .tag-gray { background: #f1f5f9; color: #475569; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 6pt 0 12pt 0;
+    font-size: 10pt;
+  }
+  th, td {
+    text-align: left;
+    padding: 6pt 8pt;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: top;
+  }
+  th { background: #f8fafc; font-weight: 600; color: #334155; }
+  ol.numbered { counter-reset: step; list-style: none; margin-left: 0; padding-left: 0; }
+  ol.numbered > li {
+    counter-increment: step;
+    position: relative;
+    padding: 6pt 0 6pt 34pt;
+    margin: 0 0 4pt 0;
+    border-bottom: 1px dashed #e2e8f0;
+  }
+  ol.numbered > li:last-child { border-bottom: none; }
+  ol.numbered > li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 6pt;
+    width: 22pt;
+    height: 22pt;
+    border-radius: 50%;
+    background: #16587C;
+    color: white;
+    text-align: center;
+    line-height: 22pt;
+    font-weight: 700;
+    font-size: 10pt;
+  }
+  .toc { columns: 2; column-gap: 22pt; font-size: 10pt; }
+  .toc a { color: #16587C; text-decoration: none; }
+  .toc .row { break-inside: avoid; padding: 3pt 0; }
+  .field-row {
+    display: grid;
+    grid-template-columns: 32% 68%;
+    gap: 6pt 10pt;
+    font-size: 10pt;
+    border-bottom: 1px dashed #e2e8f0;
+    padding: 5pt 0;
+  }
+  .field-row .k { font-weight: 600; color: #334155; }
+  .field-row .v { color: #475569; }
+  .role-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10pt;
+    margin: 8pt 0;
+  }
+  .role-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 6pt;
+    padding: 10pt;
+    font-size: 9.5pt;
+  }
+  .role-card h4 { margin-top: 0; color: #16587C; }
+  .role-card ul { margin: 4pt 0 0 16pt; }
+  .kpi-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 8pt;
+    margin: 6pt 0 10pt 0;
+  }
+  .kpi {
+    border: 1px solid #e2e8f0;
+    border-radius: 6pt;
+    padding: 8pt 10pt;
+    background: #f8fafc;
+  }
+  .kpi .n { font-size: 20pt; font-weight: 700; color: #16587C; line-height: 1.1; }
+  .kpi .l { font-size: 8.5pt; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2pt; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 18pt 0; }
+  .small { font-size: 9pt; color: #64748b; }
+  .footer-note { font-size: 8.5pt; color: #94a3b8; text-align: center; margin-top: 20pt; }
+  .page-break { page-break-after: always; }
+  .keep { page-break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div>
+    <span class="badge">Operator Guide</span>
+    <span class="badge">English · v3</span>
+  </div>
+  <h1>Running the Priya System</h1>
+  <div class="sub">A hands-on walkthrough for administrators: adding customers and employees, then scheduling them together on the weekly timeline.</div>
+  <div class="meta">Priya's Reinigungsservice · Berlin &amp; Essen · Version 3.0 · August 2026</div>
+</section>
+
+<div class="callout callout-blue" style="margin: 0 0 16pt 0;">
+  <strong>What's new in this v3 guide.</strong> The 30 Alltagshelfer customers from Priya's <em>Kundendatenliste_Alltagshelfer_Tylotech.xlsx</em> are now live in the customer list — you don't need to re-enter them. This guide also spells out, step-by-step, exactly how an administrator schedules an employee against a specific customer on the timeline (see §11 — a full worked example for Frau Hannelore Annies).
+</div>
+
+<h2 id="toc">What you'll find in this guide</h2>
+<div class="toc">
+  <div class="row">1 · <a href="#welcome">Welcome &amp; who this guide is for</a></div>
+  <div class="row">2 · <a href="#login">Signing in &amp; the dashboard</a></div>
+  <div class="row">3 · <a href="#roles">Roles and what each one can do</a></div>
+  <div class="row">4 · <a href="#customers">Where the clients list lives</a></div>
+  <div class="row">5 · <a href="#add-priya">Adding a Priya's cleaning client</a></div>
+  <div class="row">6 · <a href="#add-alltags">Adding an Alltagshilfe client</a></div>
+  <div class="row">7 · <a href="#documents">Uploading client documents</a></div>
+  <div class="row">8 · <a href="#properties">Adding properties (workplaces)</a></div>
+  <div class="row">9 · <a href="#employees">Enlisting an employee</a></div>
+  <div class="row">10 · <a href="#skills">Skills, qualifications, GPS check-in</a></div>
+  <div class="row">11 · <a href="#schedule">Scheduling — the timeline</a></div>
+  <div class="row">12 · <a href="#hours">Approving hours &amp; generating invoices</a></div>
+  <div class="row">13 · <a href="#chat">Chat, notifications &amp; mobile app</a></div>
+  <div class="row">14 · <a href="#daily">Your daily rhythm as administrator</a></div>
+  <div class="row">15 · <a href="#help">Getting help</a></div>
+  <div class="row">16 · <a href="#cheat">Administrator cheat sheet</a></div>
+</div>
+
+<hr />
+
+<h2 id="welcome">1 · Welcome &amp; who this guide is for</h2>
+<p>This guide is written for the person who runs the operations of Priya's Reinigungsservice day-to-day — assigning employees to customers, tracking hours, and making sure every visit is invoiced correctly. It covers <strong>both service lines</strong>:</p>
+<div class="role-grid" style="grid-template-columns: 1fr 1fr;">
+  <div class="role-card"><h4><span class="tag tag-priya">Priya's regular</span> Cleaning contracts</h4>
+    <p>Homes and companies that pay directly. Invoices go out automatically through Lexware.</p></div>
+  <div class="role-card"><h4><span class="tag tag-alltags">Alltagshilfe</span> Care support (§45b SGB XI)</h4>
+    <p>Elderly customers billed to the care fund. Invoices are issued manually by your team, one per calendar month.</p></div>
+</div>
+
+<div class="callout callout-blue">
+  <strong>What just changed.</strong> The 30 Alltagshelfer customers from Priya's spreadsheet have been imported, each customer now has a document file cabinet, a payer-type chip is shown on the customer list, and there is a tablet-friendly intake wizard that captures the paper Kunden-Erfassungsbogen digitally.
+</div>
+
+<h2 id="login">2 · Signing in &amp; the dashboard</h2>
+
+<ol class="numbered">
+  <li><strong>Open the app</strong> at <code>https://priyas-application.vercel.app</code> in any modern browser — Chrome, Safari, Edge or Firefox.</li>
+  <li><strong>Sign in</strong> with your work email address and password. First-time users receive an invitation email; click the link and set your password.</li>
+  <li><strong>Two-factor code.</strong> On your first sign-in you'll be asked to scan a QR code with an authenticator app (Google Authenticator, Microsoft Authenticator, or 1Password). Every future sign-in asks for a 6-digit code.</li>
+  <li><strong>Landing on the dashboard.</strong> You'll see four KPI tiles at the top, today's shifts in the middle, and the recent activity feed on the right.</li>
+</ol>
+
+<div class="kpi-row">
+  <div class="kpi"><div class="n">93</div><div class="l">Active clients</div></div>
+  <div class="kpi"><div class="n">93</div><div class="l">Properties</div></div>
+  <div class="kpi"><div class="n">18</div><div class="l">Team members</div></div>
+  <div class="kpi"><div class="n">12</div><div class="l">Today's shifts</div></div>
+</div>
+
+<div class="callout"><strong>What the KPIs mean today.</strong> 93 active clients = 63 Priya regulars + 30 Alltagshelfer just imported. 93 properties = one per Alltagshelfer + the Priya regulars' addresses. 18 team members is the current roster. The numbers are live — refresh at any time and they reflect the exact database state.</div>
+
+<h2 id="roles">3 · Roles and what each one can do</h2>
+<p>Every person in the system has one of five roles. The role decides what they can see and change.</p>
+
+<div class="role-grid">
+  <div class="role-card"><h4>Admin</h4>
+    <ul><li>Everything below, plus:</li><li>Adding &amp; removing users</li><li>Editing organisation settings</li><li>Approving invoices</li><li>Deleting records</li></ul></div>
+  <div class="role-card"><h4>Dispatcher</h4>
+    <ul><li>Creating customers &amp; properties</li><li>Uploading documents</li><li>Scheduling shifts</li><li>Approving hours</li><li>Generating invoice drafts</li></ul></div>
+  <div class="role-card"><h4>Field staff</h4>
+    <ul><li>Their own shifts</li><li>GPS check-in / -out</li><li>Damage reports</li><li>Team chat</li><li>Vacation requests</li></ul></div>
+</div>
+<div class="role-grid" style="grid-template-columns: 1fr 1fr;">
+  <div class="role-card"><h4>Auditor</h4>
+    <ul><li>Read-only access to everything</li><li>Cannot change any data</li><li>Used for Priya's monthly compliance review</li></ul></div>
+  <div class="role-card"><h4>Customer contact</h4>
+    <ul><li>Sees only their own visits</li><li>Downloads their monthly invoice</li><li>Rarely used yet — for the customer-portal roll-out later this year</li></ul></div>
+</div>
+
+<div class="callout callout-amber"><strong>Rule of thumb.</strong> If a colleague reports "I can't see the schedule button" — check their role first. Field staff intentionally see only their own shifts, not the org-wide schedule.</div>
+
+<div class="page-break"></div>
+
+<h2 id="customers">4 · Where the clients list lives</h2>
+<p>Click <strong>Clients</strong> in the left sidebar. The full list shows every client with a coloured chip that tells you at a glance:</p>
+
+<div class="field-row"><div class="k"><span class="tag tag-priya">Priya's</span></div><div class="v">Regular cleaning contract — auto-billed via Lexware</div></div>
+<div class="field-row"><div class="k"><span class="tag tag-alltags">Alltagshilfe</span></div><div class="v">Care support — one manual invoice per month per customer</div></div>
+<div class="field-row"><div class="k"><span class="tag" style="background:#f0fdf4;color:#166534">Care fund</span></div><div class="v">Payer is the Pflegekasse (Abtretungserklärung on file)</div></div>
+<div class="field-row"><div class="k"><span class="tag" style="background:#eff6ff;color:#1e40af">Health insurance</span></div><div class="v">Payer is the Krankenkasse directly</div></div>
+<div class="field-row"><div class="k"><span class="tag tag-amber">Private pay</span></div><div class="v">Customer receives the invoice themselves</div></div>
+<div class="field-row"><div class="k"><span class="tag tag-gray">Commercial</span></div><div class="v">A company is invoiced</div></div>
+
+<p style="margin-top:10pt">Above the list you can:</p>
+<ul>
+  <li>Type in the <strong>search box</strong> — matches on name, email or phone.</li>
+  <li>Filter by <strong>type</strong> (private / company / Alltagshilfe).</li>
+  <li>Filter by <strong>status</strong> — Active, Onboarding, Pending review, Ended.</li>
+  <li>Sort by <strong>name</strong> or <strong>contract start date</strong>.</li>
+  <li>Select a batch with the checkboxes and use <strong>Export CSV</strong>.</li>
+</ul>
+
+<h2 id="add-priya">5 · Adding a Priya's cleaning client</h2>
+
+<ol class="numbered">
+  <li>Click <strong>New client</strong> (top right of the Clients page).</li>
+  <li>On the picker screen, choose <strong>Priya's</strong> (the green option) → <em>Continue as Priya's</em>.</li>
+  <li>Fill in the master-data form. Fields marked with a red asterisk (<span style="color:#dc2626">*</span>) are required.</li>
+</ol>
+
+<div class="keep">
+<h4>Contact section</h4>
+<div class="field-row"><div class="k">First name <span style="color:#dc2626">*</span></div><div class="v">e.g. Maria</div></div>
+<div class="field-row"><div class="k">Last name <span style="color:#dc2626">*</span></div><div class="v">e.g. Musterfrau</div></div>
+<div class="field-row"><div class="k">Address <span style="color:#dc2626">*</span></div><div class="v">Street + number, one line — e.g. Friedrichstraße 200</div></div>
+<div class="field-row"><div class="k">Postal code <span style="color:#dc2626">*</span></div><div class="v">5 digits, e.g. 10117</div></div>
+<div class="field-row"><div class="k">City <span style="color:#dc2626">*</span></div><div class="v">e.g. Berlin</div></div>
+<div class="field-row"><div class="k">Billing address</div><div class="v">Only fill if the invoice goes to a different address (parent, holding company, tax advisor)</div></div>
+<div class="field-row"><div class="k">Email</div><div class="v">Where the invoice PDF and welcome email will go</div></div>
+<div class="field-row"><div class="k">Phone</div><div class="v">German format — the +49 prefix is added automatically</div></div>
+</div>
+
+<div class="keep">
+<h4>Service plan section</h4>
+<div class="field-row"><div class="k">Cleaning rhythm <span style="color:#dc2626">*</span></div><div class="v">Weekly · Every two weeks · Monthly · On demand</div></div>
+<div class="field-row"><div class="k">Hours per visit <span style="color:#dc2626">*</span></div><div class="v">Decimal — e.g. 2.5 for two and a half hours</div></div>
+<div class="field-row"><div class="k">Agreed hourly rate <span style="color:#dc2626">*</span></div><div class="v">Net (without 19 % VAT). VAT is added automatically on the invoice.</div></div>
+<div class="field-row"><div class="k">Contract start <span style="color:#dc2626">*</span></div><div class="v">Date the first shift can be scheduled from</div></div>
+<div class="field-row"><div class="k">Notes</div><div class="v">Anything the team should know before their first visit — key location, allergies, morning-only preference…</div></div>
+</div>
+
+<ol class="numbered" start="4">
+  <li>Click <strong>Continue to confirmation →</strong> at the bottom.</li>
+  <li>Review the summary panel on the right. If it all looks right, click <strong>Save</strong>.</li>
+  <li>You'll land on the new customer's detail page. A welcome email is automatically sent to the address above (if provided) and a Lexware debtor account is created in the background.</li>
+</ol>
+
+<div class="callout"><strong>What happens next.</strong> The customer immediately appears in the customer list with a green Priya's chip. The first shift can be booked from the Schedule tab as soon as a property has been created (see §8).</div>
+
+<div class="page-break"></div>
+
+<h2 id="add-alltags">6 · Adding an Alltagshilfe client</h2>
+
+<p>The 30 Alltagshelfer customers from Priya's Kundendatenliste have already been imported — you shouldn't need to add those again. Use this flow for <strong>new</strong> Alltagshilfe customers going forward. It replaces the paper Kunden-Erfassungsbogen — everything from that form is captured on screen.</p>
+
+<ol class="numbered">
+  <li>Click <strong>New client</strong>, then choose <strong>Alltagshilfe</strong> (the red option).</li>
+  <li>The wizard now has <strong>five sections</strong> — go top to bottom.</li>
+</ol>
+
+<div class="keep">
+<h4>1. Contact — the person receiving care</h4>
+<div class="field-row"><div class="k">Salutation</div><div class="v">Herr or Frau</div></div>
+<div class="field-row"><div class="k">First name <span style="color:#dc2626">*</span></div><div class="v"></div></div>
+<div class="field-row"><div class="k">Last name <span style="color:#dc2626">*</span></div><div class="v"></div></div>
+<div class="field-row"><div class="k">Customer number</div><div class="v">Optional internal reference. If Priya assigns 5-digit numbers (10052, 10053…), fill it here so the row is unique.</div></div>
+<div class="field-row"><div class="k">Address, PLZ, City <span style="color:#dc2626">*</span></div><div class="v">Where the visits take place</div></div>
+<div class="field-row"><div class="k">Date of birth <span style="color:#dc2626">*</span></div><div class="v">Format: DD.MM.YYYY</div></div>
+<div class="field-row"><div class="k">Email &amp; phone</div><div class="v">Optional — often the family, not the customer</div></div>
+</div>
+
+<div class="keep">
+<h4>2. Care &amp; insurance</h4>
+<div class="field-row"><div class="k">Krankenkasse <span style="color:#dc2626">*</span></div><div class="v">Pick from the dropdown (AOK, Barmer, TK, DAK, IKK…). Choose <em>Andere</em> for anything not listed.</div></div>
+<div class="field-row"><div class="k">Versicherungsnummer <span style="color:#dc2626">*</span></div><div class="v">The 10-character number from the insurance card (starts with a letter)</div></div>
+<div class="field-row"><div class="k">Pflegegrad <span style="color:#dc2626">*</span></div><div class="v">Tap 1 to 5 — the button turns red when selected</div></div>
+<div class="field-row"><div class="k">Abtretungserklärung <span style="color:#dc2626">*</span></div><div class="v">Yes = we can bill the care fund directly. No = the customer pays first and files a reimbursement.</div></div>
+</div>
+
+<div class="keep">
+<h4>3. Intake wizard — what came out of the first meeting</h4>
+<div class="field-row"><div class="k">Payer</div><div class="v">Pflegekasse · Krankenkasse · Selbstzahler · Gewerblich</div></div>
+<div class="field-row"><div class="k">Billing type</div><div class="v">§45b (Entlastungsbetrag) · §39 (Verhinderungspflege) · both</div></div>
+<div class="field-row"><div class="k">Legal representative</div><div class="v">Name and phone of a caregiver / son / daughter / legal guardian — the person we call if the customer is not reachable</div></div>
+<div class="field-row"><div class="k">Desired services</div><div class="v">Multi-select: Shopping · Cooking · Cleaning · Laundry · Companionship · Walks · Doctor visits · Authority visits · Reading aloud · Conversation</div></div>
+<div class="field-row"><div class="k">Preferred hours / week</div><div class="v">e.g. 4</div></div>
+<div class="field-row"><div class="k">Preferred days</div><div class="v">Tap Mon–Sun tiles to select</div></div>
+<div class="field-row"><div class="k">Preferred times</div><div class="v">Free text — e.g. "Mornings 9–12"</div></div>
+<div class="field-row"><div class="k">Conversation notes</div><div class="v">Anything else important from the first visit</div></div>
+</div>
+
+<div class="keep">
+<h4>4. Care plan</h4>
+<div class="field-row"><div class="k">Rhythm <span style="color:#dc2626">*</span></div><div class="v">Usually every two weeks for Alltagshilfe</div></div>
+<div class="field-row"><div class="k">Hours per visit <span style="color:#dc2626">*</span></div><div class="v">Duration of each visit — typically 1.5 to 3 hours</div></div>
+<div class="field-row"><div class="k">Contract signed?</div><div class="v">Yes = start immediately. No = the welcome pack goes with the caregiver on the first visit.</div></div>
+</div>
+
+<h4>5. Notes</h4>
+<p class="small">Anything the visiting caregiver needs to know — mobility limits, diabetes, keys with the neighbour, hearing aid required, etc.</p>
+
+<ol class="numbered" start="3">
+  <li>Click <strong>Continue to confirmation →</strong>. Review the summary; save.</li>
+  <li>The customer appears on the list with a <span class="tag tag-alltags">Alltagshilfe</span> chip and the payer chip you selected.</li>
+</ol>
+
+<div class="callout callout-red"><strong>Never</strong> route an Alltagshilfe invoice to Lexware. The system enforces this automatically, but if you see a Lexware sync error on an Alltagshilfe customer, escalate it — do not override.</div>
+
+<div class="page-break"></div>
+
+<h2 id="documents">7 · Uploading client documents</h2>
+<p>Every customer now has a digital file cabinet — the paper folders your team keeps today can move into the app so anyone can find them in seconds.</p>
+
+<ol class="numbered">
+  <li>Open a customer. Scroll to the <strong>Documents</strong> card.</li>
+  <li>Pick a <strong>category</strong> from the dropdown:
+    <ul>
+      <li><strong>Contract</strong> — signed service agreement</li>
+      <li><strong>Form</strong> — care-fund forms, tax forms</li>
+      <li><strong>Decision</strong> — Pflegegradbescheid from the Krankenkasse</li>
+      <li><strong>ID card</strong> — copy of the customer's ID or insurance card</li>
+      <li><strong>Invoice</strong> — a copy of an outgoing bill</li>
+      <li><strong>Photo</strong> — before / after photos, meter readings, key photos</li>
+      <li><strong>Other</strong> — anything else</li>
+    </ul>
+  </li>
+  <li>Add an optional <strong>note</strong> — up to 80 characters.</li>
+  <li>Click <strong>Upload file</strong>. Accepted formats: PDF, JPG, PNG, HEIC, Word (doc / docx), Excel (xls / xlsx). Maximum 50 MB per file.</li>
+</ol>
+
+<div class="callout callout-blue"><strong>Privacy.</strong> Files are stored in a private storage bucket. The link that appears when you click <strong>Open</strong> is only valid for 60 seconds and cannot be forwarded — every viewer gets their own signed URL.</div>
+
+<p>To view a document again later, click <strong>Open</strong> — it opens in a new tab. To remove one, click <strong>Delete</strong> (a manager permission).</p>
+
+<h2 id="properties">8 · Adding properties (workplaces)</h2>
+<p>A property is <strong>the actual address where a visit happens</strong>. Most Alltagshilfe customers have a single property (their apartment). Companies often have several buildings under one contract.</p>
+
+<ol class="numbered">
+  <li>From the customer detail page, click <strong>Properties</strong> in the top tab bar, then <strong>Add property</strong>.</li>
+  <li>Fill in:
+    <ul>
+      <li><strong>Property name</strong> — e.g. "Onkenstraße 12 – EG links"</li>
+      <li><strong>Address, PLZ, City</strong></li>
+      <li><strong>Kind</strong> — Apartment, House, Office, Commercial, Care home…</li>
+      <li><strong>Weekly frequency</strong> — 1 for weekly, 0.5 for every two weeks</li>
+      <li><strong>Access notes</strong> — key location, alarm code, parking, dog</li>
+    </ul>
+  </li>
+  <li>Save. The property is now bookable on the schedule.</li>
+</ol>
+
+<div class="callout"><strong>Why properties matter.</strong> Shifts are always attached to a property, never to a customer directly. This means the app can show the field staff exactly where to go and, later, the GPS check-in verifies they arrived at the right address.</div>
+
+<h2 id="employees">9 · Enlisting an employee</h2>
+
+<ol class="numbered">
+  <li>Click <strong>Employees</strong> in the sidebar → <strong>Invite employee</strong> (top right).</li>
+  <li>Fill in the master data:</li>
+</ol>
+
+<div class="field-row"><div class="k">First name <span style="color:#dc2626">*</span></div><div class="v"></div></div>
+<div class="field-row"><div class="k">Last name <span style="color:#dc2626">*</span></div><div class="v"></div></div>
+<div class="field-row"><div class="k">Email <span style="color:#dc2626">*</span></div><div class="v">This becomes their sign-in address</div></div>
+<div class="field-row"><div class="k">Phone</div><div class="v">Used for shift notifications by SMS if push is unavailable</div></div>
+<div class="field-row"><div class="k">Role <span style="color:#dc2626">*</span></div><div class="v">Admin · Dispatcher · Field staff · Auditor · Customer contact</div></div>
+<div class="field-row"><div class="k">Service line <span style="color:#dc2626">*</span></div><div class="v">Priya's (regular) · Alltagshilfe (qualified care)</div></div>
+<div class="field-row"><div class="k">Employment type <span style="color:#dc2626">*</span></div><div class="v">Minijob · Teilzeit · Vollzeit · Freelance</div></div>
+<div class="field-row"><div class="k">Contract start</div><div class="v">Date they can be scheduled from</div></div>
+<div class="field-row"><div class="k">Hourly cost</div><div class="v">Internal — used for margin reports, never shown to the customer</div></div>
+<div class="field-row"><div class="k">Weekly hours target</div><div class="v">For Teilzeit / Vollzeit — the app warns when the schedule exceeds this</div></div>
+
+<ol class="numbered" start="3">
+  <li>Click <strong>Save</strong>. The system sends an invitation email — the person clicks the link, sets a password, and sets up 2FA.</li>
+  <li>They now appear in the Employees list. Field-staff status turns green once they have signed in for the first time.</li>
+</ol>
+
+<div class="callout callout-amber"><strong>Alltagshilfe rule.</strong> Only employees whose service line is <strong>Alltagshilfe</strong> can be scheduled for Alltagshilfe customers. The schedule form hides ineligible staff automatically — this prevents cleaning-only staff from being sent to a care visit.</div>
+
+<div class="page-break"></div>
+
+<h2 id="skills">10 · Skills, qualifications, GPS check-in</h2>
+<p>On any employee's detail page you'll see three cards below the master data.</p>
+
+<h3>Skills &amp; qualifications</h3>
+<p>Click <strong>Add skill</strong>. Common tags: <em>window cleaning</em>, <em>industrial floor</em>, <em>car driver</em>, <em>bilingual DE/TR</em>, <em>bilingual DE/AR</em>, <em>certified Alltagshelfer §45a</em>, <em>Erste-Hilfe-Kurs</em>. Skills feed the search box on the schedule — you can filter available staff by skill.</p>
+
+<h3>Training progress</h3>
+<p>Onboarding videos plus their completion state. New employees are locked out of scheduling until all mandatory videos are watched. You can waive individual videos with a manager note.</p>
+
+<h3>Documents</h3>
+<p>Same file cabinet as customers, scoped to the employee — contract, tax card (Lohnsteuerbescheinigung), Führungszeugnis, driver's licence copy, etc.</p>
+
+<h3>How GPS check-in works</h3>
+<ol class="numbered">
+  <li>The employee opens the mobile app on their phone (Android or iPhone).</li>
+  <li>They tap the day's shift → <strong>Clock in</strong>.</li>
+  <li>The app captures their current GPS coordinates and compares them against the property's address.</li>
+  <li>If they are within 300 metres, the shift starts. If not, the app asks them to confirm they are actually on site — the discrepancy is logged.</li>
+  <li>Breaks and clock-out work the same way.</li>
+</ol>
+
+<h2 id="schedule">11 · Scheduling — the timeline</h2>
+<p>This is where you spend most of your day as an administrator.</p>
+
+<ol class="numbered">
+  <li>Click <strong>Schedule</strong> in the sidebar.</li>
+  <li>The default view is the <strong>current week</strong>, employees down the left, days across the top. Each cell is one day.</li>
+  <li>Switch view modes at the top:
+    <ul>
+      <li><strong>Week</strong> — the operational planning view</li>
+      <li><strong>Day</strong> — zoomed to today, with hourly detail</li>
+      <li><strong>Month</strong> — bird's-eye view for spotting gaps</li>
+    </ul>
+  </li>
+  <li>Filter buttons above the grid narrow the list by service line (Priya's / Alltagshilfe), role, or skill.</li>
+</ol>
+
+<h3>Creating one shift</h3>
+<ol class="numbered">
+  <li>Click an <strong>empty cell</strong> at the employee × day intersection you want. The dialog is titled <strong>Plan shift</strong> with the hint <em>"Set property, staff member and time range."</em></li>
+  <li>Fill:
+    <ul>
+      <li><strong>Property</strong> — pick from the dropdown; only properties the chosen employee is qualified for appear</li>
+      <li><strong>Employee</strong> — leave as-is for the row you clicked, or choose another (including <em>— No employee (open) —</em> if you're pre-booking)</li>
+      <li><strong>Date</strong>, <strong>Start</strong>, <strong>End</strong> — the app validates that End is after Start</li>
+      <li><strong>Notes</strong> — access, notes, special requests</li>
+    </ul>
+  </li>
+  <li>Click <strong>Create shift</strong>. The toast <em>"Shift planned."</em> confirms; the block appears on the grid — <span class="tag tag-priya">green</span> for Priya's, <span class="tag tag-alltags">red</span> for Alltagshilfe.</li>
+  <li>A push notification lands on the employee's phone; the shift also shows in their <strong>My schedule</strong> tab.</li>
+</ol>
+
+<h3>Editing or moving a shift</h3>
+<ul>
+  <li>Click a shift block to open its detail — the same dialog appears with actions <strong>Reschedule shift</strong>, <strong>Reassign shift</strong>, <strong>Cancel shift</strong>, or <strong>Delete</strong>.</li>
+  <li>Drag a block to another cell to move it (the employee whose row it lands in becomes the new assignee); the toast reads <em>"Shift moved."</em> or <em>"Shift reassigned."</em></li>
+  <li>Cancelling asks to confirm — the row stays visible for audit. Deleting asks a stronger confirmation because it cannot be undone.</li>
+</ul>
+
+<h3>What the dialog checks before saving</h3>
+<ul>
+  <li><strong>End must be after start</strong> — inline error otherwise.</li>
+  <li><strong>Employee qualification</strong> — the property dropdown is filtered to properties the chosen employee is qualified for, with the hint <em>"Pick a property {name} is qualified for."</em></li>
+  <li>If a save fails for any other reason (permission, network), the toast reads <em>"Save failed."</em> — the shift is not created and you keep your inputs.</li>
+</ul>
+
+<div class="callout callout-blue"><strong>Every shift is one row today.</strong> There is no series-builder yet — for a recurring visit, click the same time slot on each future date. A one-click "repeat every 2 weeks" flow is planned.</div>
+
+<h3>Worked example — booking Frau Hannelore Annies (Kundennummer 10008)</h3>
+<p>Say Frau Annies (Onkenstraße 12, 45144 Essen — one of the 30 imported Alltagshelfer customers) asks for a Tuesday morning visit every two weeks with Aylin from your care team. Here is the exact click-path:</p>
+
+<ol class="numbered">
+  <li><strong>Verify the customer is in the list.</strong> Click <strong>Clients</strong>, filter by <em>Alltagshilfe</em>. Type "Annies" in the search — the row shows a red Alltagshilfe chip and (because she is private-pay) an amber Private pay chip.</li>
+  <li><strong>Confirm the property exists.</strong> Click her row → <strong>Properties</strong> tab. The import created one automatically at Onkenstraße 12; if you need a second (e.g. she moves), click <em>Add property</em> here first.</li>
+  <li><strong>Open the schedule.</strong> Click <strong>Schedule</strong> in the sidebar. In the top filter bar, select <em>Alltagshilfe</em> — only the 8 qualified care staff remain visible.</li>
+  <li><strong>Pick the intersection.</strong> Find Aylin's row and this coming <em>Tuesday</em> column. Click the empty cell.</li>
+  <li><strong>Fill the Plan shift dialog:</strong>
+    <ul>
+      <li><strong>Property:</strong> pick Onkenstraße 12 from the <em>Choose a property…</em> dropdown (this is Frau Annies' address).</li>
+      <li><strong>Employee:</strong> auto-fills to Aylin because you clicked her row.</li>
+      <li><strong>Date, Start, End:</strong> Tuesday · 09:00 · 11:00 (a 2-hour visit is typical for Alltagshilfe).</li>
+      <li><strong>Notes:</strong> anything for Aylin she can't guess from the property notes.</li>
+    </ul>
+  </li>
+  <li><strong>Click Create shift.</strong> One red block appears on Aylin's row and the toast reads <em>"Shift planned."</em> A push notification lands on Aylin's phone; the shift also appears in her mobile <em>My schedule</em>.</li>
+  <li><strong>Recurring?</strong> For a fortnightly plan, repeat step 5 for each Tuesday you want to book (each shift is one saved row today; a repeating-series builder is on the roadmap).</li>
+</ol>
+
+<div class="callout callout-amber"><strong>What the app blocks — and why.</strong> If you pick a cleaning-only employee instead of Aylin, the save fails with <em>"Only Alltagshilfe-qualified staff can be scheduled for this customer."</em> The same guard runs in reverse: an Alltagshilfe employee <em>can</em> be booked for regular Priya visits, because being qualified for care doesn't disqualify them from cleaning work.</div>
+
+<h3>Booking a whole day for a regular Priya customer</h3>
+<p>The Priya's-side workflow is identical except for two things:</p>
+<ul>
+  <li>The customer chip on the row is <span class="tag tag-priya">green</span> instead of red.</li>
+  <li>You often set a <strong>break</strong> — 30 minutes on a 6+ hour cleaning day for legal compliance. The break is deducted automatically from the billable total.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<h2 id="hours">12 · Approving hours &amp; generating invoices</h2>
+
+<h3>End of every shift — Billing approval</h3>
+<p>When the employee clocks out, the shift lands on the <strong>Billing approval</strong> page (Schedule → Billing approval). The page title is <em>"Billing approval"</em> with the subtitle <em>"Completed shifts still waiting for billing approval."</em></p>
+<ol class="numbered">
+  <li>Each row shows <strong>Property · Employee · Date · Scheduled · Actual · Billable (hrs)</strong>.</li>
+  <li>Compare Scheduled vs. Actual. If they match the plan, click <strong>Approve</strong> — the toast reads <em>"Approved (X.X hrs)."</em></li>
+  <li>If something is wrong, click <strong>Reject</strong>, fill the required reason and confirm — the shift returns to the employee for correction.</li>
+  <li>When the list is empty you'll see <em>"No shifts to approve. Completed shifts appear here automatically."</em></li>
+  <li>Approved shifts are locked and ready to be billed. Use the button <strong>Go to "New invoice" →</strong> at the top of the page to walk one client through invoicing next.</li>
+</ol>
+
+<h3>End of every month — Priya's regular clients (Monthly Lexware billing)</h3>
+<ol class="numbered">
+  <li>Click <strong>Invoices</strong> in the sidebar (or the <strong>Monthly Lexware billing</strong> page directly). Subtitle: <em>"Generate monthly invoices from completed shifts and push them to Lexware Office."</em></li>
+  <li>Click <strong>Preview month</strong> — a dry-run summary shows <em>Clients to invoice</em>, <em>Total amount</em>, <em>Already invoiced</em>, and any <em>Errors</em>.</li>
+  <li>If the preview looks right, click <strong>Generate now</strong>, then <strong>Generate</strong> in the confirmation. The system creates one <span class="tag tag-gray">Draft</span> invoice per client with approved hours that month.</li>
+  <li>Review each draft. Use the top-right bulk button <strong>Lexware Sync</strong> to push all pending invoices — the toast reads <em>"Pushed X to Lexware."</em> The chip on synced rows turns <span class="tag tag-amber">Sent</span>.</li>
+  <li>Once Lexware reports payment back, the chip flips to <span style="color:#166534;font-weight:600">Paid</span>; anything unpaid after 14 days becomes <span style="color:#991b1b;font-weight:600">Overdue</span>.</li>
+</ol>
+
+<h3>End of every month — Alltagshilfe clients (manual insurer invoice)</h3>
+<ol class="numbered">
+  <li>Open <strong>Reports</strong> → <strong>Alltagshilfe monthly report</strong> (breadcrumb: <em>Overview → Reports → Alltagshilfe monthly report</em>).</li>
+  <li>The page runs automatically month-end and is titled <em>"Monthly report"</em> with the note <em>"Hours delivered per Alltagshilfe client · ready for manual invoicing."</em> The banner says <em>Auto-generated</em>.</li>
+  <li>Use the report to create one manual invoice per insurer in Lexware and attach the report PDF/CSV per the email footer instructions: <em>"1) Review the report, 2) Create one invoice per insurance company manually in Lexware, 3) …"</em></li>
+</ol>
+
+<div class="callout"><strong>Which colour means what?</strong> Grey = Draft (nothing sent yet). Amber = Sent (waiting for payment). Green = Paid. Red = Overdue (14 days after sent date).</div>
+
+<h2 id="chat">13 · Chat, notifications &amp; mobile app</h2>
+
+<h3>Team chat</h3>
+<p>Click <strong>Chat</strong> in the sidebar. There's one <strong>#general</strong> channel plus channels per customer and per property. Post a message once, everyone with access to that scope sees it.</p>
+
+<h3>Notifications</h3>
+<p>The bell icon top-right shows all notifications aimed at you — new customer added, shift approved / rejected, damage report, vacation request. Click one to jump straight to the record.</p>
+
+<h3>Mobile app</h3>
+<p>Every employee installs the Priya app on their phone (Android or iPhone). It gives them:</p>
+<ul>
+  <li>Today's shifts with turn-by-turn directions</li>
+  <li>GPS-verified clock in / out / break</li>
+  <li>Camera-first damage reports</li>
+  <li>Team chat with typing indicators</li>
+  <li>Vacation requests</li>
+</ul>
+<p>You (as administrator) see the same schedule in the browser plus the org-wide dashboard tab in the mobile app.</p>
+
+<h2 id="daily">14 · Your daily rhythm as administrator</h2>
+<div class="role-grid" style="grid-template-columns: 1fr 1fr;">
+  <div class="role-card"><h4>Morning (15 min)</h4>
+    <ul>
+      <li>Open the Dashboard — confirm today's shifts and who checked in.</li>
+      <li>Any red "Pending" shifts? Ping the employee on Chat.</li>
+      <li>Review new customer sign-ups or damage reports overnight.</li>
+    </ul></div>
+  <div class="role-card"><h4>During the day (as needed)</h4>
+    <ul>
+      <li>Handle same-day cancellations — drag the shift to another employee or mark it as cancelled.</li>
+      <li>Approve completed shifts one by one, or in a batch at end of day.</li>
+      <li>Respond to Chat questions.</li>
+    </ul></div>
+  <div class="role-card"><h4>End of day (10 min)</h4>
+    <ul>
+      <li>Sweep the <em>Billing approval</em> queue to zero.</li>
+      <li>Post tomorrow's briefing in <strong>Team chat</strong> if anything is unusual.</li>
+    </ul></div>
+  <div class="role-card"><h4>End of month (30–45 min)</h4>
+    <ul>
+      <li>Monthly Lexware billing → <em>Preview month</em> → <em>Generate now</em>, then <strong>Lexware Sync</strong>.</li>
+      <li>Open the Alltagshilfe monthly report; create the manual insurer invoices in Lexware.</li>
+      <li>Follow up on any <span style="color:#991b1b;font-weight:600">Overdue</span> Priya invoices.</li>
+    </ul></div>
+</div>
+
+<h2 id="help">15 · Getting help</h2>
+<p>If something in the app looks wrong, or a customer / employee is missing, or a Lexware sync is stuck:</p>
+<ol>
+  <li>Check the notification bell — many issues surface here first.</li>
+  <li>Search for the customer on the Customer list — verify their status is Active, not Archived.</li>
+  <li>Look in <strong>Settings → Audit log</strong> to see what was changed and by whom.</li>
+</ol>
+
+<div class="page-break"></div>
+
+<h2 id="cheat">16 · Administrator cheat sheet — the whole flow on one page</h2>
+<p>This is the exact sequence for taking a brand-new customer from paperwork to a booked shift, and the sequence for onboarding a new employee. Keep this page open when you train someone new.</p>
+
+<div class="role-grid" style="grid-template-columns: 1fr 1fr;">
+  <div class="role-card">
+    <h4>Adding a new client &amp; their workplace</h4>
+    <ol style="margin-left:16pt;">
+      <li>Sidebar → <strong>Clients</strong> → <em>New client</em>.</li>
+      <li>Pick service line: <span class="tag tag-priya">Priya's</span> or <span class="tag tag-alltags">Alltagshilfe</span>.</li>
+      <li>Fill the master-data wizard (§5 or §6).</li>
+      <li>Save → land on the detail page.</li>
+      <li><strong>Properties</strong> tab → <em>Add property</em> (§8).</li>
+      <li><strong>Documents</strong> card → <em>Upload file</em> for contract + Pflegegradbescheid (§7).</li>
+    </ol>
+  </div>
+  <div class="role-card">
+    <h4>Adding a new employee</h4>
+    <ol style="margin-left:16pt;">
+      <li>Sidebar → <strong>Employees</strong> → <em>Invite employee</em>.</li>
+      <li>Fill master data — pick role, service line, employment type (§9).</li>
+      <li>Save → the app emails an invitation (toast: <em>"Employee created — invitation email sent."</em>).</li>
+      <li>Person clicks link, sets password, scans QR for 2FA.</li>
+      <li>On their detail page: add skills, upload contract + Führungszeugnis (§10).</li>
+      <li>Assign mandatory training videos — scheduling stays locked until watched.</li>
+    </ol>
+  </div>
+</div>
+
+<div class="role-grid" style="grid-template-columns: 1fr 1fr; margin-top: 6pt;">
+  <div class="role-card">
+    <h4>Booking one shift on the timeline</h4>
+    <ol style="margin-left:16pt;">
+      <li>Sidebar → <strong>Schedule</strong> → Week view.</li>
+      <li>Click empty cell at <em>employee × day</em> — the <strong>Plan shift</strong> dialog opens.</li>
+      <li>Property (dropdown filtered to what the employee is qualified for) → Employee → Date → Start → End → Notes.</li>
+      <li>Click <strong>Create shift</strong>. Toast: <em>"Shift planned."</em></li>
+      <li>Push notification goes to the employee's phone.</li>
+    </ol>
+  </div>
+  <div class="role-card">
+    <h4>End-of-day approval</h4>
+    <ol style="margin-left:16pt;">
+      <li>Open <strong>Schedule → Billing approval</strong>.</li>
+      <li>Each row: Property · Employee · Date · Scheduled · Actual · Billable (hrs).</li>
+      <li><em>Approve</em> when actual matches plan. <em>Reject</em> with a reason otherwise.</li>
+      <li>Approved shifts lock and become billable.</li>
+    </ol>
+  </div>
+</div>
+
+<div class="role-grid" style="grid-template-columns: 1fr 1fr; margin-top: 6pt;">
+  <div class="role-card">
+    <h4>End-of-month — Priya's regular clients</h4>
+    <ol style="margin-left:16pt;">
+      <li>Open <strong>Monthly Lexware billing</strong>.</li>
+      <li><em>Preview month</em> → review the dry-run summary.</li>
+      <li><em>Generate now</em> → creates one <span class="tag tag-gray">Draft</span> per client with approved hours.</li>
+      <li>Top-right <strong>Lexware Sync</strong> pushes all pending drafts → chip flips to <span class="tag tag-amber">Sent</span>.</li>
+      <li>Payment sync from Lexware later flips paid rows to <span style="color:#166534;font-weight:600">Paid</span>.</li>
+    </ol>
+  </div>
+  <div class="role-card">
+    <h4>End-of-month — Alltagshilfe</h4>
+    <ol style="margin-left:16pt;">
+      <li>Sidebar → <strong>Reports</strong> → <em>Alltagshilfe monthly report</em>.</li>
+      <li>Auto-generated month-end (banner: <em>Auto-generated</em>).</li>
+      <li>Use it to create one manual invoice per insurer in Lexware.</li>
+    </ol>
+  </div>
+</div>
+
+<h3>Quick colour reference</h3>
+<table>
+  <tr>
+    <th>Where you see it</th>
+    <th>Colour</th>
+    <th>Meaning</th>
+  </tr>
+  <tr><td>Clients list — type chip</td><td><span class="tag tag-priya">green</span></td><td>Priya's regular cleaning contract</td></tr>
+  <tr><td>Clients list — type chip</td><td><span class="tag tag-alltags">red</span></td><td>Alltagshilfe (§45b SGB XI)</td></tr>
+  <tr><td>Clients list — payer chip</td><td><span class="tag tag-priya">green Care fund</span></td><td>Bills the Pflegekasse (Abtretung on file)</td></tr>
+  <tr><td>Clients list — payer chip</td><td><span class="tag tag-blue">blue Health insurance</span></td><td>Bills the Krankenkasse directly</td></tr>
+  <tr><td>Clients list — payer chip</td><td><span class="tag tag-amber">amber Private pay</span></td><td>Customer receives the invoice</td></tr>
+  <tr><td>Clients list — payer chip</td><td><span class="tag tag-gray">grey Commercial</span></td><td>A company is invoiced</td></tr>
+  <tr><td>Schedule — shift block</td><td><span class="tag tag-priya">green</span></td><td>Priya's regular visit</td></tr>
+  <tr><td>Schedule — shift block</td><td><span class="tag tag-alltags">red</span></td><td>Alltagshilfe visit</td></tr>
+  <tr><td>Invoice list — status</td><td><span class="tag tag-gray">Draft</span></td><td>Not sent yet — editable</td></tr>
+  <tr><td>Invoice list — status</td><td><span class="tag tag-amber">Sent</span></td><td>Delivered, awaiting payment</td></tr>
+  <tr><td>Invoice list — status</td><td><span style="color:#166534;font-weight:600">Paid</span></td><td>Payment reconciled via Lexware</td></tr>
+  <tr><td>Invoice list — status</td><td><span style="color:#991b1b;font-weight:600">Overdue</span></td><td>14 days past sent date, no payment</td></tr>
+</table>
+
+<div class="callout callout-blue"><strong>One rule to remember.</strong> Every shift is <em>employee × property × time</em>. If any of those three is missing, the schedule won't let you save — that's a feature, not a bug.</div>
+
+<div class="footer-note">
+  Priya's Reinigungsservice · Operator Guide v3 · English · August 2026 · © 2026 Priya's Reinigungsservice, powered by TyloTech
+</div>
+
+</body>
+</html>

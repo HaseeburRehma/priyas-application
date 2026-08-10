@@ -20,6 +20,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import * as SplashScreen from "expo-splash-screen";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { loadSavedLocale, saveLocale } from "@/lib/i18n";
+import { bindOutboxAutoDrain } from "@/lib/outbox";
+import { bindNotificationTapHandler, registerPushToken } from "@/lib/push";
 import { colors } from "@/lib/theme";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -70,6 +72,22 @@ function AuthGate() {
   const { loading, session, needsTotpEnrolment } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+
+  // Register the Expo push token as soon as we have a signed-in user.
+  // Silent on Expo Go / simulators. `session?.user.id` in the deps
+  // covers sign-in and sign-out; no stale-user risk on re-sign-in.
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    void registerPushToken(session.user.id);
+  }, [session?.user?.id]);
+
+  // Bind the tap-to-open handler once — the listener stays live for
+  // the app's lifetime and self-unsubscribes on unmount.
+  useEffect(() => bindNotificationTapHandler(router), [router]);
+
+  // Drain the offline outbox on every app-foreground so queued
+  // clock-ins / damage reports sync as soon as we're reachable again.
+  useEffect(() => bindOutboxAutoDrain(), []);
 
   useEffect(() => {
     if (loading) return;

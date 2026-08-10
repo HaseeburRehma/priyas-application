@@ -5,19 +5,42 @@ Supabase project as the web app, shares the same Postgres RLS rules,
 and re-uses the same i18n keys (files under `src/messages/*.json`
 are literal copies of the web app's `messages/`).
 
-## What ships in the first delivery
+## What ships in this release
 
-- **Auth**: email + password sign-in, TOTP challenge for admin /
-  dispatcher, standalone TOTP enrolment gate on first sign-in
-  (mirrors spec §6.2).
-- **Home (My Profile)**: hours this week / this month, vacation left,
-  mandatory training count, next 5 upcoming shifts. Works for every
-  role — field staff sees only this by default.
-- **Schedule**: list of my shifts grouped by day; tap into detail.
-- **Shift detail**: GPS-verified check-in, check-out, break start,
+**Auth & shell**
+- Email + password sign-in, TOTP challenge for admin / dispatcher,
+  standalone TOTP enrolment gate on first sign-in (mirrors spec §6.2).
+- Language picker (DE · EN · TA) with SecureStore-persisted choice.
+
+**Field-staff surfaces**
+- **Home (My Profile)** — hours this week / this month, vacation left,
+  mandatory training count, next 5 upcoming shifts.
+- **Schedule** — my shifts grouped by day; tap into detail.
+- **Shift detail** — GPS-verified check-in / check-out / break start /
   break end. State machine matches the web server actions.
-- **Tab shell** for Chat, Notifications, Clients (admin+dispatcher),
-  Settings — placeholder screens ready for follow-up turns.
+- **Chat** — realtime team channels + per-property channels with typing
+  indicator (Supabase Realtime + broadcast).
+- **Damage reports** — camera-first flow with photo upload to Storage
+  and severity / category picker.
+- **Notifications** — inbox with unread badge + tap-to-open.
+- **Vacation** — request submission + status list.
+- **Settings** — My account, security (change password, revoke sessions),
+  active devices, language + sign-out.
+
+**Admin surfaces (admin + dispatcher only)**
+- **Dashboard tab** — org KPIs, team utilisation, today's staffing.
+- **Clients tab** — full roster with search + type filter (all / private /
+  company / Alltagshilfe), payer-source chip, drill-down to detail
+  (contact, care & insurance for Alltagshilfe, properties list, notes).
+
+**Infrastructure**
+- **Push notifications** — Expo push tokens registered on sign-in and
+  written to `user_devices.expo_push_token`; tap opens the deep link
+  from `notification.data.url` (`/schedule/<id>`, `/damage/<id>`, …).
+- **Offline outbox** — clock-in / clock-out / damage reports queue in
+  SecureStore when there's no connection and drain automatically on the
+  next app-foreground. Duplicate-key conflicts from double-taps or
+  retries are treated as success.
 
 ## Prerequisites
 

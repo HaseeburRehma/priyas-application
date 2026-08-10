@@ -3109,5 +3109,50 @@
     "teamUtilTitle": "Team-Auslastung diese Woche",
     "teamUtilSubtitle": "Stunden gearbeitet vs. Zielstunden.",
     "teamUtilEmpty": "Noch keine aktiven Team-Mitglieder."
+  },
+  "mobile": {
+    "clients": {
+      "headerSummary": "{total} Kunden · {priya} Priya · {alltags} Alltagshilfe",
+      "searchPlaceholder": "Name, E-Mail oder Telefon suchen…",
+      "filter": {
+        "all": "Alle",
+        "residential": "Privat",
+        "commercial": "Firma",
+        "alltagshilfe": "Alltagshilfe"
+      },
+      "rowProperties": "{n} Objekt(e)",
+      "tagPriya": "Priya",
+      "tagAlltagshilfe": "Alltagshilfe",
+      "payer": {
+        "care_fund": "Pflegekasse",
+        "insurance": "Krankenkasse",
+        "private_pay": "Selbstzahler",
+        "commercial": "Gewerblich"
+      },
+      "emptyTitle": "Keine Kunden gefunden",
+      "emptyBody": "Passen Sie den Filter oder die Suche an.",
+      "errorTitle": "Laden fehlgeschlagen",
+      "errorBody": "Bitte prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
+      "notFoundTitle": "Kunde nicht gefunden",
+      "notFoundBody": "Der Kunde wurde möglicherweise archiviert.",
+      "detail": {
+        "contactSection": "Kontakt",
+        "address": "Adresse",
+        "email": "E-Mail",
+        "phone": "Telefon",
+        "careSection": "Pflege & Krankenversicherung",
+        "insuranceProvider": "Krankenkasse",
+        "insuranceNumber": "Versicherten-Nr.",
+        "careLevel": "Pflegegrad",
+        "propertiesSection": "Objekte ({n})",
+        "propertiesEmpty": "Noch keine Objekte hinterlegt.",
+        "notesSection": "Notizen"
+      }
+    },
+    "outbox": {
+      "pendingBanner": "{n} Aktion(en) warten auf Synchronisation",
+      "syncingNow": "Synchronisation läuft…",
+      "syncedToast": "{n} Aktion(en) synchronisiert."
+    }
   }
 }
