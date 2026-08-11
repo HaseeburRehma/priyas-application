@@ -42,10 +42,20 @@ are literal copies of the web app's `messages/`).
     overdue), read-only detail with line items, Lexware sync timestamp.
   - **Alltagshilfe monthly report** — hours per client × care fund with
     month-picker (previous / next); matches the web /reports view.
-  - **Training** — my onboarding videos, "Watch video" (opens URL in
-    system browser) + "Mark completed" (writes to the same
-    employee_training_progress table the web app reads for the schedule
-    gate).
+  - **Training** — my onboarding videos with inline WebView playback
+    for YouTube / Vimeo (auto-detected from the module's video URL),
+    full-screen player with "Mark completed" in the footer. Falls back
+    to opening the URL in the system browser for anything the classifier
+    can't safely embed. Writes to `employee_training_progress` — same
+    table the web app reads for the scheduling gate.
+
+**Admin: planning shifts from mobile**
+- On the Schedule tab a **Plan shift** button appears for admin +
+  dispatcher only. Full dialog: property picker (search across
+  name / client / city), employee picker (filtered to care-qualified
+  staff when the client is Alltagshilfe, "Open shift" option to
+  pre-book), date + start + end + notes. Save → new row on `shifts`
+  in `scheduled` state, employee notified via existing push fan-out.
 
 **Infrastructure**
 - **Push notifications** — Expo push tokens registered on sign-in and

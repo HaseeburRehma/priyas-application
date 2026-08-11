@@ -3293,7 +3293,35 @@
       },
       "watchCta": "Video ansehen",
       "noVideoUrl": "Keine Video-URL",
-      "markCompletedCta": "Als abgeschlossen markieren"
+      "markCompletedCta": "Als abgeschlossen markieren",
+      "playerFailed": "Video konnte nicht inline geöffnet werden. Bitte Video ansehen tippen, um im Browser zu öffnen."
+    },
+    "planShift": {
+      "buttonLabel": "Schicht planen",
+      "title": "Schicht planen",
+      "subtitle": "Objekt, Mitarbeiter und Zeitraum festlegen.",
+      "propertySection": "Objekt",
+      "propertySearchPlaceholder": "Objekt, Kunde oder Stadt suchen…",
+      "propertyEmpty": "Keine Objekte gefunden.",
+      "employeeSection": "Mitarbeiter",
+      "openShift": "— Offene Schicht (kein Mitarbeiter) —",
+      "timeSection": "Zeit",
+      "date": "Datum",
+      "start": "Start",
+      "end": "Ende",
+      "notesSection": "Notizen",
+      "notesPlaceholder": "Zugang, besondere Wünsche, Notizen…",
+      "cancel": "Abbrechen",
+      "saveCta": "Schicht anlegen",
+      "saving": "Speichere…",
+      "change": "Ändern",
+      "savedTitle": "Schicht angelegt",
+      "savedBody": "Die Mitarbeiter wurden benachrichtigt.",
+      "saveFailedTitle": "Speichern fehlgeschlagen",
+      "errorEndAfterStart": "Ende muss nach dem Start liegen.",
+      "errorNotSignedIn": "Sie sind nicht mehr angemeldet.",
+      "errorNoOrg": "Ihr Konto ist keiner Organisation zugeordnet.",
+      "errorNoProperty": "Bitte zuerst ein Objekt auswählen."
     }
   }
 }

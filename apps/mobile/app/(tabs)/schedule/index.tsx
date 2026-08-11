@@ -16,8 +16,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { format, isSameDay, parseISO } from "date-fns";
+import Svg, { Path } from "react-native-svg";
 import { Chip, CenterSpinner, EmptyState } from "@/components/ui";
 import { useAuth } from "@/lib/auth-context";
+import { can } from "@/lib/rbac";
 import { loadMyShifts, type ShiftRow } from "@/lib/schedule";
 import { colors, spacing, typography } from "@/lib/theme";
 import { t } from "@/lib/i18n";
@@ -25,6 +27,7 @@ import { t } from "@/lib/i18n";
 export default function ScheduleTab() {
   const router = useRouter();
   const { profile } = useAuth();
+  const canPlan = can(profile?.role ?? null, "shift.create");
   const { data, isLoading, refetch, isRefetching } = useQuery<ShiftRow[]>({
     queryKey: ["my-shifts", profile?.employeeId],
     queryFn: () =>
@@ -36,9 +39,25 @@ export default function ScheduleTab() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.tertiary[200] }} edges={["top"]}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{t("schedule.title")}</Text>
-        <Text style={styles.sub}>{t("schedule.subtitle")}</Text>
+      <View style={styles.headerRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title}>{t("schedule.title")}</Text>
+          <Text style={styles.sub}>{t("schedule.subtitle")}</Text>
+        </View>
+        {canPlan && (
+          <Pressable
+            onPress={() => router.push("/(tabs)/schedule/new")}
+            style={styles.planBtn}
+            hitSlop={8}
+          >
+            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.white} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M12 5v14M5 12h14" />
+            </Svg>
+            <Text style={styles.planBtnText}>
+              {t("mobile.planShift.buttonLabel")}
+            </Text>
+          </Pressable>
+        )}
       </View>
 
       <ScrollView
@@ -123,6 +142,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[4],
     paddingTop: spacing[3],
     paddingBottom: spacing[2],
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing[3],
+    paddingHorizontal: spacing[4],
+    paddingTop: spacing[3],
+    paddingBottom: spacing[2],
+  },
+  planBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: colors.primary[500],
+  },
+  planBtnText: {
+    color: colors.white,
+    fontWeight: "700",
+    fontSize: typography.size.sm,
   },
   title: {
     fontSize: typography.size["2xl"],

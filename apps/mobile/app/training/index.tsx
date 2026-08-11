@@ -10,9 +10,11 @@
  * `employee_training_progress` table so both surfaces stay in sync.
  */
 
+import { useState } from "react";
 import {
   ActivityIndicator,
   Linking,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -23,6 +25,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Svg, { Path } from "react-native-svg";
+import { WebView } from "react-native-webview";
 import { useAuth } from "@/lib/auth-context";
 import {
   loadMyTraining,
@@ -30,6 +33,7 @@ import {
   markModuleStarted,
   type TrainingModule,
 } from "@/lib/training";
+import { classifyVideoUrl } from "@/lib/video-embed";
 import { Chip, EmptyState } from "@/components/ui";
 import { colors, spacing, typography } from "@/lib/theme";
 import { t } from "@/lib/i18n";
@@ -65,6 +69,10 @@ export default function TrainingScreen() {
   const mandatoryTotal = modules.filter((m) => m.is_mandatory).length;
   const allMandatoryDone =
     mandatoryTotal > 0 && mandatoryDone === mandatoryTotal;
+
+  // Which module is currently playing inline? null = no player open.
+  const [playing, setPlaying] = useState<TrainingModule | null>(null);
+  const playingEmbed = playing ? classifyVideoUrl(playing.video_url) : null;
 
   return (
     <SafeAreaView
@@ -110,10 +118,20 @@ export default function TrainingScreen() {
               key={m.id}
               module={m}
               onWatch={() => {
-                if (m.video_url) {
+                if (!m.video_url) return;
+                const classified = classifyVideoUrl(m.video_url);
+                if (
+                  classified.kind === "embed" ||
+                  classified.kind === "direct"
+                ) {
+                  // Play inline via WebView.
+                  setPlaying(m);
+                } else {
+                  // Fall back to the system browser for anything
+                  // we can't safely embed.
                   Linking.openURL(m.video_url).catch(() => {});
-                  if (!m.started_at) startMutation.mutate(m.id);
                 }
+                if (!m.started_at) startMutation.mutate(m.id);
               }}
               onComplete={() => completeMutation.mutate(m.id)}
               completing={completeMutation.isPending}
@@ -121,6 +139,77 @@ export default function TrainingScreen() {
           ))}
         </ScrollView>
       )}
+
+      {/* Inline video player — full-screen modal so the WebView has
+          real estate. Autoplay is disabled by the embed provider by
+          default; the user taps the play button in the frame. */}
+      <Modal
+        visible={!!playing}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setPlaying(null)}
+      >
+        <SafeAreaView
+          style={{ flex: 1, backgroundColor: "#000" }}
+          edges={["top"]}
+        >
+          <View style={styles.playerHeader}>
+            <Text style={styles.playerTitle} numberOfLines={1}>
+              {playing?.title ?? ""}
+            </Text>
+            <Pressable
+              onPress={() => setPlaying(null)}
+              hitSlop={12}
+              style={styles.playerClose}
+            >
+              <Svg
+                width={22}
+                height={22}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#fff"
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <Path d="M6 6l12 12M6 18L18 6" />
+              </Svg>
+            </Pressable>
+          </View>
+          {playingEmbed && playingEmbed.kind !== "invalid" ? (
+            <WebView
+              source={{ uri: playingEmbed.url }}
+              allowsFullscreenVideo
+              allowsInlineMediaPlayback
+              mediaPlaybackRequiresUserAction
+              style={{ flex: 1, backgroundColor: "#000" }}
+            />
+          ) : (
+            <View style={styles.playerErrBox}>
+              <Text style={styles.playerErrText}>
+                {t("mobile.training.playerFailed")}
+              </Text>
+            </View>
+          )}
+          <View style={styles.playerFooter}>
+            <Pressable
+              onPress={() => {
+                if (playing) completeMutation.mutate(playing.id);
+                setPlaying(null);
+              }}
+              disabled={completeMutation.isPending}
+              style={[
+                styles.playerCompleteBtn,
+                completeMutation.isPending && { opacity: 0.6 },
+              ]}
+            >
+              <Text style={styles.playerCompleteBtnText}>
+                {t("mobile.training.markCompletedCta")}
+              </Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -299,5 +388,52 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: "700",
     fontSize: typography.size.sm,
+  },
+  playerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
+    backgroundColor: "#000",
+  },
+  playerTitle: {
+    flex: 1,
+    color: colors.white,
+    fontSize: typography.size.md,
+    fontWeight: "700",
+  },
+  playerClose: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  playerErrBox: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing[4],
+    backgroundColor: "#000",
+  },
+  playerErrText: {
+    color: colors.white,
+    fontSize: typography.size.md,
+    textAlign: "center",
+  },
+  playerFooter: {
+    padding: spacing[4],
+    backgroundColor: "#000",
+  },
+  playerCompleteBtn: {
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: colors.primary[500],
+    alignItems: "center",
+  },
+  playerCompleteBtnText: {
+    color: colors.white,
+    fontWeight: "800",
+    fontSize: typography.size.md,
   },
 });

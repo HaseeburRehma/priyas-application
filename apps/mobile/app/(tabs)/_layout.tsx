@@ -103,6 +103,12 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="schedule/new"
+        options={{
+          href: null, // hidden from tab bar; reached via "Plan shift" button
+        }}
+      />
+      <Tabs.Screen
         name="chat"
         options={{
           title: t("bottomNav.chat"),

@@ -3293,7 +3293,35 @@
       },
       "watchCta": "Watch video",
       "noVideoUrl": "No video URL",
-      "markCompletedCta": "Mark completed"
+      "markCompletedCta": "Mark completed",
+      "playerFailed": "Could not open the video inline. Please tap Watch video to open in your browser."
+    },
+    "planShift": {
+      "buttonLabel": "Plan shift",
+      "title": "Plan shift",
+      "subtitle": "Set property, staff member and time range.",
+      "propertySection": "Property",
+      "propertySearchPlaceholder": "Search property, client or city…",
+      "propertyEmpty": "No properties match.",
+      "employeeSection": "Employee",
+      "openShift": "— Open shift (no employee) —",
+      "timeSection": "Time",
+      "date": "Date",
+      "start": "Start",
+      "end": "End",
+      "notesSection": "Notes",
+      "notesPlaceholder": "Access, special requests, notes…",
+      "cancel": "Cancel",
+      "saveCta": "Create shift",
+      "saving": "Saving…",
+      "change": "Change",
+      "savedTitle": "Shift planned",
+      "savedBody": "The team member has been notified.",
+      "saveFailedTitle": "Save failed",
+      "errorEndAfterStart": "End must be after start.",
+      "errorNotSignedIn": "You are no longer signed in.",
+      "errorNoOrg": "Your account is not attached to an organisation.",
+      "errorNoProperty": "Please pick a property first."
     }
   }
 }

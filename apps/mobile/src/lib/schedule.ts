@@ -129,6 +129,115 @@ export async function insertTimeEntry(args: {
   return { ok: true };
 }
 
+/* ============================================================================
+ * Admin: planning a new shift from mobile.
+ *
+ * Mirrors the web /schedule shift-creation flow. RLS enforces that only
+ * admin + dispatcher can insert; the mobile UI additionally hides the
+ * button for field staff.
+ * ========================================================================== */
+
+export type EligibleEmployee = {
+  id: string;
+  full_name: string;
+  service_line: "priya" | "alltagshilfe" | null;
+};
+
+export type EligibleProperty = {
+  id: string;
+  name: string;
+  city: string | null;
+  client_name: string;
+  client_customer_type: "residential" | "commercial" | "alltagshilfe";
+};
+
+export async function loadEligibleEmployees(): Promise<EligibleEmployee[]> {
+  const supabase = getSupabase();
+  const { data } = await supabase
+    .from("employees")
+    .select("id, full_name, service_line")
+    .is("deleted_at", null)
+    .eq("status", "active")
+    .order("full_name", { ascending: true })
+    .limit(500);
+  return (data ?? []) as EligibleEmployee[];
+}
+
+export async function loadEligibleProperties(): Promise<EligibleProperty[]> {
+  const supabase = getSupabase();
+  const { data } = await supabase
+    .from("properties")
+    .select(
+      `id, name, city,
+       client:clients ( display_name, customer_type )`,
+    )
+    .is("deleted_at", null)
+    .order("name", { ascending: true })
+    .limit(500);
+  type R = {
+    id: string;
+    name: string;
+    city: string | null;
+    client: {
+      display_name: string;
+      customer_type: "residential" | "commercial" | "alltagshilfe";
+    } | null;
+  };
+  return ((data ?? []) as unknown as R[]).map((r) => ({
+    id: r.id,
+    name: r.name,
+    city: r.city,
+    client_name: r.client?.display_name ?? "—",
+    client_customer_type: r.client?.customer_type ?? "residential",
+  }));
+}
+
+export type PlanShiftInput = {
+  property_id: string;
+  employee_id: string | null;
+  scheduled_start: string; // ISO
+  scheduled_end: string; // ISO
+  notes: string | null;
+};
+
+export async function planShift(
+  input: PlanShiftInput,
+): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  if (new Date(input.scheduled_end) <= new Date(input.scheduled_start)) {
+    return { ok: false, error: "end_must_be_after_start" };
+  }
+  const supabase = getSupabase();
+  // Resolve org_id from the caller's profile — RLS re-enforces this on
+  // insert, but including it explicitly matches the shape web actions
+  // use (fewer surprises when the column becomes non-nullable).
+  const { data: authUser } = await supabase.auth.getUser();
+  const uid = authUser?.user?.id;
+  if (!uid) return { ok: false, error: "not_signed_in" };
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("org_id")
+    .eq("id", uid)
+    .maybeSingle();
+  const orgId = (prof as { org_id: string | null } | null)?.org_id;
+  if (!orgId) return { ok: false, error: "no_org" };
+
+  const { data, error } = await supabase
+    .from("shifts")
+    .insert({
+      org_id: orgId,
+      property_id: input.property_id,
+      employee_id: input.employee_id,
+      scheduled_start: input.scheduled_start,
+      scheduled_end: input.scheduled_end,
+      notes: input.notes,
+      status: "scheduled",
+    })
+    .select("id")
+    .single();
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, id: (data as { id: string }).id };
+}
+
 /** Haversine distance in metres, for GPS proximity checks. */
 export function distanceMeters(
   a: { lat: number; lng: number },
