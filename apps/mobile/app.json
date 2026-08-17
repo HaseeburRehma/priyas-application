@@ -24,7 +24,8 @@
         "NSLocationWhenInUseUsageDescription": "Priya's uses your location to verify you are at the assigned property when you clock in.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Priya's uses your location to verify check-in / check-out at each shift.",
         "NSCameraUsageDescription": "Take a photo of property damage or upload a profile photo.",
-        "NSPhotoLibraryUsageDescription": "Attach photos to damage reports and update your profile picture."
+        "NSPhotoLibraryUsageDescription": "Attach photos to damage reports and update your profile picture.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -65,7 +66,8 @@
       "expo-font"
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "tsconfigPaths": true
     },
     "extra": {
       "supabaseUrl": "",
