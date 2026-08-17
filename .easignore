@@ -1,0 +1,84 @@
+# EAS Build upload ignore rules.
+#
+# `.easignore`, when present, REPLACES `.gitignore` for EAS uploads.
+# So this file must include every rule from `.gitignore` PLUS anything
+# extra we want EAS specifically to skip.
+#
+# The one EAS-specific exclusion at the bottom is `pnpm-workspace.yaml`:
+# the mobile app is invoked standalone (from apps/mobile/) via npm, but
+# when EAS uploads the whole repo and sees the workspace file at the
+# root, it switches to workspace-hoisted install mode and can no longer
+# resolve `expo-router` from apps/mobile/node_modules. Hiding the file
+# from the upload keeps the mobile build in the plain per-package mode.
+
+# dependencies
+/node_modules
+node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# local env files
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# supabase
+supabase/.branches
+supabase/.temp
+supabase/.env
+supabase/postgres.log
+
+# claude worktrees + scratchpads (never belong in a build)
+.claude/worktrees
+.claude/cache
+
+# docs, migrations, web app source — nothing mobile needs
+docs/
+supabase/
+scripts/
+messages/
+src/
+public/
+prisma/
+tests/
+e2e/
+apps/mobile/ios/
+apps/mobile/android/
+
+# generated
+*.log
+
+# ---- EAS-specific exclusions (not in .gitignore) ----
+# pnpm workspace file at repo root. See top-of-file comment.
+pnpm-workspace.yaml
