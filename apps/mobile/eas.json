@@ -36,9 +36,9 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "operations@priyas.de",
-        "ascAppId": "REPLACE_WITH_APPLE_APP_ID",
-        "appleTeamId": "REPLACE_WITH_APPLE_TEAM_ID"
+        "appleId": "dev@tylotech.de",
+        "ascAppId": "REPLACE_AFTER_ASC_APP_RECORD_CREATED",
+        "appleTeamId": "GZHXFBK7SP"
       },
       "android": {
         "serviceAccountKeyPath": "./google-play-service-account.json",
