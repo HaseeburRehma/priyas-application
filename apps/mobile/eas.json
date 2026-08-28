@@ -28,7 +28,8 @@
       "channel": "production",
       "autoIncrement": true,
       "ios": {
-        "image": "latest"
+        "//": "Pinned to the last Xcode-16 image because RN 0.76.9 (the SDK 52 pin) ships a `fmt` library version that fails to compile under Xcode 26's stricter consteval evaluation. This build works for TestFlight distribution; App Store submissions after Apr 28 2026 require Xcode 26, so once we upgrade to Expo SDK 53 (RN 0.77+ ships a Xcode-26-compatible fmt) we should switch this back to `image: latest`.",
+        "image": "macos-sequoia-15.6-xcode-16.4"
       },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "$EXPO_PUBLIC_SUPABASE_URL",
