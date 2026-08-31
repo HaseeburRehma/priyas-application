@@ -40,7 +40,7 @@
     "production": {
       "ios": {
         "appleId": "dev@tylotech.de",
-        "ascAppId": "REPLACE_AFTER_ASC_APP_RECORD_CREATED",
+        "ascAppId": "6807064077",
         "appleTeamId": "GZHXFBK7SP"
       },
       "android": {
