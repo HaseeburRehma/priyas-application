@@ -83,7 +83,12 @@ export default function ScheduleTab() {
             {g.rows.map((s) => (
               <Pressable
                 key={s.id}
-                onPress={() => router.push(`/(tabs)/schedule/${s.id}`)}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(tabs)/schedule/[id]",
+                    params: { id: s.id },
+                  })
+                }
                 style={styles.row}
               >
                 <View style={styles.timeCol}>

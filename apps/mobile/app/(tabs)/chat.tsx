@@ -58,7 +58,12 @@ export default function ChatTab() {
           return (
             <Pressable
               key={c.id}
-              onPress={() => router.push(`/chat/${c.id}`)}
+              onPress={() =>
+                router.push({
+                  pathname: "/chat/[channelId]",
+                  params: { channelId: c.id },
+                })
+              }
               style={styles.row}
             >
               <View

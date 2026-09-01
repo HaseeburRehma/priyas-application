@@ -14,6 +14,15 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
+// NOTE on duplicate react: the repo root has its own node_modules with
+// react@18 for the Next.js web app. Metro's default nearest-wins
+// resolution correctly picks mobile's local react@19 for everything the
+// mobile bundle imports, so the duplicate is benign at bundle time.
+// expo-doctor still warns about it via a filesystem scan — see the
+// known-warnings note in the mobile README (or CLAUDE.md) if it comes
+// up again. Do not override resolver.nodeModulesPaths or disable
+// hierarchical lookup here; both cause more problems than they solve.
+
 const originalResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (moduleName === '@' || moduleName.startsWith('@/')) {

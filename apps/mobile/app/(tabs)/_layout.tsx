@@ -9,14 +9,18 @@
  */
 
 import { Tabs } from "expo-router";
-import { View } from "react-native";
+import { View, type ColorValue } from "react-native";
 import Svg, { Path, Circle, Rect } from "react-native-svg";
 import { useAuth } from "@/lib/auth-context";
 import { can } from "@/lib/rbac";
 import { colors, typography } from "@/lib/theme";
 import { t } from "@/lib/i18n";
 
-type IconProps = { color: string; size: number };
+// RN 0.86 typed the tabBarIcon callback's `color` as ColorValue
+// (= string | OpaqueColorValue) instead of plain string. react-native-svg's
+// stroke prop already accepts ColorValue, so we widen the type here rather
+// than coercing at every call site.
+type IconProps = { color: ColorValue; size: number };
 
 const Icons = {
   home: ({ color, size }: IconProps) => (

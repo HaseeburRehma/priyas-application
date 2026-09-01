@@ -18,7 +18,12 @@ import { Platform } from "react-native";
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
 import * as SecureStore from "expo-secure-store";
-import type { Router } from "expo-router";
+import { useRouter } from "expo-router";
+
+// expo-router 57 removed the standalone `Router` type export; derive it
+// from useRouter() instead. Callers still pass a live router instance —
+// only the import shape changed.
+type Router = ReturnType<typeof useRouter>;
 import { getSupabase } from "@/lib/supabase";
 
 // Show banners while the app is in the foreground — matches what the

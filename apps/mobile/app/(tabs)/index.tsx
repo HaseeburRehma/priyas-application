@@ -114,7 +114,12 @@ export default function HomeTab() {
                 data.upcoming_shifts.map((s) => (
                   <Pressable
                     key={s.id}
-                    onPress={() => router.push(`/(tabs)/schedule/${s.id}`)}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/(tabs)/schedule/[id]",
+                        params: { id: s.id },
+                      })
+                    }
                     style={styles.shiftRow}
                   >
                     <View style={styles.shiftBadge}>
