@@ -28,7 +28,7 @@
       "channel": "production",
       "autoIncrement": true,
       "ios": {
-        "image": "latest"
+        "image": "macos-sequoia-15.5-xcode-16.4"
       },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "$EXPO_PUBLIC_SUPABASE_URL",
