@@ -73,8 +73,8 @@
       "tsconfigPaths": true
     },
     "extra": {
-      "supabaseUrl": "",
-      "supabaseAnonKey": "",
+      "supabaseUrl": "https://oeovzmsstlaqbfqntwjz.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lb3Z6bXNzdGxhcWJmcW50d2p6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4ODc2ODYsImV4cCI6MjA5MzQ2MzY4Nn0.WMJhozvec_qWr6eT0mho8bfbcXc8vaNEVoPMj0k9gBA",
       "eas": {
         "projectId": "fbc398fb-ade1-47e4-8716-d71e4b001547"
       },
