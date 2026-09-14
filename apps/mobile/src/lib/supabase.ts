@@ -16,23 +16,37 @@ import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
 
 /**
- * Read from Expo's public env (`EXPO_PUBLIC_*` variables are available
- * on both the client and the native runtime). Falling back to `extra`
- * so `eas build` can inject values without a rebuild of source.
+ * Read Supabase creds from three sources, in preference order, treating
+ * empty strings the same as `undefined` so a blank env fallthrough
+ * doesn't poison the client:
+ *
+ *   1. `process.env.EXPO_PUBLIC_*` — literalized by Metro at bundle time
+ *      when set in `eas.json`'s `build.<profile>.env`. Most reliable for
+ *      production builds; no runtime manifest dependency.
+ *   2. `Constants.expoConfig?.extra?.*` — from the embedded app.json
+ *      manifest. Works in dev; in SDK 57 standalone builds the embedded
+ *      manifest occasionally doesn't carry through user-defined `extra`
+ *      values, which is why we no longer rely on it as the primary path.
+ *   3. Missing → throw at startup so we fail loud rather than emit
+ *      opaque "No API key found in request" errors later.
+ *
+ * Coalesce with a helper because `??` alone would happily return `""`
+ * from the LHS, which then reaches `createClient(url, "")` and produces
+ * exactly the empty-apikey behaviour we saw in TestFlight build 16.
  */
+const nonEmpty = (v: unknown): string | undefined =>
+  typeof v === "string" && v.length > 0 ? v : undefined;
+
 function readConfig(): { url: string; anonKey: string } {
   const url =
-    process.env.EXPO_PUBLIC_SUPABASE_URL ??
-    (Constants.expoConfig?.extra?.supabaseUrl as string | undefined);
+    nonEmpty(process.env.EXPO_PUBLIC_SUPABASE_URL) ??
+    nonEmpty(Constants.expoConfig?.extra?.supabaseUrl);
   const anonKey =
-    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
-    (Constants.expoConfig?.extra?.supabaseAnonKey as string | undefined);
+    nonEmpty(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY) ??
+    nonEmpty(Constants.expoConfig?.extra?.supabaseAnonKey);
   if (!url || !anonKey) {
-    // Deliberately loud — a missing Supabase URL means every network
-    // call would fail with an opaque error later. Better to fail fast
-    // at startup.
     throw new Error(
-      "Missing Supabase config. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in .env before running.",
+      "Missing Supabase config. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in .env or eas.json build.env.",
     );
   }
   return { url, anonKey };

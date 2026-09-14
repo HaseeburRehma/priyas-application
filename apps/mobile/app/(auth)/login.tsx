@@ -10,6 +10,7 @@
 import { useState } from "react";
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -99,11 +100,19 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.brand}>
+            {/* Wordmark ships white-on-transparent (source
+             *  public/priya-logo.png). Sits on a primary-500 green
+             *  card so it reads on the light auth-screen background.
+             *  Already includes "PRIYA'S" + "Leistung mit Herz", so
+             *  the separate <Text> labels were removed to avoid
+             *  duplication. */}
             <View style={styles.logo}>
-              <Text style={styles.logoLetter}>P</Text>
+              <Image
+                source={require("../../assets/logo-wordmark.png")}
+                style={styles.wordmark}
+                resizeMode="contain"
+              />
             </View>
-            <Text style={styles.brandName}>Priya's</Text>
-            <Text style={styles.brandTag}>Leistung mit Herz</Text>
           </View>
 
           {!challengeId ? (
@@ -188,27 +197,19 @@ const styles = StyleSheet.create({
     gap: spacing[2],
   },
   logo: {
-    width: 64,
-    height: 64,
+    // Rectangular green card sized to the wordmark's 2.5:1 aspect
+    // (110×44 native) plus 16 px of breathing room. Keeps the same
+    // visual weight the old 64×64 P-square block had.
+    paddingHorizontal: 24,
+    paddingVertical: 16,
     borderRadius: radius.lg,
     backgroundColor: colors.primary[500],
     alignItems: "center",
     justifyContent: "center",
   },
-  logoLetter: {
-    color: colors.white,
-    fontSize: 34,
-    fontWeight: "800",
-  },
-  brandName: {
-    fontSize: typography.size["2xl"],
-    fontWeight: "800",
-    color: colors.secondary[500],
-    letterSpacing: -0.5,
-  },
-  brandTag: {
-    fontSize: typography.size.sm,
-    color: colors.neutral[500],
+  wordmark: {
+    width: 200,
+    height: 80, // 200 / 2.5 = 80, matches source aspect
   },
   title: {
     fontSize: typography.size["2xl"],
