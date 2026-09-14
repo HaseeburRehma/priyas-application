@@ -115,7 +115,8 @@
     "settings": "Settings",
     "collapseSidebar": "Collapse sidebar",
     "employeeOverview": "Employee overview",
-    "brandSubtitle": "Operation"
+    "brandSubtitle": "Operation",
+    "logout": "Sign out"
   },
   "greeting": {
     "morning": "Good morning",
@@ -3171,7 +3172,21 @@
       "damage": "Damage reports",
       "damageHint": "Camera-first issue logging",
       "vacation": "Vacation",
-      "vacationHint": "Request time off"
+      "vacationHint": "Request time off",
+      "sectionWorkspace": "Workspace",
+      "sectionReports": "Reports & Billing",
+      "sectionField": "Field Work",
+      "sectionAccount": "You",
+      "clients": "Clients",
+      "clientsHint": "Search customers, properties, contacts",
+      "dashboard": "Team dashboard",
+      "dashboardHint": "Live utilisation, shifts, invoices",
+      "notifications": "Alerts",
+      "notificationsHint": "Damage, shift & billing updates",
+      "settings": "Settings",
+      "settingsHint": "Account, security, language",
+      "signOut": "Sign out",
+      "signOutHint": "End this session on this device"
     },
     "employees": {
       "title": "Employees",
@@ -3323,5 +3338,13 @@
       "errorNoOrg": "Your account is not attached to an organisation.",
       "errorNoProperty": "Please pick a property first."
     }
+  },
+  "bottomNav": {
+    "home": "Home",
+    "dashboard": "Home",
+    "schedule": "Schedule",
+    "chat": "Chat",
+    "notifications": "Alerts",
+    "settings": "Settings"
   }
 }

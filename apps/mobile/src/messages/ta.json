@@ -115,7 +115,8 @@
     "settings": "அமைப்புகள்",
     "collapseSidebar": "பக்கப்பட்டியை சுருக்கு",
     "employeeOverview": "Employee overview",
-    "brandSubtitle": "செயல்பாடு"
+    "brandSubtitle": "செயல்பாடு",
+    "logout": "வெளியேறு"
   },
   "greeting": {
     "morning": "காலை வணக்கம்",
@@ -3171,7 +3172,21 @@
       "damage": "சேத அறிக்கைகள்",
       "damageHint": "புகைப்படம் முதலிடம்",
       "vacation": "விடுமுறை",
-      "vacationHint": "விடுமுறை கோரிக்கை"
+      "vacationHint": "விடுமுறை கோரிக்கை",
+      "sectionWorkspace": "பணியிடம்",
+      "sectionReports": "அறிக்கைகள் & பில்லிங்",
+      "sectionField": "களப்பணி",
+      "sectionAccount": "உங்கள் கணக்கு",
+      "clients": "வாடிக்கையாளர்கள்",
+      "clientsHint": "வாடிக்கையாளர்கள், சொத்துகள், தொடர்புகளைத் தேடுங்கள்",
+      "dashboard": "குழு டாஷ்போர்டு",
+      "dashboardHint": "நேரடி பயன்பாடு, ஷிப்ட்கள், விலைப்பட்டியல்",
+      "notifications": "அறிவிப்புகள்",
+      "notificationsHint": "பாதிப்பு, ஷிப்ட் & பில்லிங் புதுப்பிப்புகள்",
+      "settings": "அமைப்புகள்",
+      "settingsHint": "கணக்கு, பாதுகாப்பு, மொழி",
+      "signOut": "வெளியேறு",
+      "signOutHint": "இந்த சாதனத்தில் இந்த அமர்வை முடிக்கவும்"
     },
     "employees": {
       "title": "பணியாளர்கள்",
@@ -3323,5 +3338,13 @@
       "errorNoOrg": "உங்கள் கணக்கு நிறுவனத்துடன் இணைக்கப்படவில்லை.",
       "errorNoProperty": "முதலில் ஒரு சொத்தை தேர்ந்தெடுக்கவும்."
     }
+  },
+  "bottomNav": {
+    "home": "முகப்பு",
+    "dashboard": "முகப்பு",
+    "schedule": "அட்டவணை",
+    "chat": "அரட்டை",
+    "notifications": "அறிவிப்பு",
+    "settings": "அமைப்புகள்"
   }
 }

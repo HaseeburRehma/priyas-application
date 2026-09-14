@@ -9,10 +9,8 @@
  */
 
 import { Tabs } from "expo-router";
-import { View, type ColorValue } from "react-native";
+import { type ColorValue } from "react-native";
 import Svg, { Path, Circle, Rect } from "react-native-svg";
-import { useAuth } from "@/lib/auth-context";
-import { can } from "@/lib/rbac";
 import { colors, typography } from "@/lib/theme";
 import { t } from "@/lib/i18n";
 
@@ -59,14 +57,26 @@ const Icons = {
   ),
 };
 
-export default function TabsLayout() {
-  const { profile } = useAuth();
-  const role = profile?.role ?? null;
-  const showClients = can(role, "client.read") && role !== "employee";
-  // Same permission the web app uses to gate the org-scope dashboard —
-  // Field Staff never see it. Admin + dispatcher do.
-  const showDashboard = can(role, "time.read_all");
+const MoreIcon = ({ color, size }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Circle cx={5} cy={12} r={1.5} />
+    <Circle cx={12} cy={12} r={1.5} />
+    <Circle cx={19} cy={12} r={1.5} />
+  </Svg>
+);
 
+export default function TabsLayout() {
+  // Field staff and admins both see the same 4-tab primary shell:
+  //   Home · Schedule · Chat · More
+  // Everything else — Clients, Dashboard, Notifications, Settings and
+  // the admin-only surfaces (Employees, Properties, Invoices, …) —
+  // lives behind "More", which acts as the sidebar. Cuts tap-target
+  // width from ~46 px (8 tabs on iPhone 14) back to a comfortable
+  // ~92 px, and stops labels from truncating to "[missi…]" when a
+  // key is unresolved.
+  //
+  // Routes not in the tab bar stay reachable via <Link> / router.push;
+  // `href: null` hides them from the bar without unregistering them.
   return (
     <Tabs
       screenOptions={{
@@ -86,10 +96,11 @@ export default function TabsLayout() {
         },
       }}
     >
+      {/* ---------- Primary tabs (visible in bar) ---------- */}
       <Tabs.Screen
         name="index"
         options={{
-          title: t("bottomNav.dashboard"),
+          title: t("bottomNav.home"),
           tabBarIcon: ({ color, size }) => <Icons.home color={color} size={size} />,
         }}
       />
@@ -101,18 +112,6 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="schedule/[id]"
-        options={{
-          href: null, // hide from tab bar; reached via <Link>
-        }}
-      />
-      <Tabs.Screen
-        name="schedule/new"
-        options={{
-          href: null, // hidden from tab bar; reached via "Plan shift" button
-        }}
-      />
-      <Tabs.Screen
         name="chat"
         options={{
           title: t("bottomNav.chat"),
@@ -120,50 +119,22 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="clients"
-        options={{
-          title: t("nav.clients"),
-          tabBarIcon: ({ color, size }) => <Icons.clients color={color} size={size} />,
-          href: showClients ? undefined : null,
-        }}
-      />
-      <Tabs.Screen
-        name="dashboard"
-        options={{
-          title: t("dashboardTab.tabLabel"),
-          tabBarIcon: ({ color, size }) => <Icons.home color={color} size={size} />,
-          href: showDashboard ? undefined : null,
-        }}
-      />
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          title: t("bottomNav.notifications"),
-          tabBarIcon: ({ color, size }) => (
-            <View>
-              <Icons.bell color={color} size={size} />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: t("bottomNav.settings"),
-          tabBarIcon: ({ color, size }) => <Icons.settings color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
         name="more"
         options={{
           title: t("mobile.more.tabLabel"),
-          tabBarIcon: ({ color, size }) => (
-            <View>
-              <Icons.settings color={color} size={size} />
-            </View>
-          ),
+          tabBarIcon: ({ color, size }) => <MoreIcon color={color} size={size} />,
         }}
       />
+
+      {/* ---------- Reachable routes, hidden from the tab bar ---------- */}
+      {/* Schedule detail / create sub-routes */}
+      <Tabs.Screen name="schedule/[id]" options={{ href: null }} />
+      <Tabs.Screen name="schedule/new" options={{ href: null }} />
+      {/* Surfaces linked from the More screen */}
+      <Tabs.Screen name="clients" options={{ href: null }} />
+      <Tabs.Screen name="dashboard" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="settings" options={{ href: null }} />
     </Tabs>
   );
 }

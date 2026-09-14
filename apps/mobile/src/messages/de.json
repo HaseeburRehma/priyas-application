@@ -115,7 +115,8 @@
     "settings": "Einstellungen",
     "collapseSidebar": "Seitenleiste einklappen",
     "employeeOverview": "Mitarbeiterübersicht",
-    "brandSubtitle": "Betrieb"
+    "brandSubtitle": "Betrieb",
+    "logout": "Abmelden"
   },
   "greeting": {
     "morning": "Guten Morgen",
@@ -3171,7 +3172,21 @@
       "damage": "Schadensberichte",
       "damageHint": "Fotobasierte Meldung",
       "vacation": "Urlaub",
-      "vacationHint": "Freizeit beantragen"
+      "vacationHint": "Freizeit beantragen",
+      "sectionWorkspace": "Arbeitsbereich",
+      "sectionReports": "Berichte & Abrechnung",
+      "sectionField": "Feld­einsätze",
+      "sectionAccount": "Konto",
+      "clients": "Kunden",
+      "clientsHint": "Kunden, Objekte, Kontakte suchen",
+      "dashboard": "Team-Dashboard",
+      "dashboardHint": "Auslastung, Schichten, Rechnungen",
+      "notifications": "Alarme",
+      "notificationsHint": "Schäden, Schichten, Abrechnung",
+      "settings": "Einstellungen",
+      "settingsHint": "Konto, Sicherheit, Sprache",
+      "signOut": "Abmelden",
+      "signOutHint": "Sitzung auf diesem Gerät beenden"
     },
     "employees": {
       "title": "Mitarbeitende",
@@ -3323,5 +3338,13 @@
       "errorNoOrg": "Ihr Konto ist keiner Organisation zugeordnet.",
       "errorNoProperty": "Bitte zuerst ein Objekt auswählen."
     }
+  },
+  "bottomNav": {
+    "home": "Start",
+    "dashboard": "Start",
+    "schedule": "Plan",
+    "chat": "Chat",
+    "notifications": "Alarme",
+    "settings": "Einstellungen"
   }
 }
