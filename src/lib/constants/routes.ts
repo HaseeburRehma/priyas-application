@@ -63,4 +63,9 @@ export const publicRoutes: ReadonlyArray<string> = [
   routes.forgotPassword,
   routes.resetPassword,
   routes.offline,
+  // Public marketing pages linked from the App Store listing.
+  // Apple's review team must be able to open these without a login,
+  // so they're exempt from the auth middleware.
+  "/support",
+  "/privacy",
 ];
