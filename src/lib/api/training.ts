@@ -108,6 +108,10 @@ export async function loadTrainingHub(): Promise<TrainingHubData> {
         .is("deleted_at", null)
         .order("status", { ascending: true })
         .order("full_name", { ascending: true })
+        // Cap so the training-home render stays constant-time.
+        // Manager view groups by status; 500 rows covers realistic
+        // orgs with headroom.
+        .limit(500)
     : Promise.resolve({ data: [] as unknown[] });
 
   const [empRes, modulesRes, assignmentsRes, rosterRes] = await Promise.all([

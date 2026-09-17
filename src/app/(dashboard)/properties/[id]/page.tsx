@@ -68,7 +68,9 @@ export default async function Page({
       .select("id, full_name")
       .is("deleted_at", null)
       .eq("status", "active")
-      .order("full_name", { ascending: true }),
+      .order("full_name", { ascending: true })
+      // Bounded picker for key-holder / assignment drop-downs.
+      .limit(500),
   ]);
   const keyEmployees = (empRows ?? []) as Array<{ id: string; full_name: string }>;
 

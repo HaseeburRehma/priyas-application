@@ -137,7 +137,10 @@ export async function loadStatement(
     .from("properties")
     .select("id, name")
     .eq("client_id", clientId)
-    .is("deleted_at", null);
+    .is("deleted_at", null)
+    // Bounded read — a single client's property portfolio for the
+    // statement breakdown. 500 comfortably covers any realistic client.
+    .limit(500);
   const props = (propsRows ?? []) as Array<{ id: string; name: string }>;
   const totalAll = invoices.reduce((s, r) => s + Number(r.total_cents ?? 0), 0);
   const byProperty = props.map((p, idx) => ({

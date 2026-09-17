@@ -468,7 +468,13 @@ export async function loadDashboardData(): Promise<DashboardData> {
        profile:profiles ( id, role )`,
     )
     .is("deleted_at", null)
-    .eq("status", "active");
+    .eq("status", "active")
+    // Cap so team utilisation stays constant-time as staff grows.
+    // The panel only renders the top 6 by utilisation, so 200 rows is
+    // already more than the sort/take needs and comfortably absorbs
+    // orgs into the low hundreds.
+    .order("full_name", { ascending: true })
+    .limit(200);
   type EmployeeRow = {
     id: string;
     full_name: string;

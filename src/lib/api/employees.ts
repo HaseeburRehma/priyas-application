@@ -589,8 +589,12 @@ export async function loadEmployeeDetail(
     supabase
       .from("shifts")
       .select(
+        // The employee-detail "Upcoming" row renders only the property
+        // name — the client display_name is fetched but never shown.
+        // Drop the nested clients join to save both a joined table on
+        // the read path and the extra bytes on the wire.
         `id, starts_at, ends_at,
-         property:properties ( name, client:clients ( display_name ) )`,
+         property:properties ( id, name )`,
       )
       .eq("employee_id", id)
       .is("deleted_at", null)

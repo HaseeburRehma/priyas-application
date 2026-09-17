@@ -158,7 +158,12 @@ export async function loadEmployeeOverview(): Promise<EmployeeOverviewData> {
   let empQuery = supabase
     .from("employees")
     .select("id, full_name, status, weekly_hours, system_unlocked_at, profile_id")
-    .is("deleted_at", null);
+    .is("deleted_at", null)
+    // Bounded roster read — the overview page groups by employee, so a
+    // 500-cap keeps the payload sane while covering orgs well beyond
+    // realistic staff counts for a single cleaning operation.
+    .order("full_name", { ascending: true })
+    .limit(500);
   empQuery = empQuery.eq("org_id", orgId);
   const { data: empRows } = await empQuery;
   const employees = ((empRows ?? []) as EmpRow[]).filter((e) => !!e.full_name);

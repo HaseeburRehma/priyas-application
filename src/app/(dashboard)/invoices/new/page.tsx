@@ -24,7 +24,10 @@ export default async function Page() {
     .select("id, display_name, customer_type, email, billing_email")
     .is("deleted_at", null)
     .eq("archived", false)
-    .order("display_name", { ascending: true });
+    .order("display_name", { ascending: true })
+    // Bounded picker — the invoice wizard drop-down never needs more
+    // than a few hundred options; keep the SSR payload small.
+    .limit(500);
   const clients = (data ?? []) as ClientOption[];
   return <NewInvoiceWizard clients={clients} />;
 }

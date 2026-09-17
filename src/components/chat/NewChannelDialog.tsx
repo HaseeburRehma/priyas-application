@@ -64,7 +64,12 @@ export function NewChannelDialog({ mode, open, onClose }: Props) {
         .from("profiles")
         .select("id, full_name, role")
         .neq("id", user?.id ?? "")
-        .order("full_name", { ascending: true });
+        .order("full_name", { ascending: true })
+        // Bounded teammate picker — the dialog opens on demand and the
+        // list is scanned by eye. 200 keeps the payload small; a
+        // future improvement is to add a search input and query
+        // server-side by name-prefix once orgs cross this cap.
+        .limit(200);
       setTeammates((data ?? []) as Teammate[]);
     })();
   }, [open]);
