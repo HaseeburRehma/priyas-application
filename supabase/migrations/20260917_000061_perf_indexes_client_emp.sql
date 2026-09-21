@@ -2,12 +2,18 @@
 -- Performance indexes — close the gaps flagged by the 2026-09-17 audit of
 -- the clients / employees / properties read paths.
 --
--- Every index below is idempotent (`if not exists`) and created
--- CONCURRENTLY so it takes no ACCESS EXCLUSIVE lock on the target
--- table — this migration is safe to run against production while the
--- app is live. Supabase's migration runner will keep each `create
--- index concurrently` in its own transaction (it must, since
--- CONCURRENTLY forbids running inside a transaction block).
+-- Every index below is idempotent (`if not exists`). Plain
+-- `create index` (not CONCURRENTLY) so this file can be pasted into
+-- the Supabase SQL editor, which wraps every request in a transaction
+-- and rejects CONCURRENTLY. The affected tables are in the
+-- low-thousands of rows, so the brief ACCESS EXCLUSIVE lock during
+-- the index build is imperceptible.
+--
+-- If you later apply this against a very large DB where a table lock
+-- would be visible, swap the plain `create index` back for `create
+-- index concurrently` and drive it via `supabase db push` — the CLI
+-- runs each statement outside a transaction so CONCURRENTLY is
+-- accepted.
 --
 -- Storage cost: partial indexes only — everything is scoped to
 -- `where deleted_at is null` and, where relevant, `archived = false`
@@ -29,7 +35,7 @@
 -- staff roster grows. Partial-index on soft-deleted keeps the tree
 -- tiny.
 -- ---------------------------------------------------------------------------
-create index concurrently if not exists idx_emp_profile
+create index if not exists idx_emp_profile
   on public.employees (profile_id)
   where deleted_at is null;
 
@@ -42,7 +48,7 @@ create index concurrently if not exists idx_emp_profile
 -- still spills to disk on clients with many properties. Composite
 -- gives an index-only ordered scan.
 -- ---------------------------------------------------------------------------
-create index concurrently if not exists idx_props_client_created
+create index if not exists idx_props_client_created
   on public.properties (client_id, created_at desc)
   where deleted_at is null;
 
@@ -58,7 +64,7 @@ create index concurrently if not exists idx_props_client_created
 -- Partial predicate matches the loader's default (archived = false).
 -- Archived-only listings fall back to the existing idx_clients_org.
 -- ---------------------------------------------------------------------------
-create index concurrently if not exists idx_clients_org_name
+create index if not exists idx_clients_org_name
   on public.clients (org_id, display_name)
   where deleted_at is null and archived = false;
 
@@ -68,7 +74,7 @@ create index concurrently if not exists idx_clients_org_name
 -- `status` for the archived-equivalent, and idx_emp_status already
 -- covers that view).
 -- ---------------------------------------------------------------------------
-create index concurrently if not exists idx_emp_org_name
+create index if not exists idx_emp_org_name
   on public.employees (org_id, full_name)
   where deleted_at is null;
 
@@ -76,7 +82,7 @@ create index concurrently if not exists idx_emp_org_name
 -- 5. properties default-list sort — (org_id, name)
 -- Same rationale as #3/#4.
 -- ---------------------------------------------------------------------------
-create index concurrently if not exists idx_props_org_name
+create index if not exists idx_props_org_name
   on public.properties (org_id, name)
   where deleted_at is null;
 
@@ -98,27 +104,27 @@ create index concurrently if not exists idx_props_org_name
 -- ---------------------------------------------------------------------------
 create extension if not exists pg_trgm;
 
-create index concurrently if not exists idx_clients_trgm_name
+create index if not exists idx_clients_trgm_name
   on public.clients using gin (display_name gin_trgm_ops)
   where deleted_at is null;
 
-create index concurrently if not exists idx_clients_trgm_email
+create index if not exists idx_clients_trgm_email
   on public.clients using gin (email gin_trgm_ops)
   where deleted_at is null and email is not null;
 
-create index concurrently if not exists idx_emp_trgm_name
+create index if not exists idx_emp_trgm_name
   on public.employees using gin (full_name gin_trgm_ops)
   where deleted_at is null;
 
-create index concurrently if not exists idx_emp_trgm_email
+create index if not exists idx_emp_trgm_email
   on public.employees using gin (email gin_trgm_ops)
   where deleted_at is null and email is not null;
 
-create index concurrently if not exists idx_props_trgm_name
+create index if not exists idx_props_trgm_name
   on public.properties using gin (name gin_trgm_ops)
   where deleted_at is null;
 
-create index concurrently if not exists idx_props_trgm_city
+create index if not exists idx_props_trgm_city
   on public.properties using gin (city gin_trgm_ops)
   where deleted_at is null;
 
@@ -133,6 +139,6 @@ create index concurrently if not exists idx_props_trgm_city
 -- an index probe and enforces the implicit business rule (one client
 -- per email within an org). `lower(email)` normalises casing.
 -- ---------------------------------------------------------------------------
-create unique index concurrently if not exists uniq_clients_org_lower_email
+create unique index if not exists uniq_clients_org_lower_email
   on public.clients (org_id, lower(email))
   where email is not null and deleted_at is null;

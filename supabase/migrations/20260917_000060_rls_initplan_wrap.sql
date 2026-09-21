@@ -109,22 +109,44 @@ create policy "profiles: admin all in org"
 -- ---------------------------------------------------------------------------
 -- client_documents (added in 20260804_000055_alltagshelfer_intake.sql).
 -- Same three policies, same helpers, same optimisation.
+--
+-- Wrapped in an existence check because environments that haven't yet
+-- applied the 000055 alltagshilfe migration will fail on the bare
+-- `on public.client_documents` reference. Once 000055 lands the block
+-- executes on the next migration run.
+--
+-- PL/pgSQL EXECUTE runs one statement at a time, so each policy DROP +
+-- CREATE is its own EXECUTE call — a single multi-statement string
+-- would raise "cannot insert multiple commands into a prepared
+-- statement". Also relies on `is_admin_or_dispatcher()` which was
+-- added in the same 000055 migration; that check therefore covers
+-- both the table and the helper being present.
 -- ---------------------------------------------------------------------------
+do $$
+begin
+  if to_regclass('public.client_documents') is not null then
+    execute 'drop policy if exists client_docs_read on public.client_documents';
+    execute $q$
+      create policy client_docs_read on public.client_documents for select
+        using (org_id = (select public.current_org_id()) and deleted_at is null)
+    $q$;
 
-drop policy if exists client_docs_read on public.client_documents;
-create policy client_docs_read on public.client_documents for select
-  using (org_id = (select public.current_org_id()) and deleted_at is null);
+    execute 'drop policy if exists client_docs_write on public.client_documents';
+    execute $q$
+      create policy client_docs_write on public.client_documents for insert
+        with check (
+          org_id = (select public.current_org_id())
+          and (select public.is_admin_or_dispatcher())
+        )
+    $q$;
 
-drop policy if exists client_docs_write on public.client_documents;
-create policy client_docs_write on public.client_documents for insert
-  with check (
-    org_id = (select public.current_org_id())
-    and (select public.is_admin_or_dispatcher())
-  );
-
-drop policy if exists client_docs_update on public.client_documents;
-create policy client_docs_update on public.client_documents for update
-  using (
-    org_id = (select public.current_org_id())
-    and (select public.is_admin_or_dispatcher())
-  );
+    execute 'drop policy if exists client_docs_update on public.client_documents';
+    execute $q$
+      create policy client_docs_update on public.client_documents for update
+        using (
+          org_id = (select public.current_org_id())
+          and (select public.is_admin_or_dispatcher())
+        )
+    $q$;
+  end if;
+end $$;

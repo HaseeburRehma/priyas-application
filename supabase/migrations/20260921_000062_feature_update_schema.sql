@@ -78,8 +78,12 @@ alter table public.clients
   add column if not exists recommended_weekdays int[] not null default '{}';
 
 -- Guard rail: every entry must be a valid weekday 0..6 and the array
--- must have no more than 7 elements. Check constraints on arrays use a
--- scalar-any form for readability.
+-- must have no more than 7 elements.
+--
+-- Postgres check constraints forbid sub-queries (`select …`), so the
+-- element-range check uses `<@` (array-contained-by): if every entry
+-- lies within ARRAY[0..6], the whole array is contained. Same result,
+-- no subquery.
 do $$
 begin
   if not exists (
@@ -90,16 +94,19 @@ begin
       add constraint clients_recommended_weekdays_valid
       check (
         cardinality(recommended_weekdays) <= 7
-        and not exists (
-          select 1 from unnest(recommended_weekdays) as d
-          where d < 0 or d > 6
-        )
+        and recommended_weekdays <@ array[0,1,2,3,4,5,6]::int[]
       );
   end if;
 end $$;
 
 -- Index for the schedule assistant's per-weekday shortlist.
-create index concurrently if not exists idx_clients_recommended_weekdays
+-- Plain `create index` (not CONCURRENTLY) so this migration can be
+-- pasted into the Supabase SQL editor, which wraps each request in a
+-- transaction and rejects CONCURRENTLY. Table is small (low thousands
+-- of rows in the largest orgs), so the brief ACCESS EXCLUSIVE lock is
+-- imperceptible. If applied via `supabase db push` on a very large DB,
+-- swap in `create index concurrently` — the runner handles it.
+create index if not exists idx_clients_recommended_weekdays
   on public.clients using gin (recommended_weekdays)
   where deleted_at is null;
 
@@ -134,7 +141,9 @@ alter table public.employees
     not null default 'active'
     check (availability_status in ('active','inactive','on_vacation','sick'));
 
-create index concurrently if not exists idx_emp_availability
+-- Plain `create index` for SQL-editor compatibility (see the trailing
+-- note on idx_clients_recommended_weekdays above).
+create index if not exists idx_emp_availability
   on public.employees (org_id, availability_status)
   where deleted_at is null;
 
