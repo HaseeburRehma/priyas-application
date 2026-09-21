@@ -77,7 +77,21 @@ export const createEmployeeSchema = z
       .max(500)
       .optional()
       .or(z.literal("")),
-    status: z.enum(["active", "on_leave", "inactive"]).default("active"),
+    // Feature-update #10: `terminated` (gekündigt) joins the employment
+     // status enum. Matches the DB check-constraint refresh in migration
+     // 20260921_000062.
+    status: z
+      .enum(["active", "on_leave", "inactive", "terminated"])
+      .default("active"),
+    /**
+     * Feature-update #11 · Availability axis (separate from employment
+     * `status`): can this person work THIS week? `sick` is the value the
+     * client explicitly called out as missing. Defaults to `active` so
+     * existing rows continue to appear in the schedule staff picker.
+     */
+    availability_status: z
+      .enum(["active", "inactive", "on_vacation", "sick"])
+      .default("active"),
     /**
      * Which service line this employee is qualified / assigned to work for.
      * Drives the staff filter in the shift planner so only compatible

@@ -14,6 +14,10 @@ export type ClientsQueryParams = {
   pageSize: number;
   sort: ClientsSortField;
   direction: "asc" | "desc";
+  // Feature-update #9: "Active" (default) vs "Old" toggle in the toolbar.
+  // "old" flips the archived flag on the loader so the table shows
+  // former customers that were archived but still accessible.
+  archived: boolean;
 };
 
 /**
@@ -31,6 +35,7 @@ export function useClients(params: ClientsQueryParams) {
       url.searchParams.set("pageSize", String(params.pageSize));
       url.searchParams.set("sort", params.sort);
       url.searchParams.set("direction", params.direction);
+      if (params.archived) url.searchParams.set("archived", "1");
       const res = await fetch(url.toString(), { cache: "no-store" });
       if (!res.ok) throw new Error(`clients_fetch_failed_${res.status}`);
       return (await res.json()) as ClientsListResult;

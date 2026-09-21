@@ -56,6 +56,14 @@ export async function GET(request: NextRequest) {
           .filter(Boolean)
       : undefined;
 
+  // Feature-update #9: forward the `archived` flag so the "Active vs Old"
+  // toolbar toggle actually reaches loadClientsList. Anything truthy
+  // ("1"/"true") opts into the archived view; anything else (including
+  // absent) keeps the default active-only list the loader has always
+  // returned.
+  const archivedRaw = url.searchParams.get("archived");
+  const archived = archivedRaw === "1" || archivedRaw === "true";
+
   try {
     // CSV export: ignore pagination, return *all* matching clients in
     // one document. The Export button on /clients calls this endpoint
@@ -69,6 +77,7 @@ export async function GET(request: NextRequest) {
         sort,
         direction,
         ids,
+        archived,
       });
       const headers = [
         "name",
@@ -111,6 +120,7 @@ export async function GET(request: NextRequest) {
       sort,
       direction,
       ids,
+      archived,
     });
     return NextResponse.json(result);
   } catch (err) {

@@ -11,9 +11,26 @@ type Props = {
   onType: (v: ClientCustomerType | "all") => void;
   view: "list" | "grid";
   onView: (v: "list" | "grid") => void;
+  // Feature-update #9: Active/Old toggle.
+  archived: boolean;
+  onArchived: (v: boolean) => void;
+  // Feature-update #8: top-level "Export all" (no selection required).
+  // The bulk-action bar already exposes a per-selection export; this
+  // one exports the full filtered set.
+  onExportAll: () => void;
 };
 
-export function ClientsToolbar({ q, onQ, type, onType, view, onView }: Props) {
+export function ClientsToolbar({
+  q,
+  onQ,
+  type,
+  onType,
+  view,
+  onView,
+  archived,
+  onArchived,
+  onExportAll,
+}: Props) {
   const t = useTranslations("clients.toolbar");
   const tCommon = useTranslations("common");
   const comingSoonTitle = tCommon("comingSoon");
@@ -43,13 +60,17 @@ export function ClientsToolbar({ q, onQ, type, onType, view, onView }: Props) {
         />
       </div>
 
-      {/* Status filter has no real `clients.status` column today —
-          render it disabled with the coming-soon tooltip so we don't
-          mislead the user with a fake "2"-count badge. */}
-      <FilterChip
-        label={t("filterStatus")}
-        disabledTitle={comingSoonTitle}
-      />
+      {/* Feature-update #9: Active vs Old segmented toggle. Replaces the
+          dead "filterStatus" chip that used to sit here. */}
+      <div className="inline-flex rounded-md border border-neutral-100 bg-neutral-50 p-1 text-[12px]">
+        <SegBtn active={!archived} onClick={() => onArchived(false)}>
+          Aktiv
+        </SegBtn>
+        <SegBtn active={archived} onClick={() => onArchived(true)}>
+          Alt
+        </SegBtn>
+      </div>
+
       <TypeChip type={type} onChange={onType} />
       <FilterChip
         label={t("filterContract")}
@@ -66,6 +87,29 @@ export function ClientsToolbar({ q, onQ, type, onType, view, onView }: Props) {
       />
 
       <div className="flex-1" />
+
+      {/* Feature-update #8: one-click CSV of the whole filtered list.
+          Complements the bulk-action-bar "Export" which only exports the
+          currently selected rows. */}
+      <button
+        type="button"
+        onClick={onExportAll}
+        className="inline-flex items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-3 py-2 text-[12px] font-medium text-neutral-700 transition hover:border-primary-500 hover:text-primary-600"
+        title="Alle sichtbaren Kunden als CSV herunterladen"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-3.5 w-3.5"
+        >
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+        </svg>
+        Exportieren (CSV)
+      </button>
 
       <div className="inline-flex rounded-md border border-neutral-100 bg-neutral-50 p-1 text-[12px]">
         <SegBtn active={view === "list"} onClick={() => onView("list")}>

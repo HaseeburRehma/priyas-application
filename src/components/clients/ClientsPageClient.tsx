@@ -33,6 +33,8 @@ export function ClientsPageClient({ canArchive }: Props) {
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<ClientsSortField>("name");
   const [direction, setDirection] = useState<"asc" | "desc">("asc");
+  // Feature-update #9: Active (default) vs Old (archived) view toggle.
+  const [archived, setArchived] = useState(false);
   const [pending, start] = useTransition();
 
   const { data, isLoading, isFetching } = useClients({
@@ -42,6 +44,7 @@ export function ClientsPageClient({ canArchive }: Props) {
     pageSize: PAGE_SIZE,
     sort,
     direction,
+    archived,
   });
 
   const rows = data?.rows ?? [];
@@ -55,6 +58,20 @@ export function ClientsPageClient({ canArchive }: Props) {
     const ids = Array.from(selectedIds).join(",");
     const url = `/api/clients?format=csv&ids=${encodeURIComponent(ids)}`;
     window.open(url, "_blank", "noopener");
+  }
+
+  // Feature-update #8: export the current filtered/view'd set, not just
+  // the selection. Forwards q/type/sort/direction/archived so the CSV
+  // matches what the user sees on screen.
+  function exportAll() {
+    const url = new URL("/api/clients", window.location.origin);
+    url.searchParams.set("format", "csv");
+    if (q) url.searchParams.set("q", q);
+    url.searchParams.set("type", type);
+    url.searchParams.set("sort", sort);
+    url.searchParams.set("direction", direction);
+    if (archived) url.searchParams.set("archived", "1");
+    window.open(url.toString(), "_blank", "noopener");
   }
 
   function archiveSelected() {
@@ -137,6 +154,13 @@ export function ClientsPageClient({ canArchive }: Props) {
         }}
         view={view}
         onView={setView}
+        archived={archived}
+        onArchived={(v) => {
+          setArchived(v);
+          setPage(1);
+          clear();
+        }}
+        onExportAll={exportAll}
       />
 
       {view === "list" ? (

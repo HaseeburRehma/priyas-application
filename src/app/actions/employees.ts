@@ -143,6 +143,8 @@ export async function createEmployeeAction(
           ? input.hourly_rate_eur
           : null,
       status: input.status,
+      // Feature-update #11: availability axis, separate from employment.
+      availability_status: input.availability_status,
       service_type: input.service_type,
       notes: input.notes || null,
     })
@@ -261,6 +263,8 @@ export async function updateEmployeeAction(
       hourly_rate_eur:
         typeof input.hourly_rate_eur === "number" ? input.hourly_rate_eur : null,
       status: input.status,
+      // Feature-update #11: availability axis, separate from employment.
+      availability_status: input.availability_status,
       service_type: input.service_type,
       notes: input.notes || null,
     })
