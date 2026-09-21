@@ -129,16 +129,29 @@ create index if not exists idx_props_trgm_city
   where deleted_at is null;
 
 -- ---------------------------------------------------------------------------
--- 7. Unique index for property-CSV import lookup
+-- 7. Index for property-CSV import lookup
 --
 -- /api/properties/import does
 --     .from("clients").eq("org_id", orgId).eq("email", row.client_email)
 --          .maybeSingle()
--- inside a per-row loop. Even after the loop is later batched, a
--- unique index on (org_id, lower(email)) turns per-row lookups into
--- an index probe and enforces the implicit business rule (one client
--- per email within an org). `lower(email)` normalises casing.
+-- inside a per-row loop. The composite (org_id, lower(email)) turns
+-- per-row Seq Scans into index probes.
+--
+-- Originally declared UNIQUE to also enforce the implicit business rule
+-- "one client per email within an org". Downgraded to a plain btree
+-- because live data already has same-email duplicates (e.g. two
+-- residential clients created for the same household email, or a
+-- long-standing customer re-onboarded under a new record). Enforcing
+-- uniqueness would fail the migration on those rows without solving
+-- the perf problem. If the client wants the uniqueness back, dedupe
+-- the offending rows first and add a follow-up migration promoting
+-- this index to UNIQUE.
 -- ---------------------------------------------------------------------------
-create unique index if not exists uniq_clients_org_lower_email
+create index if not exists idx_clients_org_lower_email
   on public.clients (org_id, lower(email))
   where email is not null and deleted_at is null;
+
+-- Drop the old unique-index name if a prior migration attempt got past
+-- the CREATE (unlikely — the duplicate would have failed it — but
+-- defensive: means re-running this file is a no-op on any prior state).
+drop index if exists public.uniq_clients_org_lower_email;
