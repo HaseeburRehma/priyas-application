@@ -260,9 +260,13 @@ export async function loadClientDetail(
   let detailQuery = supabase
     .from("clients")
     .select(
+      // Feature-update #1/#4/#12/#6: pull the new fields so the detail
+      // page + edit form can render + preserve them.
       `id, display_name, customer_type, payer_type, contact_name, email, phone, tax_id,
        insurance_provider, insurance_number, care_level, notes, archived,
-       created_at, updated_at, export_target, address_line1, city, postal_code, country`,
+       created_at, updated_at, export_target, address_line1, city, postal_code, country,
+       company_name, key_object, recommended_weekdays,
+       notes_updated_at, notes_updated_by`,
     )
     .eq("id", id)
     .is("deleted_at", null);
@@ -426,6 +430,16 @@ export async function loadClientDetail(
     city: (client.city as string | null) ?? null,
     postal_code: (client.postal_code as string | null) ?? null,
     country: (client.country as string | null) ?? null,
+    // Feature-update #1/#4/#12/#6: hydrate the newly added client-row columns.
+    // Nullish coalesce covers rows saved before this migration lands
+    // (company_name defaults to null, key_object defaults to false at DB
+    // level so this is defensive, recommended_weekdays defaults to []).
+    company_name: (client.company_name as string | null) ?? null,
+    key_object: Boolean(client.key_object),
+    recommended_weekdays:
+      (client.recommended_weekdays as number[] | null) ?? [],
+    notes_updated_at: (client.notes_updated_at as string | null) ?? null,
+    notes_updated_by: (client.notes_updated_by as string | null) ?? null,
     property_count: propsRes.count ?? 0,
     contact_count: 1, // single contact_name today; future: contacts table
     assignment_count: shiftsRes.count ?? 0,

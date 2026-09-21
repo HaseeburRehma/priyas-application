@@ -36,6 +36,11 @@ const baseClient = {
   display_name: z.string().min(2, "Name ist zu kurz").max(200),
   first_name: z.string().min(1, "Vorname erforderlich").max(100),
   last_name: z.string().min(1, "Name erforderlich").max(100),
+  // Feature-update #1: company / trading name. Kept optional here so the
+  // shared base still validates for residential customers (private homes
+  // usually have no company). Commercial customers upgrade this to
+  // required via a per-variant .extend() override below.
+  company_name: optionalText(200),
   contact_name: optionalText(120),
   email: z
     .string()
@@ -61,6 +66,16 @@ const baseClient = {
   city: z.string().min(1, "Stadt erforderlich").max(120),
   country: optionalText(60),
   notes: optionalText(4000),
+  // Feature-update #4: does Priya's team have a key for this object?
+  // Defaults to false; the form renders a Yes/No tile picker.
+  key_object: z.boolean().default(false),
+  // Feature-update #12: recommended weekdays for the schedule assistant.
+  // JS Date convention: 0 = Sunday, 6 = Saturday. Enforced by a DB check
+  // constraint too (see migration 20260921_000062).
+  recommended_weekdays: z
+    .array(z.number().int().min(0).max(6))
+    .max(7)
+    .default([]),
 };
 
 /** Priya's-regular (residential + commercial) extras from the intake list. */
@@ -136,10 +151,14 @@ export const createClientSchema = z.discriminatedUnion("customer_type", [
     ...baseClient,
     ...priyaExtras,
   }),
-  // Priya's regular service: commercial (companies). Same extras.
+  // Priya's regular service: commercial (companies).
+  // Overrides company_name to required — feature-update #1 says the field
+  // must be required, and a commercial customer without a legal name is
+  // effectively unbillable.
   z.object({
     customer_type: z.literal("commercial"),
     ...baseClient,
+    company_name: z.string().min(1, "Firma erforderlich").max(200),
     ...priyaExtras,
   }),
   // Alltagshilfe — different extras + insurance.
@@ -161,6 +180,9 @@ export type CreateClientInput = z.infer<typeof createClientSchema>;
 const updateBase = {
   id: z.string().uuid(),
   display_name: z.string().min(2, "Name ist zu kurz").max(200),
+  // Feature-update #1: settable via edit form too. Optional at DB level so
+  // legacy rows load without failure.
+  company_name: optionalText(200),
   contact_name: optionalText(120),
   email: z
     .string()
@@ -180,6 +202,12 @@ const updateBase = {
   city: z.string().min(1, "Stadt erforderlich").max(120),
   country: optionalText(60),
   notes: optionalText(4000),
+  // Feature-update #4 + #12: editable after onboarding via the same form.
+  key_object: z.boolean().default(false),
+  recommended_weekdays: z
+    .array(z.number().int().min(0).max(6))
+    .max(7)
+    .default([]),
 };
 
 /**

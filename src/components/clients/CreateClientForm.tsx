@@ -50,6 +50,8 @@ export function CreateClientForm({ type }: Props) {
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
+    // Feature-update #1: company / trading name.
+    company_name: "",
     contact_name: "",
     email: "",
     phone: "",
@@ -59,6 +61,12 @@ export function CreateClientForm({ type }: Props) {
     address_line2: "",
     postal_code: "",
     city: "",
+
+    // Feature-update #4: does Priya's team hold a key for this object?
+    key_object: false,
+    // Feature-update #12: recommended weekdays for the schedule assistant.
+    // JS Date convention: 0 = Sunday .. 6 = Saturday.
+    recommended_weekdays: [] as number[],
 
     billing_different: false,
     billing_address_line1: "",
@@ -145,6 +153,8 @@ export function CreateClientForm({ type }: Props) {
       display_name: displayName,
       first_name: form.first_name,
       last_name: form.last_name,
+      // Feature-update #1: pass through company name for every type.
+      company_name: form.company_name,
       contact_name: form.contact_name,
       email: form.email,
       phone: form.phone,
@@ -155,6 +165,9 @@ export function CreateClientForm({ type }: Props) {
       city: form.city,
       country: "DE",
       notes: form.notes,
+      // Feature-update #4 + #12: Key object + weekday preferences.
+      key_object: form.key_object,
+      recommended_weekdays: form.recommended_weekdays,
     };
 
     start(async () => {
@@ -990,6 +1003,110 @@ export function CreateClientForm({ type }: Props) {
                 }
                 {...input("notes")}
               />
+            </Field>
+
+            {/* ─── Feature update: extra intake fields ────────────────
+             *  #1 · Company / trading name — required for commercial
+             *       customers (validator enforces), optional for the
+             *       others but still shown so residential invoices can
+             *       carry a bill-to name if there's one.
+             *  #4 · Key-object flag — does Priya's team hold a key for
+             *       this object? Renders as two side-by-side Yes/No
+             *       tiles for parity with abtretungserklaerung /
+             *       contract_docs_signed below.
+             *  #12 · Recommended weekdays — the schedule assistant
+             *       surfaces these as "customers usually cleaned on
+             *       this day" when a PM plans a Monday. 0 = Sunday .. 6
+             *       = Saturday (JS Date convention).
+             * ------------------------------------------------------------ */}
+            <div className="mt-5 grid gap-4 border-t border-neutral-100 pt-5 md:grid-cols-2">
+              <Field
+                label="Firma / Company"
+                required={type === "commercial"}
+                error={errors.company_name}
+              >
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="z. B. Muster GmbH"
+                  {...input("company_name")}
+                />
+              </Field>
+              <Field label="Schlüsselobjekt (Key object)" error={errors.key_object}>
+                <div className="flex gap-2">
+                  {(
+                    [
+                      { v: true, label: "Ja" },
+                      { v: false, label: "Nein" },
+                    ] as const
+                  ).map((opt) => {
+                    const active = form.key_object === opt.v;
+                    return (
+                      <button
+                        key={String(opt.v)}
+                        type="button"
+                        onClick={() => setField("key_object", opt.v)}
+                        className={cn(
+                          "flex-1 rounded-md border px-3 py-2 text-[13px] font-medium transition",
+                          active
+                            ? "border-primary-500 bg-primary-50 text-primary-700"
+                            : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50",
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </Field>
+            </div>
+            <Field
+              label="Empfohlene Wochentage (recommended weekdays)"
+              error={errors.recommended_weekdays}
+            >
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    { d: 1, label: "Mo" },
+                    { d: 2, label: "Di" },
+                    { d: 3, label: "Mi" },
+                    { d: 4, label: "Do" },
+                    { d: 5, label: "Fr" },
+                    { d: 6, label: "Sa" },
+                    { d: 0, label: "So" },
+                  ] as const
+                ).map((day) => {
+                  const active = form.recommended_weekdays.includes(day.d);
+                  return (
+                    <button
+                      key={day.d}
+                      type="button"
+                      onClick={() =>
+                        setField(
+                          "recommended_weekdays",
+                          active
+                            ? form.recommended_weekdays.filter((x) => x !== day.d)
+                            : [...form.recommended_weekdays, day.d].sort(
+                                (a, b) => a - b,
+                              ),
+                        )
+                      }
+                      className={cn(
+                        "rounded-full border px-3 py-1 text-[12px] font-medium transition",
+                        active
+                          ? "border-primary-500 bg-primary-500 text-white"
+                          : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50",
+                      )}
+                    >
+                      {day.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-1 text-[11px] text-neutral-500">
+                Der Kunde kann trotzdem an anderen Tagen eingeplant werden — die
+                Auswahl steuert nur die Empfehlungsliste beim Wochenplan.
+              </p>
             </Field>
           </section>
 

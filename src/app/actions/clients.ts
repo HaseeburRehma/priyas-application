@@ -91,6 +91,9 @@ export async function createClientAction(
     display_name: input.display_name,
     first_name: input.first_name || null,
     last_name: input.last_name || null,
+    // Feature-update #1: company / trading name (required for commercial,
+    // optional for other types — enforced at the validator level).
+    company_name: input.company_name || null,
     contact_name: input.contact_name || null,
     email: input.email || null,
     phone: input.phone || null,
@@ -101,6 +104,15 @@ export async function createClientAction(
     city: input.city || null,
     country: input.country || "DE",
     notes: input.notes || null,
+    // Feature-update #4: does Priya's team have a key for the object?
+    key_object: input.key_object ?? false,
+    // Feature-update #12: recommended weekdays for the schedule assistant.
+    // Zero-length array is fine — the schedule treats it as "no preference".
+    recommended_weekdays: input.recommended_weekdays ?? [],
+    // Feature-update #6: seed the notes-audit columns on create so the
+    // overview widget can render "last updated" without needing a fallback.
+    notes_updated_at: input.notes ? new Date().toISOString() : null,
+    notes_updated_by: input.notes ? (user?.id ?? null) : null,
   };
   if (input.customer_type === "alltagshilfe") {
     insertRow.date_of_birth = input.date_of_birth || null;
@@ -226,19 +238,35 @@ export async function updateClientAction(
   const input = parsed.data;
   const supabase = await createSupabaseServerClient();
 
+  // Feature-update #6: need the current user's id to attribute the
+  // "last note updated by" column on the client row.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   // Capture the pre-update snapshot so the audit row carries a real
   // `before` diff. Without this the audit log loses half the change
   // history (only the new values land in `after`).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: beforeRow } = await ((supabase.from("clients") as any))
     .select(
-      "display_name, contact_name, email, phone, tax_id, notes, customer_type, insurance_provider, insurance_number, care_level, export_target, billing_email, address_line1, city, postal_code",
+      "display_name, company_name, contact_name, email, phone, tax_id, notes, customer_type, insurance_provider, insurance_number, care_level, export_target, billing_email, address_line1, city, postal_code, key_object, recommended_weekdays",
     )
     .eq("id", input.id)
     .maybeSingle();
 
+  // Feature-update #6: only stamp notes_updated_* when the notes content
+  // actually changed. Prevents "someone updated the notes" flashes on
+  // every unrelated field edit, and lets the overview widget answer
+  // "when was this note last written?" honestly.
+  const beforeNotes = (beforeRow as { notes: string | null } | null)?.notes ?? null;
+  const nextNotes = input.notes || null;
+  const notesChanged = beforeNotes !== nextNotes;
+
   const updateRow: Record<string, unknown> = {
     display_name: input.display_name,
+    // Feature-update #1: editable in the update form too.
+    company_name: input.company_name || null,
     contact_name: input.contact_name || null,
     email: input.email || null,
     phone: input.phone || null,
@@ -247,7 +275,16 @@ export async function updateClientAction(
     postal_code: input.postal_code || null,
     city: input.city || null,
     country: input.country || null,
-    notes: input.notes || null,
+    notes: nextNotes,
+    // Feature-update #4 + #12: editable in the update form.
+    key_object: input.key_object ?? false,
+    recommended_weekdays: input.recommended_weekdays ?? [],
+    ...(notesChanged
+      ? {
+          notes_updated_at: nextNotes ? new Date().toISOString() : null,
+          notes_updated_by: nextNotes ? (user?.id ?? null) : null,
+        }
+      : {}),
   };
   if (input.customer_type === "alltagshilfe") {
     updateRow.insurance_provider = input.insurance_provider;

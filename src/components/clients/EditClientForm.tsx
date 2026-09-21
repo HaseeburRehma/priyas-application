@@ -14,6 +14,8 @@ type Props = { detail: ClientDetail };
 
 type FormState = {
   display_name: string;
+  // Feature-update #1
+  company_name: string;
   contact_name: string;
   email: string;
   phone: string;
@@ -29,6 +31,10 @@ type FormState = {
   // Kept as plain string (like care_level) so it works with the generic
   // `field()` helper below; cast to the real union at submit time.
   export_target: string;
+  // Feature-update #4 + #12 — booleans/arrays kept out of `field()`
+  // because the helper is typed for text inputs; edited via setForm().
+  key_object: boolean;
+  recommended_weekdays: number[];
 };
 
 /**
@@ -46,6 +52,10 @@ export function EditClientForm({ detail }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState<FormState>({
     display_name: detail.display_name ?? "",
+    // Feature-update #1/#4/#12: read from the loader — fall back to
+    // safe defaults if the loader hasn't been extended yet (defensive
+    // against a stale server bundle).
+    company_name: (detail as { company_name?: string | null }).company_name ?? "",
     contact_name: detail.contact_name ?? "",
     email: detail.email ?? "",
     phone: detail.phone ?? "",
@@ -59,6 +69,9 @@ export function EditClientForm({ detail }: Props) {
     insurance_number: detail.insurance_number ?? "",
     care_level: detail.care_level ? String(detail.care_level) : "1",
     export_target: detail.export_target,
+    key_object: (detail as { key_object?: boolean | null }).key_object ?? false,
+    recommended_weekdays:
+      (detail as { recommended_weekdays?: number[] | null }).recommended_weekdays ?? [],
   });
 
   function field<K extends keyof FormState>(key: K) {
@@ -75,21 +88,31 @@ export function EditClientForm({ detail }: Props) {
     e.preventDefault();
     setErrors({});
     start(async () => {
+      // Feature-update #1/#4/#12: pass the new fields through on every
+      // variant so an edit that doesn't touch them still preserves the
+      // stored value (validator has defaults that would otherwise wipe
+      // key_object → false and recommended_weekdays → []).
+      const shared = {
+        display_name: form.display_name,
+        company_name: form.company_name,
+        contact_name: form.contact_name,
+        email: form.email,
+        phone: form.phone,
+        tax_id: form.tax_id,
+        address_line1: form.address_line1,
+        postal_code: form.postal_code,
+        city: form.city,
+        country: form.country,
+        notes: form.notes,
+        key_object: form.key_object,
+        recommended_weekdays: form.recommended_weekdays,
+      };
       const payload =
         detail.customer_type === "alltagshilfe"
           ? {
               id: detail.id,
               customer_type: "alltagshilfe" as const,
-              display_name: form.display_name,
-              contact_name: form.contact_name,
-              email: form.email,
-              phone: form.phone,
-              tax_id: form.tax_id,
-              address_line1: form.address_line1,
-              postal_code: form.postal_code,
-              city: form.city,
-              country: form.country,
-              notes: form.notes,
+              ...shared,
               insurance_provider: form.insurance_provider,
               insurance_number: form.insurance_number,
               care_level: Number(form.care_level),
@@ -97,16 +120,7 @@ export function EditClientForm({ detail }: Props) {
           : {
               id: detail.id,
               customer_type: detail.customer_type,
-              display_name: form.display_name,
-              contact_name: form.contact_name,
-              email: form.email,
-              phone: form.phone,
-              tax_id: form.tax_id,
-              address_line1: form.address_line1,
-              postal_code: form.postal_code,
-              city: form.city,
-              country: form.country,
-              notes: form.notes,
+              ...shared,
               export_target: form.export_target as "internal" | "lexware",
             };
       const result = await updateClientAction(payload);

@@ -89,6 +89,16 @@ export type ClientDetail = {
   city: string | null;
   postal_code: string | null;
   country: string | null;
+  // Feature-update #1 · Company / trading name.
+  company_name: string | null;
+  // Feature-update #4 · Does Priya's team hold a key for this object?
+  key_object: boolean;
+  // Feature-update #12 · Recommended weekdays (0=Sunday .. 6=Saturday).
+  recommended_weekdays: number[];
+  // Feature-update #6 · "Last note updated" metadata for the overview
+  // preview widget.
+  notes_updated_at: string | null;
+  notes_updated_by: string | null;
   // Aggregates
   property_count: number;
   contact_count: number;
