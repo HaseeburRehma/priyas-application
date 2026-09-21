@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { SIDEBAR_TAGS } from "@/lib/api/sidebar";
 import { redirect } from "next/navigation";
 import {
   createClientSchema,
@@ -177,6 +178,9 @@ export async function createClientAction(
   await notifyNewClient(orgId, newId, input.display_name).catch(() => {});
 
   revalidatePath(routes.clients);
+  
+
+  revalidateTag(SIDEBAR_TAGS.clients);
   revalidatePath(routes.dashboard);
   return { ok: true, data: { id: newId } };
 }
@@ -328,6 +332,8 @@ export async function updateClientAction(
 
   revalidatePath(routes.client(input.id));
   revalidatePath(routes.clients);
+  
+  revalidateTag(SIDEBAR_TAGS.clients);
   return { ok: true, data: { id: input.id } };
 }
 
@@ -364,6 +370,9 @@ export async function archiveClientAction(
   });
 
   revalidatePath(routes.clients);
+  
+
+  revalidateTag(SIDEBAR_TAGS.clients);
   return { ok: true, data: { id } };
 }
 
@@ -441,6 +450,9 @@ export async function bulkArchiveClientsAction(
   }
 
   revalidatePath(routes.clients);
+  
+
+  revalidateTag(SIDEBAR_TAGS.clients);
   return {
     ok: true,
     data: { ok: success, failed: errors.length, errors },

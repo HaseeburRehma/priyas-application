@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { SIDEBAR_TAGS } from "@/lib/api/sidebar";
 import { createClient } from "@supabase/supabase-js";
 import {
   createEmployeeSchema,
@@ -204,6 +205,8 @@ export async function createEmployeeAction(
       : `Mitarbeiter **${input.full_name}** angelegt (Einladung: ${inviteStatus}).`,
   );
   revalidatePath(routes.employees);
+  
+  revalidateTag(SIDEBAR_TAGS.employees);
   revalidatePath(routes.dashboard);
 
   // Don't fail the whole action just because the invite mail bounced —
@@ -278,6 +281,8 @@ export async function updateEmployeeAction(
   );
   revalidatePath(routes.employee(input.id));
   revalidatePath(routes.employees);
+  
+  revalidateTag(SIDEBAR_TAGS.employees);
   return { ok: true, data: { id: input.id } };
 }
 
@@ -387,6 +392,8 @@ export async function updateEmployeeRoleAction(
   );
   revalidatePath(routes.employee(emp.id));
   revalidatePath(routes.employees);
+  
+  revalidateTag(SIDEBAR_TAGS.employees);
   return {
     ok: true,
     data: { employeeId: emp.id, role: nextRole, previousRole },
@@ -465,6 +472,9 @@ export async function bulkArchiveEmployeesAction(
   }
 
   revalidatePath(routes.employees);
+  
+
+  revalidateTag(SIDEBAR_TAGS.employees);
   return {
     ok: true,
     data: { ok: success, failed: errors.length, errors },
@@ -588,6 +598,9 @@ export async function bulkInviteEmployeesAction(
   }
 
   revalidatePath(routes.employees);
+  
+
+  revalidateTag(SIDEBAR_TAGS.employees);
   return {
     ok: true,
     data: { ok: success, failed: errors.length, errors },
@@ -649,5 +662,7 @@ export async function archiveEmployeeAction(
   if (error) return { ok: false, error: error.message };
   await audit("archive", id, "Mitarbeiter archiviert.", beforeRow ?? null);
   revalidatePath(routes.employees);
+  
+  revalidateTag(SIDEBAR_TAGS.employees);
   return { ok: true, data: { id } };
 }

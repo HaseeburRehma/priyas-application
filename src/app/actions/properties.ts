@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { SIDEBAR_TAGS } from "@/lib/api/sidebar";
 import {
   createPropertySchema,
   updatePropertySchema,
@@ -101,6 +102,8 @@ export async function createPropertyAction(
   const newId = (data as { id: string }).id;
   await audit("create", newId, `Objekt **${input.name}** wurde angelegt.`);
   revalidatePath(routes.properties);
+  
+  revalidateTag(SIDEBAR_TAGS.properties);
   revalidatePath(routes.dashboard);
   return { ok: true, data: { id: newId } };
 }
@@ -167,6 +170,8 @@ export async function updatePropertyAction(
   );
   revalidatePath(routes.property(input.id));
   revalidatePath(routes.properties);
+  
+  revalidateTag(SIDEBAR_TAGS.properties);
   return { ok: true, data: { id: input.id } };
 }
 
@@ -196,6 +201,8 @@ export async function deletePropertyAction(
   if (error) return { ok: false, error: error.message };
   await audit("delete", id, "Objekt entfernt.", beforeRow ?? null);
   revalidatePath(routes.properties);
+  
+  revalidateTag(SIDEBAR_TAGS.properties);
   return { ok: true, data: { id } };
 }
 
@@ -269,6 +276,9 @@ export async function bulkArchivePropertiesAction(
   }
 
   revalidatePath(routes.properties);
+  
+
+  revalidateTag(SIDEBAR_TAGS.properties);
   return {
     ok: true,
     data: { ok: success, failed: errors.length, errors },
@@ -332,6 +342,9 @@ export async function bulkAssignPropertiesAction(
   }
 
   revalidatePath(routes.properties);
+  
+
+  revalidateTag(SIDEBAR_TAGS.properties);
   return {
     ok: true,
     data: { ok: success, failed: errors.length, errors },
