@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { loadDashboardData } from "@/lib/api/dashboard";
 import { loadMySelf } from "@/lib/api/my-self";
+import { loadPmWidget } from "@/lib/api/pm-widget";
 import { PageHead } from "@/components/dashboard/PageHead";
 import { KpiGrid } from "@/components/dashboard/KpiGrid";
 import { WeeklyChart } from "@/components/dashboard/WeeklyChart";
@@ -9,6 +10,7 @@ import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { TeamUtilization } from "@/components/dashboard/TeamUtilization";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { MySelfPanel } from "@/components/dashboard/MySelfPanel";
+import { MyFilesAndNotesWidget } from "@/components/dashboard/MyFilesAndNotesWidget";
 import { InvoiceKpiPanel } from "@/components/dashboard/InvoiceKpiPanel";
 import { loadInvoicesSummary } from "@/lib/api/invoices";
 import { loadAgingReport } from "@/lib/api/invoice-aging";
@@ -50,6 +52,14 @@ export default async function DashboardPage() {
     ? await Promise.all([loadInvoicesSummary(), loadAgingReport()])
     : [null, null];
 
+  // Feature-update #19: PM "My Files & Notes" widget. Scoped to the
+  // same audience as the org overview (admin + dispatcher) — field
+  // staff have no reason to see it. RLS on pm_notes / pm_files
+  // additionally scopes reads to owner_id = auth.uid(), so even if the
+  // gate were lifted later the widget would surface an empty list to
+  // an employee. Loader is skipped entirely to avoid the round-trip.
+  const pmWidget = canSeeOrgOverview ? await loadPmWidget() : null;
+
   // Personal-scope name for the greeting: prefer the caller's own
   // profile name, fall back to the org loader when available, then to
   // a neutral placeholder.
@@ -67,6 +77,14 @@ export default async function DashboardPage() {
         <div className="mb-6">
           <MySelfPanel data={mySelf} />
         </div>
+      )}
+
+      {/* Feature-update #19: PM "My Files & Notes" widget — sits ABOVE
+       *  the KPI grid so it's the first thing a manager sees on
+       *  every dashboard visit. Client explicitly asked for it to be
+       *  "at the top, not buried in a submenu". */}
+      {canSeeOrgOverview && pmWidget && (
+        <MyFilesAndNotesWidget notes={pmWidget.notes} files={pmWidget.files} />
       )}
 
       {/* Everything below is org-scope. Field staff never sees it. */}
