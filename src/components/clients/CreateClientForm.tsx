@@ -310,36 +310,14 @@ export function CreateClientForm({ type }: Props) {
         </button>
       </header>
 
-      {/* Stepper -------------------------------------------------------- */}
-      <ol
-        className={cn(
-          "mb-5 grid grid-cols-3 gap-2 rounded-lg border bg-white p-3 shadow-xs ring-1",
-          accentRing,
-          isAlltags ? "border-error-100" : "border-primary-100",
-        )}
-      >
-        <StepperItem
-          n={1}
-          state="done"
-          label={`${t("stepper.step")} 1`}
-          sub={t("stepper.serviceType")}
-          isAlltags={isAlltags}
-        />
-        <StepperItem
-          n={2}
-          state="active"
-          label={`${t("stepper.step")} 2`}
-          sub={isAlltags ? t("stepper.masterDataAlltagshilfe") : t("stepper.masterData")}
-          isAlltags={isAlltags}
-        />
-        <StepperItem
-          n={3}
-          state="future"
-          label={`${t("stepper.step")} 3`}
-          sub={t("stepper.confirmation")}
-          isAlltags={isAlltags}
-        />
-      </ol>
+      {/* Feature-update #2 — the client asked to "reduce clicks / fewer
+       *  steps / everything on one screen if possible". The 3-step
+       *  visual stepper was cosmetic: the form always saved in a
+       *  single submit. Removing the ornament gets the layout out of
+       *  the user's way — one continuous form + one Save at the
+       *  bottom — without touching any submit logic. The
+       *  service-context banner below still tells the user which
+       *  customer type this form is for. */}
 
       {/* Service-context banner ---------------------------------------- */}
       <section

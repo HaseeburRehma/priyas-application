@@ -40,7 +40,17 @@ export function InviteEmployeeDialog({ open, onClose }: Props) {
     vacation_days_per_year: "24",
     contract_start: "",
     hire_date: "",
-    status: "active" as "active" | "on_leave" | "inactive",
+    // Feature-update #10: `terminated` (gekündigt) is now a valid
+    // employment status. Kept the default at 'active' — new hires
+    // are almost always active on day 1.
+    status: "active" as "active" | "on_leave" | "inactive" | "terminated",
+    // Feature-update #11: separate availability axis (does the person
+    // work THIS week?), including the previously-missing 'sick' state.
+    availability_status: "active" as
+      | "active"
+      | "inactive"
+      | "on_vacation"
+      | "sick",
     role: "employee" as "admin" | "dispatcher" | "employee",
     service_type: "both" as "priya" | "alltagshilfe" | "both",
     notes: "",
@@ -107,6 +117,8 @@ export function InviteEmployeeDialog({ open, onClose }: Props) {
             ? Number(form.hourly_rate_eur)
             : "",
         status: form.status,
+        // Feature-update #11: forward the new availability axis.
+        availability_status: form.availability_status,
         role: form.role,
         service_type: form.service_type,
         notes: form.notes,
@@ -329,13 +341,46 @@ export function InviteEmployeeDialog({ open, onClose }: Props) {
                 onChange={(e) =>
                   update(
                     "status",
-                    e.target.value as "active" | "on_leave" | "inactive",
+                    e.target.value as
+                      | "active"
+                      | "on_leave"
+                      | "inactive"
+                      | "terminated",
                   )
                 }
               >
                 <option value="active">Active</option>
                 <option value="on_leave">On leave</option>
                 <option value="inactive">Inactive</option>
+                {/* Feature-update #10: 'Terminated' (gekündigt). */}
+                <option value="terminated">Gekündigt</option>
+              </select>
+            </Field>
+            {/* Feature-update #11: Availability axis — orthogonal to
+             *  employment status. 'Sick' is the state the client
+             *  explicitly asked for. */}
+            <Field
+              label="Verfügbarkeit"
+              error={errors.availability_status}
+            >
+              <select
+                className="input"
+                value={form.availability_status}
+                onChange={(e) =>
+                  update(
+                    "availability_status",
+                    e.target.value as
+                      | "active"
+                      | "inactive"
+                      | "on_vacation"
+                      | "sick",
+                  )
+                }
+              >
+                <option value="active">Aktiv (arbeitet)</option>
+                <option value="inactive">Inaktiv</option>
+                <option value="on_vacation">Im Urlaub</option>
+                <option value="sick">Krank</option>
               </select>
             </Field>
             <Field label={t("role")} error={errors.role}>

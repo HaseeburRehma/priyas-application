@@ -6,6 +6,7 @@ import { useFormat } from "@/lib/utils/i18n-format";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
 import { ClientDetailActions } from "./ClientDetailActions";
+import { EditableNotesCard } from "./EditableNotesCard";
 import { PayerChip } from "./PayerChip";
 
 type Props = {
@@ -161,9 +162,12 @@ export function ClientDetail({ detail, canUpdate, canArchive }: Props) {
           <Tab count={3} disabledTitle={comingSoonTitle}>
             {t("tabInvoices")}
           </Tab>
-          <Tab count={6} disabledTitle={comingSoonTitle}>
-            {t("tabDocuments")}
-          </Tab>
+          {/* Feature-update #5 + #7: Documents tab is now a real anchor
+              to the DocumentsCard section below (page.tsx renders it with
+              id="client-documents"). Every file the client has ever
+              uploaded already appears there as a downloadable list —
+              activating the tab makes it a one-click jump. */}
+          <Tab href="#client-documents">{t("tabDocuments")}</Tab>
           <Tab disabledTitle={comingSoonTitle}>{t("tabHistory")}</Tab>
         </div>
       </section>
@@ -179,8 +183,16 @@ export function ClientDetail({ detail, canUpdate, canArchive }: Props) {
         <KeyInformationCard detail={detail} canUpdate={canUpdate} />
       </div>
 
-      {/* Internal notes */}
-      <NotesCard detail={detail} canUpdate={canUpdate} />
+      {/* Feature-update #6: Internal notes now inline-editable via the
+       *  EditableNotesCard client component. The old NotesCard function
+       *  is still defined below (dead code kept for reference during
+       *  the transition; safe to delete in a follow-up sweep). */}
+      <EditableNotesCard
+        clientId={detail.id}
+        initialNotes={detail.notes}
+        updatedAt={detail.notes_updated_at}
+        canUpdate={canUpdate}
+      />
     </>
   );
 }
@@ -222,25 +234,28 @@ function Tab({
   count,
   children,
   disabledTitle,
+  href,
 }: {
   active?: boolean;
   count?: number;
   children: React.ReactNode;
   /** When set, renders the tab as disabled with this tooltip. */
   disabledTitle?: string;
+  /** Feature-update #5/#7: when set (and not disabled), renders the tab
+   *  as an anchor link. Used by the Documents tab to jump to the
+   *  DocumentsCard section further down the page — the simplest
+   *  activation that gives the client the "one tab per customer for
+   *  all files" UX they asked for without a full tab-panel rewrite. */
+  href?: string;
 }) {
   const disabled = !active && !!disabledTitle;
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      aria-disabled={disabled ? "true" : undefined}
-      tabIndex={disabled ? -1 : undefined}
-      title={disabled ? disabledTitle : undefined}
-      className={`relative inline-flex items-center gap-2 rounded-md px-3 py-2 ${
-        active ? "text-primary-700" : "text-neutral-600"
-      } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
-    >
+  const commonClass = `relative inline-flex items-center gap-2 rounded-md px-3 py-2 ${
+    active ? "text-primary-700" : "text-neutral-600"
+  } ${disabled ? "cursor-not-allowed opacity-50" : ""} ${
+    !disabled && href ? "hover:text-primary-600" : ""
+  }`;
+  const body = (
+    <>
       {children}
       {count !== undefined && count > 0 && (
         <span className="rounded-full bg-neutral-100 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-600">
@@ -250,6 +265,25 @@ function Tab({
       {active && (
         <span className="absolute inset-x-2 -bottom-[7px] h-0.5 rounded-full bg-primary-500" />
       )}
+    </>
+  );
+  if (!disabled && href) {
+    return (
+      <a href={href} className={commonClass}>
+        {body}
+      </a>
+    );
+  }
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      aria-disabled={disabled ? "true" : undefined}
+      tabIndex={disabled ? -1 : undefined}
+      title={disabled ? disabledTitle : undefined}
+      className={commonClass}
+    >
+      {body}
     </button>
   );
 }

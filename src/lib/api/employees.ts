@@ -530,7 +530,9 @@ export async function loadEmployeeDetail(
   let detailQuery = supabase
     .from("employees")
     .select(
-      `id, full_name, email, phone, hire_date, status, weekly_hours, hourly_rate_eur,
+      // Feature-update #11: pull availability_status so the detail view
+      // and the (about-to-land) inline edit both have the current value.
+      `id, full_name, email, phone, hire_date, status, availability_status, weekly_hours, hourly_rate_eur,
        profile:profiles ( id, role )`,
     )
     .eq("id", id)
@@ -544,6 +546,7 @@ export async function loadEmployeeDetail(
     phone: string | null;
     hire_date: string | null;
     status: EmployeeStatus;
+    availability_status: "active" | "inactive" | "on_vacation" | "sick";
     weekly_hours: number | null;
     hourly_rate_eur: number | null;
     profile: {
@@ -712,6 +715,9 @@ export async function loadEmployeeDetail(
     tone: "primary",
     hire_date: r.hire_date,
     status: r.status,
+    // Feature-update #11: hydrate the availability axis. DB default is
+    // 'active' so pre-migration rows read cleanly.
+    availability_status: r.availability_status ?? "active",
     role_chip: chipFromProfileRole(
       r.profile?.role ?? null,
       detailPending.has(r.id),

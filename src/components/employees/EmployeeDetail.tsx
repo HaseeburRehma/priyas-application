@@ -479,6 +479,35 @@ function ProfileCard({ detail }: { detail: Detail }) {
         <Row label={t("infoPhone")} value={detail.phone ?? "—"} />
         <Row label={t("infoTeam")} value={detail.team_label ?? "—"} />
         <Row label={t("infoStatus")} value={detail.status} />
+        {/* Feature-update #11: separate availability chip so the PM
+         *  can tell at a glance whether the person is actually
+         *  available this week (vs. their contract status). */}
+        <Row
+          label="Verfügbarkeit"
+          value={
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                detail.availability_status === "active" &&
+                  "bg-primary-50 text-primary-700",
+                detail.availability_status === "on_vacation" &&
+                  "bg-warning-50 text-warning-700",
+                detail.availability_status === "sick" &&
+                  "bg-error-50 text-error-700",
+                detail.availability_status === "inactive" &&
+                  "bg-neutral-100 text-neutral-600",
+              )}
+            >
+              {detail.availability_status === "active"
+                ? "Aktiv"
+                : detail.availability_status === "on_vacation"
+                  ? "Urlaub"
+                  : detail.availability_status === "sick"
+                    ? "Krank"
+                    : "Inaktiv"}
+            </span>
+          }
+        />
         <Row label={t("infoWeeklyHours")} value={`${detail.weekly_hours}h`} />
         <Row label={t("infoLanguage")} value="DE · EN" />
       </dl>

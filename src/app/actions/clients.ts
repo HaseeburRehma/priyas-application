@@ -219,6 +219,79 @@ async function notifyNewClient(
 /* ============================================================================
  * updateClient — only admin / dispatcher.
  * ========================================================================== */
+/**
+ * Feature-update #6 — lightweight notes-only update used by the
+ * inline-edit widget in the ClientDetail overview. Distinct from
+ * updateClientAction (which requires the full discriminated-union
+ * payload including customer_type + insurance columns) so the notes
+ * card doesn't need to reconstruct the whole client shape just to
+ * change a single string.
+ *
+ * Stamps notes_updated_at / notes_updated_by only when the notes
+ * content actually changed — matches the same behaviour in
+ * updateClientAction, so a UI that flips between the two paths still
+ * produces consistent "last note updated" values.
+ */
+export async function updateClientNotesAction(
+  clientId: string,
+  notes: string,
+): Promise<ActionResult<{ notes_updated_at: string | null }>> {
+  try {
+    await requirePermission("client.update");
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof PermissionError ? err.message : "Forbidden",
+    };
+  }
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const nextNotes = (notes ?? "").trim() || null;
+
+  // Fetch the current notes so we can decide whether the stamp should
+  // move. Also serves as an existence check + RLS gate.
+  const { data: beforeRow } = await supabase
+    .from("clients")
+    .select("notes")
+    .eq("id", clientId)
+    .maybeSingle();
+  if (!beforeRow) return { ok: false, error: "Kunde nicht gefunden" };
+  const beforeNotes = (beforeRow as { notes: string | null }).notes ?? null;
+  if (beforeNotes === nextNotes) {
+    // No-op — return success but skip the write so the audit log stays
+    // clean and the sidebar cache isn't invalidated for nothing.
+    return { ok: true, data: { notes_updated_at: null } };
+  }
+
+  const stampAt = nextNotes ? new Date().toISOString() : null;
+  const stampBy = nextNotes ? (user?.id ?? null) : null;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await ((supabase.from("clients") as any))
+    .update({
+      notes: nextNotes,
+      notes_updated_at: stampAt,
+      notes_updated_by: stampBy,
+    })
+    .eq("id", clientId);
+  if (error) return { ok: false, error: error.message };
+
+  await audit("update_notes", "clients", clientId, { notes: beforeNotes }, {
+    notes: nextNotes,
+    notes_updated_at: stampAt,
+    notes_updated_by: stampBy,
+  });
+
+  revalidatePath(routes.client(clientId));
+  revalidatePath(routes.clients);
+  // Notes changes don't affect the sidebar counts, so no
+  // revalidateTag call here.
+  return { ok: true, data: { notes_updated_at: stampAt } };
+}
+
 export async function updateClientAction(
   raw: unknown,
 ): Promise<ActionResult<{ id: string }>> {

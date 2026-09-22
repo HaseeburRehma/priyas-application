@@ -81,6 +81,9 @@ export type EmployeeDetail = {
   tone: "primary" | "secondary" | "accent" | "warning";
   hire_date: string | null;
   status: EmployeeStatus;
+  // Feature-update #11: availability axis (does the person work THIS
+  // week?). Distinct from employment status.
+  availability_status: "active" | "inactive" | "on_vacation" | "sick";
   role_chip: EmployeeRoleChip;
   service_type: EmployeeServiceType;
   /**

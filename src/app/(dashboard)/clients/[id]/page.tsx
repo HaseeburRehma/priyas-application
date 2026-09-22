@@ -57,7 +57,12 @@ export default async function Page({
           canEdit={canUpdate}
         />
       </div>
-      <div className="mt-5">
+      {/* id="client-documents" is the anchor target for the Documents
+       *  tab in ClientDetail (feature-update #5/#7). The Tab's <a href>
+       *  scrolls the browser here; no client-side JS or extra routing
+       *  required. scroll-mt keeps the section clear of the fixed
+       *  header when scrolled to. */}
+      <div id="client-documents" className="mt-5 scroll-mt-24">
         <DocumentsCard
           clientId={detail.id}
           documents={documents}
