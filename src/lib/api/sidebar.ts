@@ -1,5 +1,4 @@
 import "server-only";
-import { unstable_cache } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 /**
@@ -10,6 +9,16 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
  *
  * The generic 'sidebar-counts' tag lets us blast the whole widget
  * when we don't know which resource changed (e.g. bulk imports).
+ *
+ * NOTE: an earlier version wrapped the count query in `unstable_cache`
+ * for cross-user memoisation. That crashed the entire dashboard on
+ * Vercel because `unstable_cache` executes in a non-dynamic context,
+ * so the `cookies()` call inside `createSupabaseServerClient()` threw
+ * "used cookies inside unstable_cache." The count queries are cheap
+ * enough uncached (three count(*) via HEAD requests, all hitting
+ * covering indexes), so we serve them per-request and keep the tags
+ * exported for a future cache reintroduction that keys off a
+ * cookie-free service-role client.
  */
 export const SIDEBAR_TAGS = {
   all: "sidebar-counts" as const,
@@ -48,95 +57,31 @@ function capCount(n: number | null | undefined): number | null {
   return Math.min(n, 999);
 }
 
-/**
- * Cached org-scoped counts.
- *
- * These three numbers are identical for every user in an org and
- * change only when someone creates / archives a client, property or
- * employee. Wrapping in `unstable_cache` keyed on orgId means the
- * whole org shares a single cached row and every dashboard nav hits
- * the memoised value instead of firing three fresh `count` queries
- * against Postgres.
- *
- * Invalidation: every mutating action (createClientAction,
- * archiveClientAction, bulk archives, employee create/update, etc.)
- * calls `revalidateTag(SIDEBAR_TAGS.all)` so the next request pulls
- * fresh numbers within milliseconds of any change.
- *
- * TTL of 60 s is the belt-and-braces fallback in case a mutation
- * path forgets to revalidate — the counts will still self-heal within
- * a minute rather than remaining stale forever.
- */
-const loadOrgCountsCached = (orgId: string) =>
-  unstable_cache(
-    async () => {
-      const supabase = await createSupabaseServerClient();
-      const [clientsRes, propertiesRes, employeesRes] = await Promise.all([
-        supabase
-          .from("clients")
-          .select("id", { count: "exact", head: true })
-          .is("deleted_at", null)
-          .eq("org_id", orgId),
-        supabase
-          .from("properties")
-          .select("id", { count: "exact", head: true })
-          .is("deleted_at", null)
-          .eq("org_id", orgId),
-        supabase
-          .from("employees")
-          .select("id", { count: "exact", head: true })
-          .is("deleted_at", null)
-          .eq("org_id", orgId),
-      ]);
-      return {
-        clients: clientsRes.count ?? 0,
-        properties: propertiesRes.count ?? 0,
-        employees: employeesRes.count ?? 0,
-      };
-    },
-    ["sidebar-org-counts", orgId],
-    {
-      // Tags → revalidateTag from mutations. Include both the generic
-      // 'all' tag and the resource-specific ones so a granular
-      // invalidation (only clients changed) doesn't need to touch the
-      // other resource counts' cache entries.
-      tags: [
-        SIDEBAR_TAGS.all,
-        SIDEBAR_TAGS.clients,
-        SIDEBAR_TAGS.properties,
-        SIDEBAR_TAGS.employees,
-      ],
-      revalidate: 60,
-    },
-  )();
-
 export async function loadSidebarCounts(): Promise<SidebarCounts> {
   const supabase = await createSupabaseServerClient();
 
-  // Resolve the caller's org first so the cached org-counts key on it.
-  // The lookup is dedup'd within a request by React.cache elsewhere,
-  // so this doesn't add a round-trip for pages that already resolved
-  // the user.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const orgId = user
-    ? ((
-        (
-          await supabase
-            .from("profiles")
-            .select("org_id")
-            .eq("id", user.id)
-            .maybeSingle()
-        ).data as { org_id: string | null } | null
-      )?.org_id ?? null)
-    : null;
-
-  // Org-scoped counts come from the memoised branch; per-user counts
-  // (chat unread, notifications unread) stay uncached because they
-  // change with every read the user makes.
-  const [orgCounts, notificationsRes, chatUnreadRes] = await Promise.all([
-    orgId ? loadOrgCountsCached(orgId) : Promise.resolve(null),
+  // All five queries in one Promise.all — org counts + per-user unread.
+  // Small `count(*)` HEAD queries with covering indexes each land in
+  // single-digit ms, so serving them per-request is cheap.
+  const [
+    clientsRes,
+    propertiesRes,
+    employeesRes,
+    notificationsRes,
+    chatUnread,
+  ] = await Promise.all([
+    supabase
+      .from("clients")
+      .select("id", { count: "exact", head: true })
+      .is("deleted_at", null),
+    supabase
+      .from("properties")
+      .select("id", { count: "exact", head: true })
+      .is("deleted_at", null),
+    supabase
+      .from("employees")
+      .select("id", { count: "exact", head: true })
+      .is("deleted_at", null),
     supabase
       .from("notifications")
       .select("id", { count: "exact", head: true })
@@ -145,10 +90,10 @@ export async function loadSidebarCounts(): Promise<SidebarCounts> {
   ]);
 
   return {
-    clients: capCount(orgCounts?.clients ?? null),
-    properties: capCount(orgCounts?.properties ?? null),
-    employees: capCount(orgCounts?.employees ?? null),
-    unreadChat: capCount(chatUnreadRes),
+    clients: capCount(clientsRes.count),
+    properties: capCount(propertiesRes.count),
+    employees: capCount(employeesRes.count),
+    unreadChat: capCount(chatUnread),
     unreadNotifications: capCount(notificationsRes.count),
   };
 }
