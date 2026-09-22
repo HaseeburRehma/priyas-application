@@ -9,6 +9,13 @@
  *
  * Inserts go through the outbox so an out-of-range end-of-shift
  * flag still lands after the phone reconnects.
+ *
+ * The `supply_flags` table requires `client_id`, which the mobile
+ * screen only knows via the picked property. We resolve it here in
+ * one small round-trip so the caller doesn't have to fan-out the
+ * lookup — cached properties in the picker query would also work,
+ * but this keeps the module standalone and avoids react-query
+ * coupling in the outbox drain path (which has no cache).
  */
 
 import { enqueue, drain, type OutboxAction } from "@/lib/outbox";
@@ -27,6 +34,20 @@ export async function createSupplyFlag(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const supabase = getSupabase();
 
+  // Resolve the client_id from the picked property. RLS ensures the
+  // caller can only read properties in their org, so an invalid id
+  // here just returns no row and the insert is aborted with a clear
+  // error rather than queued into the outbox forever.
+  const { data: prop } = await supabase
+    .from("properties")
+    .select("client_id")
+    .eq("id", input.propertyId)
+    .maybeSingle();
+  const clientId = (prop as { client_id: string } | null)?.client_id ?? null;
+  if (!clientId) {
+    return { ok: false, error: "property_not_found_or_no_client" };
+  }
+
   // Dedupe on employee + property + supplies_ok + minute-truncated
   // timestamp — same recipe the time_entry/damage outbox actions use.
   // Minute granularity is fine: if the user taps twice inside 60s we
@@ -37,13 +58,16 @@ export async function createSupplyFlag(
     input.suppliesOk ? "ok" : "missing"
   }:${minute}`;
 
+  // Row shape matches migration 20260921_000062 — client_id required,
+  // `created_at` defaults to NOW() server-side (no `reported_at`
+  // column exists), and `resolved` defaults to false.
   const row = {
     org_id: input.orgId,
+    client_id: clientId,
     property_id: input.propertyId,
     reported_by: input.employeeId,
     supplies_ok: input.suppliesOk,
     note: input.note,
-    reported_at: iso,
   };
 
   // Fast path: try the insert now. On failure (offline, timeout),
@@ -52,7 +76,6 @@ export async function createSupplyFlag(
     const { error } = await supabase.from("supply_flags").insert(row);
     if (!error) return { ok: true };
     if (error.code === "23505") return { ok: true }; // dedupe on retry
-    // Fall through to queue on transient errors
     const action: OutboxAction = {
       kind: "supply_flag_create",
       dedupe_key: dedupe,

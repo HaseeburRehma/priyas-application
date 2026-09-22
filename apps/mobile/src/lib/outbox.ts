@@ -51,11 +51,11 @@ export type OutboxAction =
       dedupe_key: string;
       row: {
         org_id: string;
+        client_id: string;
         property_id: string;
         reported_by: string;
         supplies_ok: boolean;
         note: string | null;
-        reported_at: string;
       };
     };
 
