@@ -3,6 +3,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCachedProfile, getCachedUser } from "@/lib/api/current-user";
 import { getAllowedRoutes } from "@/lib/rbac/permissions";
 import { routes } from "@/lib/constants/routes";
 import { loadSidebarCounts } from "@/lib/api/sidebar";
@@ -37,18 +38,21 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Auth + profile go through the request-scoped cache — every child
+  // page's loader that calls getCachedUser/getCachedProfile then reuses
+  // the same values instead of firing a fresh /auth/v1/user + profiles
+  // query per loader. Saves ~2 round-trips on every dashboard render.
+  const user = await getCachedUser();
   if (!user) redirect(routes.login);
 
-  const { data: profileRaw } = await supabase
-    .from("profiles")
-    .select("full_name, role")
-    .eq("id", user.id)
-    .maybeSingle();
-  const profile = profileRaw as { full_name: string; role: string } | null;
+  const cachedProfile = await getCachedProfile();
+  const profile = cachedProfile
+    ? { full_name: cachedProfile.fullName, role: cachedProfile.role }
+    : null;
+
+  // MFA + training gates still need the raw session client for
+  // supabase.auth.mfa / supabase.rpc; instantiate it lazily below.
+  const supabase = await createSupabaseServerClient();
 
   // Spec §6.2 — hard-block admin/dispatcher accounts that haven't enrolled
   // a TOTP factor yet. They get bounced to /setup-2fa, which hosts the

@@ -1,5 +1,6 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCachedUser } from "@/lib/api/current-user";
 
 /**
  * Cache tags used to invalidate the sidebar org-scoped counts from
@@ -109,7 +110,9 @@ async function countUnreadChatMessages(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
 ): Promise<number | null> {
-  const { data: { user } } = await supabase.auth.getUser();
+  // Reuse the request-scoped cached user instead of doing another
+  // /auth/v1/user round-trip — the layout already primed it.
+  const user = await getCachedUser();
   if (!user) return null;
 
   // Memberships → channel_id → last_read_at
