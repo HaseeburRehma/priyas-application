@@ -29,6 +29,7 @@ import {
 import { ensureCalendarTokenAction } from "@/app/actions/calendar-token";
 import { APP_TZ, getZonedParts, zonedTimeToUtc } from "@/lib/utils/i18n-format";
 import { PlanShiftDialog } from "./PlanShiftDialog";
+import { QuickJobDialog } from "./QuickJobDialog";
 import { CheckInButton } from "./CheckInButton";
 import { BreakControl } from "./BreakControl";
 import type { ShiftOptionsResponse } from "@/app/api/shifts/options/route";
@@ -171,6 +172,11 @@ export function SchedulePage({
     setEmployeeFilter(new Set(allEmployeeIds));
   }, [allEmployeeIds]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  // Feature-update #17: one-time quick-job dialog. Independent of the
+  // main PlanShiftDialog because the two write to different tables
+  // (shifts vs. one_off_jobs) and share no fields beyond employee_id
+  // + date.
+  const [quickJobOpen, setQuickJobOpen] = useState(false);
   // Set when a staff member from the roster panel is dropped onto a
   // calendar cell — pre-fills the "Plan shift" dialog with the dragged
   // employee + the dropped day/hour, so the drop only leaves the property
@@ -343,10 +349,33 @@ export function SchedulePage({
                 </svg>
                 {t("actions.planShift")}
               </button>
+              {/* Feature-update #17: Quick job — one-time cleanings
+               *  without a customer record. Manual invoicing by the
+               *  team; no Lexware wiring. Distinct button next to
+               *  "Plan shift" so a PM can pick the right flow before
+               *  the form opens (both are common actions on the
+               *  schedule page). */}
+              <button
+                type="button"
+                onClick={() => setQuickJobOpen(true)}
+                className="btn btn--ghost border border-neutral-200 bg-white"
+                title="Einmaliger Auftrag ohne Kundenanlage"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                </svg>
+                Quick-Job
+              </button>
             </>
           )}
         </div>
       </div>
+
+      <QuickJobDialog
+        open={quickJobOpen}
+        onClose={() => setQuickJobOpen(false)}
+        defaultDate={week.days[0] ?? undefined}
+      />
 
       <PlanShiftDialog
         open={dialogOpen}

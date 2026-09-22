@@ -107,11 +107,15 @@ export function PlanShiftDialog({
     };
   }, [open, onClose]);
 
-  // Fetch options once when first opened (cached across later opens).
+  // Fetch options every time the picked date changes so the
+  // recommended-for-day flag reflects the user's current choice.
+  // Feature-update #12: passing ?date lets the server pre-sort
+  // properties whose client marked this weekday as recommended.
   useEffect(() => {
-    if (!open || options) return;
+    if (!open) return;
     let cancelled = false;
-    fetch("/api/shifts/options", { cache: "no-store" })
+    const url = `/api/shifts/options?date=${encodeURIComponent(form.date)}`;
+    fetch(url, { cache: "no-store" })
       .then((r) => r.json() as Promise<ShiftOptionsResponse>)
       .then((data) => {
         if (cancelled) return;
@@ -127,7 +131,7 @@ export function PlanShiftDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, options, t, resolvePropertyId]);
+  }, [open, form.date, t, resolvePropertyId]);
 
   if (!open) return null;
 
@@ -233,6 +237,49 @@ export function PlanShiftDialog({
                   })}
                 </p>
               )}
+
+              {/* Feature-update #12: chip strip of clients whose
+               *  `recommended_weekdays` includes the picked date's
+               *  weekday. Only appears when there are 1..8 matches
+               *  (avoids overwhelming the picker when EVERY property
+               *  matches a common day). Clicking a chip selects it in
+               *  the dropdown below. */}
+              {(() => {
+                const recommended = (options?.properties ?? []).filter(
+                  (p) => p.recommended_for_day,
+                );
+                if (recommended.length === 0 || recommended.length > 8) {
+                  return null;
+                }
+                const weekdayLabel = new Date(
+                  form.date + "T00:00:00",
+                ).toLocaleDateString("de-DE", { weekday: "long" });
+                return (
+                  <div className="mb-2 rounded-md border border-primary-100 bg-primary-50/40 px-3 py-2">
+                    <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary-700">
+                      Empfohlen für {weekdayLabel}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {recommended.map((p) => (
+                        <button
+                          type="button"
+                          key={p.id}
+                          onClick={() => update("property_id", p.id)}
+                          className={cn(
+                            "rounded-full border px-2.5 py-1 text-[11px] font-medium transition",
+                            form.property_id === p.id
+                              ? "border-primary-500 bg-primary-500 text-white"
+                              : "border-primary-200 bg-white text-primary-700 hover:bg-primary-100",
+                          )}
+                        >
+                          {p.client_name} · {p.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               <select
                 className="input"
                 required
@@ -272,6 +319,7 @@ export function PlanShiftDialog({
                 )}
                 {options?.properties.map((p) => (
                   <option key={p.id} value={p.id}>
+                    {p.recommended_for_day ? "★ " : ""}
                     {p.name} · {p.client_name}
                     {p.client_customer_type === "alltagshilfe" ? " · Alltagshilfe" : ""}
                   </option>

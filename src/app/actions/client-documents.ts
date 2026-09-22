@@ -137,6 +137,76 @@ export async function uploadClientDocumentAction(
     return { ok: false, error: error.message };
   }
 
+  // Feature-update #3: welcome email on contract upload.
+  //
+  // When a manager uploads a signed contract, fire the welcome email
+  // to the customer's email with the contract PDF attached. Best-
+  // effort — a mail-send failure never rolls back the successful
+  // upload, but is logged so operators can inspect Resend's status
+  // page or re-send manually. Guard clauses:
+  //   * only fires for category = 'contract'
+  //   * requires an email address on the client row
+  //   * only sends on the FIRST contract for this client (prevents
+  //     duplicate welcome emails when a manager re-uploads a
+  //     revised contract)
+  if (category.data === "contract") {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientTable = supabase.from("clients") as any;
+      const { data: clientRow } = await clientTable
+        .select("email, display_name, company_name")
+        .eq("id", clientId)
+        .maybeSingle();
+      const c = clientRow as
+        | { email: string | null; display_name: string; company_name: string | null }
+        | null;
+      const to = c?.email?.trim();
+      if (to) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const priorTable = supabase.from("client_documents") as any;
+        const { count: priorContracts } = await priorTable
+          .select("id", { count: "exact", head: true })
+          .eq("client_id", clientId)
+          .eq("category", "contract")
+          .is("deleted_at", null);
+        const isFirstContract = (priorContracts ?? 0) <= 1; // this row counts
+        if (isFirstContract) {
+          // Read the file bytes from the FormData blob (still in memory)
+          // and base64-encode for the Resend attachment payload.
+          const buf = await file.arrayBuffer();
+          const base64 =
+            typeof Buffer !== "undefined"
+              ? Buffer.from(buf).toString("base64")
+              : btoa(
+                  String.fromCharCode(...new Uint8Array(buf)),
+                );
+          const { sendWelcomeEmail } = await import("@/lib/email/welcome");
+          const nameForGreeting =
+            c?.company_name?.trim() || c?.display_name?.trim() || "";
+          const result = await sendWelcomeEmail({
+            to,
+            customerName: nameForGreeting,
+            contract: {
+              filename: file.name,
+              base64,
+              contentType: file.type || "application/pdf",
+            },
+          });
+          if (!result.ok) {
+            console.warn(
+              "[welcome-email] send failed",
+              result.error,
+              { clientId, to },
+            );
+          }
+        }
+      }
+    } catch (err) {
+      // Never fail the upload just because the email pipeline broke.
+      console.warn("[welcome-email] unexpected error", err);
+    }
+  }
+
   revalidatePath(routes.client(clientId));
   return {
     ok: true,
