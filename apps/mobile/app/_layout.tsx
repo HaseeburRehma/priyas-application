@@ -12,7 +12,10 @@
 
 import { useEffect, useState } from "react";
 import { View } from "react-native";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -26,14 +29,36 @@ import { colors } from "@/lib/theme";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+/**
+ * Feature-update #16 · Offline-friendly schedule.
+ *
+ * Persisting react-query's cache to AsyncStorage means the app boots
+ * with the last-seen schedule (and property picker, work-report
+ * summary, etc.) even before the network comes back — the mutation
+ * side of offline is handled by `src/lib/outbox.ts`.
+ *
+ * `gcTime` is bumped to 24h so cached entries survive across app
+ * launches; without it react-query would garbage-collect anything not
+ * currently rendered and the persister would then write an empty
+ * cache to disk on the next flush.
+ */
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
+      gcTime: 24 * 60 * 60 * 1000,
       refetchOnWindowFocus: true,
       retry: 1,
     },
   },
+});
+
+const persister = createAsyncStoragePersister({
+  storage: AsyncStorage,
+  key: "priyas.query-cache.v1",
+  // Skip persisting anything transient — auth checks + push token
+  // registrations refetch on every launch anyway.
+  throttleTime: 2_000,
 });
 
 export default function RootLayout() {
@@ -52,12 +77,35 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{
+            persister,
+            // Bump this when the persisted shape changes so old
+            // devices don't hydrate a stale cache into a new schema.
+            buster: "v1",
+            // Only persist queries the app can safely reuse offline;
+            // everything else is fetched fresh on next foreground.
+            dehydrateOptions: {
+              shouldDehydrateQuery: (query) => {
+                const k = query.queryKey?.[0];
+                if (typeof k !== "string") return false;
+                return (
+                  k === "my-shifts" ||
+                  k === "properties-picker" ||
+                  k === "work-report" ||
+                  k === "my-damage" ||
+                  k === "clients-list"
+                );
+              },
+            },
+          }}
+        >
           <AuthProvider>
             <AuthGate />
             <StatusBar style="dark" />
           </AuthProvider>
-        </QueryClientProvider>
+        </PersistQueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

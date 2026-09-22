@@ -137,6 +137,19 @@ export default function MoreScreen() {
           ),
           visible: canManage,
         },
+        {
+          key: "workReport",
+          labelKey: "mobile.more.workReport",
+          hintKey: "mobile.more.workReportHint",
+          href: "/reports/work-report",
+          icon: (c) => (
+            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+              <Path d="M14 2v6h6M9 15l2 2 4-4" />
+            </Svg>
+          ),
+          visible: true,
+        },
       ],
     },
     {
@@ -163,6 +176,18 @@ export default function MoreScreen() {
             <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <Path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
               <Path d="M12 9v4M12 17h.01" />
+            </Svg>
+          ),
+          visible: true,
+        },
+        {
+          key: "supplies",
+          labelKey: "mobile.more.supplies",
+          hintKey: "mobile.more.suppliesHint",
+          href: "/supplies/new",
+          icon: (c) => (
+            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M9 3h6l-1 5h4l-4 6 1 7-9-6 1-7L2 8h4z" />
             </Svg>
           ),
           visible: true,

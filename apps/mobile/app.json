@@ -2,7 +2,7 @@
   "expo": {
     "name": "Priya's",
     "slug": "priyas-mobile",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "priyas",
@@ -66,7 +66,8 @@
           "backgroundColor": "#F6FAF3"
         }
       ],
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

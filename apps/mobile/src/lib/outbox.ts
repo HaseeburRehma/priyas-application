@@ -2,10 +2,11 @@
  * Offline outbox — queues critical mutations while the phone has no
  * signal and drains them the next time the app comes to the foreground.
  *
- * Two action kinds today: `time_entry_insert` (clock in/out/break) and
- * `damage_report_create`. Both are direct table inserts — no RPC needed
- * because RLS already enforces "employee can only insert for their own
- * shift" / "can only insert for a property they can see".
+ * Three action kinds today: `time_entry_insert` (clock in/out/break),
+ * `damage_report_create`, and `supply_flag_create` (feature-update #18
+ * mobile write side). All three are direct table inserts — no RPC
+ * needed because RLS already enforces "only for my own shift / my
+ * own employee record / a property I can see".
  *
  * Dedupe is best-effort: each entry carries a `dedupe_key` (built by
  * the caller from shift_id + kind + minute-truncated timestamp) so a
@@ -43,6 +44,18 @@ export type OutboxAction =
         category: string;
         description: string;
         photo_paths: string[];
+      };
+    }
+  | {
+      kind: "supply_flag_create";
+      dedupe_key: string;
+      row: {
+        org_id: string;
+        property_id: string;
+        reported_by: string;
+        supplies_ok: boolean;
+        note: string | null;
+        reported_at: string;
       };
     };
 
@@ -100,12 +113,15 @@ export async function drain(): Promise<{ sent: number; failed: number }> {
   for (const e of entries) {
     try {
       // Insert against the correct table per action kind. Split so
-      // Supabase's row-type inference doesn't try to unify the two
-      // very different shapes and reject the second one.
+      // Supabase's row-type inference doesn't try to unify the very
+      // different row shapes and reject the ones it hasn't picked as
+      // the union head.
       const { error } =
         e.action.kind === "time_entry_insert"
           ? await supabase.from("time_entries").insert(e.action.row)
-          : await supabase.from("damage_reports").insert(e.action.row);
+          : e.action.kind === "damage_report_create"
+            ? await supabase.from("damage_reports").insert(e.action.row)
+            : await supabase.from("supply_flags").insert(e.action.row);
       if (!error) {
         sent += 1;
         continue;
