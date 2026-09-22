@@ -737,68 +737,6 @@ function Row({
   );
 }
 
-function NotesCard({
-  detail,
-  canUpdate,
-}: {
-  detail: Detail;
-  canUpdate: boolean;
-}) {
-  const t = useTranslations("clients.detail");
-  return (
-    <section className="mt-5 rounded-lg border border-warning-50 bg-warning-50/40">
-      <header className="flex items-center justify-between border-b border-warning-50 p-5">
-        <div>
-          <h3 className="flex items-center gap-2 text-[15px] font-semibold text-warning-700">
-            <svg
-              aria-hidden
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-4 w-4"
-            >
-              <path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0zM12 9v4M12 17h.01" />
-            </svg>
-            {t("notesTitle")}
-          </h3>
-          <div className="mt-0.5 text-[12px] text-neutral-500">
-            {t("notesSubtitle")}
-          </div>
-        </div>
-        {canUpdate && (
-          <button
-            type="button"
-            className="btn btn--tertiary cursor-not-allowed opacity-60"
-            disabled
-            aria-disabled="true"
-            title={t("notesAddComingSoon")}
-          >
-            <svg
-              aria-hidden
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-4 w-4"
-            >
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            {t("notesAdd")}
-          </button>
-        )}
-      </header>
-      <div className="p-5 text-[13px] leading-[1.55] text-neutral-700">
-        {detail.notes ? detail.notes : <em className="text-neutral-500">{t("notesEmpty")}</em>}
-      </div>
-    </section>
-  );
-}
-
 function StatusBadge({
   status,
   t,

@@ -99,14 +99,19 @@ export async function GET(request: NextRequest) {
       .is("deleted_at", null)
       .order("name", { ascending: true })
       .limit(500),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase
-      .from("employees")
-      .select("id, full_name, status, service_type, availability_status") as any)
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    (
+      supabase
+        .from("employees")
+        .select(
+          "id, full_name, status, service_type, availability_status",
+        ) as any
+    )
       .is("deleted_at", null)
       .eq("status", "active")
       .order("full_name", { ascending: true })
       .limit(500),
+    /* eslint-enable @typescript-eslint/no-explicit-any */
     // Only queried when a property is picked — otherwise a resolved
     // Promise so the destructure stays symmetric.
     propertyIdValid

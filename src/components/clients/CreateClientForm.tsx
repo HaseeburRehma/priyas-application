@@ -245,7 +245,6 @@ export function CreateClientForm({ type }: Props) {
   // Branding helpers — switching `isAlltags` flips the page from green
   // (Priya regular) to red (Day-care) per the design spec without
   // duplicating any layout. Both flows share the same wizard skeleton.
-  const accentRing = isAlltags ? "ring-error-100" : "ring-primary-100";
   const accentBg   = isAlltags ? "bg-error-50"    : "bg-primary-50";
   const accentText = isAlltags ? "text-error-700" : "text-primary-700";
   const accentBtn  = isAlltags ? "bg-error-500 hover:bg-error-600" : "bg-primary-500 hover:bg-primary-600";
@@ -1234,50 +1233,6 @@ function SummaryRow({
       <dt className="text-neutral-500">{label}</dt>
       <dd className="text-right font-medium text-neutral-800">{children}</dd>
     </div>
-  );
-}
-
-function StepperItem({
-  n,
-  state,
-  label,
-  sub,
-  isAlltags,
-}: {
-  n: number;
-  state: "done" | "active" | "future";
-  label: string;
-  sub: string;
-  isAlltags: boolean;
-}) {
-  const accent = isAlltags ? "bg-error-500" : "bg-primary-500";
-  return (
-    <li className="flex items-center gap-2.5">
-      <span
-        className={cn(
-          "grid h-7 w-7 flex-shrink-0 place-items-center rounded-full text-[12px] font-bold",
-          state === "done" && `${accent} text-white`,
-          state === "active" && `${accent} text-white ring-4 ring-offset-0`,
-          state === "active" && (isAlltags ? "ring-error-100" : "ring-primary-100"),
-          state === "future" && "bg-neutral-100 text-neutral-500",
-        )}
-      >
-        {state === "done" ? "✓" : n}
-      </span>
-      <div className="min-w-0">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-neutral-500">
-          {label}
-        </div>
-        <div
-          className={cn(
-            "truncate text-[13px] font-medium",
-            state === "future" ? "text-neutral-500" : "text-neutral-800",
-          )}
-        >
-          {sub}
-        </div>
-      </div>
-    </li>
   );
 }
 
