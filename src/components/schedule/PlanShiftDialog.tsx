@@ -107,14 +107,15 @@ export function PlanShiftDialog({
     };
   }, [open, onClose]);
 
-  // Fetch options every time the picked date changes so the
-  // recommended-for-day flag reflects the user's current choice.
-  // Feature-update #12: passing ?date lets the server pre-sort
-  // properties whose client marked this weekday as recommended.
+  // Fetch options every time date OR property changes so both
+  // the recommended-for-day flag (feature #12) and the staff-fit
+  // score (feature #14) reflect the user's current choices.
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    const url = `/api/shifts/options?date=${encodeURIComponent(form.date)}`;
+    const qs = new URLSearchParams({ date: form.date });
+    if (form.property_id) qs.set("property_id", form.property_id);
+    const url = `/api/shifts/options?${qs.toString()}`;
     fetch(url, { cache: "no-store" })
       .then((r) => r.json() as Promise<ShiftOptionsResponse>)
       .then((data) => {
@@ -131,7 +132,7 @@ export function PlanShiftDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, form.date, t, resolvePropertyId]);
+  }, [open, form.date, form.property_id, t, resolvePropertyId]);
 
   if (!open) return null;
 
@@ -346,12 +347,50 @@ export function PlanShiftDialog({
                   return emp.service_type === "priya" || emp.service_type === "both";
                 });
                 const isAlltags = clientType === "alltagshilfe";
+                // Feature-update #14: staff-fit chip strip. Only when a
+                // property is picked (staff_fit_score present) — top 4
+                // eligible employees with a score >= 5 (i.e. available
+                // + service-line match, or availability + past history).
+                // A score < 5 means the employee is either unavailable
+                // or a service-line mismatch — showing them as a
+                // "recommendation" would be misleading.
+                const topFit =
+                  form.property_id && eligibleEmployees
+                    ? eligibleEmployees
+                        .filter((e) => (e.staff_fit_score ?? 0) >= 5)
+                        .slice(0, 4)
+                    : [];
                 return (
                   <>
                     {options && isAlltags && (
                       <p className="mb-1.5 text-[11px] text-error-700">
                         Nur qualifiziertes Pflegepersonal (Alltagshilfe) wird angezeigt.
                       </p>
+                    )}
+                    {topFit.length > 0 && (
+                      <div className="mb-2 rounded-md border border-primary-100 bg-primary-50/40 px-3 py-2">
+                        <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary-700">
+                          Empfohlen für dieses Objekt
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {topFit.map((emp) => (
+                            <button
+                              type="button"
+                              key={emp.id}
+                              onClick={() => update("employee_id", emp.id)}
+                              className={cn(
+                                "rounded-full border px-2.5 py-1 text-[11px] font-medium transition",
+                                form.employee_id === emp.id
+                                  ? "border-primary-500 bg-primary-500 text-white"
+                                  : "border-primary-200 bg-white text-primary-700 hover:bg-primary-100",
+                              )}
+                              title={`Fitness-Score ${emp.staff_fit_score ?? 0}`}
+                            >
+                              {emp.full_name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     )}
                     <select
                       className="input"
@@ -362,6 +401,7 @@ export function PlanShiftDialog({
                       <option value="">{t("noEmployee")}</option>
                       {eligibleEmployees?.map((emp) => (
                         <option key={emp.id} value={emp.id}>
+                          {(emp.staff_fit_score ?? 0) >= 5 ? "★ " : ""}
                           {emp.full_name}
                         </option>
                       ))}
