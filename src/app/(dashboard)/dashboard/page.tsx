@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { loadDashboardData } from "@/lib/api/dashboard";
 import { loadMySelf } from "@/lib/api/my-self";
 import { loadPmWidget } from "@/lib/api/pm-widget";
@@ -30,9 +31,13 @@ export const dynamic = "force-dynamic";
  * are business KPIs they don't need — and "team utilization" leaks
  * colleagues' hours, which is PII.
  *
- * `time.read_all` is the natural gate — it already means "can see
- * cross-employee data" (used by time-tracking + report screens), so
- * reusing it here keeps the RBAC surface small.
+ * Rendering strategy: the header + personal panel gate on cached auth
+ * only (one round-trip, primed by the layout) and paint immediately.
+ * The three heavy sections — PM widget, org overview, invoice KPIs —
+ * each own an async server component wrapped in `<Suspense>` so they
+ * stream in independently. A slow invoice query no longer blocks the
+ * KPI grid; a slow chart no longer blocks the PM widget. Skeletons
+ * hold shape so the layout doesn't jump when a section arrives.
  */
 export default async function DashboardPage() {
   const [mySelf, canSeeOrgOverview, canReadInvoices, canCreateClient] =
@@ -43,28 +48,7 @@ export default async function DashboardPage() {
       can("client.create"),
     ]);
 
-  // Only pay for the org-wide loader when the caller can actually see
-  // its contents. Field staff skip the query entirely — cheaper AND
-  // means a compromised employee session can never surface org KPIs
-  // by tampering with the client bundle.
-  const data = canSeeOrgOverview ? await loadDashboardData() : null;
-  const [invoiceSummary, aging] = canReadInvoices
-    ? await Promise.all([loadInvoicesSummary(), loadAgingReport()])
-    : [null, null];
-
-  // Feature-update #19: PM "My Files & Notes" widget. Scoped to the
-  // same audience as the org overview (admin + dispatcher) — field
-  // staff have no reason to see it. RLS on pm_notes / pm_files
-  // additionally scopes reads to owner_id = auth.uid(), so even if the
-  // gate were lifted later the widget would surface an empty list to
-  // an employee. Loader is skipped entirely to avoid the round-trip.
-  const pmWidget = canSeeOrgOverview ? await loadPmWidget() : null;
-
-  // Personal-scope name for the greeting: prefer the caller's own
-  // profile name, fall back to the org loader when available, then to
-  // a neutral placeholder.
-  const greetingName =
-    mySelf?.full_name ?? data?.greetingName ?? "";
+  const greetingName = mySelf?.full_name ?? "";
 
   return (
     <>
@@ -82,44 +66,136 @@ export default async function DashboardPage() {
       {/* Feature-update #19: PM "My Files & Notes" widget — sits ABOVE
        *  the KPI grid so it's the first thing a manager sees on
        *  every dashboard visit. Client explicitly asked for it to be
-       *  "at the top, not buried in a submenu". */}
-      {canSeeOrgOverview && pmWidget && (
-        <MyFilesAndNotesWidget notes={pmWidget.notes} files={pmWidget.files} />
+       *  "at the top, not buried in a submenu". Its loader runs in
+       *  parallel with the KPI grid via streaming. */}
+      {canSeeOrgOverview && (
+        <Suspense fallback={<WidgetSkeleton height={220} />}>
+          <PmWidgetSection />
+        </Suspense>
       )}
 
-      {/* Everything below is org-scope. Field staff never sees it. */}
-      {canSeeOrgOverview && data && (
-        <>
-          <KpiGrid kpis={data.kpis} />
-
-          {/* Main grid: chart (2/3) + today's shifts (1/3) on desktop,
-              stacked below 1024px to match the prototype's media
-              query. */}
-          <div className="mb-6 grid grid-cols-1 gap-5 xl:grid-cols-[2fr_1fr]">
-            <WeeklyChart data={data.chart} />
-            <TodayShifts
-              shifts={data.todayShifts}
-              pendingCount={data.kpis.todayShifts.pendingCheckins}
-            />
-          </div>
-
-          {invoiceSummary && aging && (
-            <div className="mb-6">
-              <InvoiceKpiPanel summary={invoiceSummary} aging={aging.totals} />
-            </div>
-          )}
-
-          {/* Secondary grid: activity feed + (team utilization stacked
-              over quick actions). */}
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <RecentActivity items={data.activities} />
-            <div className="flex flex-col gap-5">
-              <TeamUtilization team={data.teamLoad} />
-              <QuickActions />
-            </div>
-          </div>
-        </>
+      {/* Org overview — KPI grid + weekly chart + today's shifts +
+       *  activity + team utilization. All fed by the same loader so
+       *  they stream in as one section, but the section as a whole
+       *  no longer blocks the PM widget above or the invoice panel
+       *  below. */}
+      {canSeeOrgOverview && (
+        <Suspense fallback={<OrgOverviewSkeleton />}>
+          <OrgOverviewSection />
+        </Suspense>
       )}
+
+      {/* Invoice KPIs live at the bottom of the fold — safe to stream
+       *  in last so the eye-catching numbers up top land first. */}
+      {canReadInvoices && (
+        <Suspense fallback={<WidgetSkeleton height={220} className="mb-6" />}>
+          <InvoicePanelSection />
+        </Suspense>
+      )}
+    </>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+ * Streaming sections — each one owns its own loader chain so React
+ * Server Components can flush them independently as data arrives.
+ * ──────────────────────────────────────────────────────────────── */
+
+async function PmWidgetSection() {
+  const pmWidget = await loadPmWidget();
+  return (
+    <MyFilesAndNotesWidget notes={pmWidget.notes} files={pmWidget.files} />
+  );
+}
+
+async function OrgOverviewSection() {
+  const data = await loadDashboardData();
+  return (
+    <>
+      <KpiGrid kpis={data.kpis} />
+
+      {/* Main grid: chart (2/3) + today's shifts (1/3) on desktop,
+          stacked below 1024px to match the prototype's media
+          query. */}
+      <div className="mb-6 grid grid-cols-1 gap-5 xl:grid-cols-[2fr_1fr]">
+        <WeeklyChart data={data.chart} />
+        <TodayShifts
+          shifts={data.todayShifts}
+          pendingCount={data.kpis.todayShifts.pendingCheckins}
+        />
+      </div>
+
+      {/* Secondary grid: activity feed + (team utilization stacked
+          over quick actions). */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <RecentActivity items={data.activities} />
+        <div className="flex flex-col gap-5">
+          <TeamUtilization team={data.teamLoad} />
+          <QuickActions />
+        </div>
+      </div>
+    </>
+  );
+}
+
+async function InvoicePanelSection() {
+  const [invoiceSummary, aging] = await Promise.all([
+    loadInvoicesSummary(),
+    loadAgingReport(),
+  ]);
+  if (!invoiceSummary || !aging) return null;
+  return (
+    <div className="mb-6">
+      <InvoiceKpiPanel summary={invoiceSummary} aging={aging.totals} />
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+ * Skeletons — shape-preserving placeholders that keep the page
+ * layout stable while each section streams in.
+ * ──────────────────────────────────────────────────────────────── */
+
+function WidgetSkeleton({
+  height,
+  className = "",
+}: {
+  height: number;
+  className?: string;
+}) {
+  return (
+    <div
+      aria-hidden
+      className={
+        "mb-6 animate-pulse rounded-lg border border-neutral-100 bg-white " +
+        className
+      }
+      style={{ minHeight: height }}
+    />
+  );
+}
+
+function OrgOverviewSkeleton() {
+  return (
+    <>
+      <div
+        aria-hidden
+        className="mb-6 grid animate-pulse grid-cols-2 gap-4 lg:grid-cols-4"
+      >
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="h-[120px] rounded-lg border border-neutral-100 bg-white"
+          />
+        ))}
+      </div>
+      <div
+        aria-hidden
+        className="mb-6 grid animate-pulse grid-cols-1 gap-5 xl:grid-cols-[2fr_1fr]"
+      >
+        <div className="h-[320px] rounded-lg border border-neutral-100 bg-white" />
+        <div className="h-[320px] rounded-lg border border-neutral-100 bg-white" />
+      </div>
     </>
   );
 }

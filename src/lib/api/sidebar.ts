@@ -1,6 +1,9 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
+import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getCachedUser } from "@/lib/api/current-user";
+import { getCachedProfile, getCachedUser } from "@/lib/api/current-user";
+import { env } from "@/lib/constants/env";
 
 /**
  * Cache tags used to invalidate the sidebar org-scoped counts from
@@ -10,16 +13,6 @@ import { getCachedUser } from "@/lib/api/current-user";
  *
  * The generic 'sidebar-counts' tag lets us blast the whole widget
  * when we don't know which resource changed (e.g. bulk imports).
- *
- * NOTE: an earlier version wrapped the count query in `unstable_cache`
- * for cross-user memoisation. That crashed the entire dashboard on
- * Vercel because `unstable_cache` executes in a non-dynamic context,
- * so the `cookies()` call inside `createSupabaseServerClient()` threw
- * "used cookies inside unstable_cache." The count queries are cheap
- * enough uncached (three count(*) via HEAD requests, all hitting
- * covering indexes), so we serve them per-request and keep the tags
- * exported for a future cache reintroduction that keys off a
- * cookie-free service-role client.
  */
 export const SIDEBAR_TAGS = {
   all: "sidebar-counts" as const,
@@ -30,13 +23,6 @@ export const SIDEBAR_TAGS = {
 
 /**
  * Live counts that drive the sidebar badges.
- *
- * Why server-side rather than realtime subscriptions: the dashboard layout
- * is already dynamic (cookies-based auth means every navigation re-renders
- * the layout against fresh Supabase queries). That gives us "fresh on
- * every page load" without the complexity of a realtime channel for what
- * is essentially decorative chrome. Push notifications + chat realtime
- * still keep the user informed in-app while between navigations.
  *
  * Each count is bounded — we never show counts > 999, falling back to
  * "999+". Zero / unknown returns `null` so the Sidebar can omit the
@@ -51,49 +37,128 @@ export type SidebarCounts = {
   unreadNotifications: number | null;
 };
 
-/** Cap displayed counts so the badge never spills out of the chrome. */
 function capCount(n: number | null | undefined): number | null {
   if (n == null) return null;
   if (n <= 0) return null;
   return Math.min(n, 999);
 }
 
+/**
+ * Cross-user org-scoped count cache.
+ *
+ * The three headline numbers (clients / properties / employees) are
+ * identical for every user in the org and change only when someone
+ * creates or archives a row. Wrapping the query in `unstable_cache`
+ * keyed on `orgId` means the whole org shares a single memoised row
+ * and every dashboard nav hits the cached value instead of firing
+ * three fresh `count(*)` queries against Postgres.
+ *
+ * Two rules make this safe:
+ *   1. The inner function uses a **service-role** Supabase client, not
+ *      the session client. Session clients call `cookies()`, and
+ *      `cookies()` is illegal inside `unstable_cache` (a fresh clone
+ *      of this file bit us with a full-site 500 last week).
+ *   2. Bypassing RLS means we MUST include `.eq("org_id", orgId)`
+ *      explicitly on every query, or a compromised cache would leak
+ *      cross-org counts. Callers still pass the caller-derived orgId,
+ *      never one from user input.
+ *
+ * Invalidation: every mutating action (createClientAction,
+ * archiveClientAction, employee create/update, etc.) calls
+ * `revalidateTag(SIDEBAR_TAGS.*)` so the next request pulls fresh
+ * numbers within milliseconds of any change. The 60 s TTL is a
+ * belt-and-braces fallback for a mutation path that forgets to
+ * revalidate — the counts still self-heal within a minute.
+ */
+function loadOrgCountsCached(orgId: string) {
+  return unstable_cache(
+    async () => {
+      const service = createClient(
+        env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+        { auth: { persistSession: false, autoRefreshToken: false } },
+      );
+      const [clientsRes, propertiesRes, employeesRes] = await Promise.all([
+        service
+          .from("clients")
+          .select("id", { count: "exact", head: true })
+          .is("deleted_at", null)
+          .eq("org_id", orgId),
+        service
+          .from("properties")
+          .select("id", { count: "exact", head: true })
+          .is("deleted_at", null)
+          .eq("org_id", orgId),
+        service
+          .from("employees")
+          .select("id", { count: "exact", head: true })
+          .is("deleted_at", null)
+          .eq("org_id", orgId),
+      ]);
+      return {
+        clients: clientsRes.count ?? 0,
+        properties: propertiesRes.count ?? 0,
+        employees: employeesRes.count ?? 0,
+      };
+    },
+    ["sidebar-org-counts", orgId],
+    {
+      tags: [
+        SIDEBAR_TAGS.all,
+        SIDEBAR_TAGS.clients,
+        SIDEBAR_TAGS.properties,
+        SIDEBAR_TAGS.employees,
+      ],
+      revalidate: 60,
+    },
+  )();
+}
+
 export async function loadSidebarCounts(): Promise<SidebarCounts> {
   const supabase = await createSupabaseServerClient();
+  const profile = await getCachedProfile();
+  const orgId = profile?.orgId ?? null;
 
-  // All five queries in one Promise.all — org counts + per-user unread.
-  // Small `count(*)` HEAD queries with covering indexes each land in
-  // single-digit ms, so serving them per-request is cheap.
-  const [
-    clientsRes,
-    propertiesRes,
-    employeesRes,
-    notificationsRes,
-    chatUnread,
-  ] = await Promise.all([
-    supabase
-      .from("clients")
-      .select("id", { count: "exact", head: true })
-      .is("deleted_at", null),
-    supabase
-      .from("properties")
-      .select("id", { count: "exact", head: true })
-      .is("deleted_at", null),
-    supabase
-      .from("employees")
-      .select("id", { count: "exact", head: true })
-      .is("deleted_at", null),
-    supabase
-      .from("notifications")
-      .select("id", { count: "exact", head: true })
-      .is("read_at", null),
-    countUnreadChatMessages(supabase),
-  ]);
+  // Org counts come from the cross-user cache; per-user unread counts
+  // stay uncached (they change with every read the user makes).
+  //
+  // The cache handles ~100% of the org-scoped hits on a typical
+  // navigation. If the service-role env var is missing (local dev
+  // without one) the cached path returns null and we fall back to the
+  // session-client query below so the sidebar still renders numbers.
+  const hasServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const [orgCounts, fallbackClients, fallbackProperties, fallbackEmployees, notificationsRes, chatUnread] =
+    await Promise.all([
+      orgId && hasServiceKey ? loadOrgCountsCached(orgId) : Promise.resolve(null),
+      !hasServiceKey
+        ? supabase
+            .from("clients")
+            .select("id", { count: "exact", head: true })
+            .is("deleted_at", null)
+        : Promise.resolve({ count: null as number | null }),
+      !hasServiceKey
+        ? supabase
+            .from("properties")
+            .select("id", { count: "exact", head: true })
+            .is("deleted_at", null)
+        : Promise.resolve({ count: null as number | null }),
+      !hasServiceKey
+        ? supabase
+            .from("employees")
+            .select("id", { count: "exact", head: true })
+            .is("deleted_at", null)
+        : Promise.resolve({ count: null as number | null }),
+      supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .is("read_at", null),
+      countUnreadChatMessages(supabase),
+    ]);
 
   return {
-    clients: capCount(clientsRes.count),
-    properties: capCount(propertiesRes.count),
-    employees: capCount(employeesRes.count),
+    clients: capCount(orgCounts?.clients ?? fallbackClients.count ?? null),
+    properties: capCount(orgCounts?.properties ?? fallbackProperties.count ?? null),
+    employees: capCount(orgCounts?.employees ?? fallbackEmployees.count ?? null),
     unreadChat: capCount(chatUnread),
     unreadNotifications: capCount(notificationsRes.count),
   };
@@ -110,12 +175,9 @@ async function countUnreadChatMessages(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
 ): Promise<number | null> {
-  // Reuse the request-scoped cached user instead of doing another
-  // /auth/v1/user round-trip — the layout already primed it.
   const user = await getCachedUser();
   if (!user) return null;
 
-  // Memberships → channel_id → last_read_at
   const { data: memberships } = await supabase
     .from("chat_members")
     .select("channel_id, last_read_at")
@@ -125,23 +187,10 @@ async function countUnreadChatMessages(
   const list = (memberships ?? []) as Member[];
   if (list.length === 0) return 0;
 
-  // Pull message timestamps for these channels in one round-trip. We only
-  // need created_at + channel_id + the author so we can exclude the
-  // current user's own messages from "unread".
-  //
-  // Defensive caps:
-  //   • Use the oldest `last_read_at` (or 30 days ago, whichever is more
-  //     recent) as a date floor. Once a channel has been read everything
-  //     before that read is irrelevant; without a floor a channel
-  //     untouched for a year drags in years of history.
-  //   • `.limit(5000)` so a single overactive channel can't OOM the
-  //     lambda. The badge caps at "999+" anyway.
   const channelIds = list.map((m) => m.channel_id);
   const THIRTY_DAYS_AGO = new Date(
     Date.now() - 30 * 24 * 60 * 60 * 1000,
   ).toISOString();
-  // Pick the oldest non-null last_read; if any channel has never been
-  // read, fall back to the 30-day floor.
   let dateFloor = THIRTY_DAYS_AGO;
   const reads = list
     .map((m) => m.last_read_at)
@@ -149,8 +198,6 @@ async function countUnreadChatMessages(
   const hasUnreadChannel = list.some((m) => !m.last_read_at);
   if (!hasUnreadChannel && reads.length > 0) {
     const oldest = reads.reduce((a, b) => (a < b ? a : b));
-    // Use whichever is older — last_read or 30-day floor — so we can
-    // still tell whether the channel has anything newer.
     dateFloor = oldest < THIRTY_DAYS_AGO ? oldest : THIRTY_DAYS_AGO;
   }
   const { data: messages } = await supabase
@@ -172,7 +219,7 @@ async function countUnreadChatMessages(
 
   let unread = 0;
   for (const m of (messages ?? []) as Msg[]) {
-    if (m.user_id === user.id) continue; // your own messages aren't "unread"
+    if (m.user_id === user.id) continue;
     const last = lastReadByChannel.get(m.channel_id);
     if (!last || new Date(m.created_at) > new Date(last)) {
       unread += 1;

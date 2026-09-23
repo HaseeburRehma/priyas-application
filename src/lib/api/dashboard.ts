@@ -197,49 +197,99 @@ export async function loadDashboardData(): Promise<DashboardData> {
   const lastWeekStart = subWeeks(weekStart, 1);
   const lastWeekEnd = subWeeks(weekEnd, 1);
 
-  // Single-round-trip KPI aggregation. The `dashboard_kpis` SQL function
-  // (see migration 000054) returns every KPI count + the open-invoice
-  // sum as one JSON blob — replaces 10 separate count() queries and
-  // cuts network round-trips (big win on cross-region deployments).
-  //
-  // Defensive fallback: if the RPC hasn't been applied to the DB yet
-  // (fresh clone, migration lag), we fall back to the old count-query
-  // fan-out so the dashboard keeps rendering. The fallback is one
-  // round-trip fatter but functionally identical.
-  const kpis = await loadKpis(supabase, {
-    monthStart,
-    todayStart,
-    todayEnd,
-  });
+  // One flat Promise.all for every DB round-trip the dashboard needs
+  // that has no data dependency on another query. What used to be six
+  // sequential await barriers (kpis → weekly chart → today shifts →
+  // audit log → employees → shifts-for-load) now runs as a single
+  // fan-out — the dashboard's serial critical path drops from ~6
+  // network round-trips to 1. Later stages that DO have dependencies
+  // (audit row → actor profile lookup) chain on top of this batch.
+  const auditQueryStart = supabase
+    .from("audit_log")
+    .select("id, action, table_name, record_id, user_id, after, created_at")
+    .order("created_at", { ascending: false })
+    .limit(16);
+  const auditQuery = orgId
+    ? auditQueryStart.eq("org_id", orgId)
+    : auditQueryStart;
 
-  /* ----- Weekly chart: Mon–Sun completed + scheduled counts -------------- */
-  const [thisWeekShiftsRes, lastWeekShiftsRes, thisWeekHoursRes, lastWeekHoursRes] =
-    await Promise.all([
-      supabase
-        .from("shifts")
-        .select("starts_at, status")
-        .is("deleted_at", null)
-        .gte("starts_at", weekStart.toISOString())
-        .lte("starts_at", weekEnd.toISOString()),
-      supabase
-        .from("shifts")
-        .select("id, status")
-        .is("deleted_at", null)
-        .gte("starts_at", lastWeekStart.toISOString())
-        .lte("starts_at", lastWeekEnd.toISOString()),
-      supabase
-        .from("time_entries")
-        .select("shift_id, employee_id, kind, occurred_at")
-        .in("kind", ["check_in", "check_out"])
-        .gte("occurred_at", weekStart.toISOString())
-        .lte("occurred_at", weekEnd.toISOString()),
-      supabase
-        .from("time_entries")
-        .select("shift_id, employee_id, kind, occurred_at")
-        .in("kind", ["check_in", "check_out"])
-        .gte("occurred_at", lastWeekStart.toISOString())
-        .lte("occurred_at", lastWeekEnd.toISOString()),
-    ]);
+  const [
+    kpis,
+    thisWeekShiftsRes,
+    lastWeekShiftsRes,
+    thisWeekHoursRes,
+    lastWeekHoursRes,
+    shiftsRowsRes,
+    auditRowsRes,
+    empRowsRes,
+    weekShiftsForLoadRes,
+  ] = await Promise.all([
+    // KPI RPC (see migration 000054). Falls back to a count-query
+    // fan-out internally if the RPC hasn't been deployed.
+    loadKpis(supabase, { monthStart, todayStart, todayEnd }),
+    // Weekly chart: this + last week's shifts and clocked time_entries.
+    supabase
+      .from("shifts")
+      .select("starts_at, status")
+      .is("deleted_at", null)
+      .gte("starts_at", weekStart.toISOString())
+      .lte("starts_at", weekEnd.toISOString()),
+    supabase
+      .from("shifts")
+      .select("id, status")
+      .is("deleted_at", null)
+      .gte("starts_at", lastWeekStart.toISOString())
+      .lte("starts_at", lastWeekEnd.toISOString()),
+    supabase
+      .from("time_entries")
+      .select("shift_id, employee_id, kind, occurred_at")
+      .in("kind", ["check_in", "check_out"])
+      .gte("occurred_at", weekStart.toISOString())
+      .lte("occurred_at", weekEnd.toISOString()),
+    supabase
+      .from("time_entries")
+      .select("shift_id, employee_id, kind, occurred_at")
+      .in("kind", ["check_in", "check_out"])
+      .gte("occurred_at", lastWeekStart.toISOString())
+      .lte("occurred_at", lastWeekEnd.toISOString()),
+    // Today's shifts list.
+    supabase
+      .from("shifts")
+      .select(
+        `id, starts_at, ends_at, status, notes,
+         property:properties (
+           name, city,
+           client:clients ( display_name )
+         ),
+         employee:employees ( id, full_name )`,
+      )
+      .is("deleted_at", null)
+      .gte("starts_at", todayStart.toISOString())
+      .lte("starts_at", todayEnd.toISOString())
+      .order("starts_at", { ascending: true })
+      .limit(8),
+    // Recent activity — raw audit rows; actor names resolved in a
+    // second small round-trip below (only if there are actors).
+    auditQuery,
+    // Team utilization — active employees + their weekly shifts.
+    supabase
+      .from("employees")
+      .select(
+        `id, full_name, weekly_hours, status,
+         profile:profiles ( id, role )`,
+      )
+      .is("deleted_at", null)
+      .eq("status", "active")
+      .order("full_name", { ascending: true })
+      .limit(200),
+    supabase
+      .from("shifts")
+      .select("employee_id, starts_at, ends_at")
+      .is("deleted_at", null)
+      .gte("starts_at", weekStart.toISOString())
+      .lte("starts_at", weekEnd.toISOString())
+      .limit(1000),
+  ]);
 
   const labels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
   const days: WeeklyChartDay[] = labels.map((label) => ({
@@ -297,21 +347,8 @@ export async function loadDashboardData(): Promise<DashboardData> {
   };
 
   /* ----- Today's shifts list -------------------------------------------- */
-  const { data: shiftsRows } = await supabase
-    .from("shifts")
-    .select(
-      `id, starts_at, ends_at, status, notes,
-       property:properties (
-         name, city,
-         client:clients ( display_name )
-       ),
-       employee:employees ( id, full_name )`,
-    )
-    .is("deleted_at", null)
-    .gte("starts_at", todayStart.toISOString())
-    .lte("starts_at", todayEnd.toISOString())
-    .order("starts_at", { ascending: true })
-    .limit(8);
+  // Data came from the top-level batch (shiftsRowsRes) — no round-trip here.
+  const shiftsRows = shiftsRowsRes.data;
 
   type ShiftRow = {
     id: string;
@@ -358,21 +395,12 @@ export async function loadDashboardData(): Promise<DashboardData> {
   );
 
   /* ----- Recent activity (audit_log + actor profile) -------------------- */
-  // Pull recent audit entries, then resolve actor names in one follow-up
-  // query rather than embedding via PostgREST (audit_log doesn't declare
-  // a foreign key on user_id, so the embedded join would need a hint).
-  // Explicit org_id filter — gives the planner the leading column on
-  // `idx_audit_org_created` instead of relying purely on RLS predicates.
-  // Pull a few extra rows here (16 instead of 8) so we still have
-  // enough non-system entries to display after we filter out the
-  // database-housekeeping rows below.
-  let auditQuery = supabase
-    .from("audit_log")
-    .select("id, action, table_name, record_id, user_id, after, created_at")
-    .order("created_at", { ascending: false })
-    .limit(16);
-  if (orgId) auditQuery = auditQuery.eq("org_id", orgId);
-  const { data: auditRows } = await auditQuery;
+  // Raw audit rows came from the top-level batch (auditRowsRes). We
+  // still do a small follow-up query below to resolve actor names —
+  // audit_log doesn't declare a foreign key on user_id, so PostgREST
+  // can't embed the profiles row automatically. Explicit org_id filter
+  // was applied at query time to give the planner `idx_audit_org_created`.
+  const auditRows = auditRowsRes.data;
   type AuditRow = {
     id: number;
     action: string;
@@ -461,20 +489,8 @@ export async function loadDashboardData(): Promise<DashboardData> {
   // Now joins through profiles so the role chip is real ("pm" vs "field"
   // vs "trainee") and the list is sorted by utilization desc instead of
   // by row index. Limited to top 6 so the panel stays compact.
-  const { data: empRows } = await supabase
-    .from("employees")
-    .select(
-      `id, full_name, weekly_hours, status,
-       profile:profiles ( id, role )`,
-    )
-    .is("deleted_at", null)
-    .eq("status", "active")
-    // Cap so team utilisation stays constant-time as staff grows.
-    // The panel only renders the top 6 by utilisation, so 200 rows is
-    // already more than the sort/take needs and comfortably absorbs
-    // orgs into the low hundreds.
-    .order("full_name", { ascending: true })
-    .limit(200);
+  // Data came from the top-level batch — no round-trip here.
+  const empRows = empRowsRes.data;
   type EmployeeRow = {
     id: string;
     full_name: string;
@@ -487,14 +503,7 @@ export async function loadDashboardData(): Promise<DashboardData> {
   };
   const employees = (empRows ?? []) as unknown as EmployeeRow[];
 
-  const { data: weekShiftsForLoad } = await supabase
-    .from("shifts")
-    .select("employee_id, starts_at, ends_at")
-    .is("deleted_at", null)
-    .gte("starts_at", weekStart.toISOString())
-    .lte("starts_at", weekEnd.toISOString())
-    // Defensive cap: 1000 shifts/week is ~5× the largest seed scenario.
-    .limit(1000);
+  const weekShiftsForLoad = weekShiftsForLoadRes.data;
 
   const hoursByEmp = new Map<string, number>();
   for (const s of (weekShiftsForLoad ?? []) as Array<{
