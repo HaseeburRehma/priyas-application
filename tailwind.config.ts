@@ -31,14 +31,19 @@ const config: Config = {
           100: "var(--primary-100)",
           200: "var(--primary-200)",
           300: "var(--primary-300)",
+          400: "var(--primary-400)",
           500: "var(--primary-500)",
           600: "var(--primary-600)",
           700: "var(--primary-700)",
           800: "var(--primary-800)",
+          900: "var(--primary-900)",
         },
         secondary: {
           50: "var(--secondary-50)",
           100: "var(--secondary-100)",
+          200: "var(--secondary-200)",
+          300: "var(--secondary-300)",
+          400: "var(--secondary-400)",
           500: "var(--secondary-500)",
           600: "var(--secondary-600)",
           700: "var(--secondary-700)",
@@ -46,10 +51,16 @@ const config: Config = {
           900: "var(--secondary-900)",
         },
         accent: {
+          50: "var(--accent-50)",
           100: "var(--accent-100)",
+          200: "var(--accent-200)",
           300: "var(--accent-300)",
+          400: "var(--accent-400)",
           500: "var(--accent-500)",
           600: "var(--accent-600)",
+          700: "var(--accent-700)",
+          800: "var(--accent-800)",
+          900: "var(--accent-900)",
         },
         tertiary: {
           200: "var(--tertiary-200)",
@@ -103,13 +114,24 @@ const config: Config = {
         sm: "var(--shadow-sm)",
         md: "var(--shadow-md)",
         lg: "var(--shadow-lg)",
+        xl: "var(--shadow-xl)",
         focus: "var(--shadow-focus)",
       },
       fontSize: {
-        // Default Tailwind scale is fine; the prototype uses arbitrary
-        // values like 11px/13px which we'll keep as tracked custom sizes.
+        // Figma DS type scale — the six named sizes render 1:1 with the
+        // Figma "Type scale" cards. Arbitrary 11/13 kept for the two
+        // places (badges, table meta) that need in-between sizes.
         "11": ["11px", { lineHeight: "1.4" }],
         "13": ["13px", { lineHeight: "1.5" }],
+        caption: ["12px", { lineHeight: "17px", fontWeight: "400" }],
+        body: ["14px", { lineHeight: "21px", fontWeight: "400" }],
+        h3: ["16px", { lineHeight: "21px", fontWeight: "600" }],
+        h2: ["20px", { lineHeight: "24px", fontWeight: "600" }],
+        h1: ["24px", { lineHeight: "29px", fontWeight: "700" }],
+        display: [
+          "40px",
+          { lineHeight: "44px", fontWeight: "800", letterSpacing: "-0.02em" },
+        ],
       },
       letterSpacing: {
         tightish: "-0.005em",
