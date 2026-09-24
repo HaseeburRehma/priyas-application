@@ -23,6 +23,13 @@ const config = {
     // a handful of functions are used. next-intl gets the same
     // treatment for its client-runtime re-exports.
     optimizePackageImports: ["date-fns", "next-intl"],
+    // Cache rendered route segments in the router for longer so
+    // back-navigation is instant instead of re-fetching. The defaults
+    // in 14.2 are 0s for dynamic and 5min for static — bumping dynamic
+    // to 30s means the last-visited page is still in memory when the
+    // user clicks Back or hops between sibling routes, and only a
+    // real 30s+ pause forces a refetch.
+    staleTimes: { dynamic: 30, static: 180 },
   },
   images: {
     remotePatterns: [
