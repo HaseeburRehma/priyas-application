@@ -1,6 +1,15 @@
 import createNextIntlPlugin from "next-intl/plugin";
+import bundleAnalyzer from "@next/bundle-analyzer";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+
+// Analyzer runs only when ANALYZE=1 is set. Reports land in
+// .next/analyze/{client,server}.html — open manually so this works
+// in headless CI runs too.
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === "1",
+  openAnalyzer: false,
+});
 
 /** @type {import('next').NextConfig} */
 const config = {
@@ -8,6 +17,12 @@ const config = {
   poweredByHeader: false,
   experimental: {
     typedRoutes: true,
+    // Next rewrites barrel imports to per-symbol module paths at build
+    // time. `date-fns` alone has 22 barrel import sites; without this,
+    // every one drags the whole module through webpack even though only
+    // a handful of functions are used. next-intl gets the same
+    // treatment for its client-runtime re-exports.
+    optimizePackageImports: ["date-fns", "next-intl"],
   },
   images: {
     remotePatterns: [
@@ -128,4 +143,4 @@ const config = {
   },
 };
 
-export default withNextIntl(config);
+export default withBundleAnalyzer(withNextIntl(config));

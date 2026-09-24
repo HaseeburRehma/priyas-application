@@ -7,10 +7,13 @@ import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { OfflineIndicator } from "@/components/pwa/OfflineIndicator";
 import "./globals.css";
 
+// Weight 300 was in the stack but nothing in the DS uses it — the Figma
+// tokens only reach for 400/500/600/700/800. Dropping it saves one WOFF
+// per language subset with no visible difference.
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
-  weight: ["300", "400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-inter",
 });
 
