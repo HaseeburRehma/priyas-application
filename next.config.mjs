@@ -32,6 +32,8 @@ const config = {
     staleTimes: { dynamic: 30, static: 180 },
   },
   images: {
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 3600,
     remotePatterns: [
       // Supabase Storage public bucket
       { protocol: "https", hostname: "*.supabase.co" },

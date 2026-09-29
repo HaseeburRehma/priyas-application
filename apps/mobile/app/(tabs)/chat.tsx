@@ -5,10 +5,11 @@
  * message preview, and an unread badge. Tap → thread route.
  */
 
+import React, { useCallback } from "react";
 import {
+  FlatList,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -28,10 +29,25 @@ export default function ChatTab() {
   const { data, isLoading, refetch, isRefetching } = useQuery<ChatChannelRow[]>({
     queryKey: ["chat-channels"],
     queryFn: loadMyChannels,
-    refetchInterval: 30_000, // gentle poll — realtime handles the fast path per-thread
+    refetchInterval: 30_000,
   });
 
   const channels = data ?? [];
+
+  const onPress = useCallback(
+    (id: string) =>
+      router.push({ pathname: "/chat/[channelId]", params: { channelId: id } }),
+    [router],
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: ChatChannelRow }) => (
+      <ChannelRowItem channel={item} onPress={onPress} />
+    ),
+    [onPress],
+  );
+
+  const keyExtractor = useCallback((item: ChatChannelRow) => item.id, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.tertiary[200] }} edges={["top"]}>
@@ -39,81 +55,98 @@ export default function ChatTab() {
         <Text style={styles.title}>{t("chat.title")}</Text>
         <Text style={styles.sub}>{t("chat.subtitle")}</Text>
       </View>
-      <ScrollView
-        contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />
-        }
-      >
-        {isLoading && <CenterSpinner />}
-        {!isLoading && channels.length === 0 && (
-          <EmptyState
-            title={t("chat.emptyTitle")}
-            subtitle={t("chat.emptyBody")}
-          />
-        )}
-        {channels.map((c) => {
-          const displayName =
-            c.name || (c.is_direct ? t("chat.dm") : t("chat.channel"));
-          return (
-            <Pressable
-              key={c.id}
-              onPress={() =>
-                router.push({
-                  pathname: "/chat/[channelId]",
-                  params: { channelId: c.id },
-                })
-              }
-              style={styles.row}
-            >
-              <View
-                style={[
-                  styles.avatar,
-                  {
-                    backgroundColor: c.is_direct
-                      ? colors.secondary[500]
-                      : colors.primary[500],
-                  },
-                ]}
-              >
-                <Text style={styles.avatarText}>
-                  {(displayName[0] ?? "?").toUpperCase()}
-                </Text>
-              </View>
-              <View style={styles.body}>
-                <View style={styles.topRow}>
-                  <Text style={styles.name} numberOfLines={1}>
-                    {c.is_direct ? "" : "#"}
-                    {displayName}
-                  </Text>
-                  {c.last_message_at ? (
-                    <Text style={styles.time}>
-                      {formatDistanceToNow(parseISO(c.last_message_at), {
-                        addSuffix: false,
-                      })}
-                    </Text>
-                  ) : null}
-                </View>
-                <View style={styles.bottomRow}>
-                  <Text style={styles.preview} numberOfLines={1}>
-                    {c.last_message_body ?? t("chat.noMessages")}
-                  </Text>
-                  {c.unread_count > 0 && (
-                    <View style={styles.badge}>
-                      <Text style={styles.badgeText}>
-                        {c.unread_count > 99 ? "99+" : c.unread_count}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+      {isLoading ? (
+        <CenterSpinner />
+      ) : (
+        <FlatList
+          data={channels}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          ItemSeparatorComponent={ListSeparator}
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={() => refetch()}
+              tintColor={colors.primary[500]}
+            />
+          }
+          ListEmptyComponent={
+            <EmptyState
+              title={t("chat.emptyTitle")}
+              subtitle={t("chat.emptyBody")}
+            />
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
+
+const ListSeparator = () => <View style={styles.sep} />;
+
+const ChannelRowItem = React.memo(function ChannelRowItem({
+  channel: c,
+  onPress,
+}: {
+  channel: ChatChannelRow;
+  onPress: (id: string) => void;
+}) {
+  const displayName =
+    c.name || (c.is_direct ? t("chat.dm") : t("chat.channel"));
+  return (
+    <Pressable
+      onPress={() => onPress(c.id)}
+      android_ripple={{ color: colors.neutral[100] }}
+      style={({ pressed }) => [
+        styles.row,
+        pressed && { backgroundColor: colors.neutral[50] },
+      ]}
+    >
+      <View
+        style={[
+          styles.avatar,
+          {
+            backgroundColor: c.is_direct
+              ? colors.secondary[500]
+              : colors.primary[500],
+          },
+        ]}
+      >
+        <Text style={styles.avatarText}>
+          {(displayName[0] ?? "?").toUpperCase()}
+        </Text>
+      </View>
+      <View style={styles.body}>
+        <View style={styles.topRow}>
+          <Text style={styles.name} numberOfLines={1}>
+            {c.is_direct ? "" : "#"}
+            {displayName}
+          </Text>
+          {c.last_message_at ? (
+            <Text style={styles.time}>
+              {formatDistanceToNow(parseISO(c.last_message_at), {
+                addSuffix: false,
+              })}
+            </Text>
+          ) : null}
+        </View>
+        <View style={styles.bottomRow}>
+          <Text style={styles.preview} numberOfLines={1}>
+            {c.last_message_body ?? t("chat.noMessages")}
+          </Text>
+          {c.unread_count > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>
+                {c.unread_count > 99 ? "99+" : c.unread_count}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+    </Pressable>
+  );
+});
 
 const styles = StyleSheet.create({
   header: {
@@ -141,8 +174,6 @@ const styles = StyleSheet.create({
     gap: spacing[3],
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
-    borderTopWidth: 1,
-    borderTopColor: colors.neutral[100],
     backgroundColor: colors.white,
   },
   avatar: {
@@ -201,4 +232,5 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontSize: 11,
   },
+  sep: { height: 1, backgroundColor: colors.neutral[100] },
 });

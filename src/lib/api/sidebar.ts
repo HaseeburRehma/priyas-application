@@ -4,6 +4,9 @@ import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCachedProfile, getCachedUser } from "@/lib/api/current-user";
 import { env } from "@/lib/constants/env";
+import { measureAsync } from "@/lib/utils/perf";
+import { withRetry } from "@/lib/utils/retry";
+import { coalesceRequest } from "@/lib/utils/coalesce";
 
 /**
  * Cache tags used to invalidate the sidebar org-scoped counts from
@@ -114,7 +117,13 @@ function loadOrgCountsCached(orgId: string) {
   )();
 }
 
-export async function loadSidebarCounts(): Promise<SidebarCounts> {
+export function loadSidebarCounts(): Promise<SidebarCounts> {
+  return coalesceRequest("sidebar-counts", () =>
+    measureAsync("loadSidebarCounts", _loadSidebarCounts),
+  );
+}
+
+async function _loadSidebarCounts(): Promise<SidebarCounts> {
   const supabase = await createSupabaseServerClient();
   const profile = await getCachedProfile();
   const orgId = profile?.orgId ?? null;
@@ -177,9 +186,10 @@ async function countUnreadChatMessages(
 ): Promise<number | null> {
   const user = await getCachedUser();
   if (!user) return null;
-  const { data, error } = await supabase.rpc("unread_chat_count", {
-    p_user_id: user.id,
-  });
+  const { data, error } = await withRetry<{ data: number | null; error: unknown }>(
+    () => supabase.rpc("unread_chat_count", { p_user_id: user.id }),
+    { maxAttempts: 2, baseDelayMs: 100 },
+  );
   if (error) return null;
   return typeof data === "number" ? data : 0;
 }

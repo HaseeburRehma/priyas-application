@@ -7,6 +7,14 @@ import {
   LexwareError,
   type LexwareInvoiceLineItem,
 } from "@/lib/lexware/client";
+import { CircuitBreaker } from "@/lib/utils/circuit-breaker";
+import { withRetry } from "@/lib/utils/retry";
+import { measureAsync } from "@/lib/utils/perf";
+
+const lexwareBreaker = new CircuitBreaker({
+  failureThreshold: 3,
+  resetTimeoutMs: 60_000,
+});
 
 /**
  * Adapter facade between invoice actions and the Lexware Office REST client.
@@ -66,6 +74,19 @@ class StubLexwareClient implements LexwareClient {
 
 class RealLexwareClient implements LexwareClient {
   async pushInvoice(invoice: AdapterInvoice): Promise<PushResult> {
+    return measureAsync("lexware.pushInvoice", () =>
+      lexwareBreaker.execute(() =>
+        withRetry(() => this._push(invoice), {
+          maxAttempts: 2,
+          baseDelayMs: 500,
+          shouldRetry: (err) =>
+            !(err instanceof LexwareError && err.status >= 400 && err.status < 500),
+        }),
+      ),
+    );
+  }
+
+  private async _push(invoice: AdapterInvoice): Promise<PushResult> {
     const cfg = getLexwareConfig();
     if (!cfg) throw new Error("Lexware not configured");
 

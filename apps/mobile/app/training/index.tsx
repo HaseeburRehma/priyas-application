@@ -10,13 +10,13 @@
  * `employee_training_progress` table so both surfaces stay in sync.
  */
 
-import { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  FlatList,
   Linking,
   Modal,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -37,6 +37,9 @@ import { classifyVideoUrl } from "@/lib/video-embed";
 import { Chip, EmptyState } from "@/components/ui";
 import { colors, spacing, typography } from "@/lib/theme";
 import { t } from "@/lib/i18n";
+
+const keyExtractor = (item: TrainingModule) => item.id;
+const ListSpacer = () => <View style={{ height: 10 }} />;
 
 export default function TrainingScreen() {
   const router = useRouter();
@@ -112,10 +115,11 @@ export default function TrainingScreen() {
           subtitle={t("mobile.training.emptyBody")}
         />
       ) : (
-        <ScrollView contentContainerStyle={{ padding: spacing[4], gap: 10 }}>
-          {modules.map((m) => (
+        <FlatList
+          data={modules}
+          keyExtractor={keyExtractor}
+          renderItem={({ item: m }) => (
             <ModuleCard
-              key={m.id}
               module={m}
               onWatch={() => {
                 if (!m.video_url) return;
@@ -124,11 +128,8 @@ export default function TrainingScreen() {
                   classified.kind === "embed" ||
                   classified.kind === "direct"
                 ) {
-                  // Play inline via WebView.
                   setPlaying(m);
                 } else {
-                  // Fall back to the system browser for anything
-                  // we can't safely embed.
                   Linking.openURL(m.video_url).catch(() => {});
                 }
                 if (!m.started_at) startMutation.mutate(m.id);
@@ -136,8 +137,10 @@ export default function TrainingScreen() {
               onComplete={() => completeMutation.mutate(m.id)}
               completing={completeMutation.isPending}
             />
-          ))}
-        </ScrollView>
+          )}
+          ItemSeparatorComponent={ListSpacer}
+          contentContainerStyle={styles.list}
+        />
       )}
 
       {/* Inline video player — full-screen modal so the WebView has
@@ -214,7 +217,7 @@ export default function TrainingScreen() {
   );
 }
 
-function ModuleCard({
+const ModuleCard = React.memo(function ModuleCard({
   module,
   onWatch,
   onComplete,
@@ -282,9 +285,12 @@ function ModuleCard({
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
+  list: {
+    padding: spacing[4],
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",

@@ -4,6 +4,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentRole } from "@/lib/rbac/permissions";
 import { getCachedProfile, getCachedUser } from "@/lib/api/current-user";
 import { pairCheckInOutEvents } from "@/lib/api/time-entries-pairing";
+import { measureAsync } from "@/lib/utils/perf";
+import { coalesceRequest } from "@/lib/utils/coalesce";
 import {
   startOfDay,
   endOfDay,
@@ -167,7 +169,13 @@ async function loadKpis(
  * explicitly. Aggregations are intentionally lightweight (counts + small
  * SELECTs) so the page renders fast even on the free tier.
  */
-export async function loadDashboardData(): Promise<DashboardData> {
+export function loadDashboardData(): Promise<DashboardData> {
+  return coalesceRequest("dashboard-data", () =>
+    measureAsync("loadDashboardData", _loadDashboardData),
+  );
+}
+
+async function _loadDashboardData(): Promise<DashboardData> {
   const supabase = await createSupabaseServerClient();
 
   // Resolve org_id explicitly so we can pass it as a leading filter on

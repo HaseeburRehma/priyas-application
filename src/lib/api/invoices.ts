@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sanitizeQ } from "@/lib/utils/postgrest-sanitize";
+import { measureAsync } from "@/lib/utils/perf";
 import type {
   AlltagshilfeBudget,
   InvoiceDetail,
@@ -29,7 +30,11 @@ export type {
   AlltagshilfeBudget,
 } from "./invoices.types";
 
-export async function loadInvoicesSummary(): Promise<InvoicesSummary> {
+export function loadInvoicesSummary(): Promise<InvoicesSummary> {
+  return measureAsync("loadInvoicesSummary", _loadInvoicesSummary);
+}
+
+async function _loadInvoicesSummary(): Promise<InvoicesSummary> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("invoice_summary_kpis");
   if (error || !data) {
