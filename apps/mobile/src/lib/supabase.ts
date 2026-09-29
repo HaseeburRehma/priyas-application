@@ -10,7 +10,6 @@
  * are refreshed via the SDK's own timer.
  */
 
-import "react-native-url-polyfill/auto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
