@@ -36,11 +36,7 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "CAMERA",
-        "READ_MEDIA_IMAGES",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "READ_MEDIA_IMAGES"
       ]
     },
     "plugins": [
@@ -53,14 +49,6 @@
           "locationAlwaysAndWhenInUsePermission": "Priya's uses your location to verify you are at the assigned property when you clock in."
         }
       ],
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Allow Priya's to access your camera to attach photos to damage reports."
-        }
-      ],
-      "expo-updates",
-      "expo-font",
       [
         "expo-splash-screen",
         {

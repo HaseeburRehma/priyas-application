@@ -14,6 +14,23 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
+// Exclude test files, changelogs, docs, and READMEs from the JS bundle.
+// These are resolved by Metro during graph traversal but contribute only
+// dead weight to the final .jsbundle.
+config.resolver.blockList = [
+  ...(Array.isArray(config.resolver.blockList)
+    ? config.resolver.blockList
+    : config.resolver.blockList
+      ? [config.resolver.blockList]
+      : []),
+  /\/__tests__\//,
+  /\/__mocks__\//,
+  /.*\.test\.(js|ts|tsx)$/,
+  /.*\.spec\.(js|ts|tsx)$/,
+  /CHANGELOG\.md$/,
+  /README\.md$/,
+];
+
 // NOTE on duplicate react: the repo root has its own node_modules with
 // react@18 for the Next.js web app. Metro's default nearest-wins
 // resolution correctly picks mobile's local react@19 for everything the
