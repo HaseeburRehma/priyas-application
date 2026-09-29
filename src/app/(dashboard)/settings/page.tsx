@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
+import nextDynamic from "next/dynamic";
 import { redirect } from "next/navigation";
 import { loadSettings } from "@/lib/api/settings";
-import { can,} from "@/lib/rbac/permissions";
+import { can } from "@/lib/rbac/permissions";
 import { routes } from "@/lib/constants/routes";
-import { SettingsPage } from "@/components/settings/SettingsPage";
+
+const SettingsPage = nextDynamic(
+  () => import("@/components/settings/SettingsPage").then((mod) => mod.SettingsPage),
+  { ssr: false },
+);
 
 export const metadata: Metadata = { title: "Einstellungen" };
 export const dynamic = "force-dynamic";

@@ -1,6 +1,5 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { startOfMonth, endOfMonth, addDays } from "date-fns";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sanitizeQ } from "@/lib/utils/postgrest-sanitize";
 import type {
@@ -32,70 +31,28 @@ export type {
 
 export async function loadInvoicesSummary(): Promise<InvoicesSummary> {
   const supabase = await createSupabaseServerClient();
-  const { data: rows } = await supabase
-    .from("invoices")
-    .select("status, total_cents, issue_date, paid_at, due_date")
-    .is("deleted_at", null);
-
-  const list = (rows ?? []) as Array<{
-    status: InvoiceStatus;
-    total_cents: number | null;
-    issue_date: string;
-    paid_at: string | null;
-    due_date: string | null;
-  }>;
-
-  const ms = startOfMonth(new Date());
-  const me = endOfMonth(new Date());
-  const inMonth = (d: string | null) => {
-    if (!d) return false;
-    const x = new Date(d).getTime();
-    return x >= ms.getTime() && x <= me.getTime();
-  };
-  const next30 = addDays(new Date(), 30);
-
-  const sum = (
-    pred: (r: (typeof list)[number]) => boolean,
-  ): { count: number; amount: number } =>
-    list
-      .filter(pred)
-      .reduce(
-        (acc, r) => ({
-          count: acc.count + 1,
-          amount: acc.amount + Number(r.total_cents ?? 0),
-        }),
-        { count: 0, amount: 0 },
-      );
-
-  const paid = sum((r) => r.status === "paid");
-  const open = sum((r) => r.status === "sent");
-  const overdue = sum((r) => r.status === "overdue");
-  const total = sum(() => true);
-
-  const collectedThisMonth = list
-    .filter((r) => r.status === "paid" && inMonth(r.paid_at))
-    .reduce((s, r) => s + Number(r.total_cents ?? 0), 0);
-
-  const forecast30d = list
-    .filter(
-      (r) =>
-        ["sent", "overdue"].includes(r.status) &&
-        r.due_date &&
-        new Date(r.due_date).getTime() <= next30.getTime(),
-    )
-    .reduce((s, r) => s + Number(r.total_cents ?? 0), 0);
-
+  const { data, error } = await supabase.rpc("invoice_summary_kpis");
+  if (error || !data) {
+    return {
+      total: 0, totalAmountCents: 0,
+      paidCount: 0, paidAmountCents: 0,
+      openCount: 0, openAmountCents: 0,
+      overdueCount: 0, overdueAmountCents: 0,
+      collectedThisMonthCents: 0, forecast30dCents: 0,
+    };
+  }
+  const d = data as Record<string, number>;
   return {
-    total: total.count,
-    totalAmountCents: total.amount,
-    paidCount: paid.count,
-    paidAmountCents: paid.amount,
-    openCount: open.count,
-    openAmountCents: open.amount,
-    overdueCount: overdue.count,
-    overdueAmountCents: overdue.amount,
-    collectedThisMonthCents: collectedThisMonth,
-    forecast30dCents: forecast30d,
+    total: d.total ?? 0,
+    totalAmountCents: d.totalAmountCents ?? 0,
+    paidCount: d.paidCount ?? 0,
+    paidAmountCents: d.paidAmountCents ?? 0,
+    openCount: d.openCount ?? 0,
+    openAmountCents: d.openAmountCents ?? 0,
+    overdueCount: d.overdueCount ?? 0,
+    overdueAmountCents: d.overdueAmountCents ?? 0,
+    collectedThisMonthCents: d.collectedThisMonthCents ?? 0,
+    forecast30dCents: d.forecast30dCents ?? 0,
   };
 }
 

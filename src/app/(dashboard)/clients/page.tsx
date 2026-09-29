@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { loadClientsSummary } from "@/lib/api/clients";
 import { can, requireRoute } from "@/lib/rbac/permissions";
 import { ClientsPageHead } from "@/components/clients/ClientsPageHead";
 import { ClientsSummaryStrip } from "@/components/clients/ClientsSummary";
 import { ClientsPageClient } from "@/components/clients/ClientsPageClient";
+import { KpiStripSkeleton, TableSkeleton } from "@/components/shared/Skeleton";
 
 export const metadata: Metadata = { title: "Kunden" };
 export const dynamic = "force-dynamic";
@@ -21,15 +23,25 @@ export const dynamic = "force-dynamic";
  */
 export default async function ClientsPage() {
   await requireRoute("clients");
-  const [summary, canArchive] = await Promise.all([
-    loadClientsSummary(),
-    can("client.archive"),
-  ]);
   return (
     <>
       <ClientsPageHead />
-      <ClientsSummaryStrip summary={summary} />
-      <ClientsPageClient canArchive={canArchive} />
+      <Suspense fallback={<KpiStripSkeleton />}>
+        <ClientsSummarySection />
+      </Suspense>
+      <Suspense fallback={<TableSkeleton />}>
+        <ClientsTableSection />
+      </Suspense>
     </>
   );
+}
+
+async function ClientsSummarySection() {
+  const summary = await loadClientsSummary();
+  return <ClientsSummaryStrip summary={summary} />;
+}
+
+async function ClientsTableSection() {
+  const canArchive = await can("client.archive");
+  return <ClientsPageClient canArchive={canArchive} />;
 }

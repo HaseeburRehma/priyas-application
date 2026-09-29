@@ -7,8 +7,9 @@
  * in one round-trip.
  */
 
-import { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
+  FlatList,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -62,7 +63,7 @@ export default function NotificationsTab() {
     return rows.filter((r) => r.category === filter);
   }, [rows, filter]);
 
-  async function onTap(row: NotificationRow) {
+  const onTap = useCallback(async function onTap(row: NotificationRow) {
     if (!row.read_at) {
       // Optimistic — flip the cached row so the UI updates instantly.
       qc.setQueryData<NotificationRow[]>(["notifications"], (prev) =>
@@ -86,7 +87,16 @@ export default function NotificationsTab() {
         /* invalid href — swallow */
       }
     }
-  }
+  }, [qc, router]);
+
+  const keyExtractor = useCallback((item: NotificationRow) => item.id, []);
+
+  const renderNotificationRow = useCallback(
+    ({ item }: { item: NotificationRow }) => (
+      <NotificationRowItem row={item} onTap={onTap} />
+    ),
+    [onTap],
+  );
 
   async function onMarkAll() {
     qc.setQueryData<NotificationRow[]>(["notifications"], (prev) =>
@@ -153,73 +163,81 @@ export default function NotificationsTab() {
         </ScrollView>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />
-        }
-      >
-        {isLoading && <CenterSpinner />}
-        {!isLoading && filtered.length === 0 && (
-          <EmptyState
-            title={t("notifications.emptyTitle")}
-            subtitle={t("notifications.emptyBody")}
-          />
-        )}
-        {filtered.map((row) => {
-          const unread = !row.read_at;
-          const tone = categoryTone(row.category);
-          return (
-            <Pressable key={row.id} onPress={() => onTap(row)}>
-              <Card
-                padded={false}
-                style={[
-                  styles.itemCard,
-                  unread && styles.itemCardUnread,
-                ]}
-              >
-                <View style={styles.itemRow}>
-                  <View style={[styles.icon, { backgroundColor: tone.bg }]}>
-                    <Text style={[styles.iconText, { color: tone.fg }]}>
-                      {categoryEmoji(row.category)}
-                    </Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <View style={styles.titleRow}>
-                      <Text
-                        style={[styles.itemTitle, unread && styles.unreadText]}
-                        numberOfLines={2}
-                      >
-                        {row.title}
-                      </Text>
-                      {unread && <View style={styles.unreadDot} />}
-                    </View>
-                    {row.body ? (
-                      <Text style={styles.itemBody} numberOfLines={2}>
-                        {row.body}
-                      </Text>
-                    ) : null}
-                    <View style={styles.metaRow}>
-                      <Chip
-                        label={t(`notifications.filter.${row.category}` as never)}
-                        tone={tone.chip}
-                      />
-                      <Text style={styles.time}>
-                        {formatDistanceToNow(parseISO(row.created_at), {
-                          addSuffix: true,
-                        })}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              </Card>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+      {isLoading ? (
+        <CenterSpinner />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          title={t("notifications.emptyTitle")}
+          subtitle={t("notifications.emptyBody")}
+        />
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={keyExtractor}
+          renderItem={renderNotificationRow}
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
+
+const NotificationRowItem = React.memo(function NotificationRowItem({
+  row,
+  onTap,
+}: {
+  row: NotificationRow;
+  onTap: (row: NotificationRow) => void;
+}) {
+  const unread = !row.read_at;
+  const tone = categoryTone(row.category);
+  return (
+    <Pressable onPress={() => onTap(row)}>
+      <Card
+        padded={false}
+        style={[styles.itemCard, unread && styles.itemCardUnread]}
+      >
+        <View style={styles.itemRow}>
+          <View style={[styles.icon, { backgroundColor: tone.bg }]}>
+            <Text style={[styles.iconText, { color: tone.fg }]}>
+              {categoryEmoji(row.category)}
+            </Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <View style={styles.titleRow}>
+              <Text
+                style={[styles.itemTitle, unread && styles.unreadText]}
+                numberOfLines={2}
+              >
+                {row.title}
+              </Text>
+              {unread && <View style={styles.unreadDot} />}
+            </View>
+            {row.body ? (
+              <Text style={styles.itemBody} numberOfLines={2}>
+                {row.body}
+              </Text>
+            ) : null}
+            <View style={styles.metaRow}>
+              <Chip
+                label={t(`notifications.filter.${row.category}` as never)}
+                tone={tone.chip}
+              />
+              <Text style={styles.time}>
+                {formatDistanceToNow(parseISO(row.created_at), {
+                  addSuffix: true,
+                })}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </Card>
+    </Pressable>
+  );
+});
 
 function categoryTone(c: NotificationCategory): {
   bg: string;

@@ -104,15 +104,16 @@ export default function NewDamageReport() {
   ) {
     if (!propertyId) return;
     setUploading(true);
-    const uploaded: string[] = [];
-    for (const a of assets) {
-      const url = await uploadDamagePhoto({
-        propertyId,
-        fileUri: a.uri,
-        mimeType: a.mimeType ?? null,
-      });
-      if (url) uploaded.push(url);
-    }
+    const results = await Promise.all(
+      assets.map((a) =>
+        uploadDamagePhoto({
+          propertyId,
+          fileUri: a.uri,
+          mimeType: a.mimeType ?? null,
+        }),
+      ),
+    );
+    const uploaded = results.filter((url): url is string => !!url);
     setPhotoUrls((prev) => [...prev, ...uploaded]);
     setUploading(false);
     if (uploaded.length < assets.length) {

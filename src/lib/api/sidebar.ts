@@ -177,53 +177,9 @@ async function countUnreadChatMessages(
 ): Promise<number | null> {
   const user = await getCachedUser();
   if (!user) return null;
-
-  const { data: memberships } = await supabase
-    .from("chat_members")
-    .select("channel_id, last_read_at")
-    .eq("user_id", user.id);
-
-  type Member = { channel_id: string; last_read_at: string | null };
-  const list = (memberships ?? []) as Member[];
-  if (list.length === 0) return 0;
-
-  const channelIds = list.map((m) => m.channel_id);
-  const THIRTY_DAYS_AGO = new Date(
-    Date.now() - 30 * 24 * 60 * 60 * 1000,
-  ).toISOString();
-  let dateFloor = THIRTY_DAYS_AGO;
-  const reads = list
-    .map((m) => m.last_read_at)
-    .filter((s): s is string => !!s);
-  const hasUnreadChannel = list.some((m) => !m.last_read_at);
-  if (!hasUnreadChannel && reads.length > 0) {
-    const oldest = reads.reduce((a, b) => (a < b ? a : b));
-    dateFloor = oldest < THIRTY_DAYS_AGO ? oldest : THIRTY_DAYS_AGO;
-  }
-  const { data: messages } = await supabase
-    .from("chat_messages")
-    .select("channel_id, user_id, created_at")
-    .in("channel_id", channelIds)
-    .is("deleted_at", null)
-    .gt("created_at", dateFloor)
-    .limit(5000);
-
-  type Msg = {
-    channel_id: string;
-    user_id: string;
-    created_at: string;
-  };
-  const lastReadByChannel = new Map(
-    list.map((m) => [m.channel_id, m.last_read_at]),
-  );
-
-  let unread = 0;
-  for (const m of (messages ?? []) as Msg[]) {
-    if (m.user_id === user.id) continue;
-    const last = lastReadByChannel.get(m.channel_id);
-    if (!last || new Date(m.created_at) > new Date(last)) {
-      unread += 1;
-    }
-  }
-  return unread;
+  const { data, error } = await supabase.rpc("unread_chat_count", {
+    p_user_id: user.id,
+  });
+  if (error) return null;
+  return typeof data === "number" ? data : 0;
 }

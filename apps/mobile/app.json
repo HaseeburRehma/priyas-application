@@ -8,7 +8,10 @@
     "scheme": "priyas",
     "userInterfaceStyle": "automatic",
     "assetBundlePatterns": [
-      "**/*"
+      "assets/icon.png",
+      "assets/adaptive-icon.png",
+      "assets/splash.png",
+      "assets/favicon.png"
     ],
     "ios": {
       "supportsTablet": true,

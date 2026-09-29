@@ -4,12 +4,13 @@
  * break controls.
  */
 
+import React, { useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import {
   Pressable,
   RefreshControl,
-  ScrollView,
+  SectionList,
   StyleSheet,
   Text,
   View,
@@ -35,7 +36,35 @@ export default function ScheduleTab() {
     enabled: !!profile?.employeeId,
   });
 
-  const groups = groupByDay(data ?? []);
+  const sections = useMemo(() => groupByDay(data ?? []), [data]);
+
+  const renderItem = useCallback(
+    ({ item: s }: { item: ShiftRow }) => (
+      <ShiftRowItem
+        shift={s}
+        onPress={() =>
+          router.push({
+            pathname: "/(tabs)/schedule/[id]",
+            params: { id: s.id },
+          })
+        }
+      />
+    ),
+    [router],
+  );
+
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: { dateKey: string } }) => (
+      <Text style={styles.groupHead}>
+        {isSameDay(new Date(section.dateKey), new Date())
+          ? t("schedule.today")
+          : format(new Date(section.dateKey), "EEEE · d MMM")}
+      </Text>
+    ),
+    [],
+  );
+
+  const keyExtractor = useCallback((item: ShiftRow) => item.id, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.tertiary[200] }} edges={["top"]}>
@@ -60,63 +89,60 @@ export default function ScheduleTab() {
         )}
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.container}
-        refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />
-        }
-      >
-        {isLoading && <CenterSpinner />}
-        {!isLoading && groups.length === 0 && (
-          <EmptyState
-            title={t("schedule.emptyTitle")}
-            subtitle={t("schedule.emptyBody")}
-          />
-        )}
-        {groups.map((g) => (
-          <View key={g.dateKey} style={styles.group}>
-            <Text style={styles.groupHead}>
-              {isSameDay(new Date(g.dateKey), new Date())
-                ? t("schedule.today")
-                : format(new Date(g.dateKey), "EEEE · d MMM")}
-            </Text>
-            {g.rows.map((s) => (
-              <Pressable
-                key={s.id}
-                onPress={() =>
-                  router.push({
-                    pathname: "/(tabs)/schedule/[id]",
-                    params: { id: s.id },
-                  })
-                }
-                style={styles.row}
-              >
-                <View style={styles.timeCol}>
-                  <Text style={styles.timeText}>
-                    {format(parseISO(s.starts_at), "HH:mm")}
-                  </Text>
-                  <Text style={styles.timeSep}>–</Text>
-                  <Text style={styles.timeText}>
-                    {format(parseISO(s.ends_at), "HH:mm")}
-                  </Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.client} numberOfLines={1}>
-                    {s.client.name}
-                  </Text>
-                  <Text style={styles.property} numberOfLines={1}>
-                    {s.property.name}
-                  </Text>
-                </View>
-                <Chip label={s.status} tone={statusTone(s.status)} />
-              </Pressable>
-            ))}
-          </View>
-        ))}
-      </ScrollView>
+      {isLoading ? (
+        <CenterSpinner />
+      ) : sections.length === 0 ? (
+        <EmptyState
+          title={t("schedule.emptyTitle")}
+          subtitle={t("schedule.emptyBody")}
+        />
+      ) : (
+        <SectionList
+          sections={sections}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          renderSectionHeader={renderSectionHeader}
+          contentContainerStyle={styles.container}
+          stickySectionHeadersEnabled={false}
+          refreshControl={
+            <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
+
+const ShiftRowItem = React.memo(function ShiftRowItem({
+  shift: s,
+  onPress,
+}: {
+  shift: ShiftRow;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={styles.row}>
+      <View style={styles.timeCol}>
+        <Text style={styles.timeText}>
+          {format(parseISO(s.starts_at), "HH:mm")}
+        </Text>
+        <Text style={styles.timeSep}>–</Text>
+        <Text style={styles.timeText}>
+          {format(parseISO(s.ends_at), "HH:mm")}
+        </Text>
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.client} numberOfLines={1}>
+          {s.client.name}
+        </Text>
+        <Text style={styles.property} numberOfLines={1}>
+          {s.property.name}
+        </Text>
+      </View>
+      <Chip label={s.status} tone={statusTone(s.status)} />
+    </Pressable>
+  );
+});
 
 function groupByDay(rows: ShiftRow[]) {
   const map = new Map<string, ShiftRow[]>();
@@ -126,9 +152,9 @@ function groupByDay(rows: ShiftRow[]) {
     existing.push(r);
     map.set(key, existing);
   }
-  return Array.from(map.entries()).map(([dateKey, rows]) => ({
+  return Array.from(map.entries()).map(([dateKey, items]) => ({
     dateKey,
-    rows,
+    data: items,
   }));
 }
 

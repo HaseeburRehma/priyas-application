@@ -7,7 +7,7 @@
  * RLS would reject the underlying query if they somehow did.
  */
 
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -128,7 +128,7 @@ export default function ClientsTab() {
               }
             />
           )}
-          ItemSeparatorComponent={() => <View style={styles.sep} />}
+          ItemSeparatorComponent={ListSeparator}
           contentContainerStyle={{ paddingBottom: spacing[6] }}
           refreshControl={
             <RefreshControl
@@ -149,7 +149,9 @@ export default function ClientsTab() {
   );
 }
 
-function ClientRowItem({
+const ListSeparator = () => <View style={styles.sep} />;
+
+const ClientRowItem = React.memo(function ClientRowItem({
   row,
   onPress,
 }: {
@@ -205,7 +207,7 @@ function ClientRowItem({
       </View>
     </Pressable>
   );
-}
+});
 
 function PayerBadge({ payer }: { payer: ClientPayerType | null }) {
   if (!payer) return null;

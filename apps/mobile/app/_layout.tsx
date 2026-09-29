@@ -11,8 +11,8 @@
  */
 
 import { useEffect, useState } from "react";
-import { View } from "react-native";
-import { QueryClient } from "@tanstack/react-query";
+import { AppState, type AppStateStatus, View } from "react-native";
+import { QueryClient, focusManager } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -28,6 +28,16 @@ import { bindNotificationTapHandler, registerPushToken } from "@/lib/push";
 import { colors } from "@/lib/theme";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// Wire React Query's focus manager to React Native's AppState so
+// refetchOnWindowFocus actually fires on app-foreground, and background
+// polling (like chat's 30s interval) pauses when the app is not visible.
+focusManager.setEventListener((handleFocus) => {
+  const sub = AppState.addEventListener("change", (state: AppStateStatus) => {
+    handleFocus(state === "active");
+  });
+  return () => sub.remove();
+});
 
 /**
  * Feature-update #16 · Offline-friendly schedule.

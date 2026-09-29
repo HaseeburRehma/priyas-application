@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import nextDynamic from "next/dynamic";
 import {
   endOfMonth,
   startOfMonth,
@@ -9,9 +11,14 @@ import {
 } from "date-fns";
 import { loadScheduleRange, loadScheduleWeek } from "@/lib/api/schedule";
 import type { ScheduleWeek } from "@/lib/api/schedule";
-import { SchedulePage } from "@/components/schedule/SchedulePage";
 import { getCurrentRole } from "@/lib/rbac/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { TableSkeleton } from "@/components/shared/Skeleton";
+
+const SchedulePage = nextDynamic(
+  () => import("@/components/schedule/SchedulePage").then((mod) => mod.SchedulePage),
+  { ssr: false },
+);
 
 export const metadata: Metadata = { title: "Einsatzplan" };
 export const dynamic = "force-dynamic";
@@ -84,12 +91,14 @@ export default async function Page({
   }
 
   return (
-    <SchedulePage
-      week={week}
-      view={view}
-      anchorIso={anchor.toISOString()}
-      viewerRole={role}
-      viewerEmployeeId={viewerEmployeeId}
-    />
+    <Suspense fallback={<TableSkeleton />}>
+      <SchedulePage
+        week={week}
+        view={view}
+        anchorIso={anchor.toISOString()}
+        viewerRole={role}
+        viewerEmployeeId={viewerEmployeeId}
+      />
+    </Suspense>
   );
 }

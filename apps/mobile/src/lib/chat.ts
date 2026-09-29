@@ -152,6 +152,9 @@ export async function loadChannelMessages(
     .reverse(); // oldest first for chat rendering
 }
 
+/** Module-level cache so we don't re-fetch org_id for the same channel on every send. */
+const orgIdCache = new Map<string, string>();
+
 /** Post a message. Server enforces org_id via trigger/RLS; we send channel + body. */
 export async function sendMessage(
   channelId: string,
@@ -167,13 +170,17 @@ export async function sendMessage(
 
   // Look up org_id for the channel — required by the insert since the
   // `chat_messages.org_id` is `not null` and defence-in-depth on top of RLS.
-  const { data: chan } = await supabase
-    .from("chat_channels")
-    .select("org_id")
-    .eq("id", channelId)
-    .maybeSingle();
-  const orgId = (chan as { org_id: string } | null)?.org_id;
-  if (!orgId) return { ok: false, error: "channel_not_found" };
+  let orgId = orgIdCache.get(channelId);
+  if (!orgId) {
+    const { data: chan } = await supabase
+      .from("chat_channels")
+      .select("org_id")
+      .eq("id", channelId)
+      .maybeSingle();
+    orgId = (chan as { org_id: string } | null)?.org_id;
+    if (!orgId) return { ok: false, error: "channel_not_found" };
+    orgIdCache.set(channelId, orgId);
+  }
 
   const { data, error } = await supabase
     .from("chat_messages")

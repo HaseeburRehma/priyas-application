@@ -90,29 +90,42 @@ export async function updateSession(request: NextRequest) {
     const ua = request.headers.get("user-agent") ?? "";
     const lang = request.headers.get("accept-language")?.split(",")[0] ?? "";
     const fp = await fingerprintOfEdge(user.id, ua, lang);
-    const { data: deviceRow } = await supabase
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .from("user_devices" as any)
-      .select("revoked_at")
-      .eq("user_id", user.id)
-      .eq("fingerprint", fp)
-      .maybeSingle();
-    if ((deviceRow as { revoked_at: string | null } | null)?.revoked_at) {
-      // signOut() clears the session cookies via the `setAll` callback
-      // above, which reassigns the closure's `response`. We must carry
-      // those cleared cookies onto the redirect response we return below —
-      // a brand-new NextResponse.redirect() wouldn't include them, leaving
-      // the (now server-invalidated, but still browser-held) session
-      // cookie in place.
-      await supabase.auth.signOut();
-      const url = request.nextUrl.clone();
-      url.pathname = routes.login;
-      url.searchParams.set("reason", "device_revoked");
-      const redirect = NextResponse.redirect(url);
-      for (const cookie of response.cookies.getAll()) {
-        redirect.cookies.set(cookie);
+
+    // Skip the DB lookup if we verified this fingerprint recently
+    const cachedFp = request.cookies.get("__device_ok")?.value;
+    if (cachedFp !== fp) {
+      const { data: deviceRow } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from("user_devices" as any)
+        .select("revoked_at")
+        .eq("user_id", user.id)
+        .eq("fingerprint", fp)
+        .maybeSingle();
+      if ((deviceRow as { revoked_at: string | null } | null)?.revoked_at) {
+        // signOut() clears the session cookies via the `setAll` callback
+        // above, which reassigns the closure's `response`. We must carry
+        // those cleared cookies onto the redirect response we return below —
+        // a brand-new NextResponse.redirect() wouldn't include them, leaving
+        // the (now server-invalidated, but still browser-held) session
+        // cookie in place.
+        await supabase.auth.signOut();
+        const url = request.nextUrl.clone();
+        url.pathname = routes.login;
+        url.searchParams.set("reason", "device_revoked");
+        const redirect = NextResponse.redirect(url);
+        for (const cookie of response.cookies.getAll()) {
+          redirect.cookies.set(cookie);
+        }
+        return redirect;
       }
-      return redirect;
+      // Verification passed — cache for 5 minutes
+      response.cookies.set("__device_ok", fp, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 300,
+        path: "/",
+      });
     }
   }
 

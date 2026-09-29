@@ -64,23 +64,42 @@ export async function loadMySelf(): Promise<MySelfData | null> {
   const ms = startOfMonth(now).toISOString();
   const me_ = endOfMonth(now).toISOString();
 
-  // Fetch time_entries for the month; then split week / month sums
-  // by pair (check_in, check_out) per shift. Doing it in JS is cheap
-  // enough — a month of one employee is bounded.
-  const { data: entriesRaw } = await supabase
-    .from("time_entries")
-    .select("shift_id, kind, occurred_at")
-    .eq("employee_id", me.id)
-    .gte("occurred_at", ms)
-    .lte("occurred_at", me_)
-    .order("occurred_at", { ascending: true });
+  // Fan out all independent queries in parallel — 5 sequential round-trips → 2
+  const [entriesRaw, vacRaw, trainRaw, shRaw] = await Promise.all([
+    supabase
+      .from("time_entries")
+      .select("shift_id, kind, occurred_at")
+      .eq("employee_id", me.id)
+      .gte("occurred_at", ms)
+      .lte("occurred_at", me_)
+      .order("occurred_at", { ascending: true }),
+    supabase
+      .from("vacation_requests")
+      .select("start_date, end_date, status")
+      .eq("employee_id", me.id)
+      .in("status", ["approved", "pending"]),
+    supabase
+      .from("employee_training_progress")
+      .select("module_id, completed_at, training_modules!inner(id, title, is_mandatory)")
+      .eq("employee_id", me.id)
+      .is("completed_at", null),
+    supabase
+      .from("shifts")
+      .select(
+        "id, starts_at, ends_at, status, properties!inner(id, name, clients!inner(id, name))",
+      )
+      .eq("employee_id", me.id)
+      .gte("starts_at", new Date().toISOString())
+      .order("starts_at", { ascending: true })
+      .limit(5),
+  ]);
 
   type Entry = {
     shift_id: string;
     kind: "check_in" | "check_out" | "break_start" | "break_end";
     occurred_at: string;
   };
-  const entries = (entriesRaw ?? []) as Entry[];
+  const entries = (entriesRaw.data ?? []) as Entry[];
 
   const pairs: Record<string, { in?: string; out?: string }> = {};
   for (const e of entries) {
@@ -103,13 +122,8 @@ export async function loadMySelf(): Promise<MySelfData | null> {
   }
 
   // Vacation — days used YTD from vacation_requests table.
-  const { data: vacRaw } = await supabase
-    .from("vacation_requests")
-    .select("start_date, end_date, status")
-    .eq("employee_id", me.id)
-    .in("status", ["approved", "pending"]);
   const vacRows =
-    (vacRaw ?? []) as Array<{ start_date: string; end_date: string; status: string }>;
+    (vacRaw.data ?? []) as Array<{ start_date: string; end_date: string; status: string }>;
   const vacationUsed = vacRows.reduce((s, r) => {
     const days =
       Math.round(
@@ -119,33 +133,16 @@ export async function loadMySelf(): Promise<MySelfData | null> {
     return s + Math.max(0, days);
   }, 0);
 
-  // Outstanding mandatory training. RPC exists on the DB side but we
-  // read the rows directly for portability — the mobile app doesn't
-  // rely on custom RPCs to keep the surface minimal.
-  const { data: trainRaw } = await supabase
-    .from("employee_training_progress")
-    .select("module_id, completed_at, training_modules!inner(id, title, is_mandatory)")
-    .eq("employee_id", me.id)
-    .is("completed_at", null);
+  // Outstanding mandatory training.
   type TRow = {
     module_id: string;
     training_modules: { id: string; title: string; is_mandatory: boolean };
   };
-  const outstanding = ((trainRaw ?? []) as unknown as TRow[])
+  const outstanding = ((trainRaw.data ?? []) as unknown as TRow[])
     .filter((r) => r.training_modules?.is_mandatory)
     .map((r) => ({ id: r.training_modules.id, title: r.training_modules.title }));
 
   // Upcoming shifts — next 5 assigned to me.
-  const { data: shRaw } = await supabase
-    .from("shifts")
-    .select(
-      "id, starts_at, ends_at, status, properties!inner(id, name, clients!inner(id, name))",
-    )
-    .eq("employee_id", me.id)
-    .gte("starts_at", new Date().toISOString())
-    .order("starts_at", { ascending: true })
-    .limit(5);
-
   type SRow = {
     id: string;
     starts_at: string;
@@ -157,7 +154,7 @@ export async function loadMySelf(): Promise<MySelfData | null> {
       clients: { id: string; name: string };
     };
   };
-  const upcoming = ((shRaw ?? []) as unknown as SRow[]).map((s) => ({
+  const upcoming = ((shRaw.data ?? []) as unknown as SRow[]).map((s) => ({
     id: s.id,
     starts_at: s.starts_at,
     ends_at: s.ends_at,
