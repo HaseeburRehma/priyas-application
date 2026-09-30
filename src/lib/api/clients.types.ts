@@ -26,6 +26,7 @@ export type ClientRow = {
   status: ClientStatus;
   contract_start: string | null;
   is_new: boolean;
+  notes_snippet: string | null;
 };
 
 export type ClientsSummary = {

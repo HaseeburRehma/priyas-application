@@ -478,7 +478,28 @@ function ProfileCard({ detail }: { detail: Detail }) {
         <Row label={t("infoEmail")} value={detail.email ?? "—"} />
         <Row label={t("infoPhone")} value={detail.phone ?? "—"} />
         <Row label={t("infoTeam")} value={detail.team_label ?? "—"} />
-        <Row label={t("infoStatus")} value={detail.status} />
+        <Row
+          label={t("infoStatus")}
+          value={
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                detail.status === "active" && "bg-success-50 text-success-700",
+                detail.status === "on_leave" && "bg-secondary-50 text-secondary-600",
+                detail.status === "inactive" && "bg-neutral-100 text-neutral-600",
+                detail.status === "terminated" && "bg-error-50 text-error-700",
+              )}
+            >
+              {detail.status === "active"
+                ? "Aktiv"
+                : detail.status === "on_leave"
+                  ? "Im Urlaub"
+                  : detail.status === "terminated"
+                    ? "Gekündigt"
+                    : "Inaktiv"}
+            </span>
+          }
+        />
         {/* Feature-update #11: separate availability chip so the PM
          *  can tell at a glance whether the person is actually
          *  available this week (vs. their contract status). */}

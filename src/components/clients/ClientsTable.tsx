@@ -126,6 +126,7 @@ export function ClientsTable({
               >
                 {t("contractStart")}
               </Th>
+              <Th>{t("latestNote")}</Th>
               <Th>{t("projectManager")}</Th>
               <Th>{t("actions")}</Th>
             </tr>
@@ -134,7 +135,7 @@ export function ClientsTable({
             {loading &&
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i} className="border-b border-neutral-100">
-                  <td colSpan={8} className="px-5 py-4">
+                  <td colSpan={9} className="px-5 py-4">
                     <div className="h-9 animate-pulse rounded bg-neutral-100" />
                   </td>
                 </tr>
@@ -142,7 +143,7 @@ export function ClientsTable({
 
             {!loading && rows.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-5 py-16 text-center text-[13px] text-neutral-500">
+                <td colSpan={9} className="px-5 py-16 text-center text-[13px] text-neutral-500">
                   {t("empty")}
                 </td>
               </tr>
@@ -233,6 +234,15 @@ export function ClientsTable({
                       <span className="font-mono text-[12px] text-neutral-600">
                         {f.date(r.contract_start)}
                       </span>
+                    </td>
+                    <td className="max-w-[180px] px-5 py-3.5 align-middle">
+                      {r.notes_snippet ? (
+                        <span className="block truncate text-[11px] text-neutral-500" title={r.notes_snippet}>
+                          {r.notes_snippet}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-neutral-300">—</span>
+                      )}
                     </td>
                     <td className="px-5 py-3.5 align-middle">
                       <div className="flex items-center gap-2">

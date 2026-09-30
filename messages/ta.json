@@ -559,6 +559,7 @@
       "properties": "சொத்துக்கள்",
       "status": "நிலை",
       "contractStart": "ஒப்பந்தத் தொடக்கம்",
+      "latestNote": "சமீபத்திய குறிப்பு",
       "projectManager": "திட்ட மேலாளர்",
       "actions": "செயல்கள்",
       "selectAll": "அனைத்தையும் தேர்ந்தெடு",
@@ -1222,6 +1223,7 @@
       "active": "செயலில்",
       "on_leave": "விடுமுறை",
       "inactive": "செயலற்றது",
+      "terminated": "பணிநீக்கம்",
       "overtime": "கூடுதல் நேரம்"
     },
     "table": {

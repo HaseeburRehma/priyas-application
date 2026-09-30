@@ -113,7 +113,7 @@ export async function loadClientsList(
   let query = supabase
     .from("clients")
     .select(
-      "id, display_name, customer_type, payer_type, email, phone, created_at, archived",
+      "id, display_name, customer_type, payer_type, email, phone, created_at, archived, notes",
       { count: "exact" },
     )
     .is("deleted_at", null);
@@ -175,6 +175,7 @@ export async function loadClientsList(
     phone: string | null;
     created_at: string;
     archived: boolean;
+    notes: string | null;
   };
   const dbRows = (data ?? []) as DbRow[];
 
@@ -240,6 +241,7 @@ export async function loadClientsList(
       : (contractByClient.get(r.id) ?? "review"),
     contract_start: contractStartByClient.get(r.id) ?? null,
     is_new: new Date(r.created_at).getTime() >= thirtyDaysAgo.getTime(),
+    notes_snippet: r.notes ? r.notes.slice(0, 80) : null,
   }));
 
   return { rows, total: count ?? 0 };

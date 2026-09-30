@@ -23,7 +23,7 @@ type Initial = {
   hire_date: string | null;
   weekly_hours: number;
   hourly_rate_eur: number | null;
-  status: "active" | "on_leave" | "inactive";
+  status: "active" | "on_leave" | "inactive" | "terminated";
   service_type?: "priya" | "alltagshilfe" | "both";
   auth_role: AuthRole | null;
   profile_id: string | null;

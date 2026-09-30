@@ -342,6 +342,7 @@ export function EmployeesPageClient({
                 "active",
                 "on_leave",
                 "inactive",
+                "terminated",
               ];
               setStatus(order[(order.indexOf(status) + 1) % order.length] ?? "all");
               setPage(1);
@@ -686,6 +687,7 @@ function StatusBadge({
     active: "bg-success-50 text-success-700",
     on_leave: "bg-secondary-50 text-secondary-600",
     inactive: "bg-neutral-100 text-neutral-600",
+    terminated: "bg-error-50 text-error-700",
     overtime: "bg-error-50 text-error-700",
   };
   return (

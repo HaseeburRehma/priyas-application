@@ -1,4 +1,4 @@
-export type EmployeeStatus = "active" | "on_leave" | "inactive";
+export type EmployeeStatus = "active" | "on_leave" | "inactive" | "terminated";
 
 export type EmployeeRoleChip = "pm" | "field" | "trainee";
 
