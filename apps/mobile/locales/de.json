@@ -1,0 +1,8 @@
+{
+  "ios": {
+    "NSLocationWhenInUseUsageDescription": "Priya's benötigt deinen Standort, um beim Einchecken zu prüfen, dass du am zugewiesenen Objekt bist.",
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "Priya's benötigt deinen Standort, um beim Einchecken zu prüfen, dass du am zugewiesenen Objekt bist.",
+    "NSCameraUsageDescription": "Fotografiere Schäden am Objekt oder nimm ein Profilfoto auf.",
+    "NSPhotoLibraryUsageDescription": "Füge Fotos zu Schadensmeldungen hinzu und aktualisiere dein Profilbild."
+  }
+}

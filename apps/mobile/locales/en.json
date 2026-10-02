@@ -1,0 +1,8 @@
+{
+  "ios": {
+    "NSLocationWhenInUseUsageDescription": "Priya's uses your location to verify you are at the assigned property when you clock in.",
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "Priya's uses your location to verify you are at the assigned property when you clock in.",
+    "NSCameraUsageDescription": "Take a photo of property damage or upload a profile photo.",
+    "NSPhotoLibraryUsageDescription": "Attach photos to damage reports and update your profile picture."
+  }
+}

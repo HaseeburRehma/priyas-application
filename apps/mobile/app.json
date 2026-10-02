@@ -25,6 +25,11 @@
         "ITSAppUsesNonExemptEncryption": false
       }
     },
+    "locales": {
+      "de": "./locales/de.json",
+      "en": "./locales/en.json",
+      "ta": "./locales/ta.json"
+    },
     "android": {
       "package": "de.priyas.mobile",
       "versionCode": 1,
@@ -42,7 +47,14 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-localization",
+      [
+        "expo-localization",
+        {
+          "supportedLocales": {
+            "ios": ["de", "en", "ta"]
+          }
+        }
+      ],
       [
         "expo-location",
         {
