@@ -42,7 +42,7 @@ export default function VacationList() {
   const done = rows.filter((r) => r.status !== "pending");
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.tertiary[200] }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.tertiary[200] }} edges={["top", "bottom"]}>
       <ScrollView
         contentContainerStyle={styles.container}
         refreshControl={

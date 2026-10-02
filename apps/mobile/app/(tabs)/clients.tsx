@@ -117,6 +117,7 @@ export default function ClientsTab() {
         <FlatList
           data={clientsQuery.data ?? []}
           keyExtractor={(row) => row.id}
+          keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
             <ClientRowItem
               row={item}

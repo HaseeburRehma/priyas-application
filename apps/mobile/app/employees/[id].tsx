@@ -35,7 +35,7 @@ export default function EmployeeDetail() {
     return (
       <SafeAreaView
         style={{ flex: 1, backgroundColor: colors.tertiary[200] }}
-        edges={["top"]}
+        edges={["top", "bottom"]}
       >
         <Header title="—" onBack={() => router.back()} />
         <View style={styles.center}>
@@ -49,7 +49,7 @@ export default function EmployeeDetail() {
     return (
       <SafeAreaView
         style={{ flex: 1, backgroundColor: colors.tertiary[200] }}
-        edges={["top"]}
+        edges={["top", "bottom"]}
       >
         <Header title="—" onBack={() => router.back()} />
         <EmptyState
@@ -63,7 +63,7 @@ export default function EmployeeDetail() {
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: colors.tertiary[200] }}
-      edges={["top"]}
+      edges={["top", "bottom"]}
     >
       <Header title={d.full_name} onBack={() => router.back()} />
       <ScrollView contentContainerStyle={{ padding: spacing[4], gap: 12 }}>

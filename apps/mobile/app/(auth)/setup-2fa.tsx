@@ -10,6 +10,8 @@ import { useState, useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -72,55 +74,63 @@ export default function Setup2FA() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.tertiary[200] }}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.badge}>{t("setup2fa.badge")}</Text>
-        <Text style={styles.title}>{t("setup2fa.title")}</Text>
-        <Text style={styles.lead}>{t("setup2fa.lead")}</Text>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text style={styles.badge}>{t("setup2fa.badge")}</Text>
+          <Text style={styles.title}>{t("setup2fa.title")}</Text>
+          <Text style={styles.lead}>{t("setup2fa.lead")}</Text>
 
-        <Card style={styles.card}>
-          <Text style={styles.sectionH}>{t("setup2fa.checklistTitle")}</Text>
-          <Step n={1} title={t("setup2fa.step1Title")} body={t("setup2fa.step1Body")} />
-          <Step n={2} title={t("setup2fa.step2Title")} body={t("setup2fa.step2Body")} />
-          <Step n={3} title={t("setup2fa.step3Title")} body={t("setup2fa.step3Body")} />
-        </Card>
+          <Card style={styles.card}>
+            <Text style={styles.sectionH}>{t("setup2fa.checklistTitle")}</Text>
+            <Step n={1} title={t("setup2fa.step1Title")} body={t("setup2fa.step1Body")} />
+            <Step n={2} title={t("setup2fa.step2Title")} body={t("setup2fa.step2Body")} />
+            <Step n={3} title={t("setup2fa.step3Title")} body={t("setup2fa.step3Body")} />
+          </Card>
 
-        <Card style={styles.card}>
-          {qrSvg ? (
-            <View style={styles.qrWrap}>
-              <SvgXml xml={qrSvg} width={200} height={200} />
-            </View>
-          ) : (
-            <ActivityIndicator color={colors.primary[500]} />
-          )}
-          {secret ? (
-            <View style={styles.secretRow}>
-              <Text style={styles.secretLabel}>
-                {t("settings.security.secret")}:
-              </Text>
-              <Text style={styles.secret}>{secret}</Text>
-            </View>
-          ) : null}
-          <Input
-            keyboardType="number-pad"
-            maxLength={6}
-            placeholder="••••••"
-            value={code}
-            onChangeText={setCode}
-            style={styles.otp}
-          />
-          <Button
-            label={t("settings.security.verify")}
-            onPress={onVerify}
-            loading={pending}
-            disabled={code.length !== 6}
-          />
-          <Button
-            label={t("settings.security.loginChallengeBack")}
-            variant="ghost"
-            onPress={() => signOut()}
-          />
-        </Card>
-      </ScrollView>
+          <Card style={styles.card}>
+            {qrSvg ? (
+              <View style={styles.qrWrap}>
+                <SvgXml xml={qrSvg} width={200} height={200} />
+              </View>
+            ) : (
+              <ActivityIndicator color={colors.primary[500]} />
+            )}
+            {secret ? (
+              <View style={styles.secretRow}>
+                <Text style={styles.secretLabel}>
+                  {t("settings.security.secret")}:
+                </Text>
+                <Text style={styles.secret}>{secret}</Text>
+              </View>
+            ) : null}
+            <Input
+              keyboardType="number-pad"
+              maxLength={6}
+              placeholder="••••••"
+              value={code}
+              onChangeText={setCode}
+              style={styles.otp}
+            />
+            <Button
+              label={t("settings.security.verify")}
+              onPress={onVerify}
+              loading={pending}
+              disabled={code.length !== 6}
+            />
+            <Button
+              label={t("settings.security.loginChallengeBack")}
+              variant="ghost"
+              onPress={() => signOut()}
+            />
+          </Card>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

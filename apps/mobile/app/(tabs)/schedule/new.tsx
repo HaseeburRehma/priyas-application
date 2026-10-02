@@ -147,7 +147,10 @@ export default function PlanShiftScreen() {
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <ScrollView contentContainerStyle={{ padding: spacing[4], gap: 12 }}>
+        <ScrollView
+          contentContainerStyle={{ padding: spacing[4], gap: 12 }}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Property picker */}
           <Card title={t("mobile.planShift.propertySection")}>
             {selectedProp ? (
@@ -175,7 +178,11 @@ export default function PlanShiftScreen() {
                   placeholder={t("mobile.planShift.propertySearchPlaceholder")}
                   autoCapitalize="none"
                 />
-                <View style={styles.pickerList}>
+                <ScrollView
+                  style={styles.pickerList}
+                  nestedScrollEnabled
+                  keyboardShouldPersistTaps="handled"
+                >
                   {filteredProps.map((p) => (
                     <Pressable
                       key={p.id}
@@ -211,7 +218,7 @@ export default function PlanShiftScreen() {
                       {t("mobile.planShift.propertyEmpty")}
                     </Text>
                   )}
-                </View>
+                </ScrollView>
               </>
             )}
           </Card>
@@ -229,7 +236,11 @@ export default function PlanShiftScreen() {
                 </Text>
               </Pressable>
             ) : (
-              <View style={styles.pickerList}>
+              <ScrollView
+                style={styles.pickerList}
+                nestedScrollEnabled
+                keyboardShouldPersistTaps="handled"
+              >
                 <Pressable
                   onPress={() => setEmpId(null)}
                   style={[styles.pickRow, styles.openShiftRow]}
@@ -254,22 +265,22 @@ export default function PlanShiftScreen() {
                     </Text>
                   </Pressable>
                 ))}
-              </View>
+              </ScrollView>
             )}
           </Card>
 
           {/* Time */}
           <Card title={t("mobile.planShift.timeSection")}>
-            <View style={styles.grid3}>
-              <View style={styles.gridCell}>
-                <Text style={styles.label}>{t("mobile.planShift.date")}</Text>
-                <Input
-                  value={dateStr}
-                  onChangeText={setDateStr}
-                  placeholder="YYYY-MM-DD"
-                  autoCapitalize="none"
-                />
-              </View>
+            <View>
+              <Text style={styles.label}>{t("mobile.planShift.date")}</Text>
+              <Input
+                value={dateStr}
+                onChangeText={setDateStr}
+                placeholder="YYYY-MM-DD"
+                autoCapitalize="none"
+              />
+            </View>
+            <View style={styles.grid2}>
               <View style={styles.gridCell}>
                 <Text style={styles.label}>{t("mobile.planShift.start")}</Text>
                 <Input
@@ -452,7 +463,7 @@ const styles = StyleSheet.create({
     color: colors.neutral[500],
     fontSize: typography.size.sm,
   },
-  grid3: { flexDirection: "row", gap: 8 },
+  grid2: { flexDirection: "row", gap: 8 },
   gridCell: { flex: 1 },
   label: {
     marginBottom: 4,

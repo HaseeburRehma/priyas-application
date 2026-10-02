@@ -47,7 +47,7 @@ export default function ClientDetailScreen() {
     return (
       <SafeAreaView
         style={{ flex: 1, backgroundColor: colors.tertiary[200] }}
-        edges={["top"]}
+        edges={["top", "bottom"]}
       >
         <Header onBack={() => router.back()} title="—" />
         <View style={styles.center}>
@@ -62,7 +62,7 @@ export default function ClientDetailScreen() {
     return (
       <SafeAreaView
         style={{ flex: 1, backgroundColor: colors.tertiary[200] }}
-        edges={["top"]}
+        edges={["top", "bottom"]}
       >
         <Header onBack={() => router.back()} title="—" />
         <EmptyState
@@ -77,7 +77,7 @@ export default function ClientDetailScreen() {
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: colors.tertiary[200] }}
-      edges={["top"]}
+      edges={["top", "bottom"]}
     >
       <Header onBack={() => router.back()} title={d.display_name} />
       <ScrollView contentContainerStyle={{ padding: spacing[4], gap: spacing[3] }}>

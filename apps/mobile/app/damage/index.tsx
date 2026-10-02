@@ -43,7 +43,7 @@ export default function DamageList() {
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: colors.tertiary[200] }}
-      edges={["top"]}
+      edges={["top", "bottom"]}
     >
       <ScrollView
         contentContainerStyle={styles.container}

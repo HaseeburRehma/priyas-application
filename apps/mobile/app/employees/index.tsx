@@ -42,7 +42,7 @@ export default function EmployeesScreen() {
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: colors.tertiary[200] }}
-      edges={["top"]}
+      edges={["top", "bottom"]}
     >
       <Header title={t("mobile.employees.title")} onBack={() => router.back()} />
       <View style={styles.searchWrap}>
@@ -81,6 +81,7 @@ export default function EmployeesScreen() {
         <FlatList
           data={query.data ?? []}
           keyExtractor={(r) => r.id}
+          keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
             <Row
               row={item}

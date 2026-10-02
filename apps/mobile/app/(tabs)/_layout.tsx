@@ -10,6 +10,7 @@
 
 import { Tabs } from "expo-router";
 import { type ColorValue } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path, Circle, Rect } from "react-native-svg";
 import { colors, typography } from "@/lib/theme";
 import { t } from "@/lib/i18n";
@@ -77,6 +78,10 @@ export default function TabsLayout() {
   //
   // Routes not in the tab bar stay reachable via <Link> / router.push;
   // `href: null` hides them from the bar without unregistering them.
+  const insets = useSafeAreaInsets();
+  // Overriding paddingBottom replaces the navigator's own safe-area
+  // padding, so the home-indicator inset has to be added back here.
+  const bottomPad = Math.max(insets.bottom, 8);
   return (
     <Tabs
       screenOptions={{
@@ -86,8 +91,8 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: colors.white,
           borderTopColor: colors.neutral[100],
-          height: 62,
-          paddingBottom: 8,
+          height: 54 + bottomPad,
+          paddingBottom: bottomPad,
           paddingTop: 6,
         },
         tabBarLabelStyle: {

@@ -139,6 +139,8 @@ export default function SettingsTab() {
     >
       <ScrollView
         contentContainerStyle={styles.container}
+        automaticallyAdjustKeyboardInsets
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
             refreshing={devicesRefetching}

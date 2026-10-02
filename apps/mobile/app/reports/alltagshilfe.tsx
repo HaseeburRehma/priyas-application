@@ -54,7 +54,7 @@ export default function AlltagshilfeReport() {
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: colors.tertiary[200] }}
-      edges={["top"]}
+      edges={["top", "bottom"]}
     >
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.headerBack}>

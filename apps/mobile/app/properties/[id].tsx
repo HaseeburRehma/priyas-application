@@ -153,7 +153,7 @@ function Wrap({
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: colors.tertiary[200] }}
-      edges={["top"]}
+      edges={["top", "bottom"]}
     >
       <View style={styles.header}>
         <Pressable onPress={onBack} hitSlop={12} style={styles.headerBack}>

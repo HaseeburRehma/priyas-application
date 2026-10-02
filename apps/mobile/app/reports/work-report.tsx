@@ -130,7 +130,7 @@ export default function WorkReportScreen() {
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: colors.tertiary[200] }}
-      edges={["top"]}
+      edges={["top", "bottom"]}
     >
       <ScrollView contentContainerStyle={styles.container}>
         <Pressable onPress={() => router.back()} style={styles.back}>

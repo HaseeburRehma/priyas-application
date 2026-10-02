@@ -93,12 +93,15 @@ export default function NewVacationRequest() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.tertiary[200] }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.tertiary[200] }} edges={["top", "bottom"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+        >
           <Pressable onPress={() => router.back()} style={styles.back}>
             <Text style={styles.backText}>← {t("schedule.back")}</Text>
           </Pressable>

@@ -21,7 +21,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
@@ -43,6 +43,7 @@ const TYPING_TTL_MS = 3500;
 export default function ChatThread() {
   const { channelId } = useLocalSearchParams<{ channelId: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const qc = useQueryClient();
   const { profile } = useAuth();
 
@@ -178,7 +179,6 @@ export default function ChatThread() {
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
         style={{ flex: 1 }}
       >
         {isLoading ? (
@@ -261,6 +261,9 @@ export default function ChatThread() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+      {/* Outside the KeyboardAvoidingView so the keyboard covers it
+       *  instead of adding its height on top of the keyboard. */}
+      <View style={{ height: insets.bottom, backgroundColor: colors.white }} />
     </SafeAreaView>
   );
 }
