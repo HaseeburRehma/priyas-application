@@ -84,11 +84,8 @@ export default function NewDamageReport() {
       Alert.alert(t("damage.pickPropertyFirst"));
       return;
     }
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert(t("damage.libraryPermTitle"), t("damage.libraryPermBody"));
-      return;
-    }
+    // The system photo picker (Android Photo Picker / iOS PHPicker) needs no
+    // media permission; READ_MEDIA_IMAGES is blocked in app.json for Play policy.
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       quality: 0.6,
