@@ -285,7 +285,7 @@
       "priyaTitle": "Priya's",
       "priyaSubtitle": "Regulärer Reinigungsservice",
       "priyaTagExisting": "Bestehender Servicebereich",
-      "priyaBilling": "Automatisch · via Lexware",
+      "priyaBilling": "Entwurf in Lexware",
       "priyaCustomers": "Reguläre Kunden · Firmen & Privatpersonen",
       "priyaStaff": "Reguläre Reinigungskräfte · 30 verfügbar",
       "priyaColor": "Grün in der gesamten App · bestehendes Verhalten",
@@ -435,7 +435,7 @@
         "changeServiceType": "Servicetyp ändern",
         "headingPriya": "Neuen Kunden anlegen",
         "headingAlltagshilfe": "Neuer Pflegekunde",
-        "subheadPriya": "Reguläre Reinigung · Automatische Abrechnung über Lexware · Schritt 2 von 3",
+        "subheadPriya": "Reguläre Reinigung · Rechnungsentwurf in Lexware · Schritt 2 von 3",
         "subheadAlltagshilfe": "Tagesbetreuung · Manuelle Abrechnung über Krankenkasse · Schritt 2 von 3"
       },
       "summary": {
@@ -444,7 +444,7 @@
         "subAlltagshilfe": "Die Angaben werden in den Pflegevertrag und den ersten Monatsbericht übernommen.",
         "serviceType": "Servicetyp",
         "invoice": "Rechnung",
-        "invoicePriya": "Automatisch · Lexware",
+        "invoicePriya": "Entwurf in Lexware",
         "invoiceAlltagshilfe": "Manuell · Krankenkasse",
         "vat": "USt",
         "vatPriya": "19 % Standard",
@@ -1490,7 +1490,7 @@
       "syncLexware": "Lexware-Sync",
       "syncLexwareTitle": "Alle ausstehenden Rechnungen mit Lexware synchronisieren",
       "syncLexwarePending": "Synchronisiere…",
-      "syncLexwareDone": "{pushed} an Lexware übertragen.",
+      "syncLexwareDone": "{pushed} als Entwurf an Lexware übertragen.",
       "syncLexwareMixed": "{pushed} übertragen · {failed} fehlgeschlagen.",
       "syncLexwareNoCandidates": "Im Moment nichts zu synchronisieren."
     },
@@ -1569,9 +1569,9 @@
       "activityTitle": "Aktivitätsverlauf",
       "clientTitle": "Kunde & Konto",
       "viewClient": "Ansehen →",
-      "lexwareSynced": "Synchronisiert mit Lexware",
+      "lexwareSynced": "Als Entwurf in Lexware angelegt",
       "lexwareNotSynced": "Noch nicht synchronisiert",
-      "syncSuccess": "Lexware-Sync erfolgreich",
+      "syncSuccess": "Entwurf in Lexware angelegt",
       "markSentSuccess": "Als versendet markiert",
       "markPaidSuccess": "Als bezahlt markiert",
       "reconciliation": {
@@ -2071,7 +2071,7 @@
   },
   "lexware": {
     "title": "Monatliche Lexware-Rechnungen",
-    "subtitle": "Monatsrechnungen aus abgeschlossenen Schichten erzeugen und an Lexware Office übertragen.",
+    "subtitle": "Monatsrechnungen aus abgeschlossenen Schichten erzeugen und als Entwürfe an Lexware Office übertragen.",
     "lastRun": "Letzter Lauf",
     "never": "Noch nie ausgeführt",
     "previewButton": "Monat prüfen",
@@ -3324,8 +3324,8 @@
         "dueDate": "Fälligkeitsdatum",
         "period": "Abrechnungszeitraum",
         "paidAt": "Bezahlt am",
-        "lexwareSynced": "Lexware-Sync",
-        "notSynced": "Nicht synchronisiert",
+        "lexwareSynced": "Lexware-Entwurf",
+        "notSynced": "Noch nicht in Lexware",
         "itemsSection": "Positionen ({n})",
         "itemsEmpty": "Keine Positionen auf dieser Rechnung."
       }
