@@ -13,6 +13,7 @@ import {
 } from "./types";
 import { minutesAtRate, summarize } from "./money";
 import { resolveRateCents, vatRateFor } from "./rates";
+import { monthsInPeriod, periodMonthLabel } from "./contract";
 
 /**
  * Row shape produced by `loadApprovedShifts()` in the data layer. Kept
@@ -45,10 +46,35 @@ export function buildDraftInvoice(args: {
   shifts: ReadonlyArray<ApprovedShiftRow>;
   groupBy?: "property_employee" | "property" | "shift";
   notes?: string | null;
+  /** Fixed-contract client: bill the flat monthly fee instead of hours. */
+  fixedMonthlyFeeCents?: number | null;
 }): DraftInvoice {
   const { clientId, invoiceKind, periodStart, periodEnd, shifts, notes } = args;
   const groupBy = args.groupBy ?? "property_employee";
   const taxRate = vatRateFor(invoiceKind);
+
+  if (args.fixedMonthlyFeeCents && args.fixedMonthlyFeeCents > 0) {
+    const items: DraftLineItem[] = [
+      {
+        description: `Pauschale Reinigung ${periodMonthLabel(periodStart, periodEnd)}`,
+        quantity: monthsInPeriod(periodStart, periodEnd),
+        unitPriceCents: args.fixedMonthlyFeeCents,
+        taxRatePercent: taxRate,
+        position: 1,
+        shiftId: null,
+        assignmentId: null,
+      },
+    ];
+    return {
+      clientId,
+      invoiceKind,
+      periodStart,
+      periodEnd,
+      items,
+      totals: summarize(items),
+      notes: notes ?? null,
+    };
+  }
 
   type Bucket = {
     description: string;

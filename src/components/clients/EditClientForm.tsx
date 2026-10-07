@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
 import { updateClientAction } from "@/app/actions/clients";
 import type { ClientDetail } from "@/lib/api/clients.types";
+import { contractEndDate } from "@/lib/billing/contract";
 
 type Props = { detail: ClientDetail };
 
@@ -35,7 +36,16 @@ type FormState = {
   // because the helper is typed for text inputs; edited via setForm().
   key_object: boolean;
   recommended_weekdays: number[];
+  // Billing (Priya clients only). Money/number inputs kept as strings.
+  billing_mode: string;
+  hourly_rate_eur: string;
+  fixed_monthly_fee_eur: string;
+  contracted_hours_per_month: string;
+  contract_months: string;
+  contract_start: string;
 };
+
+const centsToEur = (c: number | null) => (c != null ? (c / 100).toFixed(2) : "");
 
 /**
  * Edit form for an existing client. Mirrors `CreateClientForm` and reuses
@@ -72,6 +82,16 @@ export function EditClientForm({ detail }: Props) {
     key_object: (detail as { key_object?: boolean | null }).key_object ?? false,
     recommended_weekdays:
       (detail as { recommended_weekdays?: number[] | null }).recommended_weekdays ?? [],
+    billing_mode: detail.billing.mode,
+    hourly_rate_eur: centsToEur(detail.billing.hourly_rate_cents),
+    fixed_monthly_fee_eur: centsToEur(detail.billing.fixed_monthly_fee_cents),
+    contracted_hours_per_month:
+      detail.billing.contracted_hours_per_month != null
+        ? String(detail.billing.contracted_hours_per_month)
+        : "",
+    contract_months:
+      detail.billing.contract_months != null ? String(detail.billing.contract_months) : "12",
+    contract_start: detail.billing.contract_start ?? "",
   });
 
   function field<K extends keyof FormState>(key: K) {
@@ -81,6 +101,26 @@ export function EditClientForm({ detail }: Props) {
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
       ) => setForm((f) => ({ ...f, [key]: e.target.value })),
       "aria-invalid": Boolean(errors[key]),
+    };
+  }
+
+  function billingPayload() {
+    const contractStart = form.contract_start || undefined;
+    if (form.billing_mode === "fixed") {
+      return {
+        billing_mode: "fixed" as const,
+        fixed_monthly_fee_cents: Math.round(Number(form.fixed_monthly_fee_eur || "0") * 100),
+        contracted_hours_per_month: Number(form.contracted_hours_per_month || "0"),
+        contract_months: Number(form.contract_months || "0"),
+        contract_start: contractStart,
+      };
+    }
+    return {
+      billing_mode: "hourly" as const,
+      agreed_hourly_rate_cents: form.hourly_rate_eur
+        ? Math.round(Number(form.hourly_rate_eur) * 100)
+        : undefined,
+      contract_start: contractStart,
     };
   }
 
@@ -122,6 +162,7 @@ export function EditClientForm({ detail }: Props) {
               customer_type: detail.customer_type,
               ...shared,
               export_target: form.export_target as "internal" | "lexware",
+              ...billingPayload(),
             };
       const result = await updateClientAction(payload);
       if (!result.ok) {
@@ -142,6 +183,12 @@ export function EditClientForm({ detail }: Props) {
   }
 
   const isAlltags = detail.customer_type === "alltagshilfe";
+  const isFixed = !isAlltags && form.billing_mode === "fixed";
+  const monthsNum = Number(form.contract_months);
+  const contractEnd =
+    isFixed && form.contract_start && Number.isInteger(monthsNum) && monthsNum >= 1 && monthsNum <= 120
+      ? contractEndDate(form.contract_start, monthsNum)
+      : null;
 
   return (
     <form onSubmit={submit} className="grid place-items-center py-4" noValidate>
@@ -210,6 +257,84 @@ export function EditClientForm({ detail }: Props) {
                 <option value="lexware">{t("exportTargetLexware")}</option>
               </select>
             </Field>
+          )}
+          {!isAlltags && (
+            <>
+              <Field label={t("fields.billingMode")} required error={errors.billing_mode}>
+                <select className="input" {...field("billing_mode")}>
+                  <option value="hourly">{t("fields.billingHourly")}</option>
+                  <option value="fixed">{t("fields.billingFixed")}</option>
+                </select>
+              </Field>
+              <Field
+                label={t("fields.contractStart")}
+                required={isFixed}
+                error={errors.contract_start}
+              >
+                <input type="date" className="input" {...field("contract_start")} />
+              </Field>
+              {isFixed ? (
+                <>
+                  <Field
+                    label={t("fields.fixedFee")}
+                    required
+                    error={errors.fixed_monthly_fee_cents}
+                  >
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      className="input"
+                      {...field("fixed_monthly_fee_eur")}
+                    />
+                  </Field>
+                  <Field
+                    label={t("fields.contractedHours")}
+                    required
+                    error={errors.contracted_hours_per_month}
+                  >
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0.5"
+                      className="input"
+                      {...field("contracted_hours_per_month")}
+                    />
+                  </Field>
+                  <Field
+                    label={t("fields.contractMonths")}
+                    required
+                    error={errors.contract_months}
+                  >
+                    <input
+                      type="number"
+                      step="1"
+                      min="1"
+                      max="120"
+                      className="input"
+                      {...field("contract_months")}
+                    />
+                    {contractEnd && (
+                      <span className="text-[11px] text-neutral-500">
+                        {t("fields.contractEndsOn", {
+                          date: contractEnd.split("-").reverse().join("."),
+                        })}
+                      </span>
+                    )}
+                  </Field>
+                </>
+              ) : (
+                <Field label={t("fields.agreedRate")} error={errors.agreed_hourly_rate_cents}>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className="input"
+                    {...field("hourly_rate_eur")}
+                  />
+                </Field>
+              )}
+            </>
           )}
           {isAlltags && (
             <>

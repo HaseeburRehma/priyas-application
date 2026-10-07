@@ -251,6 +251,16 @@
       "agingCurrent": "Aktuell",
       "invoiceCount": "{n} Rechnungen",
       "invoiceShort": "{n} Rechn."
+    },
+    "contracts": {
+      "title": "{count, plural, one {# Festvertrag läuft aus} other {# Festverträge laufen aus}}",
+      "subtitle": "Nichts wird automatisch verlängert oder beendet – bitte je Kunde entscheiden.",
+      "endsOn": "Ende {date}",
+      "fee": "{fee}/Monat",
+      "expiredAgo": "seit {days, plural, one {# Tag} other {# Tagen}} abgelaufen",
+      "endsToday": "endet heute",
+      "endsIn": "noch {days, plural, one {# Tag} other {# Tage}}",
+      "decide": "Verlängern / ändern"
     }
   },
   "clients": {
@@ -409,7 +419,20 @@
         "day_sun": "So",
         "conversationNotes": "Gesprächsnotizen",
         "conversationNotesHint": "Ausführliche Notizen aus dem Erstgespräch",
-        "conversationNotesPlaceholder": "z. B. Familie möchte, dass primär die Tochter kontaktiert wird; Hausschlüssel liegt bei der Nachbarin; Kunde spricht wenig Deutsch…"
+        "conversationNotesPlaceholder": "z. B. Familie möchte, dass primär die Tochter kontaktiert wird; Hausschlüssel liegt bei der Nachbarin; Kunde spricht wenig Deutsch…",
+        "billingMode": "Abrechnungsart",
+        "billingHourly": "Stundenbasis",
+        "billingHourlySub": "Rechnung nach geleisteten Stunden × Stundensatz",
+        "billingFixed": "Festvertrag",
+        "billingFixedSub": "Feste Monatspauschale für eine feste Laufzeit",
+        "fixedFee": "Monatspauschale",
+        "fixedFeeHint": "Netto · 19 % USt kommt hinzu",
+        "contractedHours": "Vertragsstunden pro Monat",
+        "contractedHoursHint": "Nur intern – erscheint nicht auf der Rechnung",
+        "hoursPerMonthUnit": "Std / Monat",
+        "contractMonths": "Laufzeit",
+        "monthsUnit": "Monate",
+        "contractEndsOn": "endet am {date}"
       },
       "sectionTitles": {
         "contact": "Kontaktdaten",
@@ -493,7 +516,13 @@
         "contractCheckSigned": "Vertrag bereits unterzeichnet — Start sofort möglich",
         "contractCheckUnsigned": "Willkommensmappe wird mitgenommen",
         "priyasShort": "Priya's",
-        "alltagshilfeShort": "Alltagshilfe"
+        "alltagshilfeShort": "Alltagshilfe",
+        "billing": "Abrechnung",
+        "fixedFeeValue": "Festvertrag · € {fee}/Monat",
+        "contractedHours": "Vertragsstunden",
+        "contractedHoursValue": "{hours} Std / Monat",
+        "term": "Laufzeit",
+        "termValue": "{months} Monate · bis {date}"
       },
       "abtretungWarning": "<b>Wichtig:</b> Ohne unterschriebene Abtretungserklärung können wir die Pflegeleistungen nicht direkt mit der Krankenkasse abrechnen. Die Person erhält bei der Erstberatung eine <b>Willkommensmappe</b> mit allen Unterlagen.",
       "payer": {
@@ -745,6 +774,27 @@
         "photo": "Foto",
         "other": "Sonstiges"
       }
+    },
+    "hours": {
+      "title": "Stunden (intern)",
+      "subtitle": "Letzte 3 Monate · geplant vs. geleistet",
+      "modeFixed": "Festvertrag · {fee}/Monat",
+      "modeHourly": "Stundenbasis · {rate}/Std",
+      "modeHourlyNoRate": "Stundenbasis",
+      "term": "Laufzeit {start} – {end} ({months} Monate)",
+      "expiredAgo": "seit {days, plural, one {# Tag} other {# Tagen}} abgelaufen",
+      "endsToday": "endet heute",
+      "endsIn": "endet in {days, plural, one {# Tag} other {# Tagen}}",
+      "month": "Monat",
+      "planned": "Geplant",
+      "actual": "Geleistet",
+      "contracted": "Vertrag",
+      "difference": "Differenz",
+      "effectiveRate": "Eff. Satz",
+      "value": "Wert",
+      "running": "(laufend)",
+      "footnoteFixed": "Geleistet = abgeschlossene Einsätze. Die Rechnung enthält nur die Monatspauschale; Mehr- oder Minderstunden sind rein intern.",
+      "footnoteHourly": "Geleistet = abgeschlossene Einsätze. Wert = geleistete Stunden × Stundensatz."
     }
   },
   "properties": {
@@ -1826,7 +1876,9 @@
         "hq": "Hauptsitz",
         "depot": "Depot",
         "satellite": "Satellit"
-      }
+      },
+      "managementEmail": "E-Mail Geschäftsleitung",
+      "managementEmailHint": "Empfänger des Alltagshilfe-Monatsberichts (automatisch am 1. des Monats)"
     },
     "team": {
       "title": "02 · Team & Rollen",

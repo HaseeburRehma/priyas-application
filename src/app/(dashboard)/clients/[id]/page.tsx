@@ -5,11 +5,13 @@ import { loadContactsForClient } from "@/lib/api/client-contacts";
 import { loadClientDocuments } from "@/lib/api/client-documents";
 import { loadClientSupplyFlags } from "@/lib/api/supply-flags";
 import { loadAlltagshilfeBudget } from "@/lib/api/invoices";
+import { loadClientHours } from "@/lib/api/client-hours";
 import { ClientDetail } from "@/components/clients/ClientDetail";
 import { ContactsCard } from "@/components/clients/ContactsCard";
 import { DocumentsCard } from "@/components/clients/DocumentsCard";
 import { SupplyFlagsCard } from "@/components/clients/SupplyFlagsCard";
 import { AlltagshilfeBudgetCard } from "@/components/invoices/AlltagshilfeBudgetCard";
+import { ClientHoursCard } from "@/components/clients/ClientHoursCard";
 import { can, requireRoute } from "@/lib/rbac/permissions";
 
 export const metadata: Metadata = { title: "Kundendetails" };
@@ -40,10 +42,13 @@ export default async function Page({
 
   // For Alltagshilfe clients, fetch the current-year budget row so we can
   // surface the usage tracker right under the main detail card.
-  const budget =
-    detail.customer_type === "alltagshilfe"
-      ? await loadAlltagshilfeBudget(detail.id)
-      : null;
+  // Priya clients get the internal hours tracker instead (fixed contracts:
+  // contracted vs delivered hours; hourly: delivered hours × rate).
+  const isAlltags = detail.customer_type === "alltagshilfe";
+  const [budget, hours] = await Promise.all([
+    isAlltags ? loadAlltagshilfeBudget(detail.id) : null,
+    isAlltags ? null : loadClientHours(detail.id),
+  ]);
 
   return (
     <>
@@ -55,6 +60,11 @@ export default async function Page({
       {budget && (
         <div className="mt-5">
           <AlltagshilfeBudgetCard budget={budget} />
+        </div>
+      )}
+      {hours && (
+        <div className="mt-5">
+          <ClientHoursCard billing={detail.billing} months={hours} />
         </div>
       )}
       <div className="mt-5">

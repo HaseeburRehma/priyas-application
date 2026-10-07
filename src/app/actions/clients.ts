@@ -6,8 +6,10 @@ import { redirect } from "next/navigation";
 import {
   createClientSchema,
   updateClientSchema,
+  type BillingMode,
   type CreateClientInput,
 } from "@/lib/validators/clients";
+import { contractEndDate } from "@/lib/billing/contract";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requirePermission, PermissionError } from "@/lib/rbac/permissions";
 import { routes } from "@/lib/constants/routes";
@@ -154,8 +156,8 @@ export async function createClientAction(
     insertRow.billing_country = input.billing_country || null;
     insertRow.cleaning_rhythm = input.cleaning_rhythm;
     insertRow.estimated_hours_per_visit = input.estimated_hours_per_visit;
-    insertRow.agreed_hourly_rate_cents = input.agreed_hourly_rate_cents;
     insertRow.contract_start = input.contract_start || null;
+    Object.assign(insertRow, billingColumns(input));
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -183,6 +185,42 @@ export async function createClientAction(
   revalidateTag(SIDEBAR_TAGS.clients);
   revalidatePath(routes.dashboard);
   return { ok: true, data: { id: newId } };
+}
+
+/**
+ * Client billing columns for residential/commercial clients. Billing reads
+ * `default_hourly_rate_cents`, so the agreed rate is written there too.
+ */
+function billingColumns(input: {
+  billing_mode?: BillingMode;
+  agreed_hourly_rate_cents?: number;
+  fixed_monthly_fee_cents?: number;
+  contracted_hours_per_month?: number;
+  contract_months?: number;
+  contract_start?: string;
+}): Record<string, unknown> {
+  const cols: Record<string, unknown> = {};
+  if (input.agreed_hourly_rate_cents !== undefined) {
+    cols.agreed_hourly_rate_cents = input.agreed_hourly_rate_cents;
+    cols.default_hourly_rate_cents = input.agreed_hourly_rate_cents;
+  }
+  if (input.contract_start) cols.contract_start = input.contract_start;
+  if (input.billing_mode === "fixed") {
+    cols.billing_mode = "fixed";
+    cols.fixed_monthly_fee_cents = input.fixed_monthly_fee_cents;
+    cols.contracted_hours_per_month = input.contracted_hours_per_month;
+    cols.contract_months = input.contract_months;
+    if (input.contract_start && input.contract_months) {
+      cols.contract_end = contractEndDate(input.contract_start, input.contract_months);
+    }
+  } else if (input.billing_mode === "hourly") {
+    cols.billing_mode = "hourly";
+    cols.fixed_monthly_fee_cents = null;
+    cols.contracted_hours_per_month = null;
+    cols.contract_months = null;
+    cols.contract_end = null;
+  }
+  return cols;
 }
 
 /** Fan out a "new client" notification to every dispatcher + admin in the org. */
@@ -327,7 +365,7 @@ export async function updateClientAction(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: beforeRow } = await ((supabase.from("clients") as any))
     .select(
-      "display_name, company_name, contact_name, email, phone, tax_id, notes, customer_type, insurance_provider, insurance_number, care_level, export_target, billing_email, address_line1, city, postal_code, key_object, recommended_weekdays",
+      "display_name, company_name, contact_name, email, phone, tax_id, notes, customer_type, insurance_provider, insurance_number, care_level, export_target, billing_email, address_line1, city, postal_code, key_object, recommended_weekdays, billing_mode, default_hourly_rate_cents, fixed_monthly_fee_cents, contracted_hours_per_month, contract_months, contract_start, contract_end",
     )
     .eq("id", input.id)
     .maybeSingle();
@@ -388,6 +426,7 @@ export async function updateClientAction(
       }
     }
     updateRow.export_target = input.export_target;
+    Object.assign(updateRow, billingColumns(input));
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

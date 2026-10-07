@@ -94,6 +94,28 @@ export async function createDraftInvoiceAction(
   const prefix = INVOICE_NUMBER_PREFIX[prepared.draft.invoiceKind];
   const year = Number(parsed.data.periodEnd.slice(0, 4));
 
+  // A fixed-contract fee doesn't depend on shifts, so the shift claim below
+  // can't prevent billing the same month twice — check overlapping invoices.
+  if (prepared.client.billing_mode === "fixed") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: overlap, error: overlapErr } = await ((supabase.from("invoices") as any))
+      .select("invoice_number")
+      .eq("client_id", prepared.client.id)
+      .is("deleted_at", null)
+      .neq("status", "cancelled")
+      .lte("period_start", parsed.data.periodEnd)
+      .gte("period_end", parsed.data.periodStart)
+      .limit(1);
+    if (overlapErr) return { ok: false, error: overlapErr.message };
+    const existing = (overlap ?? []) as Array<{ invoice_number: string }>;
+    if (existing.length > 0) {
+      return {
+        ok: false,
+        error: `Für diesen Zeitraum gibt es bereits die Rechnung ${existing[0]!.invoice_number} (Festvertrag).`,
+      };
+    }
+  }
+
   // Claim every contributing shift BEFORE creating the invoice, via a
   // conditional UPDATE scoped to billing_status='approved'. Postgres
   // serializes concurrent UPDATEs on the same rows (the second waits for
@@ -105,14 +127,17 @@ export async function createDraftInvoiceAction(
   // either marks them invoiced, and both go on to create a full invoice
   // for the same hours — the client gets billed twice.
   const wantShiftIds = prepared.allShiftIds;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: claimedRows, error: claimErr } = await ((supabase.from("shifts") as any))
-    .update({ billing_status: "invoiced" })
-    .eq("billing_status", "approved")
-    .in("id", wantShiftIds)
-    .select("id");
-  if (claimErr) return { ok: false, error: claimErr.message };
-  const claimedIds = ((claimedRows ?? []) as Array<{ id: string }>).map((r) => r.id);
+  let claimedIds: string[] = [];
+  if (wantShiftIds.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: claimedRows, error: claimErr } = await ((supabase.from("shifts") as any))
+      .update({ billing_status: "invoiced" })
+      .eq("billing_status", "approved")
+      .in("id", wantShiftIds)
+      .select("id");
+    if (claimErr) return { ok: false, error: claimErr.message };
+    claimedIds = ((claimedRows ?? []) as Array<{ id: string }>).map((r) => r.id);
+  }
   if (claimedIds.length !== wantShiftIds.length) {
     // Someone else claimed some of these shifts concurrently (or one
     // changed state) between our read and this update. Release whatever
@@ -136,6 +161,7 @@ export async function createDraftInvoiceAction(
   // to 'approved' — otherwise they'd be stuck marked 'invoiced' with no
   // invoice actually attached to them, permanently unbillable.
   async function releaseClaim(): Promise<void> {
+    if (wantShiftIds.length === 0) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await ((supabase.from("shifts") as any))
       .update({ billing_status: "approved" })

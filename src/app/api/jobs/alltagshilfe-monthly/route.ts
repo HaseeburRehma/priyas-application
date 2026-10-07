@@ -2,7 +2,10 @@ import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/constants/env";
-import { runAlltagshilfeMonthlyReport } from "@/lib/alltagshilfe/monthly-report-core";
+import {
+  resolveManagementEmail,
+  runAlltagshilfeMonthlyReport,
+} from "@/lib/alltagshilfe/monthly-report-core";
 
 /**
  * Constant-time string comparison — protects the CRON_SECRET check
@@ -20,8 +23,13 @@ function safeEqual(a: string, b: string): boolean {
  * Monthly Alltagshilfe report — automated version of the "Send to
  * management" button on the Alltagshilfe report page.
  *
- *   POST /api/jobs/alltagshilfe-monthly
+ *   GET|POST /api/jobs/alltagshilfe-monthly
  *   Authorization: Bearer ${CRON_SECRET}
+ *
+ * Vercel Cron calls GET (with the CRON_SECRET bearer); POST stays for
+ * manual/curl triggers. Only orgs with a management address saved under
+ * Settings → Firmenprofil are processed — the env fallback is ignored
+ * here so unconfigured orgs (e.g. the store-review demo) never send.
  *
  * Runs early on the 1st of the month for the *previous* calendar month
  * (same convention as lexware-monthly), once per organization. Shares
@@ -40,7 +48,15 @@ function safeEqual(a: string, b: string): boolean {
  */
 export const dynamic = "force-dynamic";
 
+export async function GET(request: Request) {
+  return handle(request);
+}
+
 export async function POST(request: Request) {
+  return handle(request);
+}
+
+async function handle(request: Request) {
   const auth = request.headers.get("authorization") ?? "";
   const expected = process.env.CRON_SECRET;
   if (!expected) {
@@ -84,7 +100,15 @@ export async function POST(request: Request) {
       { status: 500, headers: { "Cache-Control": "no-store" } },
     );
   }
-  const orgIds = ((orgRows ?? []) as Array<{ id: string }>).map((o) => o.id);
+  const allOrgIds = ((orgRows ?? []) as Array<{ id: string }>).map((o) => o.id);
+  const configured = await Promise.all(
+    allOrgIds.map(async (orgId) =>
+      (await resolveManagementEmail(supabase, orgId, { allowEnvFallback: false }))
+        ? orgId
+        : null,
+    ),
+  );
+  const orgIds = configured.filter((id): id is string => id !== null);
 
   const results = await Promise.all(
     orgIds.map(async (orgId) => {
@@ -104,7 +128,14 @@ export async function POST(request: Request) {
   const failed = results.filter((r) => !r.ok);
 
   return NextResponse.json(
-    { year, month, orgsProcessed: orgIds.length, sent, failed },
+    {
+      year,
+      month,
+      orgsProcessed: orgIds.length,
+      orgsSkipped: allOrgIds.length - orgIds.length,
+      sent,
+      failed,
+    },
     { status: 200, headers: { "Cache-Control": "no-store" } },
   );
 }

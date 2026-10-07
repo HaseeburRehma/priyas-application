@@ -268,7 +268,10 @@ export async function loadClientDetail(
        insurance_provider, insurance_number, care_level, notes, archived,
        created_at, updated_at, export_target, address_line1, city, postal_code, country,
        company_name, key_object, recommended_weekdays,
-       notes_updated_at, notes_updated_by`,
+       notes_updated_at, notes_updated_by,
+       billing_mode, default_hourly_rate_cents, agreed_hourly_rate_cents,
+       fixed_monthly_fee_cents, contracted_hours_per_month, contract_months,
+       contract_start, contract_end`,
     )
     .eq("id", id)
     .is("deleted_at", null);
@@ -442,6 +445,21 @@ export async function loadClientDetail(
       (client.recommended_weekdays as number[] | null) ?? [],
     notes_updated_at: (client.notes_updated_at as string | null) ?? null,
     notes_updated_by: (client.notes_updated_by as string | null) ?? null,
+    billing: {
+      mode: client.billing_mode === "fixed" ? "fixed" : "hourly",
+      hourly_rate_cents:
+        (client.default_hourly_rate_cents as number | null) ??
+        (client.agreed_hourly_rate_cents as number | null) ??
+        null,
+      fixed_monthly_fee_cents: (client.fixed_monthly_fee_cents as number | null) ?? null,
+      contracted_hours_per_month:
+        client.contracted_hours_per_month == null
+          ? null
+          : Number(client.contracted_hours_per_month),
+      contract_months: (client.contract_months as number | null) ?? null,
+      contract_start: (client.contract_start as string | null) ?? null,
+      contract_end: (client.contract_end as string | null) ?? null,
+    },
     property_count: propsRes.count ?? 0,
     contact_count: 1, // single contact_name today; future: contacts table
     assignment_count: shiftsRes.count ?? 0,

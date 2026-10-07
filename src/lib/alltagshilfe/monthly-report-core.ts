@@ -11,27 +11,43 @@ export type MonthlyReportResult =
   | { ok: false; error: string };
 
 /**
- * Resolves the recipient address: settings.management_email on the
- * organization record first, then `MANAGEMENT_EMAIL` env, then null so
- * the caller can decide how to surface the missing-config error.
+ * Management address the monthly report goes to, in priority order:
+ *   1. Settings → Firmenprofil → "E-Mail Geschäftsleitung"
+ *      (settings.data.company.managementEmail)
+ *   2. organizations.settings.management_email (legacy)
+ *   3. `MANAGEMENT_EMAIL` env — only when `allowEnvFallback` is set
+ *      (the manual button). The cron passes false so an org that never
+ *      configured an address (e.g. the store-review demo org) is skipped
+ *      instead of mailing its data to the global fallback.
  */
-async function resolveRecipient(
+export async function resolveManagementEmail(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
   orgId: string,
+  opts: { allowEnvFallback: boolean },
 ): Promise<string | null> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await ((supabase.from("organizations") as any))
-    .select("settings")
-    .eq("id", orgId)
-    .maybeSingle();
-  const fromSettings = (
-    data as { settings: { management_email?: string } | null } | null
+  const [settingsRes, orgRes] = await Promise.all([
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ((supabase.from("settings") as any))
+      .select("data")
+      .eq("org_id", orgId)
+      .maybeSingle(),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ((supabase.from("organizations") as any))
+      .select("settings")
+      .eq("id", orgId)
+      .maybeSingle(),
+  ]);
+  const fromCompany = (
+    settingsRes.data as { data: { company?: { managementEmail?: string } } | null } | null
+  )?.data?.company?.managementEmail?.trim();
+  if (fromCompany) return fromCompany;
+  const fromOrg = (
+    orgRes.data as { settings: { management_email?: string } | null } | null
   )?.settings?.management_email?.trim();
-  if (fromSettings) return fromSettings;
-  const fromEnv = process.env.MANAGEMENT_EMAIL?.trim();
-  if (fromEnv) return fromEnv;
-  return null;
+  if (fromOrg) return fromOrg;
+  if (!opts.allowEnvFallback) return null;
+  return process.env.MANAGEMENT_EMAIL?.trim() || null;
 }
 
 /**
@@ -122,12 +138,14 @@ export async function runAlltagshilfeMonthlyReport(
   locale: "de" | "en" | "ta",
   sentByUserId: string | null,
 ): Promise<MonthlyReportResult> {
-  const recipient = await resolveRecipient(supabase, orgId);
+  const recipient = await resolveManagementEmail(supabase, orgId, {
+    allowEnvFallback: true,
+  });
   if (!recipient) {
     return {
       ok: false,
       error:
-        "Keine Management-E-Mail hinterlegt. Bitte unter Einstellungen → Allgemein eintragen.",
+        "Keine E-Mail der Geschäftsleitung hinterlegt. Bitte unter Einstellungen → Firmenprofil eintragen.",
     };
   }
 

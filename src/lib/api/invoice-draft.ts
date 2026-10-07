@@ -25,6 +25,8 @@ export type PrepareDraftResult = {
     annual_budget_cents: number | null;
     billing_email: string | null;
     email: string | null;
+    billing_mode: "hourly" | "fixed";
+    fixed_monthly_fee_cents: number | null;
   };
   shiftCount: number;
   totalMinutes: number;
@@ -54,7 +56,8 @@ export async function prepareDraftForRange(
     .from("clients")
     .select(
       `id, org_id, display_name, customer_type, export_target,
-       default_hourly_rate_cents, annual_budget_cents, billing_email, email`,
+       default_hourly_rate_cents, annual_budget_cents, billing_email, email,
+       billing_mode, fixed_monthly_fee_cents`,
     )
     .eq("id", args.clientId)
     .is("deleted_at", null)
@@ -123,6 +126,8 @@ export async function prepareDraftForRange(
     shifts: rows,
     groupBy: args.groupBy,
     notes: null,
+    fixedMonthlyFeeCents:
+      client.billing_mode === "fixed" ? client.fixed_monthly_fee_cents : null,
   });
 
   const allShiftIds = Array.from(new Set(rows.map((r) => r.shiftId)));

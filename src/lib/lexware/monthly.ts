@@ -59,6 +59,8 @@ type DbShift = {
       customer_type: string;
       export_target: string;
       default_hourly_rate_cents: number | null;
+      billing_mode: "hourly" | "fixed" | null;
+      fixed_monthly_fee_cents: number | null;
     } | null;
   } | null;
 };
@@ -144,7 +146,8 @@ export async function runMonthlyInvoices(
       `id, starts_at, ends_at, org_id, override_rate_cents,
        assignment:assignments ( hourly_rate_cents ),
        property:properties ( client_id,
-                             client:clients ( id, display_name, customer_type, export_target, default_hourly_rate_cents ) )`,
+                             client:clients ( id, display_name, customer_type, export_target, default_hourly_rate_cents,
+                                              billing_mode, fixed_monthly_fee_cents ) )`,
     )
     .eq("status", "completed")
     .gte("starts_at", monthStart.toISOString())
@@ -175,6 +178,8 @@ export async function runMonthlyInvoices(
     customerType: string;
     /** rateCents -> accumulated hours at that rate */
     rates: Map<number, number>;
+    /** Set for fixed-contract clients: bill this flat fee, not the hours. */
+    fixedFeeCents: number | null;
   };
   const byClient = new Map<string, Bucket>();
   for (const s of shifts) {
@@ -211,6 +216,10 @@ export async function runMonthlyInvoices(
         orgId: s.org_id,
         customerType: c.customer_type,
         rates: new Map(),
+        fixedFeeCents:
+          c.billing_mode === "fixed" && c.fixed_monthly_fee_cents
+            ? c.fixed_monthly_fee_cents
+            : null,
       };
       byClient.set(clientId, bucket);
     }
@@ -248,15 +257,25 @@ export async function runMonthlyInvoices(
     // rate and thus a single line, but mixed-rate months (rate changed
     // mid-period, or per-assignment overrides) need separate lines so the
     // printed price-per-hour on the invoice matches what was actually billed.
-    const lineItems = Array.from(bucket.rates.entries())
-      .sort((a, b) => a[0] - b[0])
-      .map(([rateCents, hours], idx) => ({
-        description: `Pflegedienstleistungen ${periodLabel}`,
-        quantity: Math.round(hours * 100) / 100,
-        unitPriceCents: rateCents,
-        taxRatePercent,
-        position: idx + 1,
-      }));
+    const lineItems = bucket.fixedFeeCents
+      ? [
+          {
+            description: `Pauschale Reinigung ${periodLabel}`,
+            quantity: 1,
+            unitPriceCents: bucket.fixedFeeCents,
+            taxRatePercent,
+            position: 1,
+          },
+        ]
+      : Array.from(bucket.rates.entries())
+          .sort((a, b) => a[0] - b[0])
+          .map(([rateCents, hours], idx) => ({
+            description: `Pflegedienstleistungen ${periodLabel}`,
+            quantity: Math.round(hours * 100) / 100,
+            unitPriceCents: rateCents,
+            taxRatePercent,
+            position: idx + 1,
+          }));
     const totals = summarize(lineItems);
     const totalHours = Array.from(bucket.rates.values()).reduce((a, h) => a + h, 0);
 

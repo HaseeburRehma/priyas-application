@@ -251,6 +251,16 @@
       "agingCurrent": "Current",
       "invoiceCount": "{n} invoices",
       "invoiceShort": "{n} inv."
+    },
+    "contracts": {
+      "title": "{count, plural, one {# fixed contract ending} other {# fixed contracts ending}}",
+      "subtitle": "Nothing renews or stops automatically – please decide per client.",
+      "endsOn": "Ends {date}",
+      "fee": "{fee}/month",
+      "expiredAgo": "expired {days, plural, one {# day} other {# days}} ago",
+      "endsToday": "ends today",
+      "endsIn": "{days, plural, one {# day} other {# days}} left",
+      "decide": "Extend / change"
     }
   },
   "clients": {
@@ -409,7 +419,20 @@
         "day_sun": "Sun",
         "conversationNotes": "Conversation notes",
         "conversationNotesHint": "Longer notes from the first meeting",
-        "conversationNotesPlaceholder": "e.g. family prefers to be contacted through the daughter; key is with the neighbour; customer speaks limited German…"
+        "conversationNotesPlaceholder": "e.g. family prefers to be contacted through the daughter; key is with the neighbour; customer speaks limited German…",
+        "billingMode": "Billing type",
+        "billingHourly": "Hourly",
+        "billingHourlySub": "Invoice = hours worked × hourly rate",
+        "billingFixed": "Fixed contract",
+        "billingFixedSub": "Fixed monthly fee for a fixed term",
+        "fixedFee": "Monthly fee",
+        "fixedFeeHint": "Net · 19 % VAT added",
+        "contractedHours": "Contracted hours per month",
+        "contractedHoursHint": "Internal only – not shown on the invoice",
+        "hoursPerMonthUnit": "h / month",
+        "contractMonths": "Term",
+        "monthsUnit": "months",
+        "contractEndsOn": "ends on {date}"
       },
       "sectionTitles": {
         "contact": "Contact details",
@@ -493,7 +516,13 @@
         "contractCheckSigned": "Contract already signed — start possible immediately",
         "contractCheckUnsigned": "Welcome folder will be taken along",
         "priyasShort": "Priya's",
-        "alltagshilfeShort": "Everyday assistance"
+        "alltagshilfeShort": "Everyday assistance",
+        "billing": "Billing",
+        "fixedFeeValue": "Fixed contract · € {fee}/month",
+        "contractedHours": "Contracted hours",
+        "contractedHoursValue": "{hours} h / month",
+        "term": "Term",
+        "termValue": "{months} months · until {date}"
       },
       "abtretungWarning": "<b>Important:</b> Without a signed assignment declaration we cannot bill care services directly to the health insurance. The person receives a <b>welcome package</b> with all documents at the initial consultation.",
       "payer": {
@@ -745,6 +774,27 @@
         "photo": "Photo",
         "other": "Other"
       }
+    },
+    "hours": {
+      "title": "Hours (internal)",
+      "subtitle": "Last 3 months · planned vs. delivered",
+      "modeFixed": "Fixed contract · {fee}/month",
+      "modeHourly": "Hourly · {rate}/h",
+      "modeHourlyNoRate": "Hourly",
+      "term": "Term {start} – {end} ({months} months)",
+      "expiredAgo": "expired {days, plural, one {# day} other {# days}} ago",
+      "endsToday": "ends today",
+      "endsIn": "ends in {days, plural, one {# day} other {# days}}",
+      "month": "Month",
+      "planned": "Planned",
+      "actual": "Delivered",
+      "contracted": "Contract",
+      "difference": "Difference",
+      "effectiveRate": "Eff. rate",
+      "value": "Value",
+      "running": "(in progress)",
+      "footnoteFixed": "Delivered = completed shifts. The invoice only shows the monthly fee; extra or missing hours are internal only.",
+      "footnoteHourly": "Delivered = completed shifts. Value = delivered hours × hourly rate."
     }
   },
   "properties": {
@@ -1826,7 +1876,9 @@
         "hq": "HQ",
         "depot": "Depot",
         "satellite": "Satellite"
-      }
+      },
+      "managementEmail": "Management email",
+      "managementEmailHint": "Receives the Alltagshilfe monthly report (automatically on the 1st)"
     },
     "team": {
       "title": "02 · Team & roles",

@@ -251,6 +251,16 @@
       "agingCurrent": "தற்போதைய",
       "invoiceCount": "{n} விலைப்பட்டியல்கள்",
       "invoiceShort": "{n} விலை."
+    },
+    "contracts": {
+      "title": "{count} நிலையான ஒப்பந்தங்கள் முடிவடைகின்றன",
+      "subtitle": "எதுவும் தானாக புதுப்பிக்கப்படாது அல்லது நிறுத்தப்படாது – ஒவ்வொரு வாடிக்கையாளருக்கும் முடிவு செய்யவும்.",
+      "endsOn": "முடிவு {date}",
+      "fee": "{fee}/மாதம்",
+      "expiredAgo": "{days} நாட்களுக்கு முன் காலாவதியானது",
+      "endsToday": "இன்று முடிகிறது",
+      "endsIn": "இன்னும் {days} நாட்கள்",
+      "decide": "நீட்டி / மாற்று"
     }
   },
   "clients": {
@@ -409,7 +419,20 @@
         "day_sun": "ஞாயி",
         "conversationNotes": "உரையாடல் குறிப்புகள்",
         "conversationNotesHint": "முதல் சந்திப்பிலிருந்து விரிவான குறிப்புகள்",
-        "conversationNotesPlaceholder": "எ.கா. குடும்பம் மகள் மூலம் தொடர்பு விரும்புகிறது; சாவி அண்டை வீட்டாரிடம்; வாடிக்கையாளர் அரிதாக ஜெர்மன் பேசுகிறார்…"
+        "conversationNotesPlaceholder": "எ.கா. குடும்பம் மகள் மூலம் தொடர்பு விரும்புகிறது; சாவி அண்டை வீட்டாரிடம்; வாடிக்கையாளர் அரிதாக ஜெர்மன் பேசுகிறார்…",
+        "billingMode": "பில்லிங் வகை",
+        "billingHourly": "மணிநேர அடிப்படை",
+        "billingHourlySub": "பில் = வேலை செய்த மணிநேரம் × மணிநேர விகிதம்",
+        "billingFixed": "நிலையான ஒப்பந்தம்",
+        "billingFixedSub": "நிலையான காலத்திற்கு நிலையான மாதக் கட்டணம்",
+        "fixedFee": "மாதக் கட்டணம்",
+        "fixedFeeHint": "நிகரம் · 19 % VAT சேர்க்கப்படும்",
+        "contractedHours": "மாதத்திற்கான ஒப்பந்த மணிநேரம்",
+        "contractedHoursHint": "உள் பயன்பாட்டிற்கு மட்டும் – பில்லில் காட்டப்படாது",
+        "hoursPerMonthUnit": "மணி / மாதம்",
+        "contractMonths": "காலம்",
+        "monthsUnit": "மாதங்கள்",
+        "contractEndsOn": "{date} அன்று முடிகிறது"
       },
       "sectionTitles": {
         "contact": "Contact details",
@@ -493,7 +516,13 @@
         "contractCheckSigned": "Contract already signed — start possible immediately",
         "contractCheckUnsigned": "Welcome folder will be taken along",
         "priyasShort": "Priya's",
-        "alltagshilfeShort": "Everyday assistance"
+        "alltagshilfeShort": "Everyday assistance",
+        "billing": "பில்லிங்",
+        "fixedFeeValue": "நிலையான ஒப்பந்தம் · € {fee}/மாதம்",
+        "contractedHours": "ஒப்பந்த மணிநேரம்",
+        "contractedHoursValue": "{hours} மணி / மாதம்",
+        "term": "காலம்",
+        "termValue": "{months} மாதங்கள் · {date} வரை"
       },
       "abtretungWarning": "<b>முக்கியம்:</b> கையெழுத்திட்ட ஒதுக்கீட்டு பிரகடனம் இல்லாமல், சுகாதார காப்பீட்டுடன் பராமரிப்பு சேவைகளை நேரடியாக பணம் வசூலிக்க முடியாது. தொடக்க ஆலோசனையில் அந்த நபர் அனைத்து ஆவணங்களுடன் <b>வரவேற்பு தொகுப்பை</b> பெறுவார்.",
       "payer": {
@@ -745,6 +774,27 @@
         "photo": "புகைப்படம்",
         "other": "பிற"
       }
+    },
+    "hours": {
+      "title": "மணிநேரம் (உள்)",
+      "subtitle": "கடந்த 3 மாதங்கள் · திட்டமிட்டது vs. செய்தது",
+      "modeFixed": "நிலையான ஒப்பந்தம் · {fee}/மாதம்",
+      "modeHourly": "மணிநேர அடிப்படை · {rate}/மணி",
+      "modeHourlyNoRate": "மணிநேர அடிப்படை",
+      "term": "காலம் {start} – {end} ({months} மாதங்கள்)",
+      "expiredAgo": "{days} நாட்களுக்கு முன் காலாவதியானது",
+      "endsToday": "இன்று முடிகிறது",
+      "endsIn": "{days} நாட்களில் முடிகிறது",
+      "month": "மாதம்",
+      "planned": "திட்டமிட்டது",
+      "actual": "செய்தது",
+      "contracted": "ஒப்பந்தம்",
+      "difference": "வித்தியாசம்",
+      "effectiveRate": "உண்மை விகிதம்",
+      "value": "மதிப்பு",
+      "running": "(நடப்பில்)",
+      "footnoteFixed": "செய்தது = முடிந்த பணிகள். பில்லில் மாதக் கட்டணம் மட்டுமே; கூடுதல் அல்லது குறைந்த மணிநேரம் உள் பயன்பாட்டிற்கு மட்டும்.",
+      "footnoteHourly": "செய்தது = முடிந்த பணிகள். மதிப்பு = செய்த மணிநேரம் × மணிநேர விகிதம்."
     }
   },
   "properties": {
@@ -1826,7 +1876,9 @@
         "hq": "தலைமையகம்",
         "depot": "டிபோ",
         "satellite": "சாட்டிலைட்"
-      }
+      },
+      "managementEmail": "நிர்வாக மின்னஞ்சல்",
+      "managementEmailHint": "Alltagshilfe மாத அறிக்கையைப் பெறுகிறது (ஒவ்வொரு மாதமும் 1 ஆம் தேதி தானாக)"
     },
     "team": {
       "title": "02 · குழு & பாத்திரங்கள்",

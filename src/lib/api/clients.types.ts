@@ -69,6 +69,17 @@ export type ClientsListResult = {
   total: number;
 };
 
+/** Hourly vs. fixed-contract billing settings for a client. */
+export type ClientBilling = {
+  mode: "hourly" | "fixed";
+  hourly_rate_cents: number | null;
+  fixed_monthly_fee_cents: number | null;
+  contracted_hours_per_month: number | null;
+  contract_months: number | null;
+  contract_start: string | null;
+  contract_end: string | null;
+};
+
 export type ClientDetail = {
   id: string;
   display_name: string;
@@ -100,6 +111,7 @@ export type ClientDetail = {
   // preview widget.
   notes_updated_at: string | null;
   notes_updated_by: string | null;
+  billing: ClientBilling;
   // Aggregates
   property_count: number;
   contact_count: number;

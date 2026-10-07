@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils/cn";
 import { routes } from "@/lib/constants/routes";
 import { createClientAction } from "@/app/actions/clients";
+import { contractEndDate } from "@/lib/billing/contract";
 import type { ClientCustomerType } from "@/lib/api/clients.types";
 
 type Props = { type: ClientCustomerType };
@@ -82,6 +83,12 @@ export function CreateClientForm({ type }: Props) {
     estimated_hours_per_visit: "2.0",
     agreed_hourly_rate_eur: isAlltags ? "" : "35.00",
     contract_start: new Date().toISOString().slice(0, 10),
+    // Priya clients bill either per hour or a fixed monthly fee. Fixed
+    // contracts still track hours internally (client page → Stunden).
+    billing_mode: "hourly" as "hourly" | "fixed",
+    fixed_monthly_fee_eur: "",
+    contracted_hours_per_month: "",
+    contract_months: "12",
 
     date_of_birth: "",
     insurance_provider: "",
@@ -127,6 +134,17 @@ export function CreateClientForm({ type }: Props) {
       return { ...f, [key]: next };
     });
   }
+
+  const isFixed = !isAlltags && form.billing_mode === "fixed";
+  const contractMonthsNum = Number(form.contract_months);
+  const contractEnd =
+    isFixed &&
+    form.contract_start &&
+    Number.isInteger(contractMonthsNum) &&
+    contractMonthsNum >= 1 &&
+    contractMonthsNum <= 120
+      ? contractEndDate(form.contract_start, contractMonthsNum)
+      : null;
 
   function setField<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -219,9 +237,22 @@ export function CreateClientForm({ type }: Props) {
             billing_country: form.billing_different ? "DE" : "",
             cleaning_rhythm: form.cleaning_rhythm,
             estimated_hours_per_visit: Number(form.estimated_hours_per_visit),
-            agreed_hourly_rate_cents: Math.round(
-              Number(form.agreed_hourly_rate_eur || "0") * 100,
-            ),
+            billing_mode: form.billing_mode,
+            ...(isFixed
+              ? {
+                  fixed_monthly_fee_cents: Math.round(
+                    Number(form.fixed_monthly_fee_eur || "0") * 100,
+                  ),
+                  contracted_hours_per_month: Number(
+                    form.contracted_hours_per_month || "0",
+                  ),
+                  contract_months: Number(form.contract_months || "0"),
+                }
+              : {
+                  agreed_hourly_rate_cents: Math.round(
+                    Number(form.agreed_hourly_rate_eur || "0") * 100,
+                  ),
+                }),
             contract_start: form.contract_start,
           };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -894,27 +925,123 @@ export function CreateClientForm({ type }: Props) {
               </Field>
               {!isAlltags && (
                 <>
-                  <Field
-                    label={t("fields.agreedRate")}
-                    hint={t("fields.agreedRateHint")}
-                    required
-                    error={errors.agreed_hourly_rate_cents}
-                  >
-                    <div className="flex items-stretch">
-                      <span className="inline-flex items-center rounded-l-sm border border-r-0 border-neutral-200 bg-neutral-50 px-3 text-[12px] text-neutral-600">
-                        €
-                      </span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        className="input rounded-l-none"
-                        placeholder={t("fields.agreedRatePlaceholder")}
-                        required
-                        {...input("agreed_hourly_rate_eur")}
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <span className="text-[13px] font-medium text-neutral-700">
+                      {t("fields.billingMode")}
+                      <span className="ml-1 text-error-500">*</span>
+                    </span>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      <YesNoTile
+                        selected={form.billing_mode === "hourly"}
+                        onClick={() => setField("billing_mode", "hourly")}
+                        title={t("fields.billingHourly")}
+                        sub={t("fields.billingHourlySub")}
+                        tone="neutral"
+                        compact
+                      />
+                      <YesNoTile
+                        selected={form.billing_mode === "fixed"}
+                        onClick={() => setField("billing_mode", "fixed")}
+                        title={t("fields.billingFixed")}
+                        sub={t("fields.billingFixedSub")}
+                        tone="neutral"
+                        compact
                       />
                     </div>
-                  </Field>
+                  </div>
+                  {isFixed ? (
+                    <>
+                      <Field
+                        label={t("fields.fixedFee")}
+                        hint={t("fields.fixedFeeHint")}
+                        required
+                        error={errors.fixed_monthly_fee_cents}
+                      >
+                        <div className="flex items-stretch">
+                          <span className="inline-flex items-center rounded-l-sm border border-r-0 border-neutral-200 bg-neutral-50 px-3 text-[12px] text-neutral-600">
+                            €
+                          </span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0.01"
+                            className="input rounded-l-none"
+                            placeholder="z. B. 450"
+                            required
+                            {...input("fixed_monthly_fee_eur")}
+                          />
+                        </div>
+                      </Field>
+                      <Field
+                        label={t("fields.contractedHours")}
+                        hint={t("fields.contractedHoursHint")}
+                        required
+                        error={errors.contracted_hours_per_month}
+                      >
+                        <div className="flex items-stretch gap-2">
+                          <input
+                            type="number"
+                            step="0.5"
+                            min="0.5"
+                            className="input flex-1"
+                            placeholder="z. B. 16"
+                            required
+                            {...input("contracted_hours_per_month")}
+                          />
+                          <span className="inline-flex items-center rounded-sm border border-neutral-200 bg-neutral-50 px-3 text-[12px] text-neutral-600">
+                            {t("fields.hoursPerMonthUnit")}
+                          </span>
+                        </div>
+                      </Field>
+                      <Field
+                        label={t("fields.contractMonths")}
+                        hint={
+                          contractEnd
+                            ? t("fields.contractEndsOn", { date: formatDateDe(contractEnd) })
+                            : undefined
+                        }
+                        required
+                        error={errors.contract_months}
+                      >
+                        <div className="flex items-stretch gap-2">
+                          <input
+                            type="number"
+                            step="1"
+                            min="1"
+                            max="120"
+                            className="input flex-1"
+                            required
+                            {...input("contract_months")}
+                          />
+                          <span className="inline-flex items-center rounded-sm border border-neutral-200 bg-neutral-50 px-3 text-[12px] text-neutral-600">
+                            {t("fields.monthsUnit")}
+                          </span>
+                        </div>
+                      </Field>
+                    </>
+                  ) : (
+                    <Field
+                      label={t("fields.agreedRate")}
+                      hint={t("fields.agreedRateHint")}
+                      required
+                      error={errors.agreed_hourly_rate_cents}
+                    >
+                      <div className="flex items-stretch">
+                        <span className="inline-flex items-center rounded-l-sm border border-r-0 border-neutral-200 bg-neutral-50 px-3 text-[12px] text-neutral-600">
+                          €
+                        </span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          className="input rounded-l-none"
+                          placeholder={t("fields.agreedRatePlaceholder")}
+                          required
+                          {...input("agreed_hourly_rate_eur")}
+                        />
+                      </div>
+                    </Field>
+                  )}
                   <Field label={t("fields.contractStart")} required error={errors.contract_start}>
                     <input type="date" className="input" required {...input("contract_start")} />
                   </Field>
@@ -1152,6 +1279,37 @@ export function CreateClientForm({ type }: Props) {
                 <SummaryRow label={t("fields.pflegegrad")}>
                   <span>{form.care_level}</span>
                 </SummaryRow>
+              ) : isFixed ? (
+                <>
+                  <SummaryRow label={t("summary.billing")}>
+                    <span>
+                      {form.fixed_monthly_fee_eur
+                        ? t("summary.fixedFeeValue", {
+                            fee: Number(form.fixed_monthly_fee_eur).toFixed(2),
+                          })
+                        : "—"}
+                    </span>
+                  </SummaryRow>
+                  <SummaryRow label={t("summary.contractedHours")}>
+                    <span>
+                      {form.contracted_hours_per_month
+                        ? t("summary.contractedHoursValue", {
+                            hours: Number(form.contracted_hours_per_month),
+                          })
+                        : "—"}
+                    </span>
+                  </SummaryRow>
+                  <SummaryRow label={t("summary.term")}>
+                    <span>
+                      {contractEnd
+                        ? t("summary.termValue", {
+                            months: Number(form.contract_months),
+                            date: formatDateDe(contractEnd),
+                          })
+                        : "—"}
+                    </span>
+                  </SummaryRow>
+                </>
               ) : (
                 <SummaryRow label={t("summary.rate")}>
                   <span>
@@ -1188,6 +1346,14 @@ export function CreateClientForm({ type }: Props) {
                 : [
                     ["Der Kunde erscheint grün markiert in der Kundenliste.", true],
                     ["Rechnungen landen als Entwurf in Lexware – Freigabe durch Priya's Team.", true],
+                    ...(isFixed
+                      ? ([
+                          [
+                            "Festvertrag: Rechnung = monatliche Pauschale. Die geleisteten Stunden werden intern mitgezählt (Kundenseite → Stunden).",
+                            true,
+                          ],
+                        ] as [string, boolean][])
+                      : []),
                     ["Die erste Schicht kann sofort im Einsatzplan angelegt werden.", true],
                     [
                       `Eine Willkommens-E-Mail wird an ${form.email || "{Email}"} versendet.`,
@@ -1323,3 +1489,8 @@ function Field({
 // form layout. The current sectioned-card layout uses `<section>` headers
 // + `YesNoTile` tiles instead — these helpers are intentionally removed
 // to avoid two parallel patterns in the same file.
+
+function formatDateDe(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  return `${d}.${m}.${y}`;
+}

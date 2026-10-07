@@ -13,6 +13,8 @@ import { QuickActions } from "@/components/dashboard/QuickActions";
 import { MySelfPanel } from "@/components/dashboard/MySelfPanel";
 import { MyFilesAndNotesWidget } from "@/components/dashboard/MyFilesAndNotesWidget";
 import { InvoiceKpiPanel } from "@/components/dashboard/InvoiceKpiPanel";
+import { ContractReminders } from "@/components/dashboard/ContractReminders";
+import { loadContractReminders } from "@/lib/api/client-hours";
 import { loadInvoicesSummary } from "@/lib/api/invoices";
 import { loadAgingReport } from "@/lib/api/invoice-aging";
 import { can } from "@/lib/rbac/permissions";
@@ -74,6 +76,14 @@ export default async function DashboardPage() {
         </Suspense>
       )}
 
+      {/* Fixed contracts ending within 30 days — renders nothing when
+       *  there are none, so no skeleton (it would flash and vanish). */}
+      {canSeeOrgOverview && (
+        <Suspense fallback={null}>
+          <ContractRemindersSection />
+        </Suspense>
+      )}
+
       {/* Org overview — KPI grid + weekly chart + today's shifts +
        *  activity + team utilization. All fed by the same loader so
        *  they stream in as one section, but the section as a whole
@@ -106,6 +116,11 @@ async function PmWidgetSection() {
   return (
     <MyFilesAndNotesWidget notes={pmWidget.notes} files={pmWidget.files} />
   );
+}
+
+async function ContractRemindersSection() {
+  const items = await loadContractReminders();
+  return <ContractReminders items={items} />;
 }
 
 async function OrgOverviewSection() {

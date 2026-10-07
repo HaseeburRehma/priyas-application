@@ -604,6 +604,7 @@ function CompanySection({
       registration: String(company.registration ?? ""),
       address: String(company.address ?? ""),
       supportEmail: String(company.supportEmail ?? ""),
+      managementEmail: String(company.managementEmail ?? ""),
       supportPhone: String(company.supportPhone ?? ""),
       industry: String(company.industry ?? "facility_services"),
       companySize: String(company.companySize ?? "21-50"),
@@ -827,6 +828,17 @@ function CompanySection({
             disabled={!canEdit}
           />
         </Field>
+        <div className="md:col-span-2">
+          <Field label={t("managementEmail")} hint={t("managementEmailHint")}>
+            <Input
+              type="email"
+              value={form.managementEmail}
+              onChange={(e) => setField("managementEmail", e.target.value)}
+              disabled={!canEdit}
+              placeholder="geschaeftsleitung@…"
+            />
+          </Field>
+        </div>
         <div className="md:col-span-2">
           <Field label={t("website")}>
             <div className="flex items-center gap-2 rounded-md border border-neutral-200 bg-white px-3 py-2.5 text-[13px] text-neutral-800 focus-within:border-primary-300 focus-within:ring-2 focus-within:ring-primary-100">

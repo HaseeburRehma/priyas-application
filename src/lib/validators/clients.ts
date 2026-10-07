@@ -14,6 +14,50 @@ export const cleaningRhythmSchema = z.enum([
 ]);
 export type CleaningRhythm = z.infer<typeof cleaningRhythmSchema>;
 
+/** "hourly" = hours × rate; "fixed" = flat monthly fee, hours tracked internally. */
+export const billingModeSchema = z.enum(["hourly", "fixed"]);
+export type BillingMode = z.infer<typeof billingModeSchema>;
+
+const fixedFeeCents = z
+  .number({ invalid_type_error: "Monatspauschale erforderlich" })
+  .int()
+  .positive("Monatspauschale erforderlich");
+const contractedHours = z
+  .number({ invalid_type_error: "Vertragsstunden erforderlich" })
+  .positive("Vertragsstunden erforderlich")
+  .max(744);
+const contractMonths = z
+  .number({ invalid_type_error: "Laufzeit erforderlich" })
+  .int()
+  .min(1, "Laufzeit erforderlich")
+  .max(120);
+
+type BillingFields = {
+  billing_mode?: BillingMode;
+  agreed_hourly_rate_cents?: number;
+  fixed_monthly_fee_cents?: number;
+  contracted_hours_per_month?: number;
+  contract_months?: number;
+  contract_start?: string;
+};
+
+function checkBillingFields(
+  v: BillingFields,
+  ctx: z.RefinementCtx,
+  opts: { requireHourlyRate: boolean },
+) {
+  const missing = (path: keyof BillingFields, message: string) =>
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: [path], message });
+  if (v.billing_mode === "fixed") {
+    if (!v.fixed_monthly_fee_cents) missing("fixed_monthly_fee_cents", "Monatspauschale erforderlich");
+    if (!v.contracted_hours_per_month) missing("contracted_hours_per_month", "Vertragsstunden erforderlich");
+    if (!v.contract_months) missing("contract_months", "Laufzeit erforderlich");
+    if (!v.contract_start) missing("contract_start", "Vertragsbeginn erforderlich");
+  } else if (opts.requireHourlyRate && v.agreed_hourly_rate_cents === undefined) {
+    missing("agreed_hourly_rate_cents", "Stundensatz erforderlich");
+  }
+}
+
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Datum YYYY-MM-DD");
 const optionalIsoDate = isoDate.optional().or(z.literal(""));
 const optionalText = (max: number) =>
@@ -96,8 +140,13 @@ const priyaExtras = {
   agreed_hourly_rate_cents: z
     .number({ invalid_type_error: "Stundensatz erforderlich" })
     .int()
-    .min(0),
+    .min(0)
+    .optional(),
   contract_start: isoDate,
+  billing_mode: billingModeSchema.default("hourly"),
+  fixed_monthly_fee_cents: fixedFeeCents.optional(),
+  contracted_hours_per_month: contractedHours.optional(),
+  contract_months: contractMonths.optional(),
 };
 
 /** Alltagshilfe extras — different list per the client's spec.
@@ -167,7 +216,11 @@ export const createClientSchema = z.discriminatedUnion("customer_type", [
     ...baseClient,
     ...alltagshilfeExtras,
   }),
-]);
+]).superRefine((v, ctx) => {
+  if (v.customer_type !== "alltagshilfe") {
+    checkBillingFields(v, ctx, { requireHourlyRate: true });
+  }
+});
 export type CreateClientInput = z.infer<typeof createClientSchema>;
 
 /**
@@ -217,9 +270,19 @@ const updateBase = {
  */
 const exportTargetSchema = z.enum(["internal", "lexware"]);
 
+/** Billing fields the edit form sends for residential/commercial clients. */
+const updateBilling = {
+  billing_mode: billingModeSchema.optional(),
+  agreed_hourly_rate_cents: z.number().int().min(0).optional(),
+  fixed_monthly_fee_cents: fixedFeeCents.optional(),
+  contracted_hours_per_month: contractedHours.optional(),
+  contract_months: contractMonths.optional(),
+  contract_start: isoDate.optional(),
+};
+
 export const updateClientSchema = z.discriminatedUnion("customer_type", [
-  z.object({ customer_type: z.literal("residential"), ...updateBase, export_target: exportTargetSchema }),
-  z.object({ customer_type: z.literal("commercial"), ...updateBase, export_target: exportTargetSchema }),
+  z.object({ customer_type: z.literal("residential"), ...updateBase, export_target: exportTargetSchema, ...updateBilling }),
+  z.object({ customer_type: z.literal("commercial"), ...updateBase, export_target: exportTargetSchema, ...updateBilling }),
   z.object({
     customer_type: z.literal("alltagshilfe"),
     ...updateBase,
@@ -231,7 +294,11 @@ export const updateClientSchema = z.discriminatedUnion("customer_type", [
       .min(1)
       .max(5),
   }),
-]);
+]).superRefine((v, ctx) => {
+  if (v.customer_type !== "alltagshilfe") {
+    checkBillingFields(v, ctx, { requireHourlyRate: false });
+  }
+});
 export type UpdateClientInput = z.infer<typeof updateClientSchema>;
 
 // Re-export of the unused-for-now optionalIsoDate helper so future fields
