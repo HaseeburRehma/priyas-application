@@ -261,7 +261,7 @@
       "priyaTitle": "Priya's",
       "priyaSubtitle": "Regular cleaning service",
       "priyaTagExisting": "Existing service area",
-      "priyaBilling": "Automatic · via Lexware",
+      "priyaBilling": "Draft in Lexware",
       "priyaCustomers": "Regular customers · companies & private",
       "priyaStaff": "Regular cleaners · 30 available",
       "priyaColor": "Green throughout the app · existing behaviour",
@@ -456,7 +456,7 @@
         "changeServiceType": "Change service type",
         "headingPriya": "Create new customer",
         "headingAlltagshilfe": "New care client",
-        "subheadPriya": "Regular cleaning · Automatic billing via Lexware · Step 2 of 3",
+        "subheadPriya": "Regular cleaning · Invoice draft in Lexware · Step 2 of 3",
         "subheadAlltagshilfe": "Day care · Manual billing via health insurance · Step 2 of 3"
       },
       "summary": {
@@ -465,7 +465,7 @@
         "subAlltagshilfe": "The information will be transferred to the care contract and the first monthly report upon saving.",
         "serviceType": "Service type",
         "invoice": "Invoice",
-        "invoicePriya": "Automatic · Lexware",
+        "invoicePriya": "Draft in Lexware",
         "invoiceAlltagshilfe": "Manual · Health insurance",
         "vat": "VAT",
         "vatPriya": "19 % standard rate",
@@ -1568,7 +1568,7 @@
       "syncLexware": "Lexware Sync",
       "syncLexwareTitle": "Sync all pending invoices with Lexware",
       "syncLexwarePending": "Syncing…",
-      "syncLexwareDone": "Pushed {pushed} to Lexware.",
+      "syncLexwareDone": "Pushed {pushed} to Lexware as drafts.",
       "syncLexwareMixed": "Pushed {pushed} · {failed} failed.",
       "syncLexwareNoCandidates": "Nothing to sync right now."
     },
@@ -1647,9 +1647,9 @@
       "activityTitle": "Activity timeline",
       "clientTitle": "Client & account",
       "viewClient": "View →",
-      "lexwareSynced": "Synced with Lexware",
+      "lexwareSynced": "Created as draft in Lexware",
       "lexwareNotSynced": "Not synced yet",
-      "syncSuccess": "Lexware sync successful",
+      "syncSuccess": "Draft created in Lexware",
       "markSentSuccess": "Marked as sent",
       "markPaidSuccess": "Marked as paid",
       "reconciliation": {
@@ -2128,7 +2128,7 @@
   },
   "lexware": {
     "title": "Monthly Lexware billing",
-    "subtitle": "Generate monthly invoices from completed shifts and push them to Lexware Office.",
+    "subtitle": "Generate monthly invoices from completed shifts and push them to Lexware Office as drafts.",
     "lastRun": "Last run",
     "never": "Never run",
     "previewButton": "Preview month",

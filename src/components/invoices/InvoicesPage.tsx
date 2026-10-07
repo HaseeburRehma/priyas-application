@@ -581,7 +581,7 @@ function Th({ children, align = "left" }: { children: React.ReactNode; align?: "
 /**
  * Compact pill that reflects Lexware push state on a single invoice row.
  * The colour mapping mirrors the project's status conventions:
- *   - success (green)  → row successfully synced
+ *   - success (green)  → draft created in Lexware
  *   - warning (amber) → push hasn't happened yet
  *   - error   (red)    → at least one attempt failed
  *   - neutral (gray)   → invoice isn't eligible for Lexware sync
@@ -599,7 +599,7 @@ function LexwareSyncChip({
     "na" | "pending" | "synced" | "failed",
     { cls: string; label: string; mark: string }
   > = {
-    synced:  { cls: "bg-success-50 text-success-700", label: "Synchronisiert", mark: "✓" },
+    synced:  { cls: "bg-success-50 text-success-700", label: "Entwurf in Lexware", mark: "✓" },
     pending: { cls: "bg-warning-50 text-warning-700", label: "Ausstehend",     mark: "…" },
     failed:  { cls: "bg-error-50 text-error-700",     label: "Fehlgeschlagen", mark: "!" },
     na:      { cls: "bg-neutral-100 text-neutral-500", label: "—",              mark: "" },

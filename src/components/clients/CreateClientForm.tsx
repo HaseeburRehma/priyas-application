@@ -1187,7 +1187,7 @@ export function CreateClientForm({ type }: Props) {
                   ]
                 : [
                     ["Der Kunde erscheint grün markiert in der Kundenliste.", true],
-                    ["Lexware-Sync legt automatisch ein Debitor-Konto an.", true],
+                    ["Rechnungen landen als Entwurf in Lexware – Freigabe durch Priya's Team.", true],
                     ["Die erste Schicht kann sofort im Einsatzplan angelegt werden.", true],
                     [
                       `Eine Willkommens-E-Mail wird an ${form.email || "{Email}"} versendet.`,

@@ -167,10 +167,9 @@ class RealLexwareClient implements LexwareClient {
       notes: invoice.notes,
     });
 
-    // 4) Verify the invoice was accepted and is not in draft/error state.
-    //    lexwareGetInvoice throws LexwareError on non-2xx, so if the
-    //    voucher was rejected we surface that to the caller rather than
-    //    silently storing a broken lexware_id.
+    // 4) Verify the draft voucher exists. lexwareGetInvoice throws
+    //    LexwareError on non-2xx, so a rejected voucher surfaces to the
+    //    caller instead of leaving a broken lexware_id behind.
     const verified = await lexwareGetInvoice(cfg, created.id);
 
     return {

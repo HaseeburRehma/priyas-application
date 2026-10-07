@@ -261,7 +261,7 @@
       "priyaTitle": "Priya's",
       "priyaSubtitle": "வழக்கமான சுத்தம் செய்யும் சேவை",
       "priyaTagExisting": "ஏற்கனவே உள்ள சேவைப் பகுதி",
-      "priyaBilling": "தானியங்கி · Lexware மூலம்",
+      "priyaBilling": "Lexware-இல் வரைவு",
       "priyaCustomers": "வழக்கமான வாடிக்கையாளர்கள் · நிறுவனங்கள் & தனியார்",
       "priyaStaff": "வழக்கமான சுத்தம்கைகள் · 30 கிடைக்கின்றனர்",
       "priyaColor": "முழுப் பயன்பாட்டிலும் பச்சை · ஏற்கனவே உள்ள நடத்தை",
@@ -456,7 +456,7 @@
         "changeServiceType": "Change service type",
         "headingPriya": "Create new customer",
         "headingAlltagshilfe": "New care client",
-        "subheadPriya": "Regular cleaning · Automatic billing via Lexware · Step 2 of 3",
+        "subheadPriya": "வழக்கமான சுத்தம் · Lexware-இல் விலைப்பட்டியல் வரைவு · படி 2 / 3",
         "subheadAlltagshilfe": "Day care · Manual billing via health insurance · Step 2 of 3"
       },
       "summary": {
@@ -465,7 +465,7 @@
         "subAlltagshilfe": "The information will be transferred to the care contract and the first monthly report upon saving.",
         "serviceType": "Service type",
         "invoice": "Invoice",
-        "invoicePriya": "Automatic · Lexware",
+        "invoicePriya": "Lexware-இல் வரைவு",
         "invoiceAlltagshilfe": "Manual · Health insurance",
         "vat": "VAT",
         "vatPriya": "19 % standard rate",
@@ -1568,7 +1568,7 @@
       "syncLexware": "Lexware ஒத்திசை",
       "syncLexwareTitle": "அனைத்து நிலுவையில் உள்ள விலைப்பட்டியல்களையும் Lexware-உடன் ஒத்திசைக்கவும்",
       "syncLexwarePending": "ஒத்திசைகிறது…",
-      "syncLexwareDone": "Lexware-க்கு {pushed} அனுப்பப்பட்டது.",
+      "syncLexwareDone": "{pushed} வரைவுகளாக Lexware-க்கு அனுப்பப்பட்டது.",
       "syncLexwareMixed": "{pushed} அனுப்பப்பட்டது · {failed} தோல்வி.",
       "syncLexwareNoCandidates": "தற்போது ஒத்திசைக்க எதுவும் இல்லை."
     },
@@ -1647,9 +1647,9 @@
       "activityTitle": "செயல்பாட்டுக் காலவரிசை",
       "clientTitle": "வாடிக்கையாளர் & கணக்கு",
       "viewClient": "பார் →",
-      "lexwareSynced": "Lexware-உடன் ஒத்திசைவு",
+      "lexwareSynced": "Lexware-இல் வரைவாக உருவாக்கப்பட்டது",
       "lexwareNotSynced": "இன்னும் ஒத்திசைக்கப்படவில்லை",
-      "syncSuccess": "Lexware ஒத்திசைவு வெற்றிகரமாக",
+      "syncSuccess": "Lexware-இல் வரைவு உருவாக்கப்பட்டது",
       "markSentSuccess": "அனுப்பியதாக குறிக்கப்பட்டது",
       "markPaidSuccess": "செலுத்தியதாக குறிக்கப்பட்டது",
       "reconciliation": {
@@ -2128,7 +2128,7 @@
   },
   "lexware": {
     "title": "மாதாந்திர Lexware பில்லிங்",
-    "subtitle": "முடிக்கப்பட்ட பணிநேரங்களிலிருந்து மாதாந்திர விலைப்பட்டியல்களை உருவாக்கி Lexware Office-க்கு அனுப்பவும்.",
+    "subtitle": "முடிக்கப்பட்ட பணிநேரங்களிலிருந்து மாதாந்திர விலைப்பட்டியல்களை உருவாக்கி வரைவுகளாக Lexware Office-க்கு அனுப்பவும்.",
     "lastRun": "கடைசி இயக்கம்",
     "never": "ஒருபோதும் இல்லை",
     "previewButton": "மாதத்தை முன்னோட்டம்",

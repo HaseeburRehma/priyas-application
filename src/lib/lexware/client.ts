@@ -289,13 +289,11 @@ export type LexwareInvoiceLineItem = {
 };
 
 /**
- * POST /v1/invoices?finalize=true
+ * POST /v1/invoices
  *
- * Creates a finalized (voucherStatus "open") invoice in Lexware. Without
- * `finalize=true` the voucher is created as an editable draft — it still
- * gets a voucherNumber, but it won't appear in Lexware's normal invoice
- * list/exports and could still be edited or discarded from their side.
- * Returns the created invoice including Lexware's own `voucherNumber`.
+ * Creates the invoice as an editable draft (voucherStatus "draft"). Priya's
+ * team reviews and finalizes every invoice themselves in Lexware, so never
+ * add `?finalize=true` here.
  */
 export async function lexwareCreateInvoice(
   cfg: LexwareConfig,
@@ -335,7 +333,7 @@ export async function lexwareCreateInvoice(
     // Embed our internal invoice number so the bookkeeper can cross-reference.
     remark: `Interne Nr.: ${args.invoiceNumber}`,
   };
-  return request<LexwareInvoice>(cfg, `/v1/invoices?finalize=true`, {
+  return request<LexwareInvoice>(cfg, `/v1/invoices`, {
     method: "POST",
     body: JSON.stringify(body),
   });
