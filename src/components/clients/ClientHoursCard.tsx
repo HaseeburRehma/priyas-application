@@ -25,6 +25,12 @@ export function ClientHoursCard({
   const isFixed = billing.mode === "fixed";
   const contracted = billing.contracted_hours_per_month ?? 0;
   const daysLeft = billing.contract_end ? daysUntil(billing.contract_end) : null;
+  // Months before the contract started (or after it ended) have no
+  // contracted hours to compare against — show "—" instead of a deficit.
+  const startMonth = billing.contract_start?.slice(0, 7) ?? null;
+  const endMonth = billing.contract_end?.slice(0, 7) ?? null;
+  const inContract = (month: string) =>
+    (!startMonth || month >= startMonth) && (!endMonth || month <= endMonth);
 
   return (
     <section className="rounded-lg border border-neutral-200 bg-white p-4">
@@ -91,9 +97,10 @@ export function ClientHoursCard({
           <tbody>
             {months.map((m, i) => {
               const actualH = m.actualMinutes / 60;
+              const covered = isFixed && inContract(m.month);
               const diff = actualH - contracted;
               const effective =
-                isFixed && actualH > 0 && billing.fixed_monthly_fee_cents
+                covered && actualH > 0 && billing.fixed_monthly_fee_cents
                   ? Math.round(billing.fixed_monthly_fee_cents / actualH)
                   : null;
               return (
@@ -113,20 +120,28 @@ export function ClientHoursCard({
                   {isFixed && (
                     <>
                       <td className="py-1.5 pr-3 text-right tabular-nums text-neutral-600">
-                        {formatHours(contracted)}
+                        {covered ? formatHours(contracted) : "—"}
                       </td>
                       <td
                         className={cn(
                           "py-1.5 pr-3 text-right tabular-nums",
-                          diff > 0.01
-                            ? "text-error-700"
-                            : diff < -0.01
-                              ? "text-warning-700"
-                              : "text-neutral-600",
+                          !covered
+                            ? "text-neutral-400"
+                            : diff > 0.01
+                              ? "text-error-700"
+                              : diff < -0.01
+                                ? "text-warning-700"
+                                : "text-neutral-600",
                         )}
                       >
-                        {diff > 0 ? "+" : diff < 0 ? "−" : ""}
-                        {formatHours(Math.abs(diff))}
+                        {covered ? (
+                          <>
+                            {diff > 0 ? "+" : diff < 0 ? "−" : ""}
+                            {formatHours(Math.abs(diff))}
+                          </>
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td className="py-1.5 text-right tabular-nums text-neutral-600">
                         {effective != null ? `${formatEUR(effective)}/h` : "—"}
