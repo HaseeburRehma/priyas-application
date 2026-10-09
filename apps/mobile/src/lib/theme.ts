@@ -129,15 +129,49 @@ export const radius = {
   full: 999,
 } as const;
 
+/**
+ * Brand fonts — Inter for UI text, JetBrains Mono for times, amounts and
+ * IDs (Figma "Priya Cleaning Service · Product", page 📱 Mobile App).
+ * Loaded once in `app/_layout.tsx` via expo-font; the family names below
+ * are the keys passed to `useFonts`. With custom fonts the family carries
+ * the weight, so styles set `fontFamily` instead of `fontWeight`.
+ */
+export const fonts = {
+  regular: "Inter_400Regular",
+  medium: "Inter_500Medium",
+  semibold: "Inter_600SemiBold",
+  bold: "Inter_700Bold",
+  italic: "Inter_400Regular_Italic",
+  mono: "JetBrainsMono_500Medium",
+  monoBold: "JetBrainsMono_700Bold",
+} as const;
+
+/** Mobile text styles — 1:1 with the Figma "Mobile/*" text styles. */
+export const text = {
+  display: { fontFamily: fonts.bold, fontSize: 28, lineHeight: 34, letterSpacing: -0.42 },
+  title: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 28, letterSpacing: -0.22 },
+  headline: { fontFamily: fonts.semibold, fontSize: 17, lineHeight: 22, letterSpacing: -0.085 },
+  body: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 21 },
+  bodyStrong: { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 21 },
+  callout: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 19 },
+  subhead: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18 },
+  subheadStrong: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 18 },
+  caption: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 16 },
+  overline: { fontFamily: fonts.semibold, fontSize: 11, lineHeight: 14, letterSpacing: 0.66, textTransform: "uppercase" },
+  tabLabel: { fontFamily: fonts.semibold, fontSize: 10, lineHeight: 12 },
+  kpi: { fontFamily: fonts.bold, fontSize: 26, lineHeight: 30, letterSpacing: -0.26 },
+  mono: { fontFamily: fonts.mono, fontSize: 13, lineHeight: 18 },
+  monoStrong: { fontFamily: fonts.monoBold, fontSize: 14, lineHeight: 18 },
+} as const;
+
+export type TextVariant = keyof typeof text;
+
 export const typography = {
-  // Native iOS uses "System" (SF Pro) automatically; on Android RN maps
-  // "System" to Roboto. Custom brand font can be added later via
-  // expo-font — until then System keeps rendering fast and safe.
   fontFamily: {
-    regular: undefined, // system
-    medium: undefined,
-    semibold: undefined,
-    bold: undefined,
+    regular: fonts.regular,
+    medium: fonts.medium,
+    semibold: fonts.semibold,
+    bold: fonts.bold,
   },
   weight: {
     regular: "400" as const,
@@ -147,9 +181,7 @@ export const typography = {
     extrabold: "800" as const,
   },
   // Sizes — the numeric keys (xs / sm / base / md / lg / xl / 2xl / 3xl)
-  // are legacy and used throughout the mobile app; the Figma-named
-  // semantic keys (caption / body / h3 / h2 / h1 / display) are new and
-  // let new components author against the DS spec directly.
+  // are legacy; new code uses the `text` presets above.
   size: {
     xs: 11,
     sm: 12,
@@ -159,7 +191,6 @@ export const typography = {
     xl: 20,
     "2xl": 24,
     "3xl": 28,
-    // Figma semantic scale
     caption: 12,
     body: 14,
     h3: 16,
@@ -170,12 +201,28 @@ export const typography = {
   lineHeight: {
     tight: 1.2,
     normal: 1.4,
-    relaxed: 1.5, // Figma Body = 14/21 → 21/14 = 1.5
-    display: 1.1, // Figma Display = 40/44
+    relaxed: 1.5,
+    display: 1.1,
   },
 } as const;
 
 export const shadow = {
+  // Figma "Mobile/Shadow sm" — default card shadow.
+  sm: {
+    shadowColor: "#141814",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  // Figma "Mobile/Shadow md" — hero cards and floating elements.
+  md: {
+    shadowColor: "#141814",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
   // React Native has no cross-platform shadow syntax — iOS uses shadow*,
   // Android uses elevation. This object bundles both so components can
   // spread it into their style prop. Colours tuned to the warm neutral
@@ -213,6 +260,8 @@ export const shadow = {
 
 export type Theme = {
   colors: typeof colors;
+  fonts: typeof fonts;
+  text: typeof text;
   spacing: typeof spacing;
   radius: typeof radius;
   typography: typeof typography;
@@ -221,6 +270,8 @@ export type Theme = {
 
 export const theme: Theme = {
   colors,
+  fonts,
+  text,
   spacing,
   radius,
   typography,

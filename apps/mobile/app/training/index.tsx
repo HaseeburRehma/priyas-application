@@ -1,9 +1,10 @@
 /**
- * My training modules — sequential onboarding videos.
+ * My training modules — sequential onboarding videos (Figma 23-training).
  *
- * Each row: title, mandatory badge, status (not started / in progress /
- * completed), "Watch" (opens the URL in the system browser and marks
- * the module as started), "Mark completed" (writes progress row).
+ * Each card: gradient thumbnail, title, mandatory badge, status (not
+ * started / in progress / completed), "Watch" / "Continue" (opens the
+ * URL in the system browser and marks the module as started) and
+ * "Mark completed" (writes progress row).
  *
  * The web app enforces a video-sequence gate that locks scheduling
  * until all mandatory modules are done. This screen writes to the same
@@ -11,19 +12,9 @@
  */
 
 import React from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Linking,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { Linking, Pressable, StyleSheet, View } from "react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import Svg, { Path } from "react-native-svg";
+import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { useAuth } from "@/lib/auth-context";
 import {
   loadMyTraining,
@@ -31,15 +22,24 @@ import {
   markModuleStarted,
   type TrainingModule,
 } from "@/lib/training";
-import { Chip, EmptyState } from "@/components/ui";
-import { colors, spacing, typography } from "@/lib/theme";
+import {
+  Badge,
+  Button,
+  Card,
+  CenterSpinner,
+  EmptyState,
+  Icon,
+  IconChip,
+  NavHeader,
+  Notice,
+  ProgressBar,
+  Screen,
+  Txt,
+} from "@/components/ui";
+import { colors, radius, spacing } from "@/lib/theme";
 import { t } from "@/lib/i18n";
 
-const keyExtractor = (item: TrainingModule) => item.id;
-const ListSpacer = () => <View style={{ height: 10 }} />;
-
 export default function TrainingScreen() {
-  const router = useRouter();
   const qc = useQueryClient();
   const { profile } = useAuth();
   const employeeId = profile?.employeeId ?? null;
@@ -69,245 +69,207 @@ export default function TrainingScreen() {
   const mandatoryTotal = modules.filter((m) => m.is_mandatory).length;
   const allMandatoryDone =
     mandatoryTotal > 0 && mandatoryDone === mandatoryTotal;
+  // The next module in sequence gets the highlighted border.
+  const nextId = modules.find((m) => !m.completed_at)?.id ?? null;
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: colors.tertiary[200] }}
-      edges={["top", "bottom"]}
+    <Screen
+      header={<NavHeader title={t("mobile.training.title")} />}
+      refreshing={modulesQuery.isRefetching}
+      onRefresh={() => modulesQuery.refetch()}
+      gap={12}
     >
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.headerBack}>
-          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={colors.neutral[700]} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M19 12H5M12 19l-7-7 7-7" />
-          </Svg>
-        </Pressable>
-        <Text style={styles.headerTitle}>{t("mobile.training.title")}</Text>
-      </View>
-
-      <View style={styles.progressCard}>
-        <Text style={styles.progressLabel}>
-          {t("mobile.training.progressLabel")}
-        </Text>
-        <Text style={styles.progressValue}>
-          {mandatoryDone} / {mandatoryTotal || "—"}
-        </Text>
-        <Text style={styles.progressHint}>
+      {/* Mandatory progress */}
+      <Card style={styles.progressCard}>
+        <View style={styles.progressTop}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Txt v="callout" color={colors.neutral[700]}>
+              {t("mobile.training.progressLabel")}
+            </Txt>
+            <Txt v="display" color={colors.secondary[500]}>
+              {mandatoryDone} / {mandatoryTotal || "—"}
+            </Txt>
+          </View>
+          <IconChip icon="graduation" tone="brand" size={48} iconSize={24} />
+        </View>
+        <ProgressBar
+          value={mandatoryTotal > 0 ? mandatoryDone / mandatoryTotal : 0}
+          height={8}
+        />
+        <Notice
+          tone={allMandatoryDone ? "success" : "warning"}
+          icon={allMandatoryDone ? "check" : "alert"}
+        >
           {allMandatoryDone
             ? t("mobile.training.allDoneHint")
             : t("mobile.training.notDoneHint")}
-        </Text>
-      </View>
+        </Notice>
+      </Card>
 
       {modulesQuery.isLoading ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={colors.primary[500]} />
-        </View>
+        <CenterSpinner />
       ) : modules.length === 0 ? (
         <EmptyState
+          icon="graduation"
           title={t("mobile.training.emptyTitle")}
           subtitle={t("mobile.training.emptyBody")}
         />
       ) : (
-        <FlatList
-          data={modules}
-          keyExtractor={keyExtractor}
-          renderItem={({ item: m }) => (
-            <ModuleCard
-              module={m}
-              onWatch={() => {
-                if (!m.video_url) return;
-                Linking.openURL(m.video_url).catch(() => {});
-                if (!m.started_at) startMutation.mutate(m.id);
-              }}
-              onComplete={() => completeMutation.mutate(m.id)}
-              completing={completeMutation.isPending}
-            />
-          )}
-          ItemSeparatorComponent={ListSpacer}
-          contentContainerStyle={styles.list}
-        />
+        modules.map((m) => (
+          <ModuleCard
+            key={m.id}
+            module={m}
+            highlight={m.id === nextId}
+            onWatch={() => {
+              if (!m.video_url) return;
+              Linking.openURL(m.video_url).catch(() => {});
+              if (!m.started_at) startMutation.mutate(m.id);
+            }}
+            onComplete={() => completeMutation.mutate(m.id)}
+            completing={completeMutation.isPending}
+          />
+        ))
       )}
-
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const ModuleCard = React.memo(function ModuleCard({
   module,
+  highlight,
   onWatch,
   onComplete,
   completing,
 }: {
   module: TrainingModule;
+  highlight: boolean;
   onWatch: () => void;
   onComplete: () => void;
   completing: boolean;
 }) {
   const done = !!module.completed_at;
   const started = !!module.started_at && !done;
+  const hasVideo = !!module.video_url;
+
   return (
-    <View style={styles.card}>
-      <View style={styles.cardHead}>
-        <Text style={styles.cardTitle} numberOfLines={2}>
-          {module.title}
-        </Text>
-        {module.is_mandatory && (
-          <Chip
-            label={t("mobile.training.mandatory")}
-            tone="error"
-          />
-        )}
-        {done ? (
-          <Chip label={t("mobile.training.status.done")} tone="primary" />
-        ) : started ? (
-          <Chip label={t("mobile.training.status.inProgress")} tone="warning" />
-        ) : (
-          <Chip label={t("mobile.training.status.notStarted")} tone="neutral" />
-        )}
-      </View>
-      {module.description && (
-        <Text style={styles.cardBody}>{module.description}</Text>
-      )}
-      <View style={styles.cardActions}>
+    <Card
+      style={[
+        styles.card,
+        highlight && { borderColor: colors.primary[300], borderWidth: 1.5 },
+      ]}
+    >
+      <View style={styles.cardRow}>
         <Pressable
           onPress={onWatch}
-          disabled={!module.video_url}
-          style={[
-            styles.watchBtn,
-            !module.video_url && { opacity: 0.5 },
-          ]}
+          disabled={!hasVideo}
+          accessibilityRole="button"
+          accessibilityLabel={hasVideo ? t("mobile.training.watchCta") : t("mobile.training.noVideoUrl")}
+          style={({ pressed }) => [pressed && { opacity: 0.85 }]}
         >
-          <Text style={styles.watchBtnText}>
-            {module.video_url
-              ? t("mobile.training.watchCta")
-              : t("mobile.training.noVideoUrl")}
-          </Text>
+          <Thumbnail done={done} />
         </Pressable>
-        {!done && (
-          <Pressable
+        <View style={{ flex: 1, gap: 6, minWidth: 0 }}>
+          <Txt v="headline" numberOfLines={2}>
+            {module.title}
+          </Txt>
+          <View style={styles.badges}>
+            {module.is_mandatory ? (
+              <Badge label={t("mobile.training.mandatory")} tone="error" dot={false} />
+            ) : null}
+            {done ? (
+              <Badge label={t("mobile.training.status.done")} tone="success" />
+            ) : started ? (
+              <Badge label={t("mobile.training.status.inProgress")} tone="warning" />
+            ) : (
+              <Badge label={t("mobile.training.status.notStarted")} tone="neutral" />
+            )}
+          </View>
+        </View>
+      </View>
+
+      {module.description ? (
+        <Txt v="subhead" color={colors.neutral[600]}>
+          {module.description}
+        </Txt>
+      ) : null}
+
+      {!done ? (
+        <View style={{ gap: 8 }}>
+          <Button
+            label={
+              !hasVideo
+                ? t("mobile.training.noVideoUrl")
+                : started
+                  ? t("mobile.ui.training.continue")
+                  : t("mobile.training.watchCta")
+            }
+            icon="play"
+            variant={started ? "outline" : "primary"}
+            size="md"
+            onPress={onWatch}
+            disabled={!hasVideo}
+          />
+          <Button
+            label={t("mobile.training.markCompletedCta")}
+            icon="check"
+            variant="ghost"
+            size="md"
             onPress={onComplete}
             disabled={completing}
-            style={[
-              styles.completeBtn,
-              completing && { opacity: 0.6 },
-            ]}
-          >
-            <Text style={styles.completeBtnText}>
-              {t("mobile.training.markCompletedCta")}
-            </Text>
-          </Pressable>
+          />
+        </View>
+      ) : null}
+    </Card>
+  );
+});
+
+/** Navy → green gradient tile with a play (or check) disc — drawn with SVG. */
+function Thumbnail({ done }: { done: boolean }) {
+  return (
+    <View style={styles.thumb}>
+      <Svg width={THUMB_W} height={THUMB_H} style={StyleSheet.absoluteFill}>
+        <Defs>
+          <LinearGradient id="trainingThumb" x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0" stopColor={colors.secondary[500]} />
+            <Stop offset="1" stopColor={colors.primary[500]} />
+          </LinearGradient>
+        </Defs>
+        <Rect x={0} y={0} width={THUMB_W} height={THUMB_H} rx={radius.md} fill="url(#trainingThumb)" />
+      </Svg>
+      <View style={styles.thumbDisc}>
+        {done ? (
+          <Icon name="check" size={16} color={colors.primary[600]} strokeWidth={2.5} />
+        ) : (
+          <Icon name="play" size={14} color={colors.primary[600]} strokeWidth={2.5} />
         )}
       </View>
     </View>
   );
-});
+}
+
+const THUMB_W = 104;
+const THUMB_H = 64;
 
 const styles = StyleSheet.create({
-  list: {
-    padding: spacing[4],
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingHorizontal: spacing[4],
-    paddingTop: spacing[3],
-    paddingBottom: spacing[3],
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[100],
-  },
-  headerBack: {
-    width: 32,
-    height: 32,
+  progressCard: { gap: 14 },
+  progressTop: { flexDirection: "row", alignItems: "flex-start", gap: spacing[3] },
+  card: { gap: 12, padding: 14 },
+  cardRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing[3] },
+  badges: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 },
+  thumb: {
+    width: THUMB_W,
+    height: THUMB_H,
+    borderRadius: radius.md,
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitle: {
-    flex: 1,
-    fontSize: typography.size.lg,
-    fontWeight: "800",
-    color: colors.secondary[500],
-  },
-  progressCard: {
-    margin: spacing[4],
-    padding: spacing[4],
-    borderRadius: 10,
-    backgroundColor: colors.secondary[50],
-  },
-  progressLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: colors.secondary[500],
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-  progressValue: {
-    marginTop: 4,
-    fontSize: 28,
-    fontWeight: "800",
-    color: colors.secondary[500],
-  },
-  progressHint: {
-    marginTop: 4,
-    fontSize: typography.size.sm,
-    color: colors.neutral[600],
-  },
-  center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  card: {
+  thumbDisc: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: colors.white,
-    borderRadius: 10,
-    padding: spacing[4],
-    borderWidth: 1,
-    borderColor: colors.neutral[100],
-    gap: 10,
-  },
-  cardHead: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    flexWrap: "wrap",
-  },
-  cardTitle: {
-    flex: 1,
-    fontSize: typography.size.md,
-    fontWeight: "700",
-    color: colors.neutral[800],
-  },
-  cardBody: {
-    fontSize: typography.size.sm,
-    color: colors.neutral[600],
-    lineHeight: 20,
-  },
-  cardActions: {
-    flexDirection: "row",
-    gap: 8,
-    flexWrap: "wrap",
-  },
-  watchBtn: {
-    flex: 1,
-    minWidth: 140,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: colors.secondary[500],
-    alignItems: "center",
-  },
-  watchBtnText: {
-    color: colors.white,
-    fontWeight: "700",
-    fontSize: typography.size.sm,
-  },
-  completeBtn: {
-    flex: 1,
-    minWidth: 140,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: colors.primary[500],
-    alignItems: "center",
-  },
-  completeBtnText: {
-    color: colors.white,
-    fontWeight: "700",
-    fontSize: typography.size.sm,
   },
 });

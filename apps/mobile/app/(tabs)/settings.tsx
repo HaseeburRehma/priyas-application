@@ -1,28 +1,46 @@
 /**
- * Settings tab — three sections in one scroll: My Account, Security,
- * Sessions & Devices. Each section is a Card block with its own save /
- * action buttons. Kept in one file since none of the sections is big
- * enough to warrant its own screen.
+ * Settings — Figma "18 · Einstellungen". Hidden tab route reached from
+ * the More screen, so it uses the pushed-screen NavHeader.
+ *
+ * Account card on top, then grouped rows. Rows that carry a form or a
+ * list expand inline so all logic stays on one screen:
+ *   - Konto       → Personal data (name + phone form) · Language
+ *   - Sicherheit  → Two-factor status (+ disable for field staff) ·
+ *                   Sessions & devices (revoke · sign out others)
+ *   - App         → Version (expo-constants)
+ * Sign out as a danger button at the bottom.
  */
 
-import { useEffect, useState } from "react";
-import {
-  Alert,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Alert, Platform, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
-import { Button, Card, Chip, Input } from "@/components/ui";
+import { de, enUS, ta } from "date-fns/locale";
+import Constants from "expo-constants";
+import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  Divider,
+  GroupLabel,
+  Icon,
+  IconChip,
+  InputField,
+  ListRow,
+  NavHeader,
+  RoundButton,
+  Screen,
+  Txt,
+  type IconName,
+  type Tone,
+} from "@/components/ui";
 import { useAuth } from "@/lib/auth-context";
 import {
   loadMfaState,
   loadMyDevices,
+  loadMyPhone,
   revokeDevice,
   signOutOthers,
   unenrollTotp,
@@ -30,12 +48,28 @@ import {
   type MfaState,
   type UserDevice,
 } from "@/lib/account";
-import { colors, radius, spacing, typography } from "@/lib/theme";
-import { t } from "@/lib/i18n";
+import { colors, spacing } from "@/lib/theme";
+import { i18n, saveLocale, t, type Locale } from "@/lib/i18n";
+
+type Panel = "profile" | "language" | "twoFactor" | "sessions";
+const LOCALES: Locale[] = ["de", "en", "ta"];
+
+function dfLocale() {
+  return i18n.locale === "en" ? enUS : i18n.locale === "ta" ? ta : de;
+}
+
+function roleLabelKey(role?: string | null): string | null {
+  return role === "admin" || role === "dispatcher" || role === "employee"
+    ? `mobile.ui.more.role.${role}`
+    : null;
+}
 
 export default function SettingsTab() {
-  const { profile, signOut, refreshProfile } = useAuth();
+  const router = useRouter();
+  const { profile, session, signOut, refreshProfile } = useAuth();
   const qc = useQueryClient();
+  const [open, setOpen] = useState<Panel | null>(null);
+  const toggle = (p: Panel) => setOpen((cur) => (cur === p ? null : p));
 
   // ── My Account form state ────────────────────────────────────────
   const [fullName, setFullName] = useState(profile?.fullName ?? "");
@@ -47,6 +81,17 @@ export default function SettingsTab() {
     if (profile?.fullName) setFullName(profile.fullName);
   }, [profile?.fullName]);
 
+  // Prefill the stored phone so saving the name doesn't clear it.
+  const phoneTouched = useRef(false);
+  const { data: storedPhone } = useQuery({
+    queryKey: ["my-phone", profile?.id],
+    queryFn: loadMyPhone,
+    enabled: !!profile?.id,
+  });
+  useEffect(() => {
+    if (storedPhone && !phoneTouched.current) setPhone(storedPhone);
+  }, [storedPhone]);
+
   async function saveProfile() {
     setProfilePending(true);
     const r = await updateMyProfile({ fullName, phone });
@@ -57,6 +102,14 @@ export default function SettingsTab() {
     }
     await refreshProfile();
     Alert.alert(t("settings.saved"));
+  }
+
+  // ── Language ─────────────────────────────────────────────────────
+  const [locale, setLocale] = useState<Locale>(i18n.locale as Locale);
+  async function onPickLocale(l: Locale) {
+    await saveLocale(l);
+    setLocale(l);
+    setOpen(null);
   }
 
   // ── MFA / Security ───────────────────────────────────────────────
@@ -132,10 +185,35 @@ export default function SettingsTab() {
     );
   }
 
+  // ── Presentation helpers ─────────────────────────────────────────
+  const roleKey = roleLabelKey(profile?.role);
+  const email = session?.user?.email ?? null;
+  const version = Constants.expoConfig?.version ?? null;
+  const build =
+    Platform.OS === "ios"
+      ? Constants.platform?.ios?.buildNumber
+      : Constants.platform?.android?.versionCode;
+  const versionText = version
+    ? build != null && build !== ""
+      ? t("mobile.ui.settings.build", { version, build: String(build) })
+      : version
+    : "—";
+  const devicesSub = devicesLoading
+    ? t("settings.sessions.loading")
+    : t("mobile.ui.settings.devicesCount", { n: (devices ?? []).length });
+  const expandIcon = (p: Panel) => (
+    <Icon name={open === p ? "chevron-down" : "chevron-right"} size={18} color={colors.neutral[400]} />
+  );
+
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: colors.tertiary[200] }}
-      edges={["top"]}
+    <Screen
+      scroll={false}
+      header={
+        <NavHeader
+          title={t("settings.title")}
+          onBack={() => router.navigate("/more" as never)}
+        />
+      }
     >
       <ScrollView
         contentContainerStyle={styles.container}
@@ -145,325 +223,282 @@ export default function SettingsTab() {
           <RefreshControl
             refreshing={devicesRefetching}
             onRefresh={() => refetchDevices()}
+            tintColor={colors.primary[500]}
           />
         }
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>{t("settings.title")}</Text>
-          <Text style={styles.sub}>{t("settings.subtitle")}</Text>
-        </View>
-
         {/* Identity card — role + email at a glance. */}
-        <Card style={styles.card}>
-          <View style={styles.identityRow}>
-            <View
-              style={[
-                styles.avatarLarge,
-                {
-                  backgroundColor:
-                    profile?.role === "admin"
-                      ? colors.primary[500]
-                      : profile?.role === "dispatcher"
-                        ? colors.secondary[500]
-                        : colors.success[500],
-                },
-              ]}
-            >
-              <Text style={styles.avatarLargeText}>
-                {(profile?.fullName?.[0] ?? "?").toUpperCase()}
-              </Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.name}>{profile?.fullName ?? "—"}</Text>
-              <Text style={styles.email}>{profile?.orgId ? "" : ""}</Text>
-              {profile?.role && (
-                <Chip
-                  label={
-                    profile.role === "admin"
-                      ? "MANAGEMENT"
-                      : profile.role === "dispatcher"
-                        ? "PROJECT MANAGER"
-                        : "FIELD STAFF"
-                  }
-                  tone={
-                    profile.role === "admin"
-                      ? "primary"
-                      : profile.role === "dispatcher"
-                        ? "secondary"
-                        : "success"
-                  }
-                />
-              )}
-            </View>
+        <Card style={styles.account}>
+          <Avatar name={profile?.fullName} size={56} />
+          <View style={styles.accountText}>
+            <Txt v="headline" numberOfLines={1}>
+              {profile?.fullName ?? "—"}
+            </Txt>
+            {email ? (
+              <Txt v="subhead" color={colors.neutral[500]} numberOfLines={1}>
+                {email}
+              </Txt>
+            ) : null}
+            {roleKey ? (
+              <Badge label={t(roleKey)} tone="info" dot={false} style={styles.roleBadge} />
+            ) : null}
           </View>
-        </Card>
-
-        {/* ── My Account ── */}
-        <Card style={styles.card}>
-          <Text style={styles.sectionH}>{t("settings.myAccount.title")}</Text>
-          <Text style={styles.sectionSub}>
-            {t("settings.myAccount.subtitle")}
-          </Text>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>{t("settings.myAccount.fullName")}</Text>
-            <Input value={fullName} onChangeText={setFullName} />
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>{t("settings.myAccount.phone")}</Text>
-            <Input
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="+49 …"
-              keyboardType="phone-pad"
-              autoCorrect={false}
-            />
-          </View>
-
-          <Button
-            label={t("settings.save")}
-            onPress={saveProfile}
-            loading={profilePending}
+          <RoundButton
+            icon="edit"
+            variant="subtle"
+            onPress={() => toggle("profile")}
+            accessibilityLabel={t("common.edit")}
           />
         </Card>
 
-        {/* ── Security ── */}
-        <Card style={styles.card}>
-          <Text style={styles.sectionH}>{t("settings.security.title")}</Text>
-          <Text style={styles.sectionSub}>{t("settings.security.subtitle")}</Text>
+        {/* ── Konto ── */}
+        <Group label={t("mobile.more.sectionAccount")}>
+          <ListRow
+            title={t("mobile.ui.settings.personalData")}
+            subtitle={t("mobile.ui.settings.personalDataHint")}
+            leading={<RowIcon icon="user" tone="brand" />}
+            trailing={expandIcon("profile")}
+            chevron={false}
+            onPress={() => toggle("profile")}
+          />
+          {open === "profile" ? (
+            <View style={styles.panel}>
+              <InputField
+                label={t("settings.myAccount.fullName")}
+                value={fullName}
+                onChangeText={setFullName}
+              />
+              <InputField
+                label={t("settings.myAccount.phone")}
+                value={phone}
+                onChangeText={(v) => {
+                  phoneTouched.current = true;
+                  setPhone(v);
+                }}
+                placeholder="+49 …"
+                keyboardType="phone-pad"
+                autoCorrect={false}
+              />
+              <Button
+                label={t("settings.save")}
+                onPress={saveProfile}
+                loading={profilePending}
+                size="md"
+              />
+            </View>
+          ) : null}
+          <Divider />
+          <ListRow
+            title={t("settings.account.language")}
+            leading={<RowIcon icon="globe" tone="info" />}
+            trailing={
+              <View style={styles.valueRow}>
+                <Txt v="subhead" color={colors.neutral[500]}>
+                  {t(`mobile.ui.settings.lang.${locale}`)}
+                </Txt>
+                {expandIcon("language")}
+              </View>
+            }
+            chevron={false}
+            onPress={() => toggle("language")}
+          />
+          {open === "language"
+            ? LOCALES.map((l) => (
+                <View key={l}>
+                  <Divider inset={64} />
+                  <ListRow
+                    title={t(`mobile.ui.settings.lang.${l}`)}
+                    leading={<View style={styles.optionIndent} />}
+                    trailing={
+                      l === locale ? (
+                        <Icon name="check" size={18} color={colors.primary[600]} strokeWidth={2.5} />
+                      ) : null
+                    }
+                    chevron={false}
+                    onPress={() => void onPickLocale(l)}
+                  />
+                </View>
+              ))
+            : null}
+        </Group>
 
-          <View style={styles.rowSpread}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.rowTitle}>
-                {t("settings.security.twoFactor")}
-              </Text>
-              <Text style={styles.rowBody}>
+        {/* ── Sicherheit ── */}
+        <Group label={t("settings.security.title")}>
+          <ListRow
+            title={t("settings.security.twoFactor")}
+            subtitle={
+              mfa?.hasVerifiedTotp
+                ? t("mobile.ui.settings.authenticatorApp")
+                : t("settings.security.twoFactorOff")
+            }
+            leading={<RowIcon icon="shield" tone="success" />}
+            badge={
+              mfa ? (
+                <Badge
+                  label={
+                    mfa.hasVerifiedTotp
+                      ? t("settings.security.enabled")
+                      : t("settings.security.disabled")
+                  }
+                  tone={mfa.hasVerifiedTotp ? "success" : "neutral"}
+                />
+              ) : null
+            }
+            trailing={expandIcon("twoFactor")}
+            chevron={false}
+            onPress={() => toggle("twoFactor")}
+          />
+          {open === "twoFactor" ? (
+            <View style={styles.panel}>
+              <Txt v="subhead" color={colors.neutral[600]}>
                 {mfa?.hasVerifiedTotp
                   ? t("settings.security.twoFactorOn")
                   : t("settings.security.twoFactorOff")}
-              </Text>
+              </Txt>
+              {mfa?.hasVerifiedTotp && profile?.role === "employee" && (
+                <Button
+                  label={t("settings.security.disable")}
+                  variant="outline"
+                  size="md"
+                  onPress={onDisable2FA}
+                  loading={mfaPending}
+                />
+              )}
+              {mfa?.hasVerifiedTotp && profile?.role !== "employee" && (
+                <Txt v="caption" color={colors.neutral[500]}>
+                  {t("settings.security.mandatoryNote")}
+                </Txt>
+              )}
+              {!mfa?.hasVerifiedTotp && profile?.role !== "employee" && (
+                <Txt v="caption" color={colors.neutral[500]}>
+                  {t("settings.security.enrolOnWeb")}
+                </Txt>
+              )}
             </View>
-            <Chip
-              label={mfa?.hasVerifiedTotp ? "ENABLED" : "DISABLED"}
-              tone={mfa?.hasVerifiedTotp ? "success" : "neutral"}
-            />
-          </View>
-          {mfa?.hasVerifiedTotp && profile?.role === "employee" && (
-            <Button
-              label={t("settings.security.disable")}
-              variant="ghost"
-              onPress={onDisable2FA}
-              loading={mfaPending}
-            />
-          )}
-          {mfa?.hasVerifiedTotp && profile?.role !== "employee" && (
-            <Text style={styles.mfaNote}>
-              {t("settings.security.mandatoryNote")}
-            </Text>
-          )}
-          {!mfa?.hasVerifiedTotp && profile?.role !== "employee" && (
-            <Text style={styles.mfaNote}>
-              {t("settings.security.enrolOnWeb")}
-            </Text>
-          )}
-        </Card>
-
-        {/* ── Sessions ── */}
-        <Card style={styles.card}>
-          <View style={styles.rowSpread}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.sectionH}>
-                {t("settings.sessions.title")}
-              </Text>
-              <Text style={styles.sectionSub}>
-                {t("settings.sessions.subtitle")}
-              </Text>
+          ) : null}
+          <Divider />
+          <ListRow
+            title={t("settings.sessions.title")}
+            subtitle={devicesSub}
+            leading={<RowIcon icon="settings" tone="neutral" />}
+            trailing={expandIcon("sessions")}
+            chevron={false}
+            onPress={() => toggle("sessions")}
+          />
+          {open === "sessions" ? (
+            <View style={styles.panel}>
+              {devicesLoading && (
+                <Txt v="subhead" color={colors.neutral[500]} style={styles.center}>
+                  {t("settings.sessions.loading")}
+                </Txt>
+              )}
+              {!devicesLoading && (devices ?? []).length === 0 && (
+                <Txt v="subhead" color={colors.neutral[500]} style={styles.center}>
+                  {t("settings.sessions.none")}
+                </Txt>
+              )}
+              {(devices ?? []).map((d, i) => (
+                <View key={d.id}>
+                  {i > 0 ? <Divider /> : null}
+                  <View style={styles.deviceRow}>
+                    <View style={styles.deviceText}>
+                      <Txt v="bodyStrong" numberOfLines={1}>
+                        {d.device_label}
+                      </Txt>
+                      <Txt v="mono" color={colors.neutral[500]} style={styles.deviceMeta} numberOfLines={1}>
+                        {d.geo_label ?? t("settings.sessions.geoUnknown")} ·{" "}
+                        {format(parseISO(d.last_seen_at), "d LLL · HH:mm", { locale: dfLocale() })}
+                      </Txt>
+                    </View>
+                    <Button
+                      label={t("settings.sessions.revoke")}
+                      variant="danger"
+                      size="md"
+                      onPress={() => onRevokeDevice(d.id)}
+                    />
+                  </View>
+                </View>
+              ))}
+              {devices && devices.length > 1 && (
+                <Button
+                  label={t("settings.sessions.signOutOthers")}
+                  variant="outline"
+                  size="md"
+                  icon="logout"
+                  onPress={onSignOutOthers}
+                />
+              )}
             </View>
-            {devices && devices.length > 1 && (
-              <Pressable onPress={onSignOutOthers} style={styles.signOutOthersBtn}>
-                <Text style={styles.signOutOthersText}>
-                  {t("settings.sessions.signOutOthers")}
-                </Text>
-              </Pressable>
-            )}
-          </View>
+          ) : null}
+        </Group>
 
-          {devicesLoading && (
-            <Text style={styles.emptyLine}>{t("settings.sessions.loading")}</Text>
-          )}
-          {!devicesLoading && (devices ?? []).length === 0 && (
-            <Text style={styles.emptyLine}>{t("settings.sessions.none")}</Text>
-          )}
-          {(devices ?? []).map((d) => (
-            <View key={d.id} style={styles.deviceRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.deviceLabel}>{d.device_label}</Text>
-                <Text style={styles.deviceMeta}>
-                  {d.geo_label ?? t("schedule.gpsPermTitle")} ·{" "}
-                  {format(parseISO(d.last_seen_at), "d LLL · HH:mm")}
-                </Text>
-              </View>
-              <Pressable
-                onPress={() => onRevokeDevice(d.id)}
-                style={styles.revokeBtn}
-              >
-                <Text style={styles.revokeBtnText}>
-                  {t("settings.sessions.revoke")}
-                </Text>
-              </Pressable>
-            </View>
-          ))}
-        </Card>
+        {/* ── App ── */}
+        <Group label={t("mobile.ui.settings.appSection")}>
+          <ListRow
+            title={t("mobile.ui.settings.version")}
+            leading={<RowIcon icon="file-text" tone="neutral" />}
+            trailing={
+              <Txt v="mono" color={colors.neutral[500]}>
+                {versionText}
+              </Txt>
+            }
+            chevron={false}
+          />
+        </Group>
 
-        <View style={{ height: spacing[3] }} />
         <Button
           label={t("nav.logout") ?? "Sign out"}
           onPress={() => signOut()}
           variant="danger"
+          icon="logout"
         />
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
+}
+
+function Group({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <View style={styles.group}>
+      <GroupLabel>{label}</GroupLabel>
+      <Card padded={false} style={styles.groupCard}>
+        {children}
+      </Card>
+    </View>
+  );
+}
+
+function RowIcon({ icon, tone }: { icon: IconName; tone: Tone }) {
+  return <IconChip icon={icon} tone={tone} size={36} iconSize={18} />;
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: spacing[4],
-    gap: spacing[3],
+    paddingHorizontal: spacing[4],
+    paddingTop: spacing[2],
     paddingBottom: spacing[8],
+    gap: spacing[4],
   },
-  header: { gap: spacing[1] },
-  title: {
-    fontSize: typography.size["2xl"],
-    fontWeight: "800",
-    color: colors.secondary[500],
-    letterSpacing: -0.5,
-  },
-  sub: {
-    fontSize: typography.size.md,
-    color: colors.neutral[500],
-  },
-  card: { gap: spacing[3] },
-  identityRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  account: { flexDirection: "row", alignItems: "center", gap: spacing[3] },
+  accountText: { flex: 1, minWidth: 0, gap: 2 },
+  roleBadge: { marginTop: 4 },
+  group: { gap: spacing[2] },
+  groupCard: { overflow: "hidden" },
+  panel: {
     gap: spacing[3],
+    paddingHorizontal: 14,
+    paddingTop: 4,
+    paddingBottom: 14,
   },
-  avatarLarge: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarLargeText: {
-    color: colors.white,
-    fontWeight: "800",
-    fontSize: 24,
-  },
-  name: {
-    fontSize: typography.size.lg,
-    fontWeight: "700",
-    color: colors.neutral[800],
-  },
-  email: {
-    fontSize: typography.size.sm,
-    color: colors.neutral[500],
-    marginTop: 2,
-    marginBottom: 6,
-  },
-  sectionH: {
-    fontSize: typography.size.md,
-    fontWeight: "700",
-    color: colors.secondary[500],
-  },
-  sectionSub: {
-    fontSize: typography.size.sm,
-    color: colors.neutral[500],
-    marginTop: 2,
-  },
-  fieldGroup: {
-    marginTop: spacing[2],
-  },
-  label: {
-    fontSize: typography.size.sm,
-    fontWeight: "700",
-    color: colors.neutral[700],
-    marginBottom: 6,
-  },
-  rowSpread: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[3],
-    marginTop: spacing[1],
-  },
-  rowTitle: {
-    fontSize: typography.size.md,
-    fontWeight: "700",
-    color: colors.neutral[800],
-  },
-  rowBody: {
-    fontSize: typography.size.sm,
-    color: colors.neutral[500],
-    marginTop: 2,
-  },
-  mfaNote: {
-    fontSize: typography.size.sm,
-    color: colors.neutral[500],
-    fontStyle: "italic",
-    marginTop: spacing[2],
-    lineHeight: 18,
-  },
-  signOutOthersBtn: {
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: colors.error[100],
-    backgroundColor: colors.error[50],
-  },
-  signOutOthersText: {
-    fontSize: typography.size.sm,
-    fontWeight: "700",
-    color: colors.error[700],
-  },
-  emptyLine: {
-    fontSize: typography.size.sm,
-    color: colors.neutral[500],
-    padding: spacing[3],
-    textAlign: "center",
-  },
+  valueRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  optionIndent: { width: 36 },
+  center: { textAlign: "center", paddingVertical: spacing[2] },
   deviceRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing[3],
     paddingVertical: spacing[3],
-    borderTopWidth: 1,
-    borderTopColor: colors.neutral[100],
   },
-  deviceLabel: {
-    fontSize: typography.size.md,
-    fontWeight: "700",
-    color: colors.neutral[800],
-  },
-  deviceMeta: {
-    fontSize: typography.size.xs,
-    color: colors.neutral[500],
-    marginTop: 2,
-    fontFamily: "Menlo",
-  },
-  revokeBtn: {
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.error[100],
-    backgroundColor: colors.white,
-  },
-  revokeBtnText: {
-    fontSize: typography.size.sm,
-    fontWeight: "700",
-    color: colors.error[700],
-  },
+  deviceText: { flex: 1, minWidth: 0, gap: 2 },
+  deviceMeta: { fontSize: 12 },
 });

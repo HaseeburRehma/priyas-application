@@ -1,41 +1,76 @@
 /**
- * Clients tab — admin + dispatcher only.
+ * Clients tab — admin + dispatcher only. Figma "Kunden" (frame 06).
  *
- * Search + type filter over the org roster. Tap a row to drill into
- * the client detail screen (address, insurance, properties list).
- * Field-staff never reach this tab: it's hidden at the nav layer AND
- * RLS would reject the underlying query if they somehow did.
+ * Search + type filter (chips with counts) over the org roster, a small
+ * stat strip, a client-side sort, and the list in one white card. Tap a
+ * row to drill into the client detail screen. Field-staff never reach
+ * this tab: it's hidden at the nav layer AND RLS would reject the
+ * underlying query if they somehow did.
  */
 
 import React, { useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { FlatList, Pressable, RefreshControl, StyleSheet, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import {
+  loadClientTypeCounts,
   loadMobileClients,
+  loadMobileClientsSummary,
   type ClientCustomerType,
   type ClientRow,
-  type ClientPayerType,
+  type ClientStatus,
 } from "@/lib/clients";
-import { Chip, EmptyState, Input } from "@/components/ui";
-import { colors, spacing, typography } from "@/lib/theme";
+import {
+  Avatar,
+  Badge,
+  CenterSpinner,
+  ChipRow,
+  Divider,
+  EmptyState,
+  FilterChip,
+  Icon,
+  LargeHeader,
+  ListRow,
+  Screen,
+  SearchField,
+  Txt,
+  toneFor,
+  type Tone,
+} from "@/components/ui";
+import { colors, radius, shadow, spacing } from "@/lib/theme";
 import { t } from "@/lib/i18n";
 
 type TypeFilter = ClientCustomerType | "all";
+type SortKey = "nameAsc" | "nameDesc" | "newest" | "properties";
+
+const TYPE_ORDER: TypeFilter[] = ["all", "commercial", "residential", "alltagshilfe"];
+const SORTS: SortKey[] = ["nameAsc", "nameDesc", "newest", "properties"];
+
+const STATUS_TONE: Record<ClientStatus, Tone> = {
+  active: "success",
+  review: "warning",
+  onboarding: "info",
+  ended: "neutral",
+};
+
+function sortRows(rows: ClientRow[], sort: SortKey): ClientRow[] {
+  const out = [...rows];
+  const byName = (a: ClientRow, b: ClientRow) =>
+    a.display_name.localeCompare(b.display_name, "de", { sensitivity: "base" });
+  if (sort === "nameAsc") out.sort(byName);
+  else if (sort === "nameDesc") out.sort((a, b) => byName(b, a));
+  else if (sort === "newest")
+    out.sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
+  else out.sort((a, b) => b.property_count - a.property_count || byName(a, b));
+  return out;
+}
 
 export default function ClientsTab() {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [type, setType] = useState<TypeFilter>("all");
+  const [sort, setSort] = useState<SortKey>("nameAsc");
+  const [sortOpen, setSortOpen] = useState(false);
 
   const clientsQuery = useQuery({
     queryKey: ["clients", { q: q.trim(), type }],
@@ -45,112 +80,237 @@ export default function ClientsTab() {
     staleTime: 60_000,
   });
 
+  const countsQuery = useQuery({
+    queryKey: ["client-type-counts", { q: q.trim() }],
+    queryFn: () => loadClientTypeCounts({ q }),
+    staleTime: 60_000,
+  });
+
+  const summaryQuery = useQuery({
+    queryKey: ["clients-summary"],
+    queryFn: loadMobileClientsSummary,
+    staleTime: 60_000,
+  });
+
+  const rows = useMemo(
+    () => sortRows(clientsQuery.data ?? [], sort),
+    [clientsQuery.data, sort],
+  );
+
+  const summary = summaryQuery.data;
+  const counts = countsQuery.data;
+
+  // Fallback header line (the original roster split) if the contract
+  // summary can't be loaded.
   const grouped = useMemo(() => {
-    const rows = clientsQuery.data ?? [];
+    const all = clientsQuery.data ?? [];
     return {
-      total: rows.length,
-      alltags: rows.filter((r) => r.customer_type === "alltagshilfe").length,
-      priya: rows.filter((r) => r.customer_type !== "alltagshilfe").length,
+      total: all.length,
+      alltags: all.filter((r) => r.customer_type === "alltagshilfe").length,
+      priya: all.filter((r) => r.customer_type !== "alltagshilfe").length,
     };
   }, [clientsQuery.data]);
 
+  const refresh = () => {
+    void clientsQuery.refetch();
+    void countsQuery.refetch();
+    void summaryQuery.refetch();
+  };
+
+  const header = (
+    <View style={{ gap: spacing[4], paddingBottom: spacing[3] }}>
+      {summary ? (
+        <View style={styles.stats}>
+          <StatCard
+            label={t("mobile.ui.clients.stats.contracts")}
+            value={String(summary.activeContracts)}
+            sub={
+              summary.total > 0
+                ? `${((summary.activeContracts / summary.total) * 100).toLocaleString("de-DE", {
+                    maximumFractionDigits: 1,
+                  })} %`
+                : "—"
+            }
+            subColor={colors.neutral[500]}
+          />
+          <StatCard
+            label={t("mobile.ui.clients.stats.new30")}
+            value={String(summary.newLast30Days)}
+            sub={t("mobile.ui.clients.stats.new30Sub")}
+            subColor={colors.success[500]}
+          />
+          <StatCard
+            label={t("mobile.ui.clients.stats.ending")}
+            value={String(summary.endingSoon)}
+            sub={t("mobile.ui.clients.stats.endingSub")}
+            subColor={colors.warning[700]}
+          />
+        </View>
+      ) : null}
+
+      <View style={{ gap: spacing[2] }}>
+        <View style={styles.sortRow}>
+          <Txt v="subheadStrong" color={colors.neutral[700]}>
+            {t("mobile.ui.clients.count", { n: rows.length })}
+          </Txt>
+          <Pressable
+            onPress={() => setSortOpen((o) => !o)}
+            hitSlop={8}
+            accessibilityRole="button"
+            style={styles.sortBtn}
+          >
+            <Txt v="subheadStrong" color={colors.primary[600]}>
+              {t(`mobile.ui.clients.sort.${sort}`)}
+            </Txt>
+            <Icon name="chevron-down" size={16} color={colors.primary[600]} />
+          </Pressable>
+        </View>
+        {sortOpen ? (
+          <View style={styles.sortMenu}>
+            {SORTS.map((s, i) => (
+              <View key={s}>
+                {i > 0 ? <Divider /> : null}
+                <Pressable
+                  onPress={() => {
+                    setSort(s);
+                    setSortOpen(false);
+                  }}
+                  style={({ pressed }) => [styles.sortOption, pressed && { backgroundColor: colors.neutral[50] }]}
+                >
+                  <Txt v={s === sort ? "subheadStrong" : "subhead"} color={colors.neutral[800]}>
+                    {t(`mobile.ui.clients.sort.${s}`)}
+                  </Txt>
+                  {s === sort ? <Icon name="check" size={16} color={colors.primary[600]} /> : null}
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </View>
+    </View>
+  );
+
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: colors.tertiary[200] }}
-      edges={["top"]}
-    >
-      <View style={styles.header}>
-        <Text style={styles.title}>{t("nav.clients")}</Text>
-        <Text style={styles.sub}>
-          {t("mobile.clients.headerSummary", {
-            total: grouped.total,
-            priya: grouped.priya,
-            alltags: grouped.alltags,
-          })}
-        </Text>
-      </View>
-
-      <View style={styles.searchWrap}>
-        <Input
-          value={q}
-          onChangeText={setQ}
-          placeholder={t("mobile.clients.searchPlaceholder")}
-          autoCapitalize="none"
-          returnKeyType="search"
+    <Screen
+      scroll={false}
+      header={
+        <LargeHeader
+          title={t("nav.clients")}
+          subtitle={
+            summary
+              ? t("mobile.ui.clients.headerSummary", {
+                  total: summary.total,
+                  active: summary.activeContracts,
+                })
+              : summaryQuery.isError && clientsQuery.data
+                ? t("mobile.clients.headerSummary", grouped)
+                : undefined
+          }
         />
-      </View>
+      }
+      contentStyle={styles.content}
+    >
+      <SearchField
+        value={q}
+        onChangeText={setQ}
+        placeholder={t("mobile.clients.searchPlaceholder")}
+        autoCapitalize="none"
+        returnKeyType="search"
+      />
 
-      <View style={styles.filterRow}>
-        {(["all", "residential", "commercial", "alltagshilfe"] as const).map(
-          (v) => (
-            <Pressable
-              key={v}
-              onPress={() => setType(v)}
-              style={[
-                styles.filterPill,
-                type === v && styles.filterPillActive,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.filterPillText,
-                  type === v && styles.filterPillTextActive,
-                ]}
-              >
-                {t(`mobile.clients.filter.${v}` as never)}
-              </Text>
-            </Pressable>
-          ),
-        )}
-      </View>
+      <ChipRow>
+        {TYPE_ORDER.map((v) => (
+          <FilterChip
+            key={v}
+            label={t(`mobile.clients.filter.${v}`)}
+            count={counts ? counts[v] : undefined}
+            selected={type === v}
+            onPress={() => setType(v)}
+          />
+        ))}
+      </ChipRow>
 
       {clientsQuery.isLoading ? (
-        <View style={styles.centerLoad}>
-          <ActivityIndicator color={colors.primary[500]} />
-        </View>
+        <CenterSpinner />
       ) : clientsQuery.error ? (
         <EmptyState
+          icon="alert"
           title={t("mobile.clients.errorTitle")}
           subtitle={t("mobile.clients.errorBody")}
         />
       ) : (
         <FlatList
-          data={clientsQuery.data ?? []}
+          data={rows}
           keyExtractor={(row) => row.id}
           keyboardShouldPersistTaps="handled"
-          renderItem={({ item }) => (
-            <ClientRowItem
-              row={item}
-              onPress={() =>
-                router.push({
-                  pathname: "/clients/[id]",
-                  params: { id: item.id },
-                })
-              }
-            />
+          style={styles.list}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={header}
+          renderItem={({ item, index }) => (
+            <View
+              style={[
+                styles.segment,
+                index === 0 && styles.segmentFirst,
+                index === rows.length - 1 && styles.segmentLast,
+              ]}
+            >
+              {index > 0 ? <Divider /> : null}
+              <ClientRowItem
+                row={item}
+                onPress={() =>
+                  router.push({
+                    pathname: "/clients/[id]",
+                    params: { id: item.id },
+                  })
+                }
+              />
+            </View>
           )}
-          ItemSeparatorComponent={ListSeparator}
-          contentContainerStyle={{ paddingBottom: spacing[6] }}
           refreshControl={
             <RefreshControl
               refreshing={clientsQuery.isFetching}
-              onRefresh={() => clientsQuery.refetch()}
+              onRefresh={refresh}
               tintColor={colors.primary[500]}
             />
           }
           ListEmptyComponent={
             <EmptyState
+              icon="users"
               title={t("mobile.clients.emptyTitle")}
               subtitle={t("mobile.clients.emptyBody")}
             />
           }
         />
       )}
-    </SafeAreaView>
+    </Screen>
   );
 }
 
-const ListSeparator = () => <View style={styles.sep} />;
+function StatCard({
+  label,
+  value,
+  sub,
+  subColor,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  subColor: string;
+}) {
+  return (
+    <View style={styles.statCard}>
+      <Txt v="overline" color={colors.neutral[500]} numberOfLines={1}>
+        {label}
+      </Txt>
+      <Txt v="title" color={colors.secondary[500]} numberOfLines={1}>
+        {value}
+      </Txt>
+      <Txt v="caption" color={subColor} numberOfLines={1}>
+        {sub}
+      </Txt>
+    </View>
+  );
+}
 
 const ClientRowItem = React.memo(function ClientRowItem({
   row,
@@ -159,160 +319,96 @@ const ClientRowItem = React.memo(function ClientRowItem({
   row: ClientRow;
   onPress: () => void;
 }) {
-  const initials = computeInitials(row.display_name);
   const isAlltags = row.customer_type === "alltagshilfe";
+  const parts: string[] = [t(`mobile.clients.filter.${row.customer_type}`)];
+  if (isAlltags && row.care_level) {
+    parts.push(t("clients.detail.careLevelN", { level: row.care_level }));
+  } else if (isAlltags && row.payer_type) {
+    parts.push(t(`mobile.clients.payer.${row.payer_type}`));
+  } else {
+    parts.push(t("mobile.clients.rowProperties", { count: row.property_count }));
+  }
+  if (row.city) parts.push(row.city);
+
+  const badge = row.is_new
+    ? { label: t("mobile.ui.clients.status.new"), tone: "brand" as Tone }
+    : row.status
+      ? { label: t(`mobile.ui.clients.status.${row.status}`), tone: STATUS_TONE[row.status] }
+      : null;
+
   return (
-    <Pressable
+    <ListRow
+      title={row.display_name}
+      subtitle={parts.join(" · ")}
       onPress={onPress}
-      android_ripple={{ color: colors.neutral[100] }}
-      style={({ pressed }) => [
-        styles.row,
-        pressed && { backgroundColor: colors.neutral[50] },
-      ]}
-    >
-      <View
-        style={[
-          styles.avatar,
-          {
-            backgroundColor: isAlltags
-              ? colors.error[500]
-              : colors.primary[500],
-          },
-        ]}
-      >
-        <Text style={styles.avatarText}>{initials}</Text>
-      </View>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <View style={styles.rowTop}>
-          <Text style={styles.rowName} numberOfLines={1}>
-            {row.display_name}
-          </Text>
-          <Chip
-            label={
-              isAlltags
-                ? t("mobile.clients.tagAlltagshilfe")
-                : t("mobile.clients.tagPriya")
-            }
-            tone={isAlltags ? "error" : "primary"}
-          />
-        </View>
-        <Text style={styles.rowSub} numberOfLines={1}>
-          {[row.city, row.email, row.phone].filter(Boolean).join(" · ") || "—"}
-        </Text>
-        <View style={styles.rowMeta}>
-          <PayerBadge payer={row.payer_type} />
-          <Text style={styles.metaText}>
-            {t("mobile.clients.rowProperties", { n: row.property_count })}
-          </Text>
-        </View>
-      </View>
-    </Pressable>
+      leading={
+        <Avatar
+          name={row.display_name}
+          size={40}
+          tone={isAlltags ? "red" : toneFor(row.display_name)}
+        />
+      }
+      badge={badge ? <Badge label={badge.label} tone={badge.tone} dot={false} /> : undefined}
+    />
   );
 });
 
-function PayerBadge({ payer }: { payer: ClientPayerType | null }) {
-  if (!payer) return null;
-  const map: Record<
-    ClientPayerType,
-    { tone: "primary" | "secondary" | "warning" | "neutral"; key: string }
-  > = {
-    care_fund: { tone: "primary", key: "mobile.clients.payer.care_fund" },
-    insurance: { tone: "secondary", key: "mobile.clients.payer.insurance" },
-    private_pay: { tone: "warning", key: "mobile.clients.payer.private_pay" },
-    commercial: { tone: "neutral", key: "mobile.clients.payer.commercial" },
-  };
-  const cfg = map[payer];
-  return <Chip label={t(cfg.key as never)} tone={cfg.tone} />;
-}
-
-function computeInitials(name: string): string {
-  const parts = name.split(/\s+/).filter((p) => /^[\p{L}]/u.test(p));
-  if (parts.length === 0) return "?";
-  const first = parts[0]![0] ?? "";
-  const last = parts.length > 1 ? (parts[parts.length - 1]![0] ?? "") : "";
-  return (first + last).toUpperCase() || "?";
-}
-
 const styles = StyleSheet.create({
-  header: { paddingHorizontal: spacing[4], paddingTop: spacing[3] },
-  title: {
-    fontSize: typography.size["2xl"],
-    fontWeight: "800",
-    color: colors.secondary[500],
-    letterSpacing: -0.5,
-  },
-  sub: {
-    fontSize: typography.size.sm,
-    color: colors.neutral[500],
-    marginTop: 2,
-  },
-  searchWrap: { paddingHorizontal: spacing[4], paddingTop: spacing[3] },
-  filterRow: {
-    flexDirection: "row",
-    gap: 8,
+  content: { paddingHorizontal: spacing[4], gap: spacing[3], paddingTop: spacing[1] },
+  list: { flex: 1, marginHorizontal: -spacing[4] },
+  listContent: {
     paddingHorizontal: spacing[4],
-    paddingTop: spacing[3],
-    paddingBottom: spacing[3],
-    flexWrap: "wrap",
+    paddingTop: spacing[1],
+    paddingBottom: spacing[6],
   },
-  filterPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.neutral[200],
-  },
-  filterPillActive: {
-    backgroundColor: colors.secondary[500],
-    borderColor: colors.secondary[500],
-  },
-  filterPillText: {
-    color: colors.neutral[700],
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  filterPillTextActive: { color: colors.white },
-  centerLoad: { flex: 1, alignItems: "center", justifyContent: "center" },
-  row: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3],
-    backgroundColor: colors.white,
-  },
-  rowTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    justifyContent: "space-between",
-  },
-  rowName: {
+  stats: { flexDirection: "row", gap: spacing[2] },
+  statCard: {
     flex: 1,
-    fontSize: typography.size.md,
-    fontWeight: "700",
-    color: colors.neutral[800],
+    minWidth: 0,
+    gap: 2,
+    padding: spacing[3],
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.neutral[100],
+    backgroundColor: colors.white,
+    ...shadow.sm,
   },
-  rowSub: {
-    marginTop: 2,
-    fontSize: typography.size.sm,
-    color: colors.neutral[500],
+  sortRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  sortBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
+  sortMenu: {
+    alignSelf: "flex-end",
+    minWidth: 200,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.neutral[100],
+    backgroundColor: colors.white,
+    overflow: "hidden",
+    ...shadow.md,
   },
-  rowMeta: {
-    marginTop: 6,
+  sortOption: {
     flexDirection: "row",
-    gap: 8,
     alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing[3],
+    paddingVertical: 12,
+    paddingHorizontal: 14,
   },
-  metaText: { fontSize: 11, color: colors.neutral[500] },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
+  segment: {
+    backgroundColor: colors.white,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: colors.neutral[100],
   },
-  avatarText: { color: colors.white, fontWeight: "800", fontSize: 12 },
-  sep: { height: 1, backgroundColor: colors.neutral[100] },
+  segmentFirst: {
+    borderTopWidth: 1,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    overflow: "hidden",
+  },
+  segmentLast: {
+    borderBottomWidth: 1,
+    borderBottomLeftRadius: radius.xl,
+    borderBottomRightRadius: radius.xl,
+    overflow: "hidden",
+  },
 });

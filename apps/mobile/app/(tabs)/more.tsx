@@ -1,53 +1,116 @@
 /**
- * "More" tab — acts as the app's sidebar / secondary navigation.
+ * "More" tab — Figma "10 · Mehr". Acts as the app's sidebar /
+ * secondary navigation.
  *
  * The bottom tab bar only carries four primary destinations
  * (Home · Schedule · Chat · More); everything else lives here in
- * grouped sections so each row has a comfortable tap target and
- * users scan by category rather than a flat wall of icons.
+ * grouped cards so each row has a comfortable tap target and users
+ * scan by category rather than a flat wall of icons.
  *
  * Sections:
- *   - Workspace    → Clients · Team dashboard · Employees · Properties
- *   - Reports & Billing → Invoices · Alltagshilfe monthly report
- *   - Field Work   → Training · Damage reports · Vacation
- *   - You          → Alerts · Settings · Sign out
+ *   - Workspace         → Clients · Properties · Employees · Team dashboard · Alerts
+ *   - Field Work        → Vacation · Damage reports · Supplies · Training
+ *   - Reports & Billing → Invoices · Alltagshilfe monthly report · Weekly report
+ *   - Account           → Settings · Sign out
  *
- * Each row is gated by role permissions — Field Staff see only
- * Field Work + You; Admin/Dispatch see everything. Empty sections
+ * Each row is gated by role permissions — Field Staff see only the
+ * rows they may open; Admin/Dispatch see everything. Empty sections
  * are hidden entirely so the layout never shows a lonely header.
+ * Counters (unread alerts, overdue invoices, open mandatory training)
+ * come from the same queries the target screens use.
  */
 
-import { Alert, ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import Svg, { Path, Rect, Circle } from "react-native-svg";
+import { type ReactNode } from "react";
+import { Alert, StyleSheet, View } from "react-native";
+import { useIsFocused, useRouter } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
+import Constants from "expo-constants";
+import {
+  Avatar,
+  Badge,
+  Card,
+  CountPill,
+  Divider,
+  GroupLabel,
+  Icon,
+  IconChip,
+  LargeHeader,
+  ListRow,
+  Screen,
+  Txt,
+  type IconName,
+  type Tone,
+} from "@/components/ui";
 import { useAuth } from "@/lib/auth-context";
 import { can } from "@/lib/rbac";
-import { colors, spacing, typography } from "@/lib/theme";
-import { t } from "@/lib/i18n";
+import { loadMyOrganizationName } from "@/lib/account";
+import { loadOrgKpis } from "@/lib/dashboard";
+import { loadMyNotifications } from "@/lib/notifications";
+import { loadMyTraining } from "@/lib/training";
+import { colors, radius, spacing } from "@/lib/theme";
+import { i18n, t } from "@/lib/i18n";
 
-type IconColor = string;
 type Item = {
   key: string;
   labelKey: string;
   hintKey: string;
   href?: string;
-  icon: (color: IconColor) => React.ReactNode;
+  icon: IconName;
+  tone: Tone;
   visible: boolean;
   onPress?: () => void;
   danger?: boolean;
+  trailing?: ReactNode;
 };
 type Section = { titleKey: string; items: Item[] };
 
+function roleLabelKey(role?: string | null): string | null {
+  return role === "admin" || role === "dispatcher" || role === "employee"
+    ? `mobile.ui.more.role.${role}`
+    : null;
+}
+
 export default function MoreScreen() {
   const router = useRouter();
+  // Re-render when the tab regains focus so a language switched in
+  // Settings is reflected here immediately.
+  useIsFocused();
   const { profile, signOut } = useAuth();
   const role = profile?.role ?? null;
   const canManage = can(role, "time.read_all");
   const canReadClients = can(role, "client.read") && role !== "employee";
+  const employeeId = profile?.employeeId ?? null;
 
-  const iconStroke = colors.secondary[500];
-  const dangerStroke = colors.error?.[500] ?? "#DC2626";
+  // Counters — same query keys as the destination screens, so the
+  // caches are shared and opening those screens is instant.
+  const { data: notifications } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: loadMyNotifications,
+    enabled: !!profile,
+  });
+  const unreadAlerts = (notifications ?? []).filter((n) => !n.read_at).length;
+
+  const { data: kpis } = useQuery({
+    queryKey: ["org-kpis"],
+    queryFn: loadOrgKpis,
+    enabled: canManage,
+  });
+  const overdueInvoices = kpis?.overdueCount ?? 0;
+
+  const { data: training } = useQuery({
+    queryKey: ["training", employeeId],
+    queryFn: () => loadMyTraining(employeeId!),
+    enabled: !!employeeId,
+    staleTime: 30_000,
+  });
+  const openTraining = (training ?? []).filter((m) => m.is_mandatory && !m.completed_at).length;
+
+  const { data: orgName } = useQuery({
+    queryKey: ["my-org-name", profile?.orgId],
+    queryFn: () => loadMyOrganizationName(profile!.orgId!),
+    enabled: !!profile?.orgId,
+    staleTime: 60 * 60 * 1000,
+  });
 
   const sections: Section[] = [
     {
@@ -58,28 +121,17 @@ export default function MoreScreen() {
           labelKey: "mobile.more.clients",
           hintKey: "mobile.more.clientsHint",
           href: "/clients",
-          icon: (c) => (
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-              <Circle cx={9} cy={7} r={4} />
-              <Path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-            </Svg>
-          ),
+          icon: "users",
+          tone: "brand",
           visible: canReadClients,
         },
         {
-          key: "dashboard",
-          labelKey: "mobile.more.dashboard",
-          hintKey: "mobile.more.dashboardHint",
-          href: "/dashboard",
-          icon: (c) => (
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Rect x={3} y={3} width={7} height={9} rx={1} />
-              <Rect x={14} y={3} width={7} height={5} rx={1} />
-              <Rect x={14} y={12} width={7} height={9} rx={1} />
-              <Rect x={3} y={16} width={7} height={5} rx={1} />
-            </Svg>
-          ),
+          key: "properties",
+          labelKey: "mobile.more.properties",
+          hintKey: "mobile.more.propertiesHint",
+          href: "/properties",
+          icon: "building",
+          tone: "info",
           visible: canManage,
         },
         {
@@ -87,25 +139,73 @@ export default function MoreScreen() {
           labelKey: "mobile.more.employees",
           hintKey: "mobile.more.employeesHint",
           href: "/employees",
-          icon: (c) => (
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-              <Circle cx={9} cy={7} r={4} />
-            </Svg>
-          ),
+          icon: "user",
+          tone: "sage",
           visible: canManage,
         },
         {
-          key: "properties",
-          labelKey: "mobile.more.properties",
-          hintKey: "mobile.more.propertiesHint",
-          href: "/properties",
-          icon: (c) => (
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M3 21V7l8-4 8 4v14M9 21V12h6v9" />
-            </Svg>
-          ),
+          key: "dashboard",
+          labelKey: "mobile.more.dashboard",
+          hintKey: "mobile.more.dashboardHint",
+          href: "/dashboard",
+          icon: "chart",
+          tone: "brand",
           visible: canManage,
+        },
+        {
+          key: "notifications",
+          labelKey: "mobile.more.notifications",
+          hintKey: "mobile.more.notificationsHint",
+          href: "/notifications",
+          icon: "bell",
+          tone: "error",
+          visible: true,
+          trailing: unreadAlerts > 0 ? <CountPill count={unreadAlerts > 99 ? "99+" : unreadAlerts} /> : null,
+        },
+      ],
+    },
+    {
+      titleKey: "mobile.more.sectionField",
+      items: [
+        {
+          key: "vacation",
+          labelKey: "mobile.more.vacation",
+          hintKey: "mobile.more.vacationHint",
+          href: "/vacation",
+          icon: "sun",
+          tone: "warning",
+          visible: true,
+        },
+        {
+          key: "damage",
+          labelKey: "mobile.more.damage",
+          hintKey: "mobile.more.damageHint",
+          href: "/damage",
+          icon: "camera",
+          tone: "error",
+          visible: true,
+        },
+        {
+          key: "supplies",
+          labelKey: "mobile.more.supplies",
+          hintKey: "mobile.more.suppliesHint",
+          href: "/supplies/new",
+          icon: "droplet",
+          tone: "info",
+          visible: true,
+        },
+        {
+          key: "training",
+          labelKey: "mobile.more.training",
+          hintKey: "mobile.more.trainingHint",
+          href: "/training",
+          icon: "graduation",
+          tone: "warning",
+          visible: true,
+          trailing:
+            openTraining > 0 ? (
+              <Badge label={t("mobile.ui.more.trainingOpen", { n: openTraining })} tone="warning" dot={false} />
+            ) : null,
         },
       ],
     },
@@ -117,24 +217,18 @@ export default function MoreScreen() {
           labelKey: "mobile.more.invoices",
           hintKey: "mobile.more.invoicesHint",
           href: "/invoices",
-          icon: (c) => (
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-              <Path d="M14 2v6h6M9 13h6M9 17h6M9 9h1" />
-            </Svg>
-          ),
+          icon: "receipt",
+          tone: "info",
           visible: canManage,
+          trailing: overdueInvoices > 0 ? <CountPill count={overdueInvoices} /> : null,
         },
         {
           key: "reports",
           labelKey: "mobile.more.reports",
           hintKey: "mobile.more.reportsHint",
           href: "/reports/alltagshilfe",
-          icon: (c) => (
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M18 20V10M12 20V4M6 20v-6" />
-            </Svg>
-          ),
+          icon: "file-text",
+          tone: "error",
           visible: canManage,
         },
         {
@@ -142,67 +236,8 @@ export default function MoreScreen() {
           labelKey: "mobile.more.workReport",
           hintKey: "mobile.more.workReportHint",
           href: "/reports/work-report",
-          icon: (c) => (
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-              <Path d="M14 2v6h6M9 15l2 2 4-4" />
-            </Svg>
-          ),
-          visible: true,
-        },
-      ],
-    },
-    {
-      titleKey: "mobile.more.sectionField",
-      items: [
-        {
-          key: "training",
-          labelKey: "mobile.more.training",
-          hintKey: "mobile.more.trainingHint",
-          href: "/training",
-          icon: (c) => (
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M4 4h16v14H4z M2 20h20 M12 4v14" />
-            </Svg>
-          ),
-          visible: true,
-        },
-        {
-          key: "damage",
-          labelKey: "mobile.more.damage",
-          hintKey: "mobile.more.damageHint",
-          href: "/damage",
-          icon: (c) => (
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-              <Path d="M12 9v4M12 17h.01" />
-            </Svg>
-          ),
-          visible: true,
-        },
-        {
-          key: "supplies",
-          labelKey: "mobile.more.supplies",
-          hintKey: "mobile.more.suppliesHint",
-          href: "/supplies/new",
-          icon: (c) => (
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M9 3h6l-1 5h4l-4 6 1 7-9-6 1-7L2 8h4z" />
-            </Svg>
-          ),
-          visible: true,
-        },
-        {
-          key: "vacation",
-          labelKey: "mobile.more.vacation",
-          hintKey: "mobile.more.vacationHint",
-          href: "/vacation",
-          icon: (c) => (
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M2 22c1.25-1.25 2.5-2 4-2s2.75.75 4 2 2.5 2 4 2 2.75-.75 4-2 2.5-2 4-2" />
-              <Path d="M4 12h6l3 6 3-6h4M9 4l6-2" />
-            </Svg>
-          ),
+          icon: "file-text",
+          tone: "brand",
           visible: true,
         },
       ],
@@ -211,28 +246,12 @@ export default function MoreScreen() {
       titleKey: "mobile.more.sectionAccount",
       items: [
         {
-          key: "notifications",
-          labelKey: "mobile.more.notifications",
-          hintKey: "mobile.more.notificationsHint",
-          href: "/notifications",
-          icon: (c) => (
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0" />
-            </Svg>
-          ),
-          visible: true,
-        },
-        {
           key: "settings",
           labelKey: "mobile.more.settings",
           hintKey: "mobile.more.settingsHint",
           href: "/settings",
-          icon: (c) => (
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Circle cx={12} cy={12} r={3} />
-              <Path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9 1.65 1.65 0 004.27 7.18l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
-            </Svg>
-          ),
+          icon: "settings",
+          tone: "neutral",
           visible: true,
         },
         {
@@ -252,11 +271,8 @@ export default function MoreScreen() {
                 },
               ],
             ),
-          icon: (c) => (
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-            </Svg>
-          ),
+          icon: "logout",
+          tone: "error",
           visible: true,
           danger: true,
         },
@@ -273,146 +289,79 @@ export default function MoreScreen() {
     if (item.href) router.push(item.href as never);
   };
 
+  const roleKey = roleLabelKey(role);
+  const profileSub = [roleKey ? t(roleKey) : null, orgName].filter(Boolean).join(" · ");
+  const version = Constants.expoConfig?.version;
+
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: colors.tertiary[200] }}
-      edges={["top"]}
-    >
-      <View style={styles.header}>
-        <Text style={styles.title}>{t("mobile.more.title")}</Text>
-        <Text style={styles.sub}>{t("mobile.more.subtitle")}</Text>
-      </View>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {activeSections.map((section) => (
-          <View key={section.titleKey} style={styles.section}>
-            <Text style={styles.sectionTitle}>{t(section.titleKey)}</Text>
-            <View style={styles.card}>
-              {section.items.map((item, idx) => {
-                const isLast = idx === section.items.length - 1;
-                const stroke = item.danger ? dangerStroke : iconStroke;
-                return (
-                  <Pressable
-                    key={item.key}
-                    onPress={() => handleRow(item)}
-                    android_ripple={{ color: colors.neutral[100] }}
-                    style={({ pressed }) => [
-                      styles.row,
-                      !isLast && styles.rowDivider,
-                      pressed && { opacity: 0.6 },
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.iconBox,
-                        item.danger && { backgroundColor: "#FEECEC" },
-                      ]}
-                    >
-                      {item.icon(stroke)}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text
-                        style={[
-                          styles.rowLabel,
-                          item.danger && { color: dangerStroke },
-                        ]}
-                      >
-                        {t(item.labelKey)}
-                      </Text>
-                      <Text style={styles.rowHint}>{t(item.hintKey)}</Text>
-                    </View>
-                    {!item.danger && (
-                      <Svg
-                        width={18}
-                        height={18}
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke={colors.neutral[400]}
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <Path d="M9 18l6-6-6-6" />
-                      </Svg>
-                    )}
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-        ))}
-        <View style={{ height: spacing[6] }} />
-      </ScrollView>
-    </SafeAreaView>
+    <Screen header={<LargeHeader title={t("mobile.more.title")} subtitle={t("mobile.more.subtitle")} />}>
+      {/* Profile card → Settings */}
+      <Card onPress={() => router.push("/settings" as never)} style={styles.profile}>
+        <Avatar name={profile?.fullName} size={44} />
+        <View style={styles.profileText}>
+          <Txt v="headline" numberOfLines={1}>
+            {profile?.fullName ?? "—"}
+          </Txt>
+          {profileSub ? (
+            <Txt v="subhead" color={colors.neutral[500]} numberOfLines={1}>
+              {profileSub}
+            </Txt>
+          ) : null}
+        </View>
+        <View style={styles.langChip} accessibilityLabel={t("settings.account.language")}>
+          <Icon name="globe" size={14} color={colors.neutral[600]} />
+          <Txt v="caption" color={colors.neutral[700]}>
+            {i18n.locale.toUpperCase()}
+          </Txt>
+        </View>
+      </Card>
+
+      {activeSections.map((section) => (
+        <View key={section.titleKey} style={styles.section}>
+          <GroupLabel>{t(section.titleKey)}</GroupLabel>
+          <Card padded={false} style={styles.card}>
+            {section.items.map((item, idx) => (
+              <View key={item.key}>
+                {idx > 0 ? <Divider /> : null}
+                <ListRow
+                  title={t(item.labelKey)}
+                  subtitle={t(item.hintKey)}
+                  leading={<IconChip icon={item.icon} tone={item.tone} size={36} iconSize={18} />}
+                  trailing={item.trailing}
+                  titleColor={item.danger ? colors.error[700] : undefined}
+                  chevron={!item.danger}
+                  onPress={() => handleRow(item)}
+                />
+              </View>
+            ))}
+          </Card>
+        </View>
+      ))}
+
+      {version ? (
+        <Txt v="caption" color={colors.neutral[400]} style={styles.version}>
+          {t("mobile.ui.more.version", { version })}
+        </Txt>
+      ) : null}
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: spacing[4],
-    paddingTop: spacing[3],
-    paddingBottom: spacing[2],
-  },
-  title: {
-    fontSize: typography.size["2xl"],
-    fontWeight: "800",
-    color: colors.secondary[500],
-    letterSpacing: -0.5,
-  },
-  sub: {
-    fontSize: typography.size.sm,
-    color: colors.neutral[500],
-    marginTop: 2,
-  },
-  scroll: {
-    padding: spacing[4],
-    paddingTop: spacing[2],
-    gap: spacing[5],
-  },
-  section: {
-    gap: spacing[2],
-  },
-  sectionTitle: {
-    fontSize: typography.size.xs,
-    fontWeight: "700",
-    color: colors.neutral[500],
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginLeft: spacing[2],
-  },
-  card: {
-    backgroundColor: colors.white,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.neutral[100],
-    overflow: "hidden",
-  },
-  row: {
+  profile: { flexDirection: "row", alignItems: "center", gap: spacing[3], paddingVertical: 14 },
+  profileText: { flex: 1, minWidth: 0, gap: 2 },
+  langChip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3] + 2,
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    backgroundColor: colors.neutral[50],
   },
-  rowDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[100],
-  },
-  iconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.secondary[50],
-  },
-  rowLabel: {
-    fontSize: typography.size.md,
-    fontWeight: "700",
-    color: colors.neutral[800],
-  },
-  rowHint: {
-    marginTop: 2,
-    fontSize: typography.size.sm,
-    color: colors.neutral[500],
-  },
+  section: { gap: spacing[2] },
+  card: { overflow: "hidden" },
+  version: { textAlign: "center", marginTop: spacing[1] },
 });

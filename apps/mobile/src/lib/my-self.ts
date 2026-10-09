@@ -31,8 +31,31 @@ export type MySelfData = {
     property_name: string;
     client_name: string;
     status: string;
+    /** Street line of the property ("Hauptstraße 12"). Optional so rows
+     *  restored from an older persisted cache still type-check. */
+    address_line1?: string | null;
+    /** One-line postal address ("Hauptstraße 12, 10115 Berlin") for
+     *  display + handing to the native maps app. */
+    address?: string | null;
+    /** Client service line — "alltagshilfe" vs. the Priya's cleaning lines. */
+    customer_type?: string | null;
   }>;
 };
+
+/** How many upcoming shifts `loadMySelf` returns. */
+export const UPCOMING_LIMIT = 5;
+
+/** "Hauptstraße 12, 10115 Berlin" — null when the property has no street. */
+function formatAddress(p: {
+  address_line1: string | null;
+  postal_code: string | null;
+  city: string | null;
+}): string | null {
+  const street = p.address_line1?.trim();
+  if (!street) return null;
+  const town = [p.postal_code?.trim(), p.city?.trim()].filter(Boolean).join(" ");
+  return town ? `${street}, ${town}` : street;
+}
 
 export async function loadMySelf(): Promise<MySelfData | null> {
   const supabase = getSupabase();
@@ -83,15 +106,23 @@ export async function loadMySelf(): Promise<MySelfData | null> {
       .select("module_id, completed_at, training_modules!inner(id, title, is_mandatory)")
       .eq("employee_id", me.id)
       .is("completed_at", null),
+    // Column names follow the DB schema (clients.display_name,
+    // properties.address_line1/postal_code/city) — the earlier
+    // `clients(name)` select errored, so this list was always empty.
+    // `ends_at >= now` keeps a shift that already started (but hasn't
+    // ended) as the "next" one; finished / cancelled shifts are skipped
+    // like the web MySelfPanel does.
     supabase
       .from("shifts")
       .select(
-        "id, starts_at, ends_at, status, properties!inner(id, name, clients!inner(id, name))",
+        "id, starts_at, ends_at, status, properties!inner(id, name, address_line1, postal_code, city, clients!inner(id, display_name, customer_type))",
       )
       .eq("employee_id", me.id)
-      .gte("starts_at", new Date().toISOString())
+      .is("deleted_at", null)
+      .gte("ends_at", new Date().toISOString())
+      .not("status", "in", '("completed","cancelled","no_show")')
       .order("starts_at", { ascending: true })
-      .limit(5),
+      .limit(UPCOMING_LIMIT),
   ]);
 
   type Entry = {
@@ -142,7 +173,7 @@ export async function loadMySelf(): Promise<MySelfData | null> {
     .filter((r) => r.training_modules?.is_mandatory)
     .map((r) => ({ id: r.training_modules.id, title: r.training_modules.title }));
 
-  // Upcoming shifts — next 5 assigned to me.
+  // Upcoming shifts — next UPCOMING_LIMIT assigned to me.
   type SRow = {
     id: string;
     starts_at: string;
@@ -151,7 +182,10 @@ export async function loadMySelf(): Promise<MySelfData | null> {
     properties: {
       id: string;
       name: string;
-      clients: { id: string; name: string };
+      address_line1: string | null;
+      postal_code: string | null;
+      city: string | null;
+      clients: { id: string; display_name: string; customer_type: string | null };
     };
   };
   const upcoming = ((shRaw.data ?? []) as unknown as SRow[]).map((s) => ({
@@ -159,8 +193,11 @@ export async function loadMySelf(): Promise<MySelfData | null> {
     starts_at: s.starts_at,
     ends_at: s.ends_at,
     property_name: s.properties.name,
-    client_name: s.properties.clients.name,
+    client_name: s.properties.clients.display_name,
     status: s.status,
+    address_line1: s.properties.address_line1,
+    address: formatAddress(s.properties),
+    customer_type: s.properties.clients.customer_type,
   }));
 
   return {

@@ -30,7 +30,41 @@ export type ChatMessageRow = {
   created_at: string;
   edited_at: string | null;
   author_name: string;
+  /** Author's profile role (admin / dispatcher / employee) when known. */
+  author_role?: string | null;
 };
+
+export type ChatMemberRow = {
+  user_id: string;
+  last_read_at: string | null;
+  full_name: string | null;
+  role: string | null;
+};
+
+export type ChatChannelKind = "channel" | "direct" | "group";
+
+/** Channel kind with the web app's fallback for legacy rows without `kind`. */
+export function channelKind(c: Pick<ChatChannelRow, "kind" | "is_direct">): ChatChannelKind {
+  const k = c.kind ?? (c.is_direct ? "direct" : "channel");
+  return k === "direct" || k === "group" ? k : "channel";
+}
+
+/**
+ * Display name for a channel, or null when it has none. Channel names are
+ * stored with a leading "#"; DMs as "A ↔ B" (web
+ * `createOrGetDirectChannelAction`), so a DM shows the other participant.
+ */
+export function channelDisplayName(
+  c: Pick<ChatChannelRow, "name" | "kind" | "is_direct">,
+  myName?: string | null,
+): string | null {
+  const raw = (c.name ?? "").trim();
+  if (channelKind(c) === "direct") {
+    const parts = raw.split("↔").map((s) => s.trim()).filter(Boolean);
+    return parts.find((p) => p !== myName) ?? parts[0] ?? null;
+  }
+  return raw.replace(/^#/, "") || null;
+}
 
 /** Load every channel the current user is a member of, with unread + last message metadata. */
 export async function loadMyChannels(): Promise<ChatChannelRow[]> {
@@ -125,7 +159,7 @@ export async function loadChannelMessages(
   const supabase = getSupabase();
   const { data } = await supabase
     .from("chat_messages")
-    .select("id, channel_id, user_id, body, created_at, edited_at, author:profiles(full_name)")
+    .select("id, channel_id, user_id, body, created_at, edited_at, author:profiles(full_name, role)")
     .eq("channel_id", channelId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
@@ -137,7 +171,7 @@ export async function loadChannelMessages(
     body: string;
     created_at: string;
     edited_at: string | null;
-    author: { full_name: string } | null;
+    author: { full_name: string; role?: string | null } | null;
   };
   return ((data ?? []) as unknown as Row[])
     .map((r) => ({
@@ -148,8 +182,34 @@ export async function loadChannelMessages(
       created_at: r.created_at,
       edited_at: r.edited_at,
       author_name: r.author?.full_name ?? "—",
+      author_role: r.author?.role ?? null,
     }))
     .reverse(); // oldest first for chat rendering
+}
+
+/**
+ * Members of one channel with their read cursor. RLS ("members:read same
+ * channel", migrations 000058/000065) lets any member read the roster.
+ * Used for the thread header (member count, DM partner) and read receipts.
+ */
+export async function loadChannelMembers(channelId: string): Promise<ChatMemberRow[]> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("chat_members")
+    .select("user_id, last_read_at, profile:profiles(full_name, role)")
+    .eq("channel_id", channelId);
+  if (error) return [];
+  type Row = {
+    user_id: string;
+    last_read_at: string | null;
+    profile: { full_name: string | null; role: string | null } | null;
+  };
+  return ((data ?? []) as unknown as Row[]).map((r) => ({
+    user_id: r.user_id,
+    last_read_at: r.last_read_at,
+    full_name: r.profile?.full_name ?? null,
+    role: r.profile?.role ?? null,
+  }));
 }
 
 /** Module-level cache so we don't re-fetch org_id for the same channel on every send. */

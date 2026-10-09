@@ -1,5 +1,6 @@
 /**
- * Chat thread — messages list + input, with realtime + typing.
+ * Chat thread — Figma "09 · Chat-Verlauf". Messages list + composer,
+ * with realtime + typing.
  *
  * On mount:
  *   1. Load the last 100 messages (oldest → newest).
@@ -8,37 +9,76 @@
  *   4. Subscribe to a `typing:<channelId>` broadcast channel for
  *      lightweight typing indicators.
  * On unmount: tear both subscriptions down.
+ *
+ * Presentation: white top bar (back · channel chip · member line), day
+ * separators, others' bubbles on the left with avatar + name + role
+ * badge + time, own bubbles on the right in brand green with a read
+ * receipt derived from the members' `last_read_at` cursors.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { format, parseISO } from "date-fns";
-import { CenterSpinner } from "@/components/ui";
+import { format, isSameDay, isToday, isYesterday, parseISO } from "date-fns";
+import { de, enUS, ta } from "date-fns/locale";
+import { Avatar, Badge, CenterSpinner, EmptyState, IconChip, RoundButton, Txt } from "@/components/ui";
 import { useAuth } from "@/lib/auth-context";
 import {
+  channelDisplayName,
+  channelKind,
+  loadChannelMembers,
   loadChannelMessages,
+  loadMyChannels,
   markChannelRead,
   sendMessage,
   subscribeChannelMessages,
   subscribeTyping,
+  type ChatChannelRow,
+  type ChatMemberRow,
   type ChatMessageRow,
 } from "@/lib/chat";
-import { colors, radius, spacing, typography } from "@/lib/theme";
-import { t } from "@/lib/i18n";
+import { colors, fonts, radius, spacing, text } from "@/lib/theme";
+import { i18n, t } from "@/lib/i18n";
 
 const TYPING_TTL_MS = 3500;
+/** Consecutive messages from one author within this window share a header. */
+const GROUP_WINDOW_MS = 5 * 60 * 1000;
+const CARE_RE = /alltagshilfe|pflege/i;
+
+function dfLocale() {
+  return i18n.locale === "en" ? enUS : i18n.locale === "ta" ? ta : de;
+}
+
+/** "Heute · 9. Oktober" / "Gestern · 8. Oktober" / "Montag · 6. Oktober". */
+function dayLabel(d: Date): string {
+  const locale = dfLocale();
+  const date = format(d, locale === de ? "d. MMMM" : "d MMMM", { locale });
+  if (isToday(d)) return t("notifications.groups.today", { date });
+  if (isYesterday(d)) return t("notifications.groups.yesterday", { date });
+  return `${format(d, "EEEE", { locale })} · ${date}`;
+}
+
+function roleLabel(role?: string | null): string | null {
+  return role === "admin" || role === "dispatcher" || role === "employee"
+    ? t(`mobile.ui.more.role.${role}`)
+    : null;
+}
+
+function sameGroup(a: ChatMessageRow, b: ChatMessageRow): boolean {
+  if (a.user_id !== b.user_id) return false;
+  const da = parseISO(a.created_at);
+  const db = parseISO(b.created_at);
+  return isSameDay(da, db) && Math.abs(db.getTime() - da.getTime()) < GROUP_WINDOW_MS;
+}
 
 export default function ChatThread() {
   const { channelId } = useLocalSearchParams<{ channelId: string }>();
@@ -64,6 +104,21 @@ export default function ChatThread() {
     enabled: !!channelId,
   });
   const messages = data ?? [];
+
+  // Header data: the channel row comes from the list cache shared with
+  // the Chat tab + tab bar; the roster gives member count, the DM
+  // partner, author roles for realtime rows and read receipts.
+  const { data: channels } = useQuery<ChatChannelRow[]>({
+    queryKey: ["chat-channels"],
+    queryFn: loadMyChannels,
+  });
+  const channel = channels?.find((c) => c.id === channelId) ?? null;
+  const { data: members } = useQuery<ChatMemberRow[]>({
+    queryKey: ["chat-members", channelId],
+    queryFn: () => (channelId ? loadChannelMembers(channelId) : Promise.resolve([])),
+    enabled: !!channelId,
+    refetchInterval: 30_000,
+  });
 
   // Mark read on mount so the channel-list unread badge drops.
   useEffect(() => {
@@ -166,20 +221,85 @@ export default function ChatThread() {
 
   const activeTypers = Array.from(typing.values()).map((v) => v.name);
 
+  // ── Derived presentation data ─────────────────────────────────────
+  const memberById = useMemo(
+    () => new Map((members ?? []).map((m) => [m.user_id, m])),
+    [members],
+  );
+  const kind = channel ? channelKind(channel) : "channel";
+  const dmPartner =
+    kind === "direct" ? (members ?? []).find((m) => m.user_id !== profile?.id) ?? null : null;
+  const title =
+    dmPartner?.full_name ??
+    (channel ? channelDisplayName(channel, profile?.fullName) : null) ??
+    (kind === "direct" ? t("chat.dm") : t("chat.channel"));
+  const care = kind === "channel" && CARE_RE.test(channel?.name ?? "");
+  const metaLine = (
+    kind === "direct"
+      ? [roleLabel(dmPartner?.role)]
+      : [
+          members && members.length > 0
+            ? t("mobile.ui.chat.memberCount", { n: members.length })
+            : null,
+          channel?.description ?? null,
+        ]
+  )
+    .filter(Boolean)
+    .join(" · ");
+
+  // Read cursors of everyone but me — only when the roster loaded.
+  const otherReadAt = useMemo(
+    () =>
+      (members ?? [])
+        .filter((m) => m.user_id !== profile?.id && m.last_read_at)
+        .map((m) => parseISO(m.last_read_at!).getTime()),
+    [members, profile?.id],
+  );
+  const readLabelFor = (createdAt: string): string | null => {
+    if (!members || members.length === 0) return null;
+    const at = parseISO(createdAt).getTime();
+    const n = otherReadAt.filter((r) => r >= at).length;
+    if (n === 0) return null;
+    return kind === "direct" ? t("mobile.ui.chat.read") : t("mobile.ui.chat.readBy", { n });
+  };
+
+  const canSend = !sending && !!draft.trim();
+
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: colors.tertiary[200] }}
-      edges={["top"]}
-    >
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Text style={styles.back}>← {t("chat.back")}</Text>
-        </Pressable>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      {/* ── Top bar ── */}
+      <View style={styles.topBar}>
+        <RoundButton
+          icon="chevron-left"
+          variant="plain"
+          onPress={() => router.back()}
+          accessibilityLabel={t("chat.back")}
+        />
+        {kind === "channel" ? (
+          <IconChip
+            icon={channel?.is_private ? "lock" : "hash"}
+            tone={care ? "error" : channel?.is_private ? "info" : "brand"}
+            size={40}
+            iconSize={20}
+          />
+        ) : (
+          <Avatar name={title} size={40} />
+        )}
+        <View style={styles.topText}>
+          <Txt v="headline" numberOfLines={1}>
+            {title}
+          </Txt>
+          {metaLine ? (
+            <Txt v="caption" color={colors.neutral[500]} numberOfLines={1}>
+              {metaLine}
+            </Txt>
+          ) : null}
+        </View>
       </View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
+        style={styles.body}
       >
         {isLoading ? (
           <CenterSpinner />
@@ -187,36 +307,96 @@ export default function ChatThread() {
           <FlatList
             ref={listRef}
             data={messages}
+            extraData={members}
             keyExtractor={(m) => m.id}
-            contentContainerStyle={styles.msgList}
-            renderItem={({ item }) => {
+            contentContainerStyle={[styles.msgList, messages.length === 0 && styles.msgListEmpty]}
+            keyboardShouldPersistTaps="handled"
+            ListEmptyComponent={
+              <EmptyState
+                icon="chat"
+                title={t("chat.thread.emptyTitle")}
+                subtitle={t("chat.thread.emptyBody")}
+              />
+            }
+            renderItem={({ item, index }) => {
+              const prev = index > 0 ? messages[index - 1] : undefined;
+              const next = messages[index + 1];
+              const d = parseISO(item.created_at);
+              const newDay = !prev || !isSameDay(parseISO(prev.created_at), d);
+              const groupedWithPrev = !!prev && !newDay && sameGroup(prev, item);
+              const groupedWithNext = !!next && sameGroup(item, next);
               const mine = item.user_id === profile?.id;
+              const time = format(d, "HH:mm");
+
+              const separator = newDay ? (
+                <View style={styles.dayWrap}>
+                  <View style={styles.dayPill}>
+                    <Txt v="caption" color={colors.neutral[600]}>
+                      {dayLabel(d)}
+                    </Txt>
+                  </View>
+                </View>
+              ) : null;
+
+              if (mine) {
+                const read = groupedWithNext ? null : readLabelFor(item.created_at);
+                return (
+                  <View>
+                    {separator}
+                    <View style={[styles.ownRow, { marginTop: groupedWithPrev ? 4 : 14 }]}>
+                      <View style={styles.bubbleMine}>
+                        <Txt v="body" color={colors.white}>
+                          {item.body}
+                        </Txt>
+                      </View>
+                      {!groupedWithNext ? (
+                        <View style={styles.ownMeta}>
+                          <Txt v="mono" color={colors.neutral[400]} style={styles.metaMono}>
+                            {time}
+                          </Txt>
+                          {read ? (
+                            <Txt v="caption" color={colors.neutral[500]}>
+                              {`· ${read}`}
+                            </Txt>
+                          ) : null}
+                        </View>
+                      ) : null}
+                    </View>
+                  </View>
+                );
+              }
+
+              const member = memberById.get(item.user_id);
+              // CDC-inserted rows carry "…" until the next refetch — fall
+              // back to the roster for the name.
+              const name =
+                item.author_name === "…" ? member?.full_name ?? item.author_name : item.author_name;
+              const role = roleLabel(item.author_role ?? member?.role);
               return (
-                <View
-                  style={[
-                    styles.bubbleRow,
-                    { justifyContent: mine ? "flex-end" : "flex-start" },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.bubble,
-                      mine ? styles.bubbleMine : styles.bubbleTheirs,
-                    ]}
-                  >
-                    {!mine && (
-                      <Text style={styles.author}>{item.author_name}</Text>
-                    )}
-                    <Text
-                      style={mine ? styles.bodyMine : styles.bodyTheirs}
-                    >
-                      {item.body}
-                    </Text>
-                    <Text
-                      style={mine ? styles.timeMine : styles.timeTheirs}
-                    >
-                      {format(parseISO(item.created_at), "HH:mm")}
-                    </Text>
+                <View>
+                  {separator}
+                  <View style={[styles.otherRow, { marginTop: groupedWithPrev ? 4 : 14 }]}>
+                    <View style={styles.avatarCol}>
+                      {!groupedWithPrev ? <Avatar name={name} size={32} /> : null}
+                    </View>
+                    <View style={styles.otherCol}>
+                      {!groupedWithPrev ? (
+                        <View style={styles.authorRow}>
+                          <Txt v="subheadStrong" numberOfLines={1} style={styles.authorName}>
+                            {name}
+                          </Txt>
+                          {role ? <Badge label={role} tone="neutral" dot={false} /> : null}
+                          <Txt v="mono" color={colors.neutral[400]} style={styles.metaMono}>
+                            {time}
+                          </Txt>
+                        </View>
+                      ) : null}
+                      <View style={styles.bubbleTheirs}>
+                        <Txt v="body" color={colors.neutral[800]}>
+                          {item.body}
+                        </Txt>
+                      </View>
+                    </View>
                   </View>
                 </View>
               );
@@ -226,16 +406,20 @@ export default function ChatThread() {
 
         {activeTypers.length > 0 && (
           <View style={styles.typing}>
-            <View style={styles.typingDot} />
-            <Text style={styles.typingText}>
+            <View style={styles.typingDots}>
+              <View style={styles.typingDot} />
+              <View style={styles.typingDot} />
+              <View style={styles.typingDot} />
+            </View>
+            <Txt v="caption" color={colors.neutral[500]} style={styles.typingText} numberOfLines={1}>
               {activeTypers.slice(0, 2).join(", ")}
               {activeTypers.length > 2 ? ` +${activeTypers.length - 2}` : ""}{" "}
               {t("chat.typing")}
-            </Text>
+            </Txt>
           </View>
         )}
 
-        <View style={styles.inputBar}>
+        <View style={styles.composer}>
           <TextInput
             value={draft}
             onChangeText={(txt) => {
@@ -244,21 +428,26 @@ export default function ChatThread() {
                 typingBroadcastRef.current(profile.id, profile.fullName);
               }
             }}
-            placeholder={t("chat.messagePlaceholder")}
+            placeholder={
+              channel
+                ? t("mobile.ui.chat.placeholderTo", {
+                    name: kind === "channel" ? `#${title}` : title,
+                  })
+                : t("chat.messagePlaceholder")
+            }
             placeholderTextColor={colors.neutral[400]}
             style={styles.input}
             multiline
           />
-          <Pressable
-            onPress={onSubmit}
-            disabled={sending || !draft.trim()}
-            style={[
-              styles.sendBtn,
-              (sending || !draft.trim()) && { opacity: 0.5 },
-            ]}
-          >
-            <Text style={styles.sendLabel}>{t("chat.send")}</Text>
-          </Pressable>
+          <View style={!canSend && styles.sendDisabled}>
+            <RoundButton
+              icon="send"
+              variant="primary"
+              size={44}
+              onPress={canSend ? onSubmit : undefined}
+              accessibilityLabel={t("chat.send")}
+            />
+          </View>
         </View>
       </KeyboardAvoidingView>
       {/* Outside the KeyboardAvoidingView so the keyboard covers it
@@ -269,120 +458,94 @@ export default function ChatThread() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: spacing[4],
+  safe: { flex: 1, backgroundColor: colors.white },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing[2],
+    paddingLeft: spacing[2],
+    paddingRight: spacing[4],
     paddingVertical: spacing[2],
+    backgroundColor: colors.white,
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral[100],
-    backgroundColor: colors.white,
   },
-  back: {
-    fontSize: typography.size.md,
-    color: colors.primary[600],
-    fontWeight: "600",
-  },
+  topText: { flex: 1, minWidth: 0, marginLeft: 4 },
+  body: { flex: 1, backgroundColor: colors.neutral[50] },
   msgList: {
-    padding: spacing[4],
-    gap: spacing[2],
+    paddingHorizontal: spacing[4],
+    paddingTop: spacing[2],
+    paddingBottom: spacing[4],
   },
-  bubbleRow: {
-    flexDirection: "row",
-    width: "100%",
-  },
-  bubble: {
-    maxWidth: "80%",
-    padding: spacing[3],
-    borderRadius: radius.lg,
-  },
-  bubbleMine: {
-    backgroundColor: colors.primary[500],
-    borderBottomRightRadius: 4,
-  },
-  bubbleTheirs: {
+  msgListEmpty: { flexGrow: 1, justifyContent: "center" },
+  dayWrap: { alignItems: "center", marginTop: spacing[4] },
+  dayPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: radius.full,
     backgroundColor: colors.white,
-    borderBottomLeftRadius: 4,
     borderWidth: 1,
     borderColor: colors.neutral[100],
   },
-  author: {
-    fontSize: typography.size.xs,
-    fontWeight: "700",
-    color: colors.secondary[500],
-    marginBottom: 2,
+  otherRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
+  avatarCol: { width: 32 },
+  otherCol: { flex: 1, minWidth: 0, alignItems: "flex-start", gap: 6 },
+  authorRow: { flexDirection: "row", alignItems: "center", gap: 8, maxWidth: "100%" },
+  authorName: { flexShrink: 1 },
+  metaMono: { fontSize: 12 },
+  bubbleTheirs: {
+    maxWidth: "100%",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: radius.xl,
+    borderTopLeftRadius: 4,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.neutral[100],
   },
-  bodyMine: {
-    color: colors.white,
-    fontSize: typography.size.md,
-    lineHeight: 20,
+  ownRow: { alignItems: "flex-end", gap: 4 },
+  bubbleMine: {
+    maxWidth: "82%",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: radius.xl,
+    borderBottomRightRadius: 4,
+    backgroundColor: colors.primary[500],
   },
-  bodyTheirs: {
-    color: colors.neutral[800],
-    fontSize: typography.size.md,
-    lineHeight: 20,
-  },
-  timeMine: {
-    fontSize: typography.size.xs,
-    color: "rgba(255,255,255,0.75)",
-    textAlign: "right",
-    marginTop: 4,
-    fontFamily: "Menlo",
-  },
-  timeTheirs: {
-    fontSize: typography.size.xs,
-    color: colors.neutral[500],
-    textAlign: "right",
-    marginTop: 4,
-    fontFamily: "Menlo",
-  },
+  ownMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
   typing: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: spacing[4],
-    paddingVertical: 4,
+    gap: 8,
+    paddingHorizontal: spacing[4] + 42,
+    paddingVertical: 6,
   },
-  typingDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.primary[500],
-  },
-  typingText: {
-    fontSize: typography.size.xs,
-    color: colors.neutral[500],
-    fontStyle: "italic",
-  },
-  inputBar: {
+  typingDots: { flexDirection: "row", gap: 3 },
+  typingDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.neutral[400] },
+  typingText: { flexShrink: 1, fontFamily: fonts.italic },
+  composer: {
     flexDirection: "row",
     alignItems: "flex-end",
     gap: spacing[2],
-    padding: spacing[3],
+    paddingHorizontal: spacing[3],
+    paddingVertical: 10,
     borderTopWidth: 1,
     borderTopColor: colors.neutral[100],
     backgroundColor: colors.white,
   },
   input: {
+    ...text.body,
     flex: 1,
-    minHeight: 40,
+    minHeight: 44,
     maxHeight: 120,
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
-    borderRadius: radius.md,
+    paddingHorizontal: 16,
+    paddingTop: 11,
+    paddingBottom: 11,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: colors.neutral[200],
-    fontSize: typography.size.md,
-    color: colors.neutral[800],
+    backgroundColor: colors.neutral[50],
+    color: colors.neutral[900],
   },
-  sendBtn: {
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3],
-    borderRadius: radius.md,
-    backgroundColor: colors.primary[500],
-    justifyContent: "center",
-  },
-  sendLabel: {
-    color: colors.white,
-    fontWeight: "700",
-    fontSize: typography.size.md,
-  },
+  sendDisabled: { opacity: 0.5 },
 });

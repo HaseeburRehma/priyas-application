@@ -3140,7 +3140,10 @@
         "commercial": "நிறுவனம்",
         "alltagshilfe": "அல்டாக்ஷில்பே"
       },
-      "rowProperties": "{n} சொத்து",
+      "rowProperties": {
+        "one": "{count} சொத்து",
+        "other": "{count} சொத்துகள்"
+      },
       "tagPriya": "பிரியா",
       "tagAlltagshilfe": "அல்டாக்ஷில்பே",
       "payer": {
@@ -3384,6 +3387,377 @@
       "errorNotSignedIn": "நீங்கள் உள்நுழையவில்லை.",
       "errorNoOrg": "உங்கள் கணக்கு நிறுவனத்துடன் இணைக்கப்படவில்லை.",
       "errorNoProperty": "முதலில் ஒரு சொத்தை தேர்ந்தெடுக்கவும்."
+    },
+    "ui": {
+      "auth": {
+        "heroTitle": "உங்கள் சுத்தம் செய்யும் நிறுவனம் உங்கள் பாக்கெட்டில்.",
+        "heroBody": "பணி அட்டவணை, GPS நேரப் பதிவு மற்றும் குழு அரட்டை — அனைத்தும் ஒரே இடத்தில்.",
+        "signInSubtitle": "உங்கள் பணி மின்னஞ்சல் முகவரி மற்றும் கடவுச்சொல்லை உள்ளிடவும்.",
+        "passwordPlaceholder": "உங்கள் கடவுச்சொல்",
+        "showPassword": "கடவுச்சொல்லைக் காட்டு",
+        "hidePassword": "கடவுச்சொல்லை மறை",
+        "protected2fa": "இரு-காரணி உள்நுழைவால் பாதுகாக்கப்பட்டது",
+        "trouble": "உள்நுழைவதில் சிக்கலா? உங்கள் மேலாளரைத் தொடர்பு கொள்ளவும்.",
+        "version": "பதிப்பு {version}",
+        "codeHint": "குறியீடு ஒவ்வொரு 30 விநாடிகளுக்கும் மாறும். சிக்கலா? உங்கள் மேலாளரைத் தொடர்பு கொள்ளவும்."
+      },
+      "home": {
+        "nextShift": "அடுத்த பணி",
+        "now": "இப்போது",
+        "inMinutes": "{n} நிமிடத்தில்",
+        "inHours": "{h} மணி நேரத்தில்",
+        "inHoursMinutes": "{h} மணி {m} நிமிடத்தில்",
+        "tomorrow": "நாளை",
+        "thisWeek": "இந்த வாரம் {count}",
+        "openShift": "பணியைத் திற",
+        "startTraining": "தொடங்கு",
+        "damageSub": "புகைப்படத்துடன்",
+        "vacationDaysFreeOne": "{count} நாள் மீதம்",
+        "vacationDaysFreeOther": "{count} நாட்கள் மீதம்",
+        "supplies": "சுத்தம் செய்யும் பொருட்கள்",
+        "suppliesSub": "இருப்பைத் தெரிவி",
+        "workReportSub": "PDF ஆக ஏற்றுமதி"
+      },
+      "plan": {
+        "weekSubtitle": "வாரம் {week} · {range}",
+        "dayCountOne": "{count} பணி · {hours} மணி",
+        "dayCountOther": "{count} பணிகள் · {hours} மணி"
+      },
+      "shift": {
+        "title": "பணி",
+        "route": "வழி",
+        "timeTracking": "நேரப் பதிவு",
+        "checkInDistance": "செக்-இன் இடம் · தளத்திலிருந்து {distance}",
+        "gpsHint": "செக்-இன் செய்யும்போது உங்கள் இருப்பிடம் தளத்துடன் சரிபார்க்கப்படும்.",
+        "actionsHint": "செக்-இன் செய்த பிறகு இடைவேளை மற்றும் செக்-அவுட் கிடைக்கும்.",
+        "area": "பகுதி",
+        "statusNoShow": "வரவில்லை"
+      },
+      "dashboard": {
+        "subtitle": "{date} · இன்று நடப்பவை",
+        "planShift": "பணியைத் திட்டமிடு",
+        "all": "அனைத்தும் →",
+        "kpi": {
+          "addedThisMonth": "இந்த மாதம் {n}",
+          "propertiesAdded": "இந்த மாதம் {n} புதியவை",
+          "pendingCheckins": "{n} செக்-இன்கள் நிலுவையில்",
+          "awaitingPayment": "{n} கட்டணத்திற்காகக் காத்திருக்கின்றன"
+        },
+        "chart": {
+          "titleDay": "இன்றைய பணிகள்",
+          "titleWeek": "வாராந்திர பணிகள்",
+          "titleMonth": "மாதாந்திர பணிகள்",
+          "weekShort": "வாரம் {n}",
+          "hours": "மணிநேரம்",
+          "rate": "{rate} விகிதம்",
+          "empty": "இந்தக் காலத்தில் பணிகள் இல்லை."
+        },
+        "today": {
+          "subtitle": "{count} பணிகள் · {pending} நிலுவையில்",
+          "late": "செக்-இன் தாமதம் · {min} நிமி"
+        },
+        "team": {
+          "subtitle": "இந்த வாரம் · {n} செயலில்",
+          "action": "குழு →",
+          "hours": "{h} / {target} மணி"
+        },
+        "activity": {
+          "created": "உருவாக்கப்பட்டது",
+          "updated": "புதுப்பிக்கப்பட்டது",
+          "deleted": "நீக்கப்பட்டது"
+        }
+      },
+      "clients": {
+        "headerSummary": "{total} வாடிக்கையாளர்கள் · {active} செயலில் உள்ள ஒப்பந்தங்கள்",
+        "count": "{n} வாடிக்கையாளர்கள்",
+        "stats": {
+          "contracts": "ஒப்பந்தங்கள்",
+          "new30": "புதியவை (30 நா.)",
+          "new30Sub": "முழு அமைப்பிலும்",
+          "ending": "விரைவில் முடிவடையும்",
+          "endingSub": "60 நாட்களுக்குள்"
+        },
+        "sort": {
+          "nameAsc": "பெயர் A–Z",
+          "nameDesc": "பெயர் Z–A",
+          "newest": "புதியவை முதலில்",
+          "properties": "அதிக சொத்துகள்"
+        },
+        "status": {
+          "new": "புதியது",
+          "active": "செயலில்",
+          "review": "மதிப்பாய்வில்",
+          "onboarding": "சேர்க்கை",
+          "ended": "செயலற்றது"
+        },
+        "detail": {
+          "statProperties": "சொத்துகள்",
+          "statContacts": "தொடர்புகள்",
+          "statShifts": "பணிகள்",
+          "statYtd": "ஆண்டு இதுவரை",
+          "call": "அழை",
+          "mail": "மின்னஞ்சல் அனுப்பு",
+          "sms": "குறுஞ்செய்தி அனுப்பு",
+          "planShift": "பணியைத் திட்டமிடு",
+          "tabInvoices": "விலைப்பட்டியல்கள்",
+          "invoicesEmpty": "இன்னும் விலைப்பட்டியல்கள் இல்லை."
+        },
+        "hours": {
+          "title": "மணிநேரம் (உள்)",
+          "subtitle": "கடந்த 3 மாதங்கள் · திட்டமிட்டது vs. செய்தது",
+          "modeFixed": "நிலையான ஒப்பந்தம் · {fee}",
+          "modeFixedMonthly": "நிலையான ஒப்பந்தம் · {fee} / மாதம்",
+          "modeHourly": "மணிநேர அடிப்படை · {rate}/மணி",
+          "modeHourlyNoRate": "மணிநேர அடிப்படை",
+          "term": "காலம் {start} – {end} ({months} மாதங்கள்)",
+          "expiredAgo": "{days} நாட்களுக்கு முன் காலாவதியானது",
+          "endsToday": "இன்று முடிகிறது",
+          "endsIn": "{days} நாட்களில் முடிகிறது",
+          "running": "(நடப்பில்)",
+          "footnoteFixed": "செய்தது = முடிக்கப்பட்ட பணிகள். விலைப்பட்டியலில் மாதக் கட்டணம் மட்டுமே இருக்கும்; கூடுதல் அல்லது குறைவான மணிநேரங்கள் உள் தகவல் மட்டுமே.",
+          "footnoteHourly": "செய்தது = முடிக்கப்பட்ட பணிகள், திட்டமிட்ட மணிநேரத்துடன் ஒப்பிடப்பட்டது. மதிப்பு = செய்த மணிநேரம் × மணிநேரக் கட்டணம்."
+        },
+        "contacts": {
+          "count": {
+            "one": "{count} நபர்",
+            "other": "{count} நபர்கள்"
+          },
+          "primary": "முதன்மை"
+        },
+        "scope": {
+          "title": "சேவை வரம்பு",
+          "subtitle": "சுத்தம் வகைகள் & இடைவெளிகள்",
+          "types": {
+            "maintenance_cleaning": "பராமரிப்பு சுத்தம்",
+            "deep_cleaning": "ஆழ்ந்த சுத்தம்",
+            "window_cleaning": "ஜன்னல் சுத்தம்",
+            "office_cleaning": "அலுவலக சுத்தம்",
+            "floor_cleaning": "தரை சுத்தம்",
+            "waste_disposal": "கழிவு அகற்றல்",
+            "carpet_cleaning": "கம்பள சுத்தம்",
+            "sanitary_cleaning": "சுகாதாரப் பகுதி சுத்தம்",
+            "stairwell_cleaning": "படிக்கட்டு சுத்தம்",
+            "glass_cleaning": "கண்ணாடி சுத்தம்",
+            "emergency": "அவசர சேவை"
+          },
+          "freq": {
+            "daily": "தினசரி",
+            "weekly": "வாராந்திரம்",
+            "biweekly": "இரு வாரங்களுக்கு ஒருமுறை",
+            "monthly": "மாதாந்திரம்",
+            "quarterly": "காலாண்டுக்கு ஒருமுறை",
+            "yearly": "ஆண்டுக்கு ஒருமுறை",
+            "on_demand": "தேவைக்கேற்ப",
+            "once": "ஒருமுறை"
+          }
+        },
+        "info": {
+          "clientId": "வாடிக்கையாளர் ஐடி",
+          "companyName": "நிறுவனப் பெயர்",
+          "legalForm": "சட்ட வடிவம்",
+          "vatId": "VAT எண்",
+          "contractStart": "ஒப்பந்தத் தொடக்கம்",
+          "contractEnd": "ஒப்பந்த முடிவு",
+          "term": "காலம்",
+          "months": "{n} மாதங்கள்",
+          "days": "{n} நாட்கள்",
+          "notice": "அறிவிப்புக் காலம்",
+          "payer": "செலுத்துபவர்",
+          "billing": "கட்டண முறை",
+          "contractedHours": "ஒப்பந்த மணிநேரம் / மாதம்",
+          "noContract": "ஒப்பந்தம் பதிவு செய்யப்படவில்லை."
+        },
+        "note": {
+          "title": "உள் குறிப்பு"
+        }
+      },
+      "properties": {
+        "headerSummary": "{total} சொத்துகள் · {active} செயலில் சேவையில்",
+        "perWeek": "{n}×/வாரம்",
+        "stats": {
+          "active": "செயலில்",
+          "new30": "புதியவை (30 நா.)",
+          "new30Sub": "கடந்த 30 நாட்கள்",
+          "attention": "கவனம்",
+          "attentionSub": "பணி இல்லை (7 நா.)"
+        },
+        "status": {
+          "active": "செயலில்",
+          "onboarding": "சேர்க்கை",
+          "attention": "கவனம்"
+        },
+        "shift": {
+          "late": "தாமதம்"
+        },
+        "detail": {
+          "title": "சொத்து",
+          "since": "{date} முதல் சேவையில்",
+          "area": "பரப்பளவு",
+          "team": "குழு",
+          "frequency": "அதிர்வெண்",
+          "perWeek": "{n}× / வாரம்",
+          "shiftsTotal": "மொத்தப் பணிகள்",
+          "route": "வழி",
+          "tabShifts": "பணிகள்",
+          "thisMonth": "இந்த மாதம் {n}",
+          "all": "அனைத்தும் →",
+          "keysOut": "வழங்கப்பட்ட சாவிகள்"
+        }
+      },
+      "chat": {
+        "subtitle": "சேனல்கள், குழுக்கள் மற்றும் நேரடிச் செய்திகள்",
+        "searchPlaceholder": "சேனல்கள் மற்றும் செய்திகளைத் தேடுக…",
+        "filterDirect": "நேரடி",
+        "yesterday": "நேற்று",
+        "memberCount": "{n} உறுப்பினர்கள்",
+        "read": "படிக்கப்பட்டது",
+        "readBy": "{n} பேர் படித்தனர்",
+        "placeholderTo": "{name} க்குச் செய்தி…"
+      },
+      "alerts": {
+        "today": "இன்று",
+        "yesterday": "நேற்று",
+        "earlier": "முந்தையவை"
+      },
+      "more": {
+        "role": {
+          "admin": "நிர்வாகம்",
+          "dispatcher": "திட்ட மேலாளர்",
+          "employee": "களப் பணியாளர்"
+        },
+        "trainingOpen": "{n} நிலுவையில்",
+        "version": "Priya's App · பதிப்பு {version}"
+      },
+      "settings": {
+        "personalData": "தனிப்பட்ட விவரங்கள்",
+        "personalDataHint": "பெயர், தொலைபேசி",
+        "authenticatorApp": "அங்கீகரிப்புச் செயலி",
+        "devicesCount": "உள்நுழைந்த சாதனங்கள்: {n}",
+        "appSection": "செயலி",
+        "version": "பதிப்பு",
+        "build": "{version} (பில்ட் {build})",
+        "lang": {
+          "de": "Deutsch",
+          "en": "English",
+          "ta": "தமிழ்"
+        }
+      },
+      "employees": {
+        "serviceFilter": "சேவைப் பிரிவின்படி வடிகட்டு",
+        "statAway": "வரவில்லை",
+        "statAwaySub": "விடுப்பு அல்லது உடல்நலக்குறைவு",
+        "statOvertimeSub": "வார இலக்கை விட அதிகம்",
+        "vacationLeftA11y": "மீதமுள்ள விடுப்பு: {n} நாட்கள்",
+        "status": {
+          "vacation": "விடுப்பு",
+          "unavailable": "கிடைக்கவில்லை",
+          "terminated": "பணியிலிருந்து விலகினார்"
+        },
+        "detailTitle": "பணியாளர்",
+        "since": "{date} முதல் · {years} ஆ. {months} மா.",
+        "thisWeek": "இந்த வாரம்",
+        "hoursLeft": "{n} ம மீதம்",
+        "hoursOver": "இலக்கை விட {n} ம அதிகம்",
+        "shifts": "பணிகள்",
+        "last90Days": "கடந்த 90 நாட்கள்",
+        "vacation": "விடுப்பு",
+        "daysOf": "{n} / {total} நாட்கள்",
+        "daysUsed": "{n} பயன்படுத்தப்பட்டது",
+        "training": "பயிற்சிகள்",
+        "trainingOpen": "{title} நிலுவையில்",
+        "trainingDone": "அனைத்தும் முடிந்தது",
+        "onShift": "பணியில்",
+        "onShiftNow": "இப்போது பணியில்",
+        "planned": "திட்டமிடப்பட்டது {start}–{end}",
+        "assignShift": "பணி ஒதுக்கு",
+        "thisWeekCount": "இந்த வாரம் {n}",
+        "skillsCount": "{n} பதிவு செய்யப்பட்டது",
+        "vacationTitle": "விடுப்பு & இல்லாமை",
+        "entitlement": "உரிமை {year}",
+        "used": "பயன்படுத்தப்பட்டது",
+        "plannedLeave": "அங்கீகரிக்கப்பட்டது (திட்டமிடப்பட்டது)",
+        "available": "கிடைக்கும்",
+        "daysValue": "{n} நாட்கள்",
+        "ofTotal": "{n} இல்",
+        "nextLeave": "அடுத்த விடுப்பு"
+      },
+      "invoices": {
+        "openSub": "{n} கட்டணத்திற்காக காத்திருக்கின்றன",
+        "paidMonth": "செலுத்தப்பட்டது (மாதம்)",
+        "invoiceCount": "{n} விலைப்பட்டியல்கள்",
+        "drafts": "வரைவுகள்",
+        "draftsInLexware": "அவற்றில் {n} Lexware இல் வரைவாக",
+        "due30Title": "30 நாட்களில் நிலுவை",
+        "due30Overdue": "இதில் {amount} ஏற்கனவே தாமதம்",
+        "due30Sub": "அடுத்த 30 நாட்களில் நிலுவையாகும் அனுப்பப்பட்ட விலைப்பட்டியல்கள்",
+        "partial": "பகுதி {pct} %",
+        "paidOn": "{date} அன்று செலுத்தப்பட்டது",
+        "issuedOn": "{date} அன்று வழங்கப்பட்டது",
+        "lexwareFailed": "Lexware க்கு மாற்றம் தோல்வியடைந்தது",
+        "daysOverdue": "{n} நாட்கள் தாமதம்",
+        "dueToday": "இன்று நிலுவை",
+        "dueIn": "நிலுவை {date} · {n} நாட்களில்",
+        "daysShort": "{n} நாட்கள்",
+        "openAmount": "நிலுவைத் தொகை",
+        "invoiceAmount": "விலைப்பட்டியல் தொகை",
+        "partialPaid": "{total} இல் {paid} செலுத்தப்பட்டது",
+        "lexwareDraftNotice": "Lexware இல் வரைவு · Priya's குழு Lexware இல் சரிபார்த்து இறுதி செய்யும்",
+        "billTo": "விலைப்பட்டியல் பெறுநர்",
+        "serviceLocation": "சேவை இடம்",
+        "itemsCount": "{n} உருப்படிகள்",
+        "evPayment": "கட்டணம் பெறப்பட்டது · {amount}",
+        "evEmailSent": "மின்னஞ்சல் மூலம் அனுப்பப்பட்டது",
+        "evCreated": "விலைப்பட்டியல் உருவாக்கப்பட்டது"
+      },
+      "alltagshilfe": {
+        "running": "நடப்பில்",
+        "clients": "வாடிக்கையாளர்கள்",
+        "staff": "பணியாளர்கள்",
+        "staffSub": "இந்த மாதம் வருகைகளுடன்",
+        "amount": "தொகை",
+        "emptyBody": "Alltagshilfe வாடிக்கையாளர்களுக்கு பணிகள் திட்டமிடப்பட்டவுடன் இங்கே தோன்றும்.",
+        "showMore": "மேலும் {n} வாடிக்கையாளர்களைக் காட்டு",
+        "showLess": "குறைவாகக் காட்டு",
+        "totalSub": "{visits} வருகைகள் · {hours}",
+        "staffLine": "{visits} வருகைகள் · {hours}",
+        "deliveryInfo": "முந்தைய மாத அறிக்கை ஒவ்வொரு மாதமும் 1 ஆம் தேதி தானாக நிர்வாகத்திற்கு அனுப்பப்படும் – இணையத்தில் அமைப்புகள் → நிறுவன சுயவிவரத்தில் \"நிர்வாக மின்னஞ்சல்\" சேமிக்கப்பட்டிருந்தால் மட்டும். இதற்கு Lexware பயன்படுத்தப்படாது."
+      },
+      "vacation": {
+        "availableDays": "நாட்கள் கிடைக்கின்றன",
+        "legendUsed": "{n} பயன்படுத்தப்பட்டது",
+        "legendApproved": "{n} ஒப்புதல்",
+        "legendFree": "{n} மீதம்",
+        "nextLeave": "அடுத்த விடுமுறை",
+        "suggestion": "பரிந்துரை: {period}",
+        "requestedOn": "{date} அன்று கோரப்பட்டது",
+        "prevMonth": "முந்தைய மாதம்",
+        "nextMonth": "அடுத்த மாதம்",
+        "calendarSelected": "தேர்வு",
+        "calendarRequested": "ஏற்கனவே கோரப்பட்டது",
+        "remainingAfter": "அதன் பிறகு {n} நாட்கள் மீதம்",
+        "notice": "உங்கள் மேலாளருக்கு அறிவிக்கப்படும். பணி அட்டவணையில் பற்றாக்குறை இருந்தால், மாற்று தேதி பரிந்துரைக்கப்படலாம்."
+      },
+      "damage": {
+        "photoCount": "{n} புகைப்படம்(கள்)",
+        "pickProperty": "இடத்தைத் தேர்ந்தெடுக்கவும்",
+        "addPhoto": "புகைப்படம்",
+        "addPhotoTitle": "புகைப்படம் சேர்க்கவும்"
+      },
+      "supplies": {
+        "okSub": "அடுத்த பணிக்கு எல்லாம் உள்ளது",
+        "missingSub": "PM மீண்டும் ஆர்டர் செய்வார்",
+        "offlineNotice": "இணைப்பு இல்லையா? அடுத்த முறை ஆப்பைத் திறக்கும்போது அறிக்கை தானாக அனுப்பப்படும்."
+      },
+      "training": {
+        "continue": "தொடரவும்"
+      },
+      "workReport": {
+        "share": "பகிர்",
+        "week": "வாரம் {n}",
+        "totalWeek": "மொத்தம் · வாரம் {n}",
+        "shifts": "பணிகள்",
+        "hoursShort": "{h} மணி"
+      }
     }
   },
   "bottomNav": {

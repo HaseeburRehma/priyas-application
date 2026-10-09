@@ -24,12 +24,14 @@ export type OutboxAction =
       kind: "time_entry_insert";
       dedupe_key: string;
       row: {
+        org_id: string;
         shift_id: string;
         employee_id: string;
+        property_id: string;
         kind: "check_in" | "check_out" | "break_start" | "break_end";
         occurred_at: string; // ISO — the moment the user tapped, not the moment we send
-        lat: number | null;
-        lng: number | null;
+        latitude: number | null;
+        longitude: number | null;
       };
     }
   | {

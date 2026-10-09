@@ -8,7 +8,7 @@
  * `shifts` (RLS enforces the admin/dispatcher check).
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -16,22 +16,32 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import Svg, { Path } from "react-native-svg";
 import {
   loadEligibleEmployees,
   loadEligibleProperties,
   planShift,
   type EligibleEmployee,
-  type EligibleProperty,
 } from "@/lib/schedule";
-import { Input } from "@/components/ui";
-import { colors, spacing, typography } from "@/lib/theme";
+import {
+  Avatar,
+  Button,
+  Card,
+  CenterSpinner,
+  Divider,
+  FieldLabel,
+  IconChip,
+  InputField,
+  ListRow,
+  NavHeader,
+  Screen,
+  SearchField,
+  Txt,
+} from "@/components/ui";
+import { colors, radius, spacing } from "@/lib/theme";
 import { t } from "@/lib/i18n";
 
 export default function PlanShiftScreen() {
@@ -126,236 +136,260 @@ export default function PlanShiftScreen() {
 
   const canSave = !!propId && !!dateStr && !!startStr && !!endStr;
 
-  return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: colors.tertiary[200] }}
-      edges={["top"]}
-    >
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.headerBack}>
-          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={colors.neutral[700]} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M19 12H5M12 19l-7-7 7-7" />
-          </Svg>
-        </Pressable>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.title}>{t("mobile.planShift.title")}</Text>
-          <Text style={styles.sub}>{t("mobile.planShift.subtitle")}</Text>
-        </View>
-      </View>
+  const saving = saveMutation.isPending;
 
+  return (
+    <Screen header={<NavHeader title={t("mobile.planShift.title")} />} scroll={false}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
-          contentContainerStyle={{ padding: spacing[4], gap: 12 }}
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
+          <Txt v="subhead" color={colors.neutral[500]}>
+            {t("mobile.planShift.subtitle")}
+          </Txt>
+
           {/* Property picker */}
-          <Card title={t("mobile.planShift.propertySection")}>
+          <Field label={t("mobile.planShift.propertySection")} required>
             {selectedProp ? (
-              <Pressable
-                onPress={() => setPropId(null)}
-                style={styles.chosenRow}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.chosenName}>{selectedProp.name}</Text>
-                  <Text style={styles.chosenSub}>
-                    {[selectedProp.client_name, selectedProp.city]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </Text>
-                </View>
-                <Text style={styles.linkText}>
-                  {t("mobile.planShift.change")}
-                </Text>
-              </Pressable>
+              <Chosen
+                leading={<IconChip icon="building" tone="info" size={36} iconSize={18} />}
+                title={selectedProp.name}
+                subtitle={[selectedProp.client_name, selectedProp.city]
+                  .filter(Boolean)
+                  .join(" · ")}
+                onChange={() => setPropId(null)}
+              />
             ) : (
               <>
-                <Input
+                <SearchField
                   value={propSearch}
                   onChangeText={setPropSearch}
                   placeholder={t("mobile.planShift.propertySearchPlaceholder")}
                   autoCapitalize="none"
                 />
-                <ScrollView
-                  style={styles.pickerList}
-                  nestedScrollEnabled
-                  keyboardShouldPersistTaps="handled"
-                >
-                  {filteredProps.map((p) => (
-                    <Pressable
-                      key={p.id}
-                      onPress={() => {
-                        setPropId(p.id);
-                        // Clear the employee choice if it's no longer
-                        // eligible for the newly-picked property.
-                        if (empId) {
-                          const stillOk = (
-                            employeesQuery.data ?? []
-                          ).some(
-                            (e) =>
-                              e.id === empId &&
-                              (p.client_customer_type !== "alltagshilfe" ||
-                                e.service_line === "alltagshilfe" ||
-                                e.service_line == null),
-                          );
-                          if (!stillOk) setEmpId(null);
-                        }
-                      }}
-                      style={styles.pickRow}
+                <Card padded={false} style={styles.pickerCard}>
+                  {propertiesQuery.isLoading ? (
+                    <CenterSpinner />
+                  ) : (
+                    <ScrollView
+                      style={styles.pickerList}
+                      nestedScrollEnabled
+                      keyboardShouldPersistTaps="handled"
                     >
-                      <Text style={styles.pickName} numberOfLines={1}>
-                        {p.name}
-                      </Text>
-                      <Text style={styles.pickSub} numberOfLines={1}>
-                        {[p.client_name, p.city].filter(Boolean).join(" · ")}
-                      </Text>
-                    </Pressable>
-                  ))}
-                  {filteredProps.length === 0 && (
-                    <Text style={styles.emptyText}>
-                      {t("mobile.planShift.propertyEmpty")}
-                    </Text>
+                      {filteredProps.map((p, i) => (
+                        <View key={p.id}>
+                          {i > 0 ? <Divider /> : null}
+                          <ListRow
+                            title={p.name}
+                            subtitle={[p.client_name, p.city].filter(Boolean).join(" · ")}
+                            chevron={false}
+                            onPress={() => {
+                              setPropId(p.id);
+                              // Clear the employee choice if it's no longer
+                              // eligible for the newly-picked property.
+                              if (empId) {
+                                const stillOk = (
+                                  employeesQuery.data ?? []
+                                ).some(
+                                  (e) =>
+                                    e.id === empId &&
+                                    (p.client_customer_type !== "alltagshilfe" ||
+                                      e.service_line === "alltagshilfe" ||
+                                      e.service_line == null),
+                                );
+                                if (!stillOk) setEmpId(null);
+                              }
+                            }}
+                          />
+                        </View>
+                      ))}
+                      {filteredProps.length === 0 && (
+                        <Txt v="subhead" color={colors.neutral[500]} style={styles.emptyText}>
+                          {t("mobile.planShift.propertyEmpty")}
+                        </Txt>
+                      )}
+                    </ScrollView>
                   )}
-                </ScrollView>
+                </Card>
               </>
             )}
-          </Card>
+          </Field>
 
           {/* Employee picker */}
-          <Card title={t("mobile.planShift.employeeSection")}>
+          <Field label={t("mobile.planShift.employeeSection")}>
             {selectedEmp ? (
-              <Pressable
-                onPress={() => setEmpId(null)}
-                style={styles.chosenRow}
-              >
-                <Text style={styles.chosenName}>{selectedEmp.full_name}</Text>
-                <Text style={styles.linkText}>
-                  {t("mobile.planShift.change")}
-                </Text>
-              </Pressable>
+              <Chosen
+                leading={<Avatar name={selectedEmp.full_name} size={36} />}
+                title={selectedEmp.full_name}
+                subtitle={serviceLabel(selectedEmp)}
+                onChange={() => setEmpId(null)}
+              />
             ) : (
-              <ScrollView
-                style={styles.pickerList}
-                nestedScrollEnabled
-                keyboardShouldPersistTaps="handled"
-              >
-                <Pressable
-                  onPress={() => setEmpId(null)}
-                  style={[styles.pickRow, styles.openShiftRow]}
-                >
-                  <Text style={styles.pickName}>
-                    {t("mobile.planShift.openShift")}
-                  </Text>
-                </Pressable>
-                {eligibleEmployees.map((e) => (
-                  <Pressable
-                    key={e.id}
-                    onPress={() => setEmpId(e.id)}
-                    style={styles.pickRow}
+              <Card padded={false} style={styles.pickerCard}>
+                {employeesQuery.isLoading ? (
+                  <CenterSpinner />
+                ) : (
+                  <ScrollView
+                    style={styles.pickerList}
+                    nestedScrollEnabled
+                    keyboardShouldPersistTaps="handled"
                   >
-                    <Text style={styles.pickName}>{e.full_name}</Text>
-                    <Text style={styles.pickSub}>
-                      {e.service_line === "alltagshilfe"
-                        ? t("mobile.employees.service.alltagshilfe")
-                        : e.service_line === "priya"
-                          ? t("mobile.employees.service.priya")
-                          : "—"}
-                    </Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
+                    <ListRow
+                      title={t("mobile.planShift.openShift")}
+                      leading={<IconChip icon="users" tone="neutral" size={36} iconSize={18} />}
+                      chevron={false}
+                      onPress={() => setEmpId(null)}
+                    />
+                    {eligibleEmployees.map((e) => (
+                      <View key={e.id}>
+                        <Divider />
+                        <ListRow
+                          title={e.full_name}
+                          subtitle={serviceLabel(e)}
+                          leading={<Avatar name={e.full_name} size={36} />}
+                          chevron={false}
+                          onPress={() => setEmpId(e.id)}
+                        />
+                      </View>
+                    ))}
+                  </ScrollView>
+                )}
+              </Card>
             )}
-          </Card>
+          </Field>
 
           {/* Time */}
-          <Card title={t("mobile.planShift.timeSection")}>
-            <View>
-              <Text style={styles.label}>{t("mobile.planShift.date")}</Text>
-              <Input
-                value={dateStr}
-                onChangeText={setDateStr}
-                placeholder="YYYY-MM-DD"
+          <InputField
+            label={t("mobile.planShift.date")}
+            required
+            icon="calendar"
+            value={dateStr}
+            onChangeText={setDateStr}
+            placeholder="YYYY-MM-DD"
+            autoCapitalize="none"
+          />
+          <View style={styles.grid2}>
+            <View style={styles.gridCell}>
+              <InputField
+                label={t("mobile.planShift.start")}
+                required
+                icon="clock"
+                value={startStr}
+                onChangeText={setStartStr}
+                placeholder="HH:MM"
                 autoCapitalize="none"
               />
             </View>
-            <View style={styles.grid2}>
-              <View style={styles.gridCell}>
-                <Text style={styles.label}>{t("mobile.planShift.start")}</Text>
-                <Input
-                  value={startStr}
-                  onChangeText={setStartStr}
-                  placeholder="HH:MM"
-                  autoCapitalize="none"
-                />
-              </View>
-              <View style={styles.gridCell}>
-                <Text style={styles.label}>{t("mobile.planShift.end")}</Text>
-                <Input
-                  value={endStr}
-                  onChangeText={setEndStr}
-                  placeholder="HH:MM"
-                  autoCapitalize="none"
-                />
-              </View>
+            <View style={styles.gridCell}>
+              <InputField
+                label={t("mobile.planShift.end")}
+                required
+                icon="clock"
+                value={endStr}
+                onChangeText={setEndStr}
+                placeholder="HH:MM"
+                autoCapitalize="none"
+              />
             </View>
-          </Card>
+          </View>
 
           {/* Notes */}
-          <Card title={t("mobile.planShift.notesSection")}>
-            <Input
-              value={notes}
-              onChangeText={setNotes}
-              placeholder={t("mobile.planShift.notesPlaceholder")}
-              multiline
-              style={{ minHeight: 80, textAlignVertical: "top" }}
-            />
-          </Card>
+          <InputField
+            label={t("mobile.planShift.notesSection")}
+            value={notes}
+            onChangeText={setNotes}
+            placeholder={t("mobile.planShift.notesPlaceholder")}
+            multiline
+          />
         </ScrollView>
 
+        {/* Sticky footer. The tab bar sits below this screen, so no extra
+         *  home-indicator inset (unlike the kit's BottomBar). */}
         <View style={styles.footer}>
-          <Pressable
-            onPress={() => router.back()}
-            style={styles.cancelBtn}
-          >
-            <Text style={styles.cancelBtnText}>
-              {t("mobile.planShift.cancel")}
-            </Text>
-          </Pressable>
-          <Pressable
+          <Button
+            label={t("mobile.planShift.saveCta")}
+            icon="check"
             onPress={() => saveMutation.mutate()}
-            disabled={!canSave || saveMutation.isPending}
-            style={[
-              styles.saveBtn,
-              (!canSave || saveMutation.isPending) && { opacity: 0.5 },
-            ]}
-          >
-            <Text style={styles.saveBtnText}>
-              {saveMutation.isPending
-                ? t("mobile.planShift.saving")
-                : t("mobile.planShift.saveCta")}
-            </Text>
-          </Pressable>
+            disabled={!canSave || saving}
+            loading={saving}
+            accessibilityLabel={saving ? t("mobile.planShift.saving") : undefined}
+          />
+          <Button
+            label={t("mobile.planShift.cancel")}
+            variant="ghost"
+            size="md"
+            onPress={() => router.back()}
+          />
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
-function Card({
-  title,
+function Field({
+  label,
+  required,
   children,
 }: {
-  title: string;
-  children: React.ReactNode;
+  label: string;
+  required?: boolean;
+  children: ReactNode;
 }) {
   return (
-    <View style={styles.card}>
-      <Text style={styles.cardTitle}>{title}</Text>
-      <View style={{ gap: 8 }}>{children}</View>
+    <View style={{ gap: 8 }}>
+      <FieldLabel label={label} required={required} />
+      {children}
     </View>
   );
+}
+
+/** Selected property / employee, with an inline "Ändern" to re-pick. */
+function Chosen({
+  leading,
+  title,
+  subtitle,
+  onChange,
+}: {
+  leading: ReactNode;
+  title: string;
+  subtitle?: string;
+  onChange: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onChange}
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.chosen, pressed && { opacity: 0.85 }]}
+    >
+      {leading}
+      <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+        <Txt v="bodyStrong" numberOfLines={1}>
+          {title}
+        </Txt>
+        {subtitle ? (
+          <Txt v="subhead" color={colors.neutral[500]} numberOfLines={1}>
+            {subtitle}
+          </Txt>
+        ) : null}
+      </View>
+      <Txt v="subheadStrong" color={colors.primary[600]}>
+        {t("mobile.planShift.change")}
+      </Txt>
+    </Pressable>
+  );
+}
+
+function serviceLabel(e: EligibleEmployee): string {
+  return e.service_line === "alltagshilfe"
+    ? t("mobile.employees.service.alltagshilfe")
+    : e.service_line === "priya"
+      ? t("mobile.employees.service.priya")
+      : "—";
 }
 
 function combine(dateStr: string, timeStr: string): string {
@@ -379,131 +413,31 @@ function translateError(code: string): string {
 }
 
 const styles = StyleSheet.create({
-  header: {
+  content: { padding: spacing[4], gap: spacing[5] },
+  pickerCard: { overflow: "hidden" },
+  pickerList: { maxHeight: 260 },
+  emptyText: { padding: spacing[4], textAlign: "center" },
+  chosen: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    paddingHorizontal: spacing[4],
-    paddingTop: spacing[3],
-    paddingBottom: spacing[3],
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[100],
-  },
-  headerBack: {
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  title: {
-    fontSize: typography.size.lg,
-    fontWeight: "800",
-    color: colors.secondary[500],
-  },
-  sub: { fontSize: typography.size.sm, color: colors.neutral[500] },
-  card: {
-    backgroundColor: colors.white,
-    borderRadius: 10,
-    padding: spacing[4],
-    borderWidth: 1,
-    borderColor: colors.neutral[100],
-    gap: 10,
-  },
-  cardTitle: {
-    fontSize: typography.size.sm,
-    fontWeight: "700",
-    color: colors.secondary[500],
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  pickerList: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.neutral[100],
-    maxHeight: 260,
-  },
-  pickRow: {
+    gap: spacing[3],
+    minHeight: 56,
     paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.neutral[100],
-  },
-  openShiftRow: { backgroundColor: colors.neutral[50] },
-  pickName: {
-    fontSize: typography.size.md,
-    fontWeight: "600",
-    color: colors.neutral[800],
-  },
-  pickSub: {
-    marginTop: 2,
-    fontSize: typography.size.sm,
-    color: colors.neutral[500],
-  },
-  chosenRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  chosenName: {
-    fontSize: typography.size.md,
-    fontWeight: "700",
-    color: colors.neutral[800],
-  },
-  chosenSub: {
-    marginTop: 2,
-    fontSize: typography.size.sm,
-    color: colors.neutral[500],
-  },
-  linkText: {
-    color: colors.secondary[500],
-    fontWeight: "700",
-    fontSize: typography.size.sm,
-  },
-  emptyText: {
-    padding: 12,
-    color: colors.neutral[500],
-    fontSize: typography.size.sm,
-  },
-  grid2: { flexDirection: "row", gap: 8 },
-  gridCell: { flex: 1 },
-  label: {
-    marginBottom: 4,
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.neutral[500],
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-  footer: {
-    flexDirection: "row",
-    gap: 8,
-    padding: spacing[4],
-    borderTopWidth: 1,
-    borderTopColor: colors.neutral[100],
-    backgroundColor: colors.white,
-  },
-  cancelBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.neutral[200],
-    alignItems: "center",
+    backgroundColor: colors.white,
   },
-  cancelBtnText: {
-    color: colors.neutral[700],
-    fontWeight: "700",
-    fontSize: typography.size.md,
-  },
-  saveBtn: {
-    flex: 2,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: colors.primary[500],
-    alignItems: "center",
-  },
-  saveBtnText: {
-    color: colors.white,
-    fontWeight: "800",
-    fontSize: typography.size.md,
+  grid2: { flexDirection: "row", gap: spacing[3] },
+  gridCell: { flex: 1 },
+  footer: {
+    gap: spacing[1],
+    paddingTop: spacing[3],
+    paddingBottom: spacing[2],
+    paddingHorizontal: spacing[4],
+    backgroundColor: colors.white,
+    borderTopWidth: 1,
+    borderTopColor: colors.neutral[100],
   },
 });

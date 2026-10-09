@@ -3140,7 +3140,10 @@
         "commercial": "Company",
         "alltagshilfe": "Alltagshilfe"
       },
-      "rowProperties": "{n} property(ies)",
+      "rowProperties": {
+        "one": "{count} property",
+        "other": "{count} properties"
+      },
       "tagPriya": "Priya",
       "tagAlltagshilfe": "Alltagshilfe",
       "payer": {
@@ -3384,6 +3387,377 @@
       "errorNotSignedIn": "You are no longer signed in.",
       "errorNoOrg": "Your account is not attached to an organisation.",
       "errorNoProperty": "Please pick a property first."
+    },
+    "ui": {
+      "auth": {
+        "heroTitle": "Your cleaning business in your pocket.",
+        "heroBody": "Shift plan, GPS time tracking and team chat — all in one place.",
+        "signInSubtitle": "Enter your work email address and password.",
+        "passwordPlaceholder": "Your password",
+        "showPassword": "Show password",
+        "hidePassword": "Hide password",
+        "protected2fa": "Protected with two-factor sign-in",
+        "trouble": "Trouble signing in? Contact your manager.",
+        "version": "Version {version}",
+        "codeHint": "The code changes every 30 seconds. Problems? Contact your manager."
+      },
+      "home": {
+        "nextShift": "Next shift",
+        "now": "Now",
+        "inMinutes": "in {n} min",
+        "inHours": "in {h} h",
+        "inHoursMinutes": "in {h} h {m} min",
+        "tomorrow": "Tomorrow",
+        "thisWeek": "{count} this week",
+        "openShift": "Open shift",
+        "startTraining": "Start",
+        "damageSub": "With photo",
+        "vacationDaysFreeOne": "{count} day left",
+        "vacationDaysFreeOther": "{count} days left",
+        "supplies": "Cleaning supplies",
+        "suppliesSub": "Report stock",
+        "workReportSub": "Export as PDF"
+      },
+      "plan": {
+        "weekSubtitle": "Week {week} · {range}",
+        "dayCountOne": "{count} shift · {hours} h",
+        "dayCountOther": "{count} shifts · {hours} h"
+      },
+      "shift": {
+        "title": "Shift",
+        "route": "Route",
+        "timeTracking": "Time tracking",
+        "checkInDistance": "Check-in location · {distance} from the site",
+        "gpsHint": "Your location is checked against the site when you check in.",
+        "actionsHint": "Break and check-out become available after check-in.",
+        "area": "Area",
+        "statusNoShow": "No-show"
+      },
+      "dashboard": {
+        "subtitle": "{date} · Here's what's happening today",
+        "planShift": "Plan shift",
+        "all": "All →",
+        "kpi": {
+          "addedThisMonth": "{n} this month",
+          "propertiesAdded": "{n} new this month",
+          "pendingCheckins": "{n} check-ins open",
+          "awaitingPayment": "{n} awaiting payment"
+        },
+        "chart": {
+          "titleDay": "Shifts today",
+          "titleWeek": "Weekly shifts",
+          "titleMonth": "Monthly shifts",
+          "weekShort": "Wk {n}",
+          "hours": "Hours",
+          "rate": "{rate} rate",
+          "empty": "No shifts in this period."
+        },
+        "today": {
+          "subtitle": "{count} shifts · {pending} pending",
+          "late": "Check-in late · {min} min"
+        },
+        "team": {
+          "subtitle": "This week · {n} active",
+          "action": "Team →",
+          "hours": "{h} / {target} h"
+        },
+        "activity": {
+          "created": "created",
+          "updated": "updated",
+          "deleted": "deleted"
+        }
+      },
+      "clients": {
+        "headerSummary": "{total} clients · {active} active contracts",
+        "count": "{n} clients",
+        "stats": {
+          "contracts": "Contracts",
+          "new30": "New (30 d)",
+          "new30Sub": "system-wide",
+          "ending": "Ending soon",
+          "endingSub": "within 60 days"
+        },
+        "sort": {
+          "nameAsc": "Name A–Z",
+          "nameDesc": "Name Z–A",
+          "newest": "Newest first",
+          "properties": "Most properties"
+        },
+        "status": {
+          "new": "New",
+          "active": "Active",
+          "review": "In review",
+          "onboarding": "Onboarding",
+          "ended": "Inactive"
+        },
+        "detail": {
+          "statProperties": "Properties",
+          "statContacts": "Contacts",
+          "statShifts": "Shifts",
+          "statYtd": "YTD",
+          "call": "Call",
+          "mail": "Send email",
+          "sms": "Send text message",
+          "planShift": "Plan shift",
+          "tabInvoices": "Invoices",
+          "invoicesEmpty": "No invoices yet."
+        },
+        "hours": {
+          "title": "Hours (internal)",
+          "subtitle": "Last 3 months · planned vs. delivered",
+          "modeFixed": "Fixed contract · {fee}",
+          "modeFixedMonthly": "Fixed contract · {fee} / month",
+          "modeHourly": "Hourly · {rate}/h",
+          "modeHourlyNoRate": "Hourly",
+          "term": "Term {start} – {end} ({months} months)",
+          "expiredAgo": "expired {days} days ago",
+          "endsToday": "ends today",
+          "endsIn": "ends in {days} days",
+          "running": "(in progress)",
+          "footnoteFixed": "Delivered = completed shifts. The invoice only shows the monthly fee; extra or missing hours are internal only.",
+          "footnoteHourly": "Delivered = completed shifts, compared with planned hours. Value = delivered hours × hourly rate."
+        },
+        "contacts": {
+          "count": {
+            "one": "{count} person",
+            "other": "{count} people"
+          },
+          "primary": "Primary"
+        },
+        "scope": {
+          "title": "Scope of services",
+          "subtitle": "Cleaning types & intervals",
+          "types": {
+            "maintenance_cleaning": "Maintenance cleaning",
+            "deep_cleaning": "Deep cleaning",
+            "window_cleaning": "Window cleaning",
+            "office_cleaning": "Office cleaning",
+            "floor_cleaning": "Floor cleaning",
+            "waste_disposal": "Waste disposal",
+            "carpet_cleaning": "Carpet cleaning",
+            "sanitary_cleaning": "Sanitary cleaning",
+            "stairwell_cleaning": "Stairwell cleaning",
+            "glass_cleaning": "Glass cleaning",
+            "emergency": "Emergency call-out"
+          },
+          "freq": {
+            "daily": "Daily",
+            "weekly": "Weekly",
+            "biweekly": "Every two weeks",
+            "monthly": "Monthly",
+            "quarterly": "Quarterly",
+            "yearly": "Yearly",
+            "on_demand": "On demand",
+            "once": "One-off"
+          }
+        },
+        "info": {
+          "clientId": "Client ID",
+          "companyName": "Company name",
+          "legalForm": "Legal form",
+          "vatId": "VAT ID",
+          "contractStart": "Contract start",
+          "contractEnd": "Contract end",
+          "term": "Term",
+          "months": "{n} months",
+          "days": "{n} days",
+          "notice": "Notice period",
+          "payer": "Payer",
+          "billing": "Billing",
+          "contractedHours": "Contracted hours / month",
+          "noContract": "No contract on file."
+        },
+        "note": {
+          "title": "Internal note"
+        }
+      },
+      "properties": {
+        "headerSummary": "{total} properties · {active} actively serviced",
+        "perWeek": "{n}×/week",
+        "stats": {
+          "active": "Active",
+          "new30": "New (30 d)",
+          "new30Sub": "last 30 days",
+          "attention": "Attention",
+          "attentionSub": "no shift (7 d)"
+        },
+        "status": {
+          "active": "Active",
+          "onboarding": "Onboarding",
+          "attention": "Attention"
+        },
+        "shift": {
+          "late": "Late"
+        },
+        "detail": {
+          "title": "Property",
+          "since": "Serviced since {date}",
+          "area": "Area",
+          "team": "Team",
+          "frequency": "Frequency",
+          "perWeek": "{n}× / week",
+          "shiftsTotal": "Total shifts",
+          "route": "Directions",
+          "tabShifts": "Shifts",
+          "thisMonth": "{n} this month",
+          "all": "All →",
+          "keysOut": "Keys issued"
+        }
+      },
+      "chat": {
+        "subtitle": "Channels, groups and direct messages",
+        "searchPlaceholder": "Search channels and messages…",
+        "filterDirect": "Direct",
+        "yesterday": "Yesterday",
+        "memberCount": "{n} members",
+        "read": "Read",
+        "readBy": "Read by {n}",
+        "placeholderTo": "Message {name}…"
+      },
+      "alerts": {
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "earlier": "Earlier"
+      },
+      "more": {
+        "role": {
+          "admin": "Management",
+          "dispatcher": "Project manager",
+          "employee": "Field staff"
+        },
+        "trainingOpen": "{n} open",
+        "version": "Priya's App · Version {version}"
+      },
+      "settings": {
+        "personalData": "Personal details",
+        "personalDataHint": "Name, phone",
+        "authenticatorApp": "Authenticator app",
+        "devicesCount": "Signed-in devices: {n}",
+        "appSection": "App",
+        "version": "Version",
+        "build": "{version} (build {build})",
+        "lang": {
+          "de": "Deutsch",
+          "en": "English",
+          "ta": "தமிழ்"
+        }
+      },
+      "employees": {
+        "serviceFilter": "Filter by service line",
+        "statAway": "Away",
+        "statAwaySub": "Vacation or sick",
+        "statOvertimeSub": "over weekly target",
+        "vacationLeftA11y": "Vacation left: {n} days",
+        "status": {
+          "vacation": "Vacation",
+          "unavailable": "Unavailable",
+          "terminated": "Left company"
+        },
+        "detailTitle": "Employee",
+        "since": "Since {date} · {years} y {months} m",
+        "thisWeek": "This week",
+        "hoursLeft": "{n} h left",
+        "hoursOver": "{n} h over target",
+        "shifts": "Shifts",
+        "last90Days": "last 90 days",
+        "vacation": "Vacation",
+        "daysOf": "{n} / {total} days",
+        "daysUsed": "{n} used",
+        "training": "Training",
+        "trainingOpen": "{title} open",
+        "trainingDone": "All completed",
+        "onShift": "On shift",
+        "onShiftNow": "On shift now",
+        "planned": "Planned {start}–{end}",
+        "assignShift": "Assign shift",
+        "thisWeekCount": "{n} this week",
+        "skillsCount": "{n} recorded",
+        "vacationTitle": "Vacation & absence",
+        "entitlement": "Entitlement {year}",
+        "used": "Used",
+        "plannedLeave": "Approved (planned)",
+        "available": "Available",
+        "daysValue": "{n} days",
+        "ofTotal": "of {n}",
+        "nextLeave": "Next vacation"
+      },
+      "invoices": {
+        "openSub": "{n} awaiting payment",
+        "paidMonth": "Paid (month)",
+        "invoiceCount": "{n} invoices",
+        "drafts": "Drafts",
+        "draftsInLexware": "{n} of them as draft in Lexware",
+        "due30Title": "Due in 30 days",
+        "due30Overdue": "incl. {amount} already overdue",
+        "due30Sub": "Sent invoices due within the next 30 days",
+        "partial": "Partial {pct} %",
+        "paidOn": "Paid on {date}",
+        "issuedOn": "Issued on {date}",
+        "lexwareFailed": "Transfer to Lexware failed",
+        "daysOverdue": "{n} days overdue",
+        "dueToday": "Due today",
+        "dueIn": "Due {date} · in {n} days",
+        "daysShort": "{n} days",
+        "openAmount": "Open amount",
+        "invoiceAmount": "Invoice amount",
+        "partialPaid": "{paid} of {total} paid",
+        "lexwareDraftNotice": "Draft in Lexware · reviewed and finalised by Priya's team in Lexware",
+        "billTo": "Bill to",
+        "serviceLocation": "Service location",
+        "itemsCount": "{n} items",
+        "evPayment": "Payment received · {amount}",
+        "evEmailSent": "Sent by email",
+        "evCreated": "Invoice created"
+      },
+      "alltagshilfe": {
+        "running": "In progress",
+        "clients": "Clients",
+        "staff": "Staff",
+        "staffSub": "with visits this month",
+        "amount": "Amount",
+        "emptyBody": "Shifts at Alltagshilfe clients will appear here once they are planned.",
+        "showMore": "Show {n} more clients",
+        "showLess": "Show less",
+        "totalSub": "{visits} visits · {hours}",
+        "staffLine": "{visits} visits · {hours}",
+        "deliveryInfo": "The previous month's report is sent to management automatically on the 1st of each month – provided a \"Management email\" is saved on the web under Settings → Company profile. Lexware is not used for this."
+      },
+      "vacation": {
+        "availableDays": "days available",
+        "legendUsed": "{n} used",
+        "legendApproved": "{n} approved",
+        "legendFree": "{n} free",
+        "nextLeave": "Next vacation",
+        "suggestion": "Suggested: {period}",
+        "requestedOn": "requested on {date}",
+        "prevMonth": "Previous month",
+        "nextMonth": "Next month",
+        "calendarSelected": "Selected",
+        "calendarRequested": "Already requested",
+        "remainingAfter": "{n} days left afterwards",
+        "notice": "Your manager will be notified. If the schedule is tight, an alternative date may be suggested."
+      },
+      "damage": {
+        "photoCount": "{n} photo(s)",
+        "pickProperty": "Choose property",
+        "addPhoto": "Photo",
+        "addPhotoTitle": "Add photo"
+      },
+      "supplies": {
+        "okSub": "Everything there for the next visit",
+        "missingSub": "PM will reorder",
+        "offlineNotice": "No connection? The report is sent automatically the next time you open the app."
+      },
+      "training": {
+        "continue": "Continue"
+      },
+      "workReport": {
+        "share": "Share",
+        "week": "Week {n}",
+        "totalWeek": "Total week {n}",
+        "shifts": "Shifts",
+        "hoursShort": "{h} h"
+      }
     }
   },
   "bottomNav": {

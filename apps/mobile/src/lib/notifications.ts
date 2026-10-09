@@ -27,6 +27,8 @@ export type NotificationRow = {
   title: string;
   body: string | null;
   link: string | null;
+  /** Same heuristic as the web inbox (`src/lib/api/notifications.ts`). */
+  urgent?: boolean;
 };
 
 export async function loadMyNotifications(): Promise<NotificationRow[]> {
@@ -38,7 +40,9 @@ export async function loadMyNotifications(): Promise<NotificationRow[]> {
 
   const { data, error } = await supabase
     .from("notifications")
-    .select("id, created_at, read_at, category, title, body, link")
+    // The column is `link_url` (migration 000002); we keep exposing it as
+    // `link` so callers stay unchanged.
+    .select("id, created_at, read_at, category, title, body, link_url")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -51,7 +55,7 @@ export async function loadMyNotifications(): Promise<NotificationRow[]> {
     category: string | null;
     title: string;
     body: string | null;
-    link: string | null;
+    link_url: string | null;
   };
   return ((data ?? []) as DbRow[]).map((r) => ({
     id: r.id,
@@ -60,8 +64,18 @@ export async function loadMyNotifications(): Promise<NotificationRow[]> {
     category: normaliseCategory(r.category),
     title: r.title,
     body: r.body,
-    link: r.link,
+    link: r.link_url,
+    urgent: isUrgent(r.category, r.body),
   }));
+}
+
+/** Mirrors `isUrgent` in the web app's notifications loader. */
+function isUrgent(category: string | null, body: string | null): boolean {
+  const c = (category ?? "").toLowerCase();
+  if (c.includes("overdue") || c.includes("urgent") || c.includes("dringend")) {
+    return true;
+  }
+  return !!body && /(überfällig|overdue|urgent|missed)/i.test(body);
 }
 
 function normaliseCategory(raw: string | null): NotificationCategory {
@@ -78,6 +92,17 @@ function normaliseCategory(raw: string | null): NotificationCategory {
   if (raw && (known as readonly string[]).includes(raw)) {
     return raw as NotificationCategory;
   }
+  // The server emits event-style categories (`shift_change`,
+  // `missed_checkin`, `invoice_overdue`, `vacation_request`,
+  // `damage_report`, `training_assigned`, `chat_mention`, …) — map them
+  // onto the mobile buckets so the filter chips work.
+  const c = (raw ?? "").toLowerCase();
+  if (c.includes("shift") || c.includes("checkin") || c.includes("schedule")) return "shift";
+  if (c.includes("invoice")) return "invoice";
+  if (c.includes("vacation") || c.includes("leave")) return "vacation";
+  if (c.includes("training")) return "training";
+  if (c.includes("damage")) return "damage";
+  if (c.includes("chat") || c.includes("mention")) return "chat";
   return "other";
 }
 

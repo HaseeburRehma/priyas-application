@@ -1,27 +1,35 @@
 /**
- * Notifications tab — inbox view.
+ * Notifications ("Alarme") — Figma "17 · Alarme".
  *
- * Filter pills at the top: All / Unread / Shifts / Invoices / System.
- * Tapping a row marks it read (optimistic) and, if the row carries a
- * `link`, navigates the user there. "Mark all read" wipes unread badges
- * in one round-trip.
+ * Filter chips at the top: All / Unread / Shifts / Invoices / Vacation /
+ * Training / System. Cards are grouped into Heute · Gestern · Früher.
+ * Tapping a card marks it read (optimistic) and, if the row carries a
+ * `link`, navigates the user there. The header check button marks all
+ * read in one round-trip.
  */
 
-import React, { useCallback, useMemo, useState } from "react";
-import {
-  FlatList,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { memo, useCallback, useMemo, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { formatDistanceToNow, parseISO } from "date-fns";
-import { Card, CenterSpinner, Chip, EmptyState } from "@/components/ui";
+import { format, formatDistanceToNow, isToday, isYesterday, parseISO } from "date-fns";
+import { de, enUS, ta } from "date-fns/locale";
+import {
+  Badge,
+  Card,
+  CenterSpinner,
+  ChipRow,
+  EmptyState,
+  FilterChip,
+  GroupLabel,
+  IconChip,
+  LargeHeader,
+  RoundButton,
+  Screen,
+  Txt,
+  type IconName,
+  type Tone,
+} from "@/components/ui";
 import {
   loadMyNotifications,
   markAllNotificationsRead,
@@ -29,8 +37,8 @@ import {
   type NotificationCategory,
   type NotificationRow,
 } from "@/lib/notifications";
-import { colors, spacing, typography } from "@/lib/theme";
-import { t } from "@/lib/i18n";
+import { colors, spacing } from "@/lib/theme";
+import { i18n, t } from "@/lib/i18n";
 
 type Filter = "all" | "unread" | NotificationCategory;
 
@@ -43,6 +51,10 @@ const FILTER_ORDER: Filter[] = [
   "training",
   "system",
 ];
+
+function dfLocale() {
+  return i18n.locale === "en" ? enUS : i18n.locale === "ta" ? ta : de;
+}
 
 export default function NotificationsTab() {
   const router = useRouter();
@@ -62,6 +74,23 @@ export default function NotificationsTab() {
     if (filter === "unread") return rows.filter((r) => !r.read_at);
     return rows.filter((r) => r.category === filter);
   }, [rows, filter]);
+
+  const groups = useMemo(() => {
+    const today: NotificationRow[] = [];
+    const yesterday: NotificationRow[] = [];
+    const earlier: NotificationRow[] = [];
+    for (const r of filtered) {
+      const d = parseISO(r.created_at);
+      if (isToday(d)) today.push(r);
+      else if (isYesterday(d)) yesterday.push(r);
+      else earlier.push(r);
+    }
+    return [
+      { key: "today", labelKey: "mobile.ui.alerts.today", rows: today },
+      { key: "yesterday", labelKey: "mobile.ui.alerts.yesterday", rows: yesterday },
+      { key: "earlier", labelKey: "mobile.ui.alerts.earlier", rows: earlier },
+    ].filter((g) => g.rows.length > 0);
+  }, [filtered]);
 
   const onTap = useCallback(async function onTap(row: NotificationRow) {
     if (!row.read_at) {
@@ -89,15 +118,6 @@ export default function NotificationsTab() {
     }
   }, [qc, router]);
 
-  const keyExtractor = useCallback((item: NotificationRow) => item.id, []);
-
-  const renderNotificationRow = useCallback(
-    ({ item }: { item: NotificationRow }) => (
-      <NotificationRowItem row={item} onTap={onTap} />
-    ),
-    [onTap],
-  );
-
   async function onMarkAll() {
     qc.setQueryData<NotificationRow[]>(["notifications"], (prev) =>
       (prev ?? []).map((r) =>
@@ -108,84 +128,70 @@ export default function NotificationsTab() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.tertiary[200] }} edges={["top"]}>
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.title}>{t("notifications.title")}</Text>
-            <Text style={styles.sub}>
-              {unreadCount > 0
-                ? t("notifications.unreadCount", { n: unreadCount })
-                : t("notifications.allCaughtUp")}
-            </Text>
-          </View>
-          {unreadCount > 0 && (
-            <Pressable onPress={onMarkAll} style={styles.markAllBtn}>
-              <Text style={styles.markAllText}>
-                {t("notifications.markAll")}
-              </Text>
-            </Pressable>
-          )}
-        </View>
-
-        {/* Filter pills — horizontal scroll so more pills can fit on
-            small screens without wrapping. */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.pillRow}
-        >
-          {FILTER_ORDER.map((f) => {
-            const active = filter === f;
-            return (
-              <Pressable
-                key={f}
-                onPress={() => setFilter(f)}
-                style={[
-                  styles.pill,
-                  active && {
-                    backgroundColor: colors.primary[500],
-                    borderColor: colors.primary[500],
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.pillLabel,
-                    active && { color: colors.white },
-                  ]}
-                >
-                  {t(`notifications.filter.${f}` as never)}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
+    <Screen
+      header={
+        <LargeHeader
+          // Hidden tab reached from "Mehr": the tab bar treats "Mehr" as
+          // already active here, so give an explicit way back.
+          leading={
+            <RoundButton
+              icon="chevron-left"
+              variant="plain"
+              onPress={() => router.navigate("/more" as never)}
+              accessibilityLabel={t("chat.back")}
+            />
+          }
+          title={t("mobile.more.notifications")}
+          subtitle={t("notifications.subtitle")}
+          right={
+            unreadCount > 0 ? (
+              <RoundButton
+                icon="check"
+                onPress={onMarkAll}
+                accessibilityLabel={t("notifications.markAll")}
+              />
+            ) : undefined
+          }
+        />
+      }
+      refreshing={isRefetching}
+      onRefresh={() => refetch()}
+    >
+      <ChipRow>
+        {FILTER_ORDER.map((f) => (
+          <FilterChip
+            key={f}
+            label={t(`notifications.filter.${f}`)}
+            count={f === "unread" && unreadCount > 0 ? unreadCount : undefined}
+            selected={filter === f}
+            onPress={() => setFilter(f)}
+          />
+        ))}
+      </ChipRow>
 
       {isLoading ? (
         <CenterSpinner />
       ) : filtered.length === 0 ? (
         <EmptyState
+          icon="bell"
           title={t("notifications.emptyTitle")}
           subtitle={t("notifications.emptyBody")}
         />
       ) : (
-        <FlatList
-          data={filtered}
-          keyExtractor={keyExtractor}
-          renderItem={renderNotificationRow}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />
-          }
-        />
+        groups.map((g) => (
+          <View key={g.key} style={styles.group}>
+            <GroupLabel>{t(g.labelKey)}</GroupLabel>
+            {g.rows.map((row) => (
+              <NotificationCard key={row.id} row={row} onTap={onTap} />
+            ))}
+          </View>
+        ))
       )}
-    </SafeAreaView>
+    </Screen>
   );
 }
 
-const NotificationRowItem = React.memo(function NotificationRowItem({
+const NotificationCard = memo(function NotificationCard({
   row,
   onTap,
 }: {
@@ -193,206 +199,79 @@ const NotificationRowItem = React.memo(function NotificationRowItem({
   onTap: (row: NotificationRow) => void;
 }) {
   const unread = !row.read_at;
-  const tone = categoryTone(row.category);
+  const look = categoryLook(row);
+  const meta = `${whenLabel(row.created_at)} · ${t(`notifications.filter.${row.category}`)}`;
   return (
-    <Pressable onPress={() => onTap(row)}>
-      <Card
-        padded={false}
-        style={[styles.itemCard, unread && styles.itemCardUnread]}
-      >
-        <View style={styles.itemRow}>
-          <View style={[styles.icon, { backgroundColor: tone.bg }]}>
-            <Text style={[styles.iconText, { color: tone.fg }]}>
-              {categoryEmoji(row.category)}
-            </Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <View style={styles.titleRow}>
-              <Text
-                style={[styles.itemTitle, unread && styles.unreadText]}
-                numberOfLines={2}
-              >
-                {row.title}
-              </Text>
-              {unread && <View style={styles.unreadDot} />}
-            </View>
-            {row.body ? (
-              <Text style={styles.itemBody} numberOfLines={2}>
-                {row.body}
-              </Text>
-            ) : null}
-            <View style={styles.metaRow}>
-              <Chip
-                label={t(`notifications.filter.${row.category}` as never)}
-                tone={tone.chip}
-              />
-              <Text style={styles.time}>
-                {formatDistanceToNow(parseISO(row.created_at), {
-                  addSuffix: true,
-                })}
-              </Text>
-            </View>
-          </View>
+    <Card onPress={() => onTap(row)} style={[styles.card, unread && styles.cardUnread]}>
+      <IconChip icon={look.icon} tone={look.tone} size={40} iconSize={20} />
+      <View style={styles.cardBody}>
+        <View style={styles.titleRow}>
+          <Txt v={unread ? "bodyStrong" : "body"} style={styles.title} numberOfLines={2}>
+            {row.title}
+          </Txt>
+          {unread ? <View style={styles.unreadDot} /> : null}
         </View>
-      </Card>
-    </Pressable>
+        {row.body ? (
+          <Txt v="subhead" color={colors.neutral[600]} numberOfLines={3}>
+            {row.body}
+          </Txt>
+        ) : null}
+        <View style={styles.metaRow}>
+          {row.urgent ? <Badge label={t("notifications.urgent")} tone="error" /> : null}
+          <Txt v="caption" color={colors.neutral[400]} numberOfLines={1} style={styles.meta}>
+            {meta}
+          </Txt>
+        </View>
+      </View>
+    </Card>
   );
 });
 
-function categoryTone(c: NotificationCategory): {
-  bg: string;
-  fg: string;
-  chip: "primary" | "secondary" | "warning" | "success" | "error" | "neutral";
-} {
-  switch (c) {
-    case "shift":
-      return { bg: colors.secondary[50], fg: colors.secondary[500], chip: "secondary" };
-    case "invoice":
-      return { bg: colors.success[50], fg: colors.success[700], chip: "success" };
-    case "vacation":
-      return { bg: colors.warning[50], fg: colors.warning[700], chip: "warning" };
-    case "training":
-      return { bg: colors.primary[50], fg: colors.primary[700], chip: "primary" };
-    case "damage":
-      return { bg: colors.error[50], fg: colors.error[700], chip: "error" };
-    case "chat":
-      return { bg: colors.secondary[50], fg: colors.secondary[500], chip: "secondary" };
-    default:
-      return { bg: colors.neutral[100], fg: colors.neutral[600], chip: "neutral" };
-  }
+/** "vor 8 Minuten" today · "Gestern · 16:20" · "Mo., 6. Okt. · 14:00". */
+function whenLabel(iso: string): string {
+  const d = parseISO(iso);
+  const locale = dfLocale();
+  if (isToday(d)) return formatDistanceToNow(d, { addSuffix: true, locale });
+  if (isYesterday(d)) return `${t("mobile.ui.alerts.yesterday")} · ${format(d, "HH:mm")}`;
+  return format(d, locale === de ? "EEE, d. MMM · HH:mm" : "EEE, d MMM · HH:mm", { locale });
 }
 
-function categoryEmoji(c: NotificationCategory): string {
-  switch (c) {
-    case "shift": return "📅";
-    case "invoice": return "€";
-    case "vacation": return "✈";
-    case "training": return "🎓";
-    case "damage": return "!";
-    case "chat": return "💬";
-    case "system": return "⚙";
-    default: return "•";
+function categoryLook(row: NotificationRow): { icon: IconName; tone: Tone } {
+  if (row.urgent) return { icon: "alert", tone: "error" };
+  switch (row.category) {
+    case "shift":
+      return { icon: "calendar", tone: "brand" };
+    case "invoice":
+      return { icon: "receipt", tone: "brand" };
+    case "vacation":
+      return { icon: "sun", tone: "warning" };
+    case "training":
+      return { icon: "graduation", tone: "warning" };
+    case "damage":
+      return { icon: "camera", tone: "error" };
+    case "chat":
+      return { icon: "chat", tone: "info" };
+    case "system":
+      return { icon: "settings", tone: "neutral" };
+    default:
+      return { icon: "bell", tone: "neutral" };
   }
 }
 
 const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: spacing[4],
-    paddingTop: spacing[3],
-    paddingBottom: spacing[2],
-    gap: spacing[3],
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  title: {
-    fontSize: typography.size["2xl"],
-    fontWeight: "800",
-    color: colors.secondary[500],
-    letterSpacing: -0.5,
-  },
-  sub: {
-    fontSize: typography.size.md,
-    color: colors.neutral[500],
-    marginTop: 2,
-  },
-  markAllBtn: {
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: colors.neutral[200],
-    backgroundColor: colors.white,
-  },
-  markAllText: {
-    fontSize: typography.size.sm,
-    fontWeight: "600",
-    color: colors.primary[700],
-  },
-  pillRow: {
-    gap: spacing[2],
-    paddingRight: spacing[2],
-  },
-  pill: {
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[2],
-    borderRadius: 999,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.neutral[200],
-  },
-  pillLabel: {
-    fontSize: typography.size.sm,
-    fontWeight: "600",
-    color: colors.neutral[700],
-  },
-  list: {
-    padding: spacing[4],
-    paddingTop: spacing[2],
-    gap: spacing[3],
-  },
-  itemCard: {
-    padding: spacing[4],
-  },
-  itemCardUnread: {
-    borderColor: colors.primary[200],
-    backgroundColor: colors.primary[50],
-  },
-  itemRow: {
-    flexDirection: "row",
-    gap: spacing[3],
-  },
-  icon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconText: {
-    fontSize: 18,
-    fontWeight: "800",
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: spacing[2],
-  },
-  itemTitle: {
-    flex: 1,
-    fontSize: typography.size.md,
-    fontWeight: "600",
-    color: colors.neutral[800],
-    lineHeight: 20,
-  },
-  unreadText: {
-    fontWeight: "800",
-    color: colors.secondary[500],
-  },
+  group: { gap: 10 },
+  card: { flexDirection: "row", alignItems: "flex-start", gap: spacing[3], padding: 14 },
+  cardUnread: { borderColor: colors.primary[300] },
+  cardBody: { flex: 1, minWidth: 0, gap: 4 },
+  titleRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing[2] },
+  title: { flex: 1 },
   unreadDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.primary[500],
     marginTop: 6,
+    backgroundColor: colors.primary[500],
   },
-  itemBody: {
-    fontSize: typography.size.sm,
-    color: colors.neutral[600],
-    marginTop: 4,
-    lineHeight: 18,
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: spacing[2],
-  },
-  time: {
-    fontSize: typography.size.xs,
-    color: colors.neutral[500],
-    fontFamily: "Menlo",
-  },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: spacing[2], marginTop: 2 },
+  meta: { flexShrink: 1 },
 });

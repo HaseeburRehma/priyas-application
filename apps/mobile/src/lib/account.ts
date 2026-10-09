@@ -111,3 +111,39 @@ export async function unenrollTotp(
   if (error) return { ok: false, error: error.message };
   return { ok: true };
 }
+
+/**
+ * Display name of the signed-in user's organisation (RLS: "orgs: members
+ * can read own"). Shown under the user's role on the More / Settings
+ * profile cards. Returns null when unavailable.
+ */
+export async function loadMyOrganizationName(orgId: string): Promise<string | null> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("organizations")
+    .select("name")
+    .eq("id", orgId)
+    .maybeSingle();
+  if (error) return null;
+  return (data as { name: string | null } | null)?.name ?? null;
+}
+
+/**
+ * Current phone number from my own profile row, so the Settings form can
+ * prefill it (saving the form writes `phone` back — without the prefill
+ * an untouched, empty field would clear the stored number).
+ */
+export async function loadMyPhone(): Promise<string | null> {
+  const supabase = getSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("phone")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (error) return null;
+  return (data as { phone: string | null } | null)?.phone ?? null;
+}

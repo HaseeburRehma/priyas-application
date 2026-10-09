@@ -3140,7 +3140,10 @@
         "commercial": "Firma",
         "alltagshilfe": "Alltagshilfe"
       },
-      "rowProperties": "{n} Objekt(e)",
+      "rowProperties": {
+        "one": "{count} Objekt",
+        "other": "{count} Objekte"
+      },
       "tagPriya": "Priya",
       "tagAlltagshilfe": "Alltagshilfe",
       "payer": {
@@ -3384,6 +3387,377 @@
       "errorNotSignedIn": "Sie sind nicht mehr angemeldet.",
       "errorNoOrg": "Ihr Konto ist keiner Organisation zugeordnet.",
       "errorNoProperty": "Bitte zuerst ein Objekt auswählen."
+    },
+    "ui": {
+      "auth": {
+        "heroTitle": "Dein Reinigungsbetrieb in der Hosentasche.",
+        "heroBody": "Einsatzplan, Zeiterfassung mit GPS und Team-Chat — alles an einem Ort.",
+        "signInSubtitle": "Gib deine dienstliche E-Mail-Adresse und dein Passwort ein.",
+        "passwordPlaceholder": "Dein Passwort",
+        "showPassword": "Passwort anzeigen",
+        "hidePassword": "Passwort verbergen",
+        "protected2fa": "Geschützt mit Zwei-Faktor-Anmeldung",
+        "trouble": "Probleme beim Anmelden? Wende dich an deine Leitung.",
+        "version": "Version {version}",
+        "codeHint": "Der Code wechselt alle 30 Sekunden. Probleme? Wende dich an deine Leitung."
+      },
+      "home": {
+        "nextShift": "Nächster Einsatz",
+        "now": "Jetzt",
+        "inMinutes": "in {n} min",
+        "inHours": "in {h} h",
+        "inHoursMinutes": "in {h} h {m} min",
+        "tomorrow": "Morgen",
+        "thisWeek": "{count} diese Woche",
+        "openShift": "Einsatz öffnen",
+        "startTraining": "Starten",
+        "damageSub": "Mit Foto",
+        "vacationDaysFreeOne": "{count} Tag frei",
+        "vacationDaysFreeOther": "{count} Tage frei",
+        "supplies": "Reinigungsmittel",
+        "suppliesSub": "Bestand melden",
+        "workReportSub": "PDF exportieren"
+      },
+      "plan": {
+        "weekSubtitle": "KW {week} · {range}",
+        "dayCountOne": "{count} Einsatz · {hours} h",
+        "dayCountOther": "{count} Einsätze · {hours} h"
+      },
+      "shift": {
+        "title": "Einsatz",
+        "route": "Route",
+        "timeTracking": "Zeiterfassung",
+        "checkInDistance": "Check-in-Standort · {distance} vom Objekt",
+        "gpsHint": "Beim Einchecken wird dein Standort mit dem Objekt abgeglichen.",
+        "actionsHint": "Pause und Auschecken sind nach dem Einchecken verfügbar.",
+        "area": "Bereich",
+        "statusNoShow": "Nicht erschienen"
+      },
+      "dashboard": {
+        "subtitle": "{date} · Das passiert heute",
+        "planShift": "Einsatz planen",
+        "all": "Alle →",
+        "kpi": {
+          "addedThisMonth": "{n} diesen Monat",
+          "propertiesAdded": "{n} neu diesen Monat",
+          "pendingCheckins": "{n} Check-ins offen",
+          "awaitingPayment": "{n} warten auf Zahlung"
+        },
+        "chart": {
+          "titleDay": "Einsätze heute",
+          "titleWeek": "Wöchentliche Einsätze",
+          "titleMonth": "Monatliche Einsätze",
+          "weekShort": "KW {n}",
+          "hours": "Stunden",
+          "rate": "{rate} Quote",
+          "empty": "Keine Einsätze in diesem Zeitraum."
+        },
+        "today": {
+          "subtitle": "{count} Einsätze · {pending} ausstehend",
+          "late": "Check-in verspätet · {min} min"
+        },
+        "team": {
+          "subtitle": "Diese Woche · {n} aktiv",
+          "action": "Team →",
+          "hours": "{h} / {target} h"
+        },
+        "activity": {
+          "created": "angelegt",
+          "updated": "aktualisiert",
+          "deleted": "gelöscht"
+        }
+      },
+      "clients": {
+        "headerSummary": "{total} Kunden · {active} aktive Verträge",
+        "count": "{n} Kunden",
+        "stats": {
+          "contracts": "Verträge",
+          "new30": "Neu (30 T.)",
+          "new30Sub": "systemweit",
+          "ending": "Enden bald",
+          "endingSub": "in 60 Tagen"
+        },
+        "sort": {
+          "nameAsc": "Name A–Z",
+          "nameDesc": "Name Z–A",
+          "newest": "Neueste zuerst",
+          "properties": "Meiste Objekte"
+        },
+        "status": {
+          "new": "Neu",
+          "active": "Aktiv",
+          "review": "In Prüfung",
+          "onboarding": "Onboarding",
+          "ended": "Inaktiv"
+        },
+        "detail": {
+          "statProperties": "Objekte",
+          "statContacts": "Kontakte",
+          "statShifts": "Einsätze",
+          "statYtd": "YTD",
+          "call": "Anrufen",
+          "mail": "E-Mail senden",
+          "sms": "SMS senden",
+          "planShift": "Einsatz planen",
+          "tabInvoices": "Rechnungen",
+          "invoicesEmpty": "Noch keine Rechnungen."
+        },
+        "hours": {
+          "title": "Stunden (intern)",
+          "subtitle": "Letzte 3 Monate · geplant vs. geleistet",
+          "modeFixed": "Festvertrag · {fee}",
+          "modeFixedMonthly": "Festvertrag · {fee} / Monat",
+          "modeHourly": "Stundenbasis · {rate}/h",
+          "modeHourlyNoRate": "Stundenbasis",
+          "term": "Laufzeit {start} – {end} ({months} Monate)",
+          "expiredAgo": "seit {days} Tagen abgelaufen",
+          "endsToday": "endet heute",
+          "endsIn": "endet in {days} Tagen",
+          "running": "(laufend)",
+          "footnoteFixed": "Geleistet = abgeschlossene Einsätze. Die Rechnung enthält nur die Monatspauschale; Mehr- oder Minderstunden sind rein intern.",
+          "footnoteHourly": "Geleistet = abgeschlossene Einsätze, verglichen mit den geplanten Stunden. Wert = geleistete Stunden × Stundensatz."
+        },
+        "contacts": {
+          "count": {
+            "one": "{count} Person",
+            "other": "{count} Personen"
+          },
+          "primary": "Primär"
+        },
+        "scope": {
+          "title": "Leistungsumfang",
+          "subtitle": "Reinigungsarten & Intervalle",
+          "types": {
+            "maintenance_cleaning": "Unterhaltsreinigung",
+            "deep_cleaning": "Grundreinigung",
+            "window_cleaning": "Fensterreinigung",
+            "office_cleaning": "Büroreinigung",
+            "floor_cleaning": "Bodenreinigung",
+            "waste_disposal": "Abfallentsorgung",
+            "carpet_cleaning": "Teppichreinigung",
+            "sanitary_cleaning": "Sanitärreinigung",
+            "stairwell_cleaning": "Treppenhausreinigung",
+            "glass_cleaning": "Glasreinigung",
+            "emergency": "Notfall-Einsatz"
+          },
+          "freq": {
+            "daily": "Täglich",
+            "weekly": "Wöchentlich",
+            "biweekly": "14-täglich",
+            "monthly": "Monatlich",
+            "quarterly": "Quartalsweise",
+            "yearly": "Jährlich",
+            "on_demand": "Auf Abruf",
+            "once": "Einmalig"
+          }
+        },
+        "info": {
+          "clientId": "Kunden-ID",
+          "companyName": "Firmenname",
+          "legalForm": "Rechtsform",
+          "vatId": "USt-IdNr.",
+          "contractStart": "Vertragsbeginn",
+          "contractEnd": "Vertragsende",
+          "term": "Laufzeit",
+          "months": "{n} Monate",
+          "days": "{n} Tage",
+          "notice": "Kündigungsfrist",
+          "payer": "Kostenträger",
+          "billing": "Abrechnung",
+          "contractedHours": "Vertragsstunden / Monat",
+          "noContract": "Kein Vertrag hinterlegt."
+        },
+        "note": {
+          "title": "Interne Notiz"
+        }
+      },
+      "properties": {
+        "headerSummary": "{total} Objekte · {active} aktiv betreut",
+        "perWeek": "{n}×/Woche",
+        "stats": {
+          "active": "Aktiv",
+          "new30": "Neu (30 T.)",
+          "new30Sub": "letzte 30 Tage",
+          "attention": "Achtung",
+          "attentionSub": "ohne Einsatz (7 T.)"
+        },
+        "status": {
+          "active": "Aktiv",
+          "onboarding": "Onboarding",
+          "attention": "Achtung"
+        },
+        "shift": {
+          "late": "Verspätet"
+        },
+        "detail": {
+          "title": "Objekt",
+          "since": "Betreut seit {date}",
+          "area": "Fläche",
+          "team": "Team",
+          "frequency": "Frequenz",
+          "perWeek": "{n}× / Woche",
+          "shiftsTotal": "Einsätze gesamt",
+          "route": "Route",
+          "tabShifts": "Einsätze",
+          "thisMonth": "{n} diesen Monat",
+          "all": "Alle →",
+          "keysOut": "Ausgegebene Schlüssel"
+        }
+      },
+      "chat": {
+        "subtitle": "Kanäle, Gruppen und Direktnachrichten",
+        "searchPlaceholder": "Kanäle und Nachrichten suchen …",
+        "filterDirect": "Direkt",
+        "yesterday": "Gestern",
+        "memberCount": "{n} Mitglieder",
+        "read": "Gelesen",
+        "readBy": "Gelesen von {n}",
+        "placeholderTo": "Nachricht an {name} …"
+      },
+      "alerts": {
+        "today": "Heute",
+        "yesterday": "Gestern",
+        "earlier": "Früher"
+      },
+      "more": {
+        "role": {
+          "admin": "Geschäftsleitung",
+          "dispatcher": "Projektleitung",
+          "employee": "Außendienst"
+        },
+        "trainingOpen": "{n} offen",
+        "version": "Priya's App · Version {version}"
+      },
+      "settings": {
+        "personalData": "Persönliche Daten",
+        "personalDataHint": "Name, Telefon",
+        "authenticatorApp": "Authenticator-App",
+        "devicesCount": "Angemeldete Geräte: {n}",
+        "appSection": "App",
+        "version": "Version",
+        "build": "{version} (Build {build})",
+        "lang": {
+          "de": "Deutsch",
+          "en": "English",
+          "ta": "தமிழ்"
+        }
+      },
+      "employees": {
+        "serviceFilter": "Servicebereich filtern",
+        "statAway": "Abwesend",
+        "statAwaySub": "Urlaub oder krank",
+        "statOvertimeSub": "über Wochensoll",
+        "vacationLeftA11y": "Resturlaub: {n} Tage",
+        "status": {
+          "vacation": "Urlaub",
+          "unavailable": "Nicht verfügbar",
+          "terminated": "Ausgeschieden"
+        },
+        "detailTitle": "Mitarbeiter:in",
+        "since": "Seit {date} · {years} J. {months} M.",
+        "thisWeek": "Diese Woche",
+        "hoursLeft": "{n} h übrig",
+        "hoursOver": "{n} h über Soll",
+        "shifts": "Einsätze",
+        "last90Days": "letzte 90 Tage",
+        "vacation": "Urlaub",
+        "daysOf": "{n} / {total} Tage",
+        "daysUsed": "{n} genutzt",
+        "training": "Schulungen",
+        "trainingOpen": "{title} offen",
+        "trainingDone": "Alle abgeschlossen",
+        "onShift": "Im Einsatz",
+        "onShiftNow": "Jetzt im Einsatz",
+        "planned": "Geplant {start}–{end}",
+        "assignShift": "Schicht zuweisen",
+        "thisWeekCount": "{n} diese Woche",
+        "skillsCount": "{n} erfasst",
+        "vacationTitle": "Urlaub & Abwesenheit",
+        "entitlement": "Anspruch {year}",
+        "used": "Genutzt",
+        "plannedLeave": "Genehmigt (geplant)",
+        "available": "Verfügbar",
+        "daysValue": "{n} Tage",
+        "ofTotal": "von {n}",
+        "nextLeave": "Nächster Urlaub"
+      },
+      "invoices": {
+        "openSub": "{n} warten auf Zahlung",
+        "paidMonth": "Bezahlt (Monat)",
+        "invoiceCount": "{n} Rechnungen",
+        "drafts": "Entwürfe",
+        "draftsInLexware": "{n} davon als Entwurf in Lexware",
+        "due30Title": "Fällig in 30 Tagen",
+        "due30Overdue": "davon {amount} bereits überfällig",
+        "due30Sub": "Gesendete Rechnungen mit Fälligkeit in den nächsten 30 Tagen",
+        "partial": "Teilweise {pct} %",
+        "paidOn": "Bezahlt am {date}",
+        "issuedOn": "Ausgestellt am {date}",
+        "lexwareFailed": "Übertragung an Lexware fehlgeschlagen",
+        "daysOverdue": "{n} Tage überfällig",
+        "dueToday": "Heute fällig",
+        "dueIn": "Fällig {date} · in {n} Tagen",
+        "daysShort": "{n} Tage",
+        "openAmount": "Offener Betrag",
+        "invoiceAmount": "Rechnungsbetrag",
+        "partialPaid": "{paid} von {total} bezahlt",
+        "lexwareDraftNotice": "Entwurf in Lexware · Prüfung und Freigabe durch Priya's Team in Lexware",
+        "billTo": "Rechnung an",
+        "serviceLocation": "Leistungsort",
+        "itemsCount": "{n} Positionen",
+        "evPayment": "Zahlung eingegangen · {amount}",
+        "evEmailSent": "Per E-Mail gesendet",
+        "evCreated": "Rechnung erstellt"
+      },
+      "alltagshilfe": {
+        "running": "Laufend",
+        "clients": "Kund:innen",
+        "staff": "Mitarbeitende",
+        "staffSub": "mit Einsätzen im Monat",
+        "amount": "Betrag",
+        "emptyBody": "Sobald Schichten bei Alltagshilfe-Kund:innen geplant sind, erscheinen sie hier.",
+        "showMore": "{n} weitere Kund:innen anzeigen",
+        "showLess": "Weniger anzeigen",
+        "totalSub": "{visits} Besuche · {hours}",
+        "staffLine": "{visits} Besuche · {hours}",
+        "deliveryInfo": "Der Bericht des Vormonats wird am 1. jedes Monats automatisch an die Geschäftsleitung gesendet – sofern im Web unter Einstellungen → Firmenprofil eine „E-Mail Geschäftsleitung“ hinterlegt ist. Lexware wird dabei nicht verwendet."
+      },
+      "vacation": {
+        "availableDays": "Tage verfügbar",
+        "legendUsed": "{n} genutzt",
+        "legendApproved": "{n} genehmigt",
+        "legendFree": "{n} frei",
+        "nextLeave": "Nächster Urlaub",
+        "suggestion": "Vorschlag: {period}",
+        "requestedOn": "beantragt am {date}",
+        "prevMonth": "Vorheriger Monat",
+        "nextMonth": "Nächster Monat",
+        "calendarSelected": "Auswahl",
+        "calendarRequested": "Bereits beantragt",
+        "remainingAfter": "danach {n} Tage übrig",
+        "notice": "Deine Leitung wird benachrichtigt. Bei Engpässen im Einsatzplan kann ein Alternativtermin vorgeschlagen werden."
+      },
+      "damage": {
+        "photoCount": "{n} Foto(s)",
+        "pickProperty": "Objekt wählen",
+        "addPhoto": "Foto",
+        "addPhotoTitle": "Foto hinzufügen"
+      },
+      "supplies": {
+        "okSub": "Alles da für den nächsten Einsatz",
+        "missingSub": "PM bestellt nach",
+        "offlineNotice": "Keine Verbindung? Die Meldung wird beim nächsten Öffnen automatisch nachgesendet."
+      },
+      "training": {
+        "continue": "Fortsetzen"
+      },
+      "workReport": {
+        "share": "Teilen",
+        "week": "KW {n}",
+        "totalWeek": "Gesamt KW {n}",
+        "shifts": "Einsätze",
+        "hoursShort": "{h} h"
+      }
     }
   },
   "bottomNav": {

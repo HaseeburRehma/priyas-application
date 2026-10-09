@@ -21,8 +21,16 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import * as SplashScreen from "expo-splash-screen";
+import { useFonts } from "expo-font";
+import { Inter_400Regular } from "@expo-google-fonts/inter/400Regular";
+import { Inter_400Regular_Italic } from "@expo-google-fonts/inter/400Regular_Italic";
+import { Inter_500Medium } from "@expo-google-fonts/inter/500Medium";
+import { Inter_600SemiBold } from "@expo-google-fonts/inter/600SemiBold";
+import { Inter_700Bold } from "@expo-google-fonts/inter/700Bold";
+import { JetBrainsMono_500Medium } from "@expo-google-fonts/jetbrains-mono/500Medium";
+import { JetBrainsMono_700Bold } from "@expo-google-fonts/jetbrains-mono/700Bold";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
-import { loadSavedLocale, saveLocale } from "@/lib/i18n";
+import { i18n, loadSavedLocale, onLocaleChange, saveLocale } from "@/lib/i18n";
 import { bindOutboxAutoDrain } from "@/lib/outbox";
 import { bindNotificationTapHandler, registerPushToken } from "@/lib/push";
 import { colors } from "@/lib/theme";
@@ -73,6 +81,22 @@ const persister = createAsyncStoragePersister({
 
 export default function RootLayout() {
   const [localeReady, setLocaleReady] = useState(false);
+  // Re-mount the navigator when the user switches language in Settings
+  // so every mounted screen re-renders with the new strings at once.
+  const [localeKey, setLocaleKey] = useState(String(i18n.locale));
+  useEffect(() => onLocaleChange((l) => setLocaleKey(l)), []);
+  // Brand fonts (see `fonts` in lib/theme). The native splash stays up
+  // until both fonts and locale are ready, so text never re-flows from
+  // the system font. A load error falls back to system fonts.
+  const [fontsLoaded, fontError] = useFonts({
+    Inter_400Regular,
+    Inter_400Regular_Italic,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    JetBrainsMono_500Medium,
+    JetBrainsMono_700Bold,
+  });
 
   useEffect(() => {
     (async () => {
@@ -82,7 +106,7 @@ export default function RootLayout() {
     })();
   }, []);
 
-  if (!localeReady) return null;
+  if (!localeReady || (!fontsLoaded && !fontError)) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -112,7 +136,7 @@ export default function RootLayout() {
           }}
         >
           <AuthProvider>
-            <AuthGate />
+            <AuthGate key={localeKey} />
             <StatusBar style="dark" />
           </AuthProvider>
         </PersistQueryClientProvider>

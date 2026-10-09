@@ -1,135 +1,101 @@
 /**
- * Bottom-tab shell for signed-in users.
- *
- * Field staff sees: Home (MySelf) · Schedule · Chat · Notifications
- * Admin / dispatcher also gets: Clients, Reports (added dynamically).
- *
- * Icons are inline SVGs so we don't need an icon-font asset — keeps
- * the bundle small and avoids splash-blocking font loads.
+ * Bottom-tab shell for signed-in users — Figma "Tab Bar" component:
+ * Start · Plan · Chat · Mehr, active tab in a green pill, unread chat
+ * count as a red badge. Everything else (clients, dashboard, settings,
+ * admin surfaces) lives behind "Mehr"; those routes stay registered
+ * with `href: null` so <Link>/router.push still reach them.
  */
 
 import { Tabs } from "expo-router";
-import { type ColorValue } from "react-native";
+import { type ComponentProps } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Path, Circle, Rect } from "react-native-svg";
-import { colors, typography } from "@/lib/theme";
+import { useQuery } from "@tanstack/react-query";
+import { Icon, type IconName } from "@/components/icon";
+import { Txt } from "@/components/ui";
+import { loadMyChannels } from "@/lib/chat";
+import { useAuth } from "@/lib/auth-context";
+import { colors, shadow } from "@/lib/theme";
 import { t } from "@/lib/i18n";
 
-// RN 0.86 typed the tabBarIcon callback's `color` as ColorValue
-// (= string | OpaqueColorValue) instead of plain string. react-native-svg's
-// stroke prop already accepts ColorValue, so we widen the type here rather
-// than coercing at every call site.
-type IconProps = { color: ColorValue; size: number };
+const TABS: { name: string; icon: IconName; label: () => string }[] = [
+  { name: "index", icon: "home", label: () => t("bottomNav.home") },
+  { name: "schedule/index", icon: "calendar", label: () => t("bottomNav.schedule") },
+  { name: "chat", icon: "chat", label: () => t("bottomNav.chat") },
+  { name: "more", icon: "more", label: () => t("mobile.more.tabLabel") },
+];
 
-const Icons = {
-  home: ({ color, size }: IconProps) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V10" />
-    </Svg>
-  ),
-  schedule: ({ color, size }: IconProps) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Rect x={3} y={4} width={18} height={18} rx={2} />
-      <Path d="M16 2v4M8 2v4M3 10h18" />
-    </Svg>
-  ),
-  chat: ({ color, size }: IconProps) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-    </Svg>
-  ),
-  bell: ({ color, size }: IconProps) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0" />
-    </Svg>
-  ),
-  clients: ({ color, size }: IconProps) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-      <Circle cx={9} cy={7} r={4} />
-      <Path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-    </Svg>
-  ),
-  settings: ({ color, size }: IconProps) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx={12} cy={12} r={3} />
-      <Path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9 1.65 1.65 0 004.27 7.18l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
-    </Svg>
-  ),
-};
+// expo-router vendors react-navigation, so derive the props from <Tabs>.
+type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>["tabBar"]>>[0];
 
-const MoreIcon = ({ color, size }: IconProps) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <Circle cx={5} cy={12} r={1.5} />
-    <Circle cx={12} cy={12} r={1.5} />
-    <Circle cx={19} cy={12} r={1.5} />
-  </Svg>
-);
+function TabBar({ state, navigation }: TabBarProps) {
+  const insets = useSafeAreaInsets();
+  const { session } = useAuth();
+  // Shares the cache with the Chat tab, so opening Chat is instant.
+  const { data: channels } = useQuery({
+    queryKey: ["chat-channels"],
+    queryFn: loadMyChannels,
+    enabled: !!session,
+    refetchInterval: 60_000,
+  });
+  const unread = (channels ?? []).reduce((n, c) => n + (c.unread_count ?? 0), 0);
+  const activeName = state.routes[state.index]?.name ?? "index";
+  // Detail routes highlight their parent tab.
+  const activeTab = activeName.startsWith("schedule")
+    ? "schedule/index"
+    : TABS.some((x) => x.name === activeName)
+      ? activeName
+      : "more";
+
+  return (
+    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+      {TABS.map((tab) => {
+        const on = tab.name === activeTab;
+        const fg = on ? colors.primary[700] : colors.neutral[500];
+        return (
+          <Pressable
+            key={tab.name}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            accessibilityLabel={tab.label()}
+            onPress={() => {
+              const route = state.routes.find((r) => r.name === tab.name);
+              const event = navigation.emit({ type: "tabPress", target: route?.key ?? tab.name, canPreventDefault: true });
+              // Navigate whenever we're not already on the tab's own root —
+              // e.g. tapping "Mehr" from Alarme (a hidden child) returns to Mehr.
+              if (activeName !== tab.name && !event.defaultPrevented) {
+                navigation.navigate(tab.name as never);
+              }
+            }}
+            style={styles.item}
+          >
+            <View style={[styles.pill, on && { backgroundColor: colors.primary[50] }]}>
+              <Icon name={tab.icon} size={22} color={fg} />
+              {tab.name === "chat" && unread > 0 ? (
+                <View style={styles.badge}>
+                  <Txt v="tabLabel" color={colors.white}>
+                    {unread > 99 ? "99+" : String(unread)}
+                  </Txt>
+                </View>
+              ) : null}
+            </View>
+            <Txt v="tabLabel" color={fg}>
+              {tab.label()}
+            </Txt>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
 
 export default function TabsLayout() {
-  // Field staff and admins both see the same 4-tab primary shell:
-  //   Home · Schedule · Chat · More
-  // Everything else — Clients, Dashboard, Notifications, Settings and
-  // the admin-only surfaces (Employees, Properties, Invoices, …) —
-  // lives behind "More", which acts as the sidebar. Cuts tap-target
-  // width from ~46 px (8 tabs on iPhone 14) back to a comfortable
-  // ~92 px, and stops labels from truncating to "[missi…]" when a
-  // key is unresolved.
-  //
-  // Routes not in the tab bar stay reachable via <Link> / router.push;
-  // `href: null` hides them from the bar without unregistering them.
-  const insets = useSafeAreaInsets();
-  // Overriding paddingBottom replaces the navigator's own safe-area
-  // padding, so the home-indicator inset has to be added back here.
-  const bottomPad = Math.max(insets.bottom, 8);
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.primary[600],
-        tabBarInactiveTintColor: colors.neutral[500],
-        tabBarStyle: {
-          backgroundColor: colors.white,
-          borderTopColor: colors.neutral[100],
-          height: 54 + bottomPad,
-          paddingBottom: bottomPad,
-          paddingTop: 6,
-        },
-        tabBarLabelStyle: {
-          fontSize: typography.size.xs,
-          fontWeight: "600",
-        },
-      }}
-    >
-      {/* ---------- Primary tabs (visible in bar) ---------- */}
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: t("bottomNav.home"),
-          tabBarIcon: ({ color, size }) => <Icons.home color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="schedule/index"
-        options={{
-          title: t("bottomNav.schedule"),
-          tabBarIcon: ({ color, size }) => <Icons.schedule color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="chat"
-        options={{
-          title: t("bottomNav.chat"),
-          tabBarIcon: ({ color, size }) => <Icons.chat color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="more"
-        options={{
-          title: t("mobile.more.tabLabel"),
-          tabBarIcon: ({ color, size }) => <MoreIcon color={color} size={size} />,
-        }}
-      />
+    <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
+      <Tabs.Screen name="index" />
+      <Tabs.Screen name="schedule/index" />
+      <Tabs.Screen name="chat" />
+      <Tabs.Screen name="more" />
 
       {/* ---------- Reachable routes, hidden from the tab bar ---------- */}
       {/* Schedule detail / create sub-routes */}
@@ -143,3 +109,30 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  bar: {
+    flexDirection: "row",
+    paddingTop: 8,
+    paddingHorizontal: 8,
+    backgroundColor: colors.white,
+    borderTopWidth: 1,
+    borderTopColor: colors.neutral[100],
+    ...shadow.sm,
+  },
+  item: { flex: 1, alignItems: "center", gap: 4 },
+  pill: { width: 60, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
+  badge: {
+    position: "absolute",
+    top: -3,
+    left: 34,
+    minWidth: 18,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 9,
+    alignItems: "center",
+    backgroundColor: colors.error[500],
+    borderWidth: 2,
+    borderColor: colors.white,
+  },
+});

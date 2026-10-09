@@ -42,12 +42,14 @@ const LOCALE_KEY = "priyas.locale";
  */
 function toI18nJs<T>(node: T): T {
   if (typeof node === "string") {
-    // First protect literal `{{name}}` → ` name `, then swap
-    // remaining `{name}` for `%{name}`, then restore the literals.
+    // Protect literal `{{name}}` with control-character sentinels that
+    // can never occur in real copy, swap remaining `{name}` for
+    // `%{name}`, then restore the literals. (Using spaces as the
+    // sentinel mangled every " word " in normal sentences.)
     return node
-      .replace(/\{\{([\w.]+)\}\}/g, " $1 ")
+      .replace(/\{\{([\w.]+)\}\}/g, "\u0000$1\u0001")
       .replace(/\{([\w.]+)\}/g, "%{$1}")
-      .replace(/ ([\w.]+) /g, "{$1}") as unknown as T;
+      .replace(/\u0000([\w.]+)\u0001/g, "{$1}") as unknown as T;
   }
   if (Array.isArray(node)) return node.map(toI18nJs) as unknown as T;
   if (node && typeof node === "object") {
@@ -114,10 +116,22 @@ export async function loadSavedLocale(): Promise<Locale | null> {
   return null;
 }
 
+const localeListeners = new Set<(l: Locale) => void>();
+
+/** Subscribe to locale switches (the root layout re-mounts the app). */
+export function onLocaleChange(cb: (l: Locale) => void): () => void {
+  localeListeners.add(cb);
+  return () => {
+    localeListeners.delete(cb);
+  };
+}
+
 /** Persist a locale choice. Call this from the Settings screen. */
 export async function saveLocale(l: Locale): Promise<void> {
   await ensureLocaleLoaded(l);
+  const changed = i18n.locale !== l;
   i18n.locale = l;
+  if (changed) localeListeners.forEach((cb) => cb(l));
   try {
     await SecureStore.setItemAsync(LOCALE_KEY, l);
   } catch {

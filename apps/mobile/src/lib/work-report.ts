@@ -61,7 +61,7 @@ type ShiftJoin = {
   ends_at: string;
   properties: {
     name: string;
-    clients: { name: string } | null;
+    clients: { display_name: string } | null;
   } | null;
 };
 type EntryRow = {
@@ -109,7 +109,7 @@ export async function loadWorkReport(args: {
   const { data: shifts } = await supabase
     .from("shifts")
     .select(
-      "id, starts_at, ends_at, properties!inner(name, clients!inner(name))",
+      "id, starts_at, ends_at, properties!inner(name, clients!inner(display_name))",
     )
     .eq("employee_id", args.employeeId)
     .gte("starts_at", start.toISOString())
@@ -149,7 +149,7 @@ export async function loadWorkReport(args: {
       date: isoDate(new Date(s.starts_at)),
       starts_at: s.starts_at,
       ends_at: s.ends_at,
-      client_name: s.properties?.clients?.name ?? "—",
+      client_name: s.properties?.clients?.display_name ?? "—",
       property_name: s.properties?.name ?? "—",
       minutes_worked: clocked ?? scheduled,
       source: clocked !== null ? "clocked" : "scheduled",

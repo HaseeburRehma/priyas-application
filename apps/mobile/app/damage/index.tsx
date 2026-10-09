@@ -1,33 +1,47 @@
 /**
- * Damage reports — my history + big "new report" CTA.
+ * Damage reports — my history + floating "new report" button.
+ * Cards follow the notification-card look (Figma 17) with the category
+ * colours / severity scale from the report form (Figma 21).
  */
 
-import {
-  Image,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useMemo, useState } from "react";
+import { Image, ScrollView, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { format, parseISO } from "date-fns";
-import { Button, Card, CenterSpinner, Chip, EmptyState } from "@/components/ui";
+import { parseISO } from "date-fns";
+import {
+  Badge,
+  Button,
+  Card,
+  CenterSpinner,
+  ChipRow,
+  EmptyState,
+  FilterChip,
+  Icon,
+  IconChip,
+  NavHeader,
+  Screen,
+  Txt,
+  type IconName,
+  type Tone,
+} from "@/components/ui";
 import { useAuth } from "@/lib/auth-context";
 import {
   loadMyDamageReports,
   type DamageCategory,
   type DamageReportRow,
 } from "@/lib/damage";
-import { colors, spacing, typography } from "@/lib/theme";
-import { t } from "@/lib/i18n";
+import { colors, radius, shadow, spacing } from "@/lib/theme";
+import { i18n, t } from "@/lib/i18n";
+
+type Filter = "all" | "open" | "resolved";
 
 export default function DamageList() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { profile } = useAuth();
+  const [filter, setFilter] = useState<Filter>("all");
 
   const { data, isLoading, refetch, isRefetching } = useQuery<DamageReportRow[]>({
     queryKey: ["my-damage", profile?.employeeId],
@@ -39,215 +53,171 @@ export default function DamageList() {
   });
 
   const rows = data ?? [];
+  const counts = useMemo(
+    () => ({
+      all: rows.length,
+      open: rows.filter((r) => !r.resolved).length,
+      resolved: rows.filter((r) => r.resolved).length,
+    }),
+    [rows],
+  );
+  const visible =
+    filter === "all"
+      ? rows
+      : rows.filter((r) => (filter === "resolved" ? r.resolved : !r.resolved));
+
+  const goNew = () => router.push("/damage/new");
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: colors.tertiary[200] }}
-      edges={["top", "bottom"]}
-    >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />
-        }
-      >
-        <Pressable onPress={() => router.back()} style={styles.back}>
-          <Text style={styles.backText}>← {t("schedule.back")}</Text>
-        </Pressable>
-
-        <View style={styles.header}>
-          <Text style={styles.title}>{t("damage.title")}</Text>
-          <Text style={styles.sub}>{t("damage.subtitle")}</Text>
+    <Screen
+      header={<NavHeader title={t("damage.title")} />}
+      refreshing={isRefetching}
+      onRefresh={() => refetch()}
+      contentStyle={{ paddingBottom: 96 + insets.bottom }}
+      footer={
+        <View style={[styles.fab, { bottom: Math.max(insets.bottom, 12) + 12 }]} pointerEvents="box-none">
+          <Button label={t("damage.newReport")} icon="plus" onPress={goNew} style={styles.fabBtn} />
         </View>
+      }
+    >
+      <Txt v="subhead" color={colors.neutral[500]}>
+        {t("damage.subtitle")}
+      </Txt>
 
-        <Button
-          label={t("damage.newReport")}
-          onPress={() => router.push("/damage/new")}
+      {rows.length > 0 ? (
+        <ChipRow>
+          {(["all", "open", "resolved"] as const).map((f) => (
+            <FilterChip
+              key={f}
+              label={t(`damage.filter.${f}`)}
+              count={f === "all" ? undefined : counts[f]}
+              selected={filter === f}
+              onPress={() => setFilter(f)}
+            />
+          ))}
+        </ChipRow>
+      ) : null}
+
+      {isLoading && <CenterSpinner />}
+      {!isLoading && rows.length === 0 && (
+        <EmptyState
+          icon="camera"
+          title={t("damage.emptyTitle")}
+          subtitle={t("damage.emptyBody")}
         />
+      )}
+      {!isLoading && rows.length > 0 && visible.length === 0 && (
+        <Txt v="subhead" color={colors.neutral[500]} style={{ textAlign: "center" }}>
+          {t("damage.empty")}
+        </Txt>
+      )}
 
-        {isLoading && <CenterSpinner />}
-        {!isLoading && rows.length === 0 && (
-          <EmptyState
-            title={t("damage.emptyTitle")}
-            subtitle={t("damage.emptyBody")}
-          />
-        )}
-
-        {rows.map((r) => (
-          <Card key={r.id} style={styles.card}>
-            <View style={styles.head}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.property}>{r.property_name}</Text>
-                <Text style={styles.client}>{r.client_name}</Text>
-              </View>
-              <Chip
-                label={t(`damage.category.${r.category}` as never)}
-                tone={categoryTone(r.category)}
-              />
-            </View>
-
-            <View style={styles.metaRow}>
-              <SeverityBar level={r.severity} />
-              <Text style={styles.time}>
-                {format(parseISO(r.created_at), "d LLL · HH:mm")}
-              </Text>
-            </View>
-
-            <Text style={styles.description}>{r.description}</Text>
-
-            {r.photo_paths.length > 0 && (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.photoRow}
-              >
-                {r.photo_paths.map((url) => (
-                  <Image
-                    key={url}
-                    source={{ uri: url }}
-                    style={styles.photo}
-                    resizeMode="cover"
-                  />
-                ))}
-              </ScrollView>
-            )}
-
-            {r.resolved && (
-              <View style={styles.resolved}>
-                <Text style={styles.resolvedText}>
-                  ✓ {t("damage.resolvedLabel")}{" "}
-                  {r.resolved_at
-                    ? format(parseISO(r.resolved_at), "d LLL yyyy")
-                    : ""}
-                </Text>
-              </View>
-            )}
-          </Card>
-        ))}
-      </ScrollView>
-    </SafeAreaView>
+      {visible.map((r) => (
+        <ReportCard key={r.id} row={r} />
+      ))}
+    </Screen>
   );
 }
 
-function categoryTone(
-  c: DamageCategory,
-): "primary" | "secondary" | "warning" | "success" | "error" | "neutral" {
-  if (c === "damage") return "error";
-  if (c === "problem") return "warning";
-  if (c === "note") return "secondary";
+function ReportCard({ row: r }: { row: DamageReportRow }) {
+  const cat = CATEGORY_STYLE[r.category] ?? CATEGORY_STYLE.note;
+  const created = parseISO(r.created_at);
+  const when = `${created.toLocaleDateString(i18n.locale, {
+    day: "numeric",
+    month: "short",
+  })} · ${created.toLocaleTimeString(i18n.locale, { hour: "2-digit", minute: "2-digit" })}`;
+
+  return (
+    <Card style={styles.card}>
+      <View style={styles.cardRow}>
+        <IconChip icon={cat.icon} tone={cat.tone} size={40} iconSize={20} />
+        <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
+          <Txt v="bodyStrong" numberOfLines={1}>
+            {t(`damage.category.${r.category}`)}
+            {" · "}
+            {r.property_name}
+          </Txt>
+          <Txt v="subhead" color={colors.neutral[500]} numberOfLines={1}>
+            {r.client_name}
+          </Txt>
+          <Txt v="subhead" color={colors.neutral[700]} numberOfLines={3}>
+            {r.description}
+          </Txt>
+
+          <View style={styles.badges}>
+            <Badge
+              label={`${r.severity} · ${t(`damage.severity.${r.severity}`)}`}
+              tone={severityTone(r.severity)}
+              dot={false}
+            />
+            {r.resolved ? (
+              <Badge label={t("damage.resolvedTag")} tone="success" />
+            ) : (
+              <Badge label={t("damage.filter.open")} tone="warning" />
+            )}
+            {r.photo_paths.length > 0 ? (
+              <View style={styles.photoCount}>
+                <Icon name="camera" size={14} color={colors.neutral[500]} />
+                <Txt v="caption" color={colors.neutral[500]}>
+                  {t("mobile.ui.damage.photoCount", { n: r.photo_paths.length })}
+                </Txt>
+              </View>
+            ) : null}
+          </View>
+
+          {r.photo_paths.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: spacing[2] }}
+              style={{ marginTop: 4 }}
+            >
+              {r.photo_paths.map((url) => (
+                <Image key={url} source={{ uri: url }} style={styles.photo} resizeMode="cover" />
+              ))}
+            </ScrollView>
+          ) : null}
+
+          <Txt v="caption" color={colors.neutral[400]}>
+            {when}
+            {r.resolved && r.resolved_at
+              ? ` · ${t("damage.resolvedLabel")} ${parseISO(r.resolved_at).toLocaleDateString(
+                  i18n.locale,
+                  { day: "numeric", month: "short", year: "numeric" },
+                )}`
+              : ""}
+          </Txt>
+        </View>
+      </View>
+    </Card>
+  );
+}
+
+const CATEGORY_STYLE: Record<DamageCategory, { icon: IconName; tone: Tone }> = {
+  normal: { icon: "check", tone: "success" },
+  note: { icon: "file-text", tone: "info" },
+  problem: { icon: "alert", tone: "warning" },
+  damage: { icon: "camera", tone: "error" },
+};
+
+function severityTone(level: number): Tone {
+  if (level >= 4) return "error";
+  if (level === 3) return "warning";
+  if (level === 2) return "brand";
   return "success";
 }
 
-function SeverityBar({ level }: { level: number }) {
-  return (
-    <View style={styles.sevRow}>
-      {[1, 2, 3, 4, 5].map((n) => (
-        <View
-          key={n}
-          style={[
-            styles.sevPip,
-            {
-              backgroundColor:
-                n <= level ? severityColor(level) : colors.neutral[200],
-            },
-          ]}
-        />
-      ))}
-    </View>
-  );
-}
-
-function severityColor(level: number): string {
-  if (level >= 5) return colors.error[500];
-  if (level >= 4) return colors.warning[500];
-  if (level >= 3) return colors.warning[300];
-  return colors.primary[500];
-}
-
 const styles = StyleSheet.create({
-  container: {
-    padding: spacing[4],
-    gap: spacing[3],
-  },
-  back: { marginBottom: spacing[1] },
-  backText: {
-    fontSize: typography.size.md,
-    color: colors.primary[600],
-    fontWeight: "600",
-  },
-  header: { gap: spacing[1] },
-  title: {
-    fontSize: typography.size["2xl"],
-    fontWeight: "800",
-    color: colors.secondary[500],
-    letterSpacing: -0.5,
-  },
-  sub: {
-    fontSize: typography.size.md,
-    color: colors.neutral[500],
-  },
-  card: { gap: spacing[2] },
-  head: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing[3],
-  },
-  property: {
-    fontSize: typography.size.md,
-    fontWeight: "700",
-    color: colors.neutral[800],
-  },
-  client: {
-    fontSize: typography.size.sm,
-    color: colors.neutral[500],
-    marginTop: 2,
-  },
-  metaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: spacing[1],
-  },
-  sevRow: {
-    flexDirection: "row",
-    gap: 4,
-  },
-  sevPip: {
-    width: 12,
-    height: 6,
-    borderRadius: 3,
-  },
-  time: {
-    fontSize: typography.size.xs,
-    color: colors.neutral[500],
-    fontFamily: "Menlo",
-  },
-  description: {
-    fontSize: typography.size.md,
-    color: colors.neutral[700],
-    lineHeight: 20,
-    marginTop: spacing[1],
-  },
-  photoRow: {
-    marginTop: spacing[2],
-  },
+  card: { padding: 14 },
+  cardRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing[3] },
+  badges: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 2 },
+  photoCount: { flexDirection: "row", alignItems: "center", gap: 4, marginLeft: 2 },
   photo: {
-    width: 90,
-    height: 90,
-    borderRadius: 8,
-    marginRight: spacing[2],
+    width: 56,
+    height: 56,
+    borderRadius: radius.md,
     backgroundColor: colors.neutral[100],
   },
-  resolved: {
-    marginTop: spacing[2],
-    paddingVertical: spacing[2],
-    paddingHorizontal: spacing[3],
-    borderRadius: 8,
-    backgroundColor: colors.success[50],
-  },
-  resolvedText: {
-    fontSize: typography.size.sm,
-    fontWeight: "700",
-    color: colors.success[700],
-  },
+  fab: { position: "absolute", right: spacing[4] },
+  fabBtn: { borderRadius: radius.full, ...shadow.md },
 });
