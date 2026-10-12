@@ -2,6 +2,7 @@
  * Schedule + shift loaders scoped to the caller's own assignments.
  */
 
+import Constants from "expo-constants";
 import { startOfWeek } from "date-fns";
 import { getSupabase } from "@/lib/supabase";
 
@@ -351,7 +352,37 @@ export async function planShift(
     .select("id")
     .single();
   if (error) return { ok: false, error: error.message };
-  return { ok: true, id: (data as { id: string }).id };
+  const id = (data as { id: string }).id;
+  if (input.employee_id) void announceAssignedShift(id);
+  return { ok: true, id };
+}
+
+/** Web app origin — it sends notifications on the app's behalf. */
+function webUrl(): string | null {
+  const v =
+    process.env.EXPO_PUBLIC_WEB_URL ||
+    (Constants.expoConfig?.extra?.webUrl as string | undefined);
+  return v ? v.replace(/\/$/, "") : null;
+}
+
+/**
+ * The insert above goes straight to Supabase, so the server never sees
+ * it. Ask the web app to notify the assignee (in-app + push). Fire and
+ * forget: a failure here must never block or undo the planned shift.
+ */
+async function announceAssignedShift(shiftId: string): Promise<void> {
+  try {
+    const base = webUrl();
+    const { data } = await getSupabase().auth.getSession();
+    const token = data.session?.access_token;
+    if (!base || !token) return;
+    await fetch(`${base}/api/shifts/${shiftId}/notify-assigned`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    // Best-effort.
+  }
 }
 
 /** Haversine distance in metres, for GPS proximity checks. */

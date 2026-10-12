@@ -1,10 +1,12 @@
 import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sendPushToProfile } from "@/lib/push/send";
 import { createWhatsAppClient } from "@/lib/integrations/whatsapp";
 
 export type NotificationCategory =
   | "new_client"
+  | "shift_assigned"
   | "shift_change"
   | "missed_checkin"
   | "invoice_overdue"
@@ -33,6 +35,8 @@ type EmitInput = {
  */
 const CATEGORY_TO_EVENT: Record<NotificationCategory, string | null> = {
   new_client: "new_client",
+  // Assignment is a kind of shift change for the Settings toggles.
+  shift_assigned: "shift_change",
   shift_change: "shift_change",
   missed_checkin: "missed_checkin",
   invoice_overdue: "invoice_overdue",
@@ -51,8 +55,17 @@ const CATEGORY_TO_EVENT: Record<NotificationCategory, string | null> = {
  *
  * Failures are logged but never thrown — notifications are best-effort.
  */
-export async function emitNotification(input: EmitInput): Promise<void> {
-  const supabase = await createSupabaseServerClient();
+export async function emitNotification(
+  input: EmitInput,
+  /**
+   * Client for the writes. Defaults to the caller's cookie session; pass
+   * a service-role client from routes authenticated another way (e.g. a
+   * mobile bearer token), where there is no cookie session.
+   */
+  client?: SupabaseClient,
+): Promise<void> {
+  const supabase = (client ??
+    (await createSupabaseServerClient())) as unknown as SupabaseClient;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await ((supabase.from("notifications") as any)).insert({
     org_id: input.org_id,
@@ -85,17 +98,20 @@ export async function emitNotification(input: EmitInput): Promise<void> {
   // WhatsApp dispatch — gated on (a) the category having a matching
   // settings toggle and (b) the org having that toggle on for the
   // whatsapp channel in their settings.notifications matrix.
-  await maybeSendWhatsApp(input).catch((err) => {
+  await maybeSendWhatsApp(input, supabase).catch((err) => {
     // eslint-disable-next-line no-console
     console.warn("[notifications] whatsapp failed", err);
   });
 }
 
-async function maybeSendWhatsApp(input: EmitInput): Promise<void> {
+async function maybeSendWhatsApp(
+  input: EmitInput,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+): Promise<void> {
   const eventKey = CATEGORY_TO_EVENT[input.category];
   if (!eventKey) return;
 
-  const supabase = await createSupabaseServerClient();
   // 1) Org-level matrix: settings.data.notifications[event].whatsapp ?
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: settingsRow } = await ((supabase.from("settings") as any))

@@ -11,6 +11,7 @@ import {
   writeImportAudit,
   checkImportThrottle,
 } from "@/lib/import/runImport";
+import { notifyShiftAssigned } from "@/lib/notifications/shift-assigned";
 
 /**
  * CSV import schema for shifts (the /schedule module).
@@ -98,6 +99,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Assigned shifts that were actually inserted — notified after the run.
+  const assignedShiftIds: string[] = [];
   const result = await runImport<ImportShiftRow>({
     module: "shifts",
     file: parsed.file,
@@ -159,17 +162,22 @@ export async function POST(request: NextRequest) {
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await ((supabase.from("shifts") as any)).insert({
-        org_id: orgId,
-        property_id: propertyId,
-        employee_id: employeeId,
-        starts_at: row.starts_at,
-        ends_at: row.ends_at,
-        notes: row.notes ?? null,
-        status: "scheduled",
-        created_by: userId,
-      });
+      const { data: inserted, error } = await ((supabase.from("shifts") as any))
+        .insert({
+          org_id: orgId,
+          property_id: propertyId,
+          employee_id: employeeId,
+          starts_at: row.starts_at,
+          ends_at: row.ends_at,
+          notes: row.notes ?? null,
+          status: "scheduled",
+          created_by: userId,
+        })
+        .select("id")
+        .single();
       if (error) return { ok: false, error: error.message };
+      const insertedId = (inserted as { id: string } | null)?.id;
+      if (employeeId && insertedId) assignedShiftIds.push(insertedId);
       return { ok: true };
     },
   });
@@ -180,6 +188,8 @@ export async function POST(request: NextRequest) {
       tableName: "shifts",
       result,
     });
+    // One summary per employee, not one push per row.
+    await notifyShiftAssigned(assignedShiftIds, { actorId: userId });
   }
 
   return NextResponse.json(result);

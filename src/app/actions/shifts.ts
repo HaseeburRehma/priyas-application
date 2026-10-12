@@ -10,6 +10,7 @@ import { requirePermission, PermissionError } from "@/lib/rbac/permissions";
 import { getOutstandingMandatoryModules } from "@/lib/training/lock";
 import { routes } from "@/lib/constants/routes";
 import { getCachedUser } from "@/lib/api/current-user";
+import { notifyShiftAssigned } from "@/lib/notifications/shift-assigned";
 
 type ActionResult<T = void> =
   | { ok: true; data: T }
@@ -235,6 +236,9 @@ export async function createShiftAction(
     newId,
     `Schicht **${input.starts_at}** wurde geplant.`,
   );
+  if (input.employee_id) {
+    await notifyShiftAssigned([newId], { actorId: user?.id });
+  }
 
   revalidatePath(routes.schedule);
   revalidatePath(routes.dashboard);
@@ -289,6 +293,15 @@ export async function updateShiftAction(
   );
   if (conflict) return conflict;
 
+  // Previous assignee — only a *new* assignee gets a notification.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: before } = await ((supabase.from("shifts") as any))
+    .select("employee_id")
+    .eq("id", input.id)
+    .maybeSingle();
+  const previousEmployee =
+    (before as { employee_id: string | null } | null)?.employee_id ?? null;
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await ((supabase.from("shifts") as any))
     .update({
@@ -305,6 +318,10 @@ export async function updateShiftAction(
     return { ok: false, error: error.message };
   }
   await audit("update", input.id, "Schicht aktualisiert.");
+  if (input.employee_id && input.employee_id !== previousEmployee) {
+    const user = await getCachedUser();
+    await notifyShiftAssigned([input.id], { actorId: user?.id });
+  }
   revalidatePath(routes.schedule);
   return { ok: true, data: { id: input.id } };
 }
@@ -357,7 +374,7 @@ export async function reassignShiftAction(input: {
   const supabase = await createSupabaseServerClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: existing, error: loadErr } = await ((supabase.from("shifts") as any))
-    .select("id, property_id, starts_at, ends_at, status")
+    .select("id, property_id, starts_at, ends_at, status, employee_id")
     .eq("id", input.id)
     .maybeSingle();
   if (loadErr || !existing) {
@@ -369,6 +386,7 @@ export async function reassignShiftAction(input: {
     starts_at: string;
     ends_at: string;
     status: string;
+    employee_id: string | null;
   };
 
   if (input.employee_id) {
@@ -407,6 +425,10 @@ export async function reassignShiftAction(input: {
     return { ok: false, error: error.message };
   }
   await audit("update", input.id, "Schicht neu zugewiesen.");
+  if (input.employee_id && input.employee_id !== row.employee_id) {
+    const user = await getCachedUser();
+    await notifyShiftAssigned([input.id], { actorId: user?.id });
+  }
   revalidatePath(routes.schedule);
   return { ok: true, data: { id: input.id } };
 }
