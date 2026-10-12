@@ -14,6 +14,7 @@ import {
 } from "@/lib/push/client";
 import {
   registerPushSubscriptionAction,
+  sendTestPushAction,
   unregisterPushSubscriptionAction,
 } from "@/app/actions/push";
 
@@ -102,6 +103,23 @@ export function PushToggleCard() {
     });
   }
 
+  function sendTest() {
+    start(async () => {
+      const r = await sendTestPushAction();
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      if (r.data.sent > 0) {
+        toast.success(t("testSent", { count: r.data.sent }));
+      } else if (r.data.failed > 0) {
+        toast.error(t("testFailed"));
+      } else {
+        toast.error(t("testNone"));
+      }
+    });
+  }
+
   return (
     <section className="rounded-lg border border-neutral-100 bg-white">
       <header className="border-b border-neutral-100 p-5">
@@ -142,6 +160,24 @@ export function PushToggleCard() {
               {t("enable")}
             </button>
           ) : null}
+        </div>
+        <div className="mt-3 flex flex-wrap items-start justify-between gap-4 rounded-md border border-neutral-100 p-4">
+          <div className="min-w-0">
+            <span className="text-[13px] font-semibold text-neutral-800">
+              {t("testTitle")}
+            </span>
+            <p className="mt-1 max-w-[480px] text-[12px] leading-[1.5] text-neutral-500">
+              {t("testHint")}
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={sendTest}
+            className="btn btn--ghost border border-neutral-200"
+          >
+            {t("testButton")}
+          </button>
         </div>
       </div>
     </section>

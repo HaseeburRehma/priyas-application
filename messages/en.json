@@ -2086,7 +2086,15 @@
       "bodyDenied": "You blocked notifications. Enable them in your browser settings, then reload.",
       "bodyMissingVapid": "Push isn't configured on the server. Add VAPID keys to enable.",
       "bodyOn": "You'll receive push notifications on this device.",
-      "bodyOff": "Turn on to receive notifications from this device's browser."
+      "bodyOff": "Turn on to receive notifications from this device's browser.",
+      "testTitle": "Test notification",
+      "testHint": "Sends a test notification to all your signed-in devices – this browser (if enabled) and the Priya's app.",
+      "testButton": "Send test",
+      "testSent": "Test sent to {count} device(s).",
+      "testNone": "No device registered for push. Open the Priya's app on your phone and allow notifications.",
+      "testFailed": "The test couldn't be delivered.",
+      "testPushTitle": "Test notification",
+      "testPushBody": "Push notifications are working on this device."
     },
     "security": {
       "title": "07 · Security",

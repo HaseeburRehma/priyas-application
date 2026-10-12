@@ -2086,7 +2086,15 @@
       "bodyDenied": "Du hast Benachrichtigungen blockiert. Aktiviere sie in den Browser-Einstellungen und lade die Seite neu.",
       "bodyMissingVapid": "Push ist serverseitig nicht konfiguriert. Bitte VAPID-Schlüssel ergänzen.",
       "bodyOn": "Du erhältst Push-Benachrichtigungen auf diesem Gerät.",
-      "bodyOff": "Aktivieren, um auf diesem Gerät benachrichtigt zu werden."
+      "bodyOff": "Aktivieren, um auf diesem Gerät benachrichtigt zu werden.",
+      "testTitle": "Test-Benachrichtigung",
+      "testHint": "Schickt eine Test-Benachrichtigung an alle deine angemeldeten Geräte – diesen Browser (falls aktiv) und die Priya's App.",
+      "testButton": "Test senden",
+      "testSent": "Test an {count} Gerät(e) gesendet.",
+      "testNone": "Kein Gerät für Push registriert. Öffne die Priya's App auf deinem Handy und erlaube Benachrichtigungen.",
+      "testFailed": "Test konnte nicht zugestellt werden.",
+      "testPushTitle": "Test-Benachrichtigung",
+      "testPushBody": "Push-Benachrichtigungen funktionieren auf diesem Gerät."
     },
     "security": {
       "title": "07 · Sicherheit",

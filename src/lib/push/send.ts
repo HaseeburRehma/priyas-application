@@ -1,5 +1,8 @@
 import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { sendExpoPushToProfile } from "@/lib/push/expo";
+import { createPushServiceClient } from "@/lib/push/service-client";
 
 /**
  * Late-bound `web-push` import. The package may not be installed in
@@ -50,14 +53,33 @@ export type PushPayload = {
   tag?: string;
 };
 
+/**
+ * Deliver to every device the user has: browsers (Web Push) and the
+ * mobile app (Expo). Each channel no-ops when it isn't configured.
+ */
 export async function sendPushToProfile(
+  profileId: string,
+  payload: PushPayload,
+): Promise<{ sent: number; failed: number }> {
+  const none = { sent: 0, failed: 0 };
+  const [web, mobile] = await Promise.all([
+    sendWebPushToProfile(profileId, payload).catch(() => none),
+    sendExpoPushToProfile(profileId, payload).catch(() => none),
+  ]);
+  return { sent: web.sent + mobile.sent, failed: web.failed + mobile.failed };
+}
+
+async function sendWebPushToProfile(
   profileId: string,
   payload: PushPayload,
 ): Promise<{ sent: number; failed: number }> {
   const wp = await loadAndConfigure();
   if (!wp) return { sent: 0, failed: 0 };
 
-  const supabase = await createSupabaseServerClient();
+  // Prefer the service client: RLS hides other users' subscriptions
+  // from the caller's session.
+  const supabase = (createPushServiceClient() ??
+    (await createSupabaseServerClient())) as unknown as SupabaseClient;
   const { data: rows } = await supabase
     .from("push_subscriptions")
     .select("id, endpoint, p256dh, auth")

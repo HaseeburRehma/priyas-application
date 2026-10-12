@@ -1,5 +1,6 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
 import { pushSubscriptionSchema } from "@/lib/validators/push";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCachedUser } from "@/lib/api/current-user";
@@ -71,4 +72,26 @@ export async function unregisterPushSubscriptionAction(
     .eq("profile_id", user.id);
   if (error) return { ok: false, error: error.message };
   return { ok: true, data: undefined };
+}
+
+/**
+ * Send a test notification to the current user's own devices — every
+ * browser with Web Push on and every phone running the Priya's app.
+ * Lets anyone confirm delivery end to end without waiting for a real
+ * event. Never targets anyone else.
+ */
+export async function sendTestPushAction(): Promise<
+  ActionResult<{ sent: number; failed: number }>
+> {
+  const user = await getCachedUser();
+  if (!user) return { ok: false, error: "Not signed in" };
+  const t = await getTranslations("settings.push");
+  const { sendPushToProfile } = await import("@/lib/push/send");
+  const result = await sendPushToProfile(user.id, {
+    title: t("testPushTitle"),
+    body: t("testPushBody"),
+    url: "/",
+    tag: "test",
+  });
+  return { ok: true, data: result };
 }
