@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "551916614006",
+    "project_id": "priyas-reinigung",
+    "storage_bucket": "priyas-reinigung.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:551916614006:android:21bc42f80c5a78003d8a57",
+        "android_client_info": {
+          "package_name": "de.priyas.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBK0XhSIzM6xxOwMrmxyBz29NCoTN5DjFk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
