@@ -64,14 +64,12 @@ async function getDeviceFingerprint(): Promise<string> {
  */
 export async function registerPushToken(userId: string): Promise<void> {
   try {
-    // Push tokens don't work in the Expo Go client past SDK 53 for iOS;
-    // this is expected. We still register on Android Go (which does
-    // work) and on real / TestFlight builds.
-    if (!Constants.isDevice && Platform.OS !== "web") {
-      // Simulators — Apple will refuse a token; Android emulators can
-      // register but the token is worthless. Skip either way.
-      return;
-    }
+    // Native builds only — there is no Expo push on web. Don't gate on
+    // `Constants.isDevice`: expo-constants no longer has it, so the old
+    // check was always undefined and returned early on every real
+    // phone (no token was ever saved). Simulators simply fail to get a
+    // token below, which the catch swallows.
+    if (Platform.OS === "web") return;
 
     const projectId =
       Constants.expoConfig?.extra?.eas?.projectId ??

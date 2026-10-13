@@ -165,14 +165,14 @@ function ReportCard({ row: r }: { row: DamageReportRow }) {
             ) : null}
           </View>
 
-          {r.photo_paths.length > 0 ? (
+          {r.photo_urls.length > 0 ? (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ gap: spacing[2] }}
               style={{ marginTop: 4 }}
             >
-              {r.photo_paths.map((url) => (
+              {r.photo_urls.map((url) => (
                 <Image key={url} source={{ uri: url }} style={styles.photo} resizeMode="cover" />
               ))}
             </ScrollView>

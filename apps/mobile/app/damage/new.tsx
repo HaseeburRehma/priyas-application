@@ -78,7 +78,9 @@ export default function NewDamageReport() {
   const [category, setCategory] = useState<DamageCategory>("problem");
   const [severity, setSeverity] = useState<number>(3);
   const [description, setDescription] = useState("");
-  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  // `path` is what gets saved; `uri` is the local file for the preview
+  // (the bucket is private, so there's no public URL to show).
+  const [photos, setPhotos] = useState<Array<{ path: string; uri: string }>>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -133,27 +135,30 @@ export default function NewDamageReport() {
   async function uploadAssets(
     assets: Array<{ uri: string; mimeType?: string | null }>,
   ) {
-    if (!propertyId) return;
+    if (!propertyId || !profile?.orgId) return;
+    const orgId = profile.orgId;
     setUploading(true);
     const results = await Promise.all(
-      assets.map((a) =>
-        uploadDamagePhoto({
+      assets.map(async (a) => {
+        const path = await uploadDamagePhoto({
+          orgId,
           propertyId,
           fileUri: a.uri,
           mimeType: a.mimeType ?? null,
-        }),
-      ),
+        });
+        return path ? { path, uri: a.uri } : null;
+      }),
     );
-    const uploaded = results.filter((url): url is string => !!url);
-    setPhotoUrls((prev) => [...prev, ...uploaded]);
+    const uploaded = results.filter((p): p is { path: string; uri: string } => !!p);
+    setPhotos((prev) => [...prev, ...uploaded]);
     setUploading(false);
     if (uploaded.length < assets.length) {
       Alert.alert(t("damage.uploadPartial"));
     }
   }
 
-  function removePhoto(url: string) {
-    setPhotoUrls((prev) => prev.filter((u) => u !== url));
+  function removePhoto(path: string) {
+    setPhotos((prev) => prev.filter((p) => p.path !== path));
   }
 
   /** Single "add photo" tile → choose camera or library (both flows kept). */
@@ -191,7 +196,7 @@ export default function NewDamageReport() {
       severity,
       category,
       description,
-      photoUrls,
+      photoPaths: photos.map((p) => p.path),
     });
     setSubmitting(false);
     if (!r.ok) {
@@ -335,18 +340,18 @@ export default function NewDamageReport() {
         <View style={{ gap: 8 }}>
           <View style={styles.rowBetween}>
             <FieldLabel label={t("damage.photos")} />
-            {photoUrls.length > 0 ? (
+            {photos.length > 0 ? (
               <Txt v="caption" color={colors.neutral[500]}>
-                {t("damage.photosAttached", { n: photoUrls.length })}
+                {t("damage.photosAttached", { n: photos.length })}
               </Txt>
             ) : null}
           </View>
           <View style={styles.photoGrid}>
-            {photoUrls.map((url) => (
-              <View key={url} style={styles.thumb}>
-                <Image source={{ uri: url }} style={styles.thumbImg} resizeMode="cover" />
+            {photos.map((photo) => (
+              <View key={photo.path} style={styles.thumb}>
+                <Image source={{ uri: photo.uri }} style={styles.thumbImg} resizeMode="cover" />
                 <Pressable
-                  onPress={() => removePhoto(url)}
+                  onPress={() => removePhoto(photo.path)}
                   hitSlop={8}
                   style={styles.thumbX}
                   accessibilityRole="button"

@@ -2,8 +2,10 @@
  * Damage / condition reports — loader + create + Storage upload.
  *
  * Insertion writes to `damage_reports`. Photos are uploaded to the
- * existing `property-photos` bucket under `<property_id>/damage/<...>`
- * and their public URLs stored back on the row's `photo_paths` array.
+ * private `property-photos` bucket under `<org_id>/<property_id>/damage/`
+ * — the same layout the web app uses, and the org prefix the bucket's
+ * RLS requires — and their storage *paths* are stored on `photo_paths`.
+ * Reading them back needs signed URLs (see `photo_urls`).
  */
 
 import { getSupabase } from "@/lib/supabase";
@@ -19,6 +21,8 @@ export type DamageReportRow = {
   category: DamageCategory;
   description: string;
   photo_paths: string[];
+  /** Signed, short-lived URLs for `photo_paths`, in the same order. */
+  photo_urls: string[];
   resolved: boolean;
   resolved_at: string | null;
   created_at: string;
@@ -63,7 +67,21 @@ export async function loadMyDamageReports(
       client: { display_name: string } | null;
     } | null;
   };
-  return ((data ?? []) as unknown as Row[]).map((r) => ({
+  const rows = (data ?? []) as unknown as Row[];
+
+  // The bucket is private: sign every stored path in one call.
+  const paths = Array.from(new Set(rows.flatMap((r) => r.photo_paths ?? [])));
+  const signed = new Map<string, string>();
+  if (paths.length > 0) {
+    const { data: urls } = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrls(paths, 60 * 60);
+    for (const u of urls ?? []) {
+      if (u.path && u.signedUrl) signed.set(u.path, u.signedUrl);
+    }
+  }
+
+  return rows.map((r) => ({
     id: r.id,
     property_id: r.property_id,
     shift_id: r.shift_id,
@@ -72,6 +90,9 @@ export async function loadMyDamageReports(
     category: r.category,
     description: r.description,
     photo_paths: r.photo_paths ?? [],
+    photo_urls: (r.photo_paths ?? [])
+      .map((p) => signed.get(p))
+      .filter((u): u is string => !!u),
     resolved: r.resolved,
     resolved_at: r.resolved_at,
     created_at: r.created_at,
@@ -81,10 +102,11 @@ export async function loadMyDamageReports(
 }
 
 /**
- * Upload one photo to Storage. Returns the public URL, or null on
- * failure. Path scheme: `<property_id>/damage/<timestamp>-<rand>.jpg`.
+ * Upload one photo to Storage. Returns the storage path, or null on
+ * failure. Path scheme: `<org_id>/<property_id>/damage/<timestamp>-<rand>.<ext>`.
  */
 export async function uploadDamagePhoto(args: {
+  orgId: string;
   propertyId: string;
   fileUri: string;
   mimeType: string | null;
@@ -92,7 +114,7 @@ export async function uploadDamagePhoto(args: {
   const supabase = getSupabase();
   const ext = (args.mimeType?.split("/")[1] ?? "jpg").split(";")[0];
   const rand = Math.random().toString(36).slice(2, 10);
-  const path = `${args.propertyId}/damage/${Date.now()}-${rand}.${ext}`;
+  const path = `${args.orgId}/${args.propertyId}/damage/${Date.now()}-${rand}.${ext}`;
 
   // React Native FormData with file:// URI. Cast via `as never` because
   // the web File-shape isn't the RN shape; Supabase accepts both.
@@ -110,9 +132,7 @@ export async function uploadDamagePhoto(args: {
       upsert: false,
     });
   if (error) return null;
-
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return data.publicUrl ?? null;
+  return path;
 }
 
 export async function createDamageReport(args: {
@@ -123,7 +143,8 @@ export async function createDamageReport(args: {
   severity: number; // 1-5
   category: DamageCategory;
   description: string;
-  photoUrls: string[];
+  /** Storage paths returned by `uploadDamagePhoto`. */
+  photoPaths: string[];
 }): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   const supabase = getSupabase();
   const desc = args.description.trim();
@@ -142,7 +163,7 @@ export async function createDamageReport(args: {
       severity: args.severity,
       category: args.category,
       description: desc,
-      photo_paths: args.photoUrls,
+      photo_paths: args.photoPaths,
     })
     .select("id")
     .single();
