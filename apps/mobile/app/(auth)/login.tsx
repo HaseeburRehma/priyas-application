@@ -25,8 +25,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import Constants from "expo-constants";
-import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
-import { Button, Icon, IconChip, InputField, Notice, Txt } from "@/components/ui";
+import { Button, GradientFill, Icon, IconChip, InputField, Notice, Txt } from "@/components/ui";
 import { getSupabase } from "@/lib/supabase";
 import { colors, radius, spacing } from "@/lib/theme";
 import { t } from "@/lib/i18n";
@@ -179,16 +178,14 @@ export default function LoginScreen() {
         >
           {/* Hero — diagonal navy → green gradient behind the copy. */}
           <View style={[styles.hero, { paddingTop: insets.top + spacing[4] }]}>
-            <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" preserveAspectRatio="none">
-              <Defs>
-                <LinearGradient id="loginHero" x1="0" y1="0" x2="1" y2="1">
-                  <Stop offset="0" stopColor="#0B2D40" />
-                  <Stop offset="0.55" stopColor="#16587C" />
-                  <Stop offset="1" stopColor="#487030" />
-                </LinearGradient>
-              </Defs>
-              <Rect x="0" y="0" width="100%" height="100%" fill="url(#loginHero)" />
-            </Svg>
+            <GradientFill
+              id="loginHero"
+              stops={[
+                [0, "#0B2D40"],
+                [0.55, "#16587C"],
+                [1, "#487030"],
+              ]}
+            />
 
             {/* Wordmark ships white-on-transparent (110×44, already
              *  includes "PRIYA'S" + "Leistung mit Herz"). */}
@@ -367,9 +364,11 @@ const styles = StyleSheet.create({
     // 28 visible + 24 hidden under the sheet's rounded top.
     paddingBottom: 28 + spacing[6],
     overflow: "hidden",
+    // Shows if the gradient hasn't drawn yet — never white-on-white.
+    backgroundColor: "#16587C",
   },
   wordmark: { width: 120, height: 48, tintColor: colors.white },
-  heroCopy: { marginTop: 56, gap: spacing[2] },
+  heroCopy: { marginTop: 40, gap: spacing[2] },
   heroBody: { marginTop: 4 },
   sheet: {
     flexGrow: 1,

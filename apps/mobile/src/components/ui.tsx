@@ -7,7 +7,7 @@
  * EmptyState) keep their original props so older call sites still work.
  */
 
-import { type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import {
   ActivityIndicator,
   type ColorValue,
@@ -26,6 +26,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets, type Edge } from "react-native-safe-area-context";
+import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { Icon, type IconName } from "@/components/icon";
 import { colors, fonts, radius, shadow, spacing, text, type TextVariant } from "@/lib/theme";
 
@@ -57,9 +58,53 @@ export function Txt({
   ...rest
 }: TextProps & { v?: TextVariant; color?: ColorValue }) {
   return (
-    <Text {...rest} style={[text[v] as object, { color }, style]}>
+    <Text
+      maxFontSizeMultiplier={MAX_FONT_SCALE}
+      {...rest}
+      style={[text[v] as object, { color }, style]}
+    >
       {children}
     </Text>
+  );
+}
+
+/**
+ * Honour the system font size, but cap it: beyond ~1.3× the fixed-size
+ * cards, chips and tab bar start clipping or wrapping mid-word.
+ */
+export const MAX_FONT_SCALE = 1.3;
+
+/**
+ * Full-bleed linear gradient behind a view's content (top-left → bottom-
+ * right). Drawn at the measured pixel size: react-native-svg on Android
+ * doesn't reliably re-render percentage sizes when the parent grows
+ * after the first layout, which left part of the login hero white.
+ * Give the parent a solid fallback background as well.
+ */
+export function GradientFill({ id, stops }: { id: string; stops: Array<[number, string]> }) {
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  return (
+    <View
+      pointerEvents="none"
+      style={StyleSheet.absoluteFill}
+      onLayout={(e) => {
+        const { width, height } = e.nativeEvent.layout;
+        setSize((prev) => (prev && prev.w === width && prev.h === height ? prev : { w: width, h: height }));
+      }}
+    >
+      {size ? (
+        <Svg width={size.w} height={size.h}>
+          <Defs>
+            <LinearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+              {stops.map(([offset, color]) => (
+                <Stop key={offset} offset={offset} stopColor={color} />
+              ))}
+            </LinearGradient>
+          </Defs>
+          <Rect x={0} y={0} width={size.w} height={size.h} fill={`url(#${id})`} />
+        </Svg>
+      ) : null}
+    </View>
   );
 }
 
@@ -92,13 +137,19 @@ export function Screen({
   edges?: Edge[];
   gap?: number;
 }) {
+  const insets = useSafeAreaInsets();
+  // Android draws edge-to-edge: without this the last rows of a pushed
+  // screen scroll in under the navigation bar. (A footer/BottomBar
+  // handles the inset itself.)
+  const bottomPad =
+    footer || edges.includes("bottom") ? undefined : { paddingBottom: spacing[6] + insets.bottom };
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }} edges={edges}>
       {header}
       {scroll ? (
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={[styles.screenContent, { gap }, contentStyle]}
+          contentContainerStyle={[styles.screenContent, { gap }, bottomPad, contentStyle]}
           keyboardShouldPersistTaps="handled"
           refreshControl={
             onRefresh ? (
@@ -722,6 +773,7 @@ export function InputField({
         {icon ? <Icon name={icon} size={20} color={colors.neutral[400]} /> : null}
         <TextInput
           placeholderTextColor={colors.neutral[400]}
+          maxFontSizeMultiplier={MAX_FONT_SCALE}
           {...input}
           style={[
             text.body,
@@ -750,6 +802,7 @@ export function Input(props: TextInputProps) {
   return (
     <TextInput
       placeholderTextColor={colors.neutral[400]}
+      maxFontSizeMultiplier={MAX_FONT_SCALE}
       {...props}
       style={[text.body, styles.legacyInput, props.multiline && { minHeight: 104, textAlignVertical: "top" }, props.style]}
     />

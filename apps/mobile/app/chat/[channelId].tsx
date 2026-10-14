@@ -30,7 +30,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, isSameDay, isToday, isYesterday, parseISO } from "date-fns";
 import { de, enUS, ta } from "date-fns/locale";
-import { Avatar, Badge, CenterSpinner, EmptyState, IconChip, RoundButton, Txt } from "@/components/ui";
+import { Avatar, Badge, CenterSpinner, EmptyState, IconChip, MAX_FONT_SCALE, RoundButton, Txt } from "@/components/ui";
 import { useAuth } from "@/lib/auth-context";
 import {
   channelDisplayName,
@@ -421,6 +421,7 @@ export default function ChatThread() {
 
         <View style={styles.composer}>
           <TextInput
+            maxFontSizeMultiplier={MAX_FONT_SCALE}
             value={draft}
             onChangeText={(txt) => {
               setDraft(txt);

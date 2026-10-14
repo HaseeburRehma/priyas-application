@@ -14,7 +14,6 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Linking, Platform, Pressable, StyleSheet, View } from "react-native";
-import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import {
   differenceInCalendarDays,
   endOfWeek,
@@ -32,6 +31,7 @@ import {
   CenterSpinner,
   Divider,
   EmptyState,
+  GradientFill,
   Grid,
   HALF,
   Icon,
@@ -292,15 +292,13 @@ function NextShiftHero({ shift: s, now, onOpen }: { shift: Upcoming; now: Date; 
 
   return (
     <View style={styles.hero}>
-      <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" preserveAspectRatio="none">
-        <Defs>
-          <LinearGradient id="homeHero" x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor={colors.primary[500]} />
-            <Stop offset="1" stopColor={colors.primary[700]} />
-          </LinearGradient>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#homeHero)" />
-      </Svg>
+      <GradientFill
+        id="homeHero"
+        stops={[
+          [0, colors.primary[500]],
+          [1, colors.primary[700]],
+        ]}
+      />
 
       <View style={styles.heroTop}>
         <Txt v="overline" color="rgba(255,255,255,0.85)">
