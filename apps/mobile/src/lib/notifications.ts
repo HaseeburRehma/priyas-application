@@ -16,6 +16,7 @@ export type NotificationCategory =
   | "training"
   | "damage"
   | "chat"
+  | "client"
   | "system"
   | "other";
 
@@ -86,6 +87,7 @@ function normaliseCategory(raw: string | null): NotificationCategory {
     "training",
     "damage",
     "chat",
+    "client",
     "system",
     "other",
   ];
@@ -103,6 +105,7 @@ function normaliseCategory(raw: string | null): NotificationCategory {
   if (c.includes("training")) return "training";
   if (c.includes("damage")) return "damage";
   if (c.includes("chat") || c.includes("mention")) return "chat";
+  if (c.includes("client")) return "client";
   return "other";
 }
 

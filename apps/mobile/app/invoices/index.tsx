@@ -172,8 +172,16 @@ export default function InvoicesScreen() {
         <Card>
           <EmptyState
             icon="receipt"
-            title={t("mobile.invoices.emptyTitle")}
-            subtitle={t("mobile.invoices.emptyBody")}
+            title={
+              status === "all"
+                ? t("mobile.ui.invoices.emptyAllTitle")
+                : t("mobile.invoices.emptyTitle")
+            }
+            subtitle={
+              status === "all"
+                ? t("mobile.ui.invoices.emptyAllBody")
+                : t("mobile.invoices.emptyBody")
+            }
           />
         </Card>
       ) : (

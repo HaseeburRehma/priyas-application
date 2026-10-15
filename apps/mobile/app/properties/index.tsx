@@ -10,6 +10,7 @@
 import { useMemo, useState } from "react";
 import { FlatList, RefreshControl, Pressable, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import {
   inferPropertyKind,
@@ -66,6 +67,7 @@ function kindVisual(kind: PropertyKind, alltags: boolean): { icon: IconName; bg:
 }
 
 export default function PropertiesScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [q, setQ] = useState("");
   const [kind, setKind] = useState<KindFilter>("all");
@@ -179,7 +181,7 @@ export default function PropertiesScreen() {
           keyExtractor={(r) => r.id}
           keyboardShouldPersistTaps="handled"
           style={styles.list}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingBottom: spacing[8] + insets.bottom }]}
           ListHeaderComponent={query.data && total > 0 ? header : null}
           renderItem={({ item, index }) => (
             <View
@@ -207,6 +209,7 @@ export default function PropertiesScreen() {
               refreshing={query.isFetching}
               onRefresh={() => query.refetch()}
               tintColor={colors.primary[500]}
+              colors={[colors.primary[500]]}
             />
           }
           ListEmptyComponent={
@@ -235,13 +238,13 @@ function StatCard({
 }) {
   return (
     <View style={styles.statCard}>
-      <Txt v="overline" color={colors.neutral[500]} numberOfLines={1}>
+      <Txt v="overline" color={colors.neutral[500]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
         {label}
       </Txt>
       <Txt v="title" color={colors.secondary[500]} numberOfLines={1}>
         {value}
       </Txt>
-      <Txt v="caption" color={subColor} numberOfLines={1}>
+      <Txt v="caption" color={subColor} numberOfLines={2}>
         {sub}
       </Txt>
     </View>

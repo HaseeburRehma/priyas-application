@@ -91,7 +91,14 @@ function TabBar({ state, navigation }: TabBarProps) {
 
 export default function TabsLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
+    // "history": Android back (and router.back()) from hidden routes like
+    // shift detail or settings returns to the previous screen instead of
+    // jumping to the first tab.
+    <Tabs
+      backBehavior="history"
+      screenOptions={{ headerShown: false }}
+      tabBar={(props) => <TabBar {...props} />}
+    >
       <Tabs.Screen name="index" />
       <Tabs.Screen name="schedule/index" />
       <Tabs.Screen name="chat" />

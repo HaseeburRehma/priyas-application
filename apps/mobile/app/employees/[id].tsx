@@ -149,14 +149,19 @@ function HeroCard({
   if (since) {
     const date = parseISO(since);
     const months = Math.max(0, differenceInMonths(new Date(), date));
-    meta.push({
-      icon: "calendar",
-      text: t("mobile.ui.employees.since", {
-        date: format(date, "LLLL yyyy", { locale: dfLocale() }),
-        years: Math.floor(months / 12),
-        months: months % 12,
-      }),
+    const years = Math.floor(months / 12);
+    const rest = months % 12;
+    // "Seit Juli 2026 · 2 Monate" / "Seit März 2023 · 3 Jahre 7 Monate".
+    const tenure = [
+      years > 0 ? t("mobile.ui.employees.tenureYears", { count: years }) : null,
+      rest > 0 ? t("mobile.ui.employees.tenureMonths", { count: rest }) : null,
+    ]
+      .filter(Boolean)
+      .join(" ");
+    const sinceText = t("mobile.ui.employees.sinceDate", {
+      date: format(date, "LLLL yyyy", { locale: dfLocale() }),
     });
+    meta.push({ icon: "calendar", text: tenure ? `${sinceText} · ${tenure}` : sinceText });
   }
   if (d.email) meta.push({ icon: "mail", text: d.email });
   if (d.phone) meta.push({ icon: "phone", text: d.phone });

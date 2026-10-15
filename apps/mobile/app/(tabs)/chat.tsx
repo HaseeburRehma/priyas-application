@@ -37,6 +37,7 @@ import { useAuth } from "@/lib/auth-context";
 import {
   channelDisplayName,
   channelKind,
+  isPropertyChannel,
   loadMyChannels,
   type ChatChannelKind,
   type ChatChannelRow,
@@ -204,7 +205,12 @@ const ChannelRowItem = memo(function ChannelRowItem({
       ]}
     >
       {kind === "channel" ? (
-        <IconChip icon={c.is_private ? "lock" : "hash"} tone={chipTone} size={40} iconSize={18} />
+        <IconChip
+          icon={c.is_private ? "lock" : isPropertyChannel(c) ? "building" : "hash"}
+          tone={chipTone}
+          size={40}
+          iconSize={18}
+        />
       ) : (
         <Avatar name={title} size={40} />
       )}

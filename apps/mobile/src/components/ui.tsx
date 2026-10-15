@@ -157,6 +157,7 @@ export function Screen({
                 refreshing={!!refreshing}
                 onRefresh={onRefresh}
                 tintColor={colors.primary[500]}
+                colors={[colors.primary[500]]}
               />
             ) : undefined
           }
@@ -366,7 +367,7 @@ export function Button({
           ) : (
             icon
           )}
-          <Txt v={lg ? "bodyStrong" : "subheadStrong"} color={b.fg} numberOfLines={1}>
+          <Txt v={lg ? "bodyStrong" : "subheadStrong"} color={b.fg} numberOfLines={1} style={{ flexShrink: 1 }}>
             {label}
           </Txt>
         </>
@@ -434,7 +435,7 @@ export function Badge({
   return (
     <View style={[styles.badge, { backgroundColor: c.bg }, style]}>
       {dot ? <View style={[styles.badgeDot, { backgroundColor: c.accent }]} /> : null}
-      <Txt v="overline" color={c.fg} numberOfLines={1}>
+      <Txt v="overline" color={c.fg} numberOfLines={1} style={{ flexShrink: 1 }}>
         {label}
       </Txt>
     </View>
@@ -611,7 +612,12 @@ export function FilterChip({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: !!selected }}
-      style={[styles.filterChip, selected ? styles.filterChipOn : styles.filterChipOff]}
+      hitSlop={{ top: 6, bottom: 6 }}
+      style={({ pressed }) => [
+        styles.filterChip,
+        selected ? styles.filterChipOn : styles.filterChipOff,
+        pressed && { opacity: 0.75 },
+      ]}
     >
       <Txt v="callout" color={selected ? colors.white : colors.neutral[700]}>
         {label}
@@ -660,7 +666,8 @@ export function Segmented<T extends string>({
             onPress={() => onChange(o.value)}
             accessibilityRole="tab"
             accessibilityState={{ selected: on }}
-            style={[styles.segment, on && styles.segmentOn]}
+            hitSlop={{ top: 6, bottom: 6 }}
+            style={({ pressed }) => [styles.segment, on && styles.segmentOn, pressed && !on && { opacity: 0.7 }]}
           >
             <Txt v={on ? "subheadStrong" : "subhead"} color={on ? colors.neutral[900] : colors.neutral[500]}>
               {o.label}
@@ -692,7 +699,14 @@ export function TabsRow<T extends string>({
       {options.map((o) => {
         const on = o.value === value;
         return (
-          <Pressable key={o.value} onPress={() => onChange(o.value)} style={{ gap: 8, alignItems: "center" }}>
+          <Pressable
+            key={o.value}
+            onPress={() => onChange(o.value)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+            style={({ pressed }) => [{ gap: 8, alignItems: "center" }, pressed && { opacity: 0.7 }]}
+          >
             <View style={styles.row6}>
               <Txt v={on ? "subheadStrong" : "subhead"} color={on ? colors.primary[700] : colors.neutral[500]}>
                 {o.label}
@@ -716,17 +730,31 @@ export function TabsRow<T extends string>({
 /* -------------------------------- Inputs ------------------------------ */
 
 export function SearchField(props: TextInputProps) {
+  // iOS-only clearButtonMode left Android without a way to clear the
+  // query — draw our own on both platforms.
+  const hasText = !!props.value;
   return (
     <View style={styles.search}>
       <Icon name="search" size={20} color={colors.neutral[400]} />
       <TextInput
         placeholderTextColor={colors.neutral[400]}
         returnKeyType="search"
-        clearButtonMode="while-editing"
         autoCorrect={false}
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
         {...props}
         style={[text.body, { flex: 1, color: colors.neutral[900], paddingVertical: 0 }, props.style]}
       />
+      {hasText && props.onChangeText ? (
+        <Pressable
+          onPress={() => props.onChangeText?.("")}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="Clear"
+          style={({ pressed }) => [styles.searchClear, pressed && { opacity: 0.6 }]}
+        >
+          <Icon name="x" size={14} color={colors.white} strokeWidth={3} />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -863,9 +891,10 @@ export function ChoiceTile({
       onPress={onPress}
       accessibilityRole="radio"
       accessibilityState={{ selected: !!selected }}
-      style={[
+      style={({ pressed }) => [
         styles.choice,
         selected ? { backgroundColor: c.bg, borderColor: c.accent, borderWidth: 2 } : null,
+        pressed && { opacity: 0.85 },
         style,
       ]}
     >
@@ -1011,14 +1040,14 @@ export function KpiCard({
           {trend ? <Badge label={trend.label} tone={trend.tone} dot={trend.dot ?? false} /> : null}
         </View>
       ) : null}
-      <Txt v="overline" color={colors.neutral[500]} numberOfLines={1}>
+      <Txt v="overline" color={colors.neutral[500]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
         {label}
       </Txt>
       <Txt v="kpi" color={valueColor} numberOfLines={1} adjustsFontSizeToFit>
         {value}
       </Txt>
       {sub ? (
-        <Txt v="caption" color={colors.neutral[500]} numberOfLines={1}>
+        <Txt v="caption" color={colors.neutral[500]} numberOfLines={2}>
           {sub}
         </Txt>
       ) : null}
@@ -1062,14 +1091,14 @@ export function StatTile({
 }) {
   return (
     <View style={[styles.statTile, style]}>
-      <Txt v="overline" color={colors.neutral[500]} numberOfLines={1}>
+      <Txt v="overline" color={colors.neutral[500]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
         {label}
       </Txt>
       <Txt v="headline" color={valueColor} numberOfLines={1}>
         {value}
       </Txt>
       {sub ? (
-        <Txt v="caption" color={colors.neutral[500]} numberOfLines={1}>
+        <Txt v="caption" color={colors.neutral[500]} numberOfLines={2}>
           {sub}
         </Txt>
       ) : null}
@@ -1105,7 +1134,7 @@ export function ListRow({
     <>
       {leading}
       <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
-        <Txt v="bodyStrong" color={titleColor} numberOfLines={1}>
+        <Txt v="bodyStrong" color={titleColor} numberOfLines={2}>
           {title}
         </Txt>
         {subtitle ? (
@@ -1248,6 +1277,8 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: "row",
     alignItems: "center",
+    flexShrink: 1,
+    maxWidth: "100%",
     gap: 5,
     paddingLeft: 8,
     paddingRight: 9,
@@ -1282,6 +1313,14 @@ const styles = StyleSheet.create({
   segmentOn: { backgroundColor: colors.white, ...shadow.sm },
   tabCount: { paddingHorizontal: 6, borderRadius: radius.full, backgroundColor: colors.neutral[100] },
   tabUnderline: { height: 2, borderRadius: 1, alignSelf: "stretch" },
+  searchClear: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.neutral[400],
+  },
   search: {
     flexDirection: "row",
     alignItems: "center",

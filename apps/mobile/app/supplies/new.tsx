@@ -275,6 +275,9 @@ function PropertyPicker({
                 data={filtered}
                 keyExtractor={(p) => p.id}
                 keyboardShouldPersistTaps="handled"
+                // The modal doesn't shrink for the keyboard on edge-to-edge
+                // Android — dragging the list hides it so every row is reachable.
+                keyboardDismissMode="on-drag"
                 ItemSeparatorComponent={Divider}
                 renderItem={({ item: p }) => (
                   <ListRow

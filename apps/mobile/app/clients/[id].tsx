@@ -155,15 +155,19 @@ export default function ClientDetailScreen() {
     staleTime: 30_000,
   });
 
-  const call = useCallback((phone: string) => {
-    Linking.openURL(`tel:${phone.replace(/[^\d+]/g, "")}`);
+  // No dialer / mail app (tablets, work profiles) rejects openURL.
+  const open = useCallback((url: string) => {
+    Linking.openURL(url).catch(() => {});
   }, []);
-  const email = useCallback((addr: string) => {
-    Linking.openURL(`mailto:${addr}`);
-  }, []);
-  const sms = useCallback((phone: string) => {
-    Linking.openURL(`sms:${phone.replace(/[^\d+]/g, "")}`);
-  }, []);
+  const call = useCallback(
+    (phone: string) => open(`tel:${phone.replace(/[^\d+]/g, "")}`),
+    [open],
+  );
+  const email = useCallback((addr: string) => open(`mailto:${addr}`), [open]);
+  const sms = useCallback(
+    (phone: string) => open(`sms:${phone.replace(/[^\d+]/g, "")}`),
+    [open],
+  );
 
   const navHeader = <NavHeader title={t("clients.table.client")} />;
 
@@ -547,7 +551,7 @@ function HeroStat({ value, label }: { value: string; label: string }) {
       <Txt v="headline" color={colors.secondary[500]} numberOfLines={1} adjustsFontSizeToFit>
         {value}
       </Txt>
-      <Txt v="overline" color={colors.neutral[500]} numberOfLines={1}>
+      <Txt v="overline" color={colors.neutral[500]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
         {label}
       </Txt>
     </View>

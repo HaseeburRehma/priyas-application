@@ -167,10 +167,13 @@ export default function NewDamageReport() {
       Alert.alert(t("damage.pickPropertyFirst"));
       return;
     }
+    // Cancel first: Android lays three buttons out as neutral / negative /
+    // positive, so the last one would be the highlighted primary action.
+    // iOS still puts the "cancel" style at the bottom.
     Alert.alert(t("mobile.ui.damage.addPhotoTitle"), undefined, [
-      { text: t("damage.takePhoto"), onPress: () => void pickFromCamera() },
-      { text: t("damage.chooseFromLibrary"), onPress: () => void pickFromLibrary() },
       { text: t("damage.cancel"), style: "cancel" },
+      { text: t("damage.chooseFromLibrary"), onPress: () => void pickFromLibrary() },
+      { text: t("damage.takePhoto"), onPress: () => void pickFromCamera() },
     ]);
   }
 
@@ -456,6 +459,9 @@ function PropertyPicker({
                 data={filtered}
                 keyExtractor={(p) => p.id}
                 keyboardShouldPersistTaps="handled"
+                // The modal doesn't shrink for the keyboard on edge-to-edge
+                // Android — dragging the list hides it so every row is reachable.
+                keyboardDismissMode="on-drag"
                 ItemSeparatorComponent={Divider}
                 renderItem={({ item: p }) => (
                   <ListRow

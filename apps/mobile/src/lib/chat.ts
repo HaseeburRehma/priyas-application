@@ -63,7 +63,14 @@ export function channelDisplayName(
     const parts = raw.split("↔").map((s) => s.trim()).filter(Boolean);
     return parts.find((p) => p !== myName) ?? parts[0] ?? null;
   }
-  return raw.replace(/^#/, "") || null;
+  // Property channels are auto-created as "prop-<address>"; show the
+  // address, not the slug.
+  return raw.replace(/^#/, "").replace(/^prop-/i, "") || null;
+}
+
+/** Auto-created per-property channel ("prop-<address>"). */
+export function isPropertyChannel(c: Pick<ChatChannelRow, "name">): boolean {
+  return /^#?prop-/i.test((c.name ?? "").trim());
 }
 
 /** Load every channel the current user is a member of, with unread + last message metadata. */

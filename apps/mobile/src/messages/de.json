@@ -2154,7 +2154,8 @@
       "damage": "Schaden",
       "chat": "Chat",
       "system": "System",
-      "other": "Sonstiges"
+      "other": "Sonstiges",
+      "client": "Kunden"
     }
   },
   "vacation": {
@@ -3180,7 +3181,7 @@
     "more": {
       "tabLabel": "Mehr",
       "title": "Mehr",
-      "subtitle": "Alle Bildschirme, die nicht in die Hauptleiste passen.",
+      "subtitle": "Alle weiteren Bereiche und Einstellungen.",
       "employees": "Mitarbeitende",
       "employeesHint": "Vollständige Teamliste",
       "properties": "Objekte",
@@ -3357,7 +3358,7 @@
         "done": "Abgeschlossen"
       },
       "watchCta": "Video ansehen",
-      "noVideoUrl": "Keine Video-URL",
+      "noVideoUrl": "Video folgt in Kürze",
       "markCompletedCta": "Als abgeschlossen markieren",
       "playerFailed": "Video konnte nicht inline geöffnet werden. Bitte Video ansehen tippen, um im Browser zu öffnen."
     },
@@ -3640,7 +3641,8 @@
           "de": "Deutsch",
           "en": "English",
           "ta": "தமிழ்"
-        }
+        },
+        "twoFactorShort": "Zwei-Faktor-Anmeldung"
       },
       "employees": {
         "serviceFilter": "Servicebereich filtern",
@@ -3679,7 +3681,16 @@
         "available": "Verfügbar",
         "daysValue": "{n} Tage",
         "ofTotal": "von {n}",
-        "nextLeave": "Nächster Urlaub"
+        "nextLeave": "Nächster Urlaub",
+        "sinceDate": "Seit {date}",
+        "tenureYears": {
+          "one": "{count} Jahr",
+          "other": "{count} Jahre"
+        },
+        "tenureMonths": {
+          "one": "{count} Monat",
+          "other": "{count} Monate"
+        }
       },
       "invoices": {
         "openSub": "{n} warten auf Zahlung",
@@ -3707,7 +3718,9 @@
         "itemsCount": "{n} Positionen",
         "evPayment": "Zahlung eingegangen · {amount}",
         "evEmailSent": "Per E-Mail gesendet",
-        "evCreated": "Rechnung erstellt"
+        "evCreated": "Rechnung erstellt",
+        "emptyAllTitle": "Noch keine Rechnungen",
+        "emptyAllBody": "Rechnungen erscheinen hier, sobald sie in der Web-App erstellt wurden."
       },
       "alltagshilfe": {
         "running": "Laufend",
@@ -3757,6 +3770,13 @@
         "totalWeek": "Gesamt KW {n}",
         "shifts": "Einsätze",
         "hoursShort": "{h} h"
+      },
+      "planShift": {
+        "invalidDateTime": "Bitte Datum (TT.MM.JJJJ) und Uhrzeit (HH:MM) prüfen."
+      },
+      "setup2fa": {
+        "openApp": "In Authenticator-App öffnen",
+        "noApp": "Keine Authenticator-App gefunden. Bitte den Schlüssel oben manuell eingeben."
       }
     }
   },

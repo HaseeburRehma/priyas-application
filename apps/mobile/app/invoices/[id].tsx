@@ -154,7 +154,7 @@ function SummaryCard({ d }: { d: InvoiceDetailData }) {
         <View style={styles.dates}>
           {dates.map((x) => (
             <View key={x.label} style={styles.dateCol}>
-              <Txt v="overline" color={colors.neutral[500]} numberOfLines={1}>
+              <Txt v="overline" color={colors.neutral[500]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                 {x.label}
               </Txt>
               <Txt v="subheadStrong" numberOfLines={1}>

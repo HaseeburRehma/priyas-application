@@ -12,7 +12,16 @@
  */
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Alert, Platform, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
@@ -65,6 +74,7 @@ function roleLabelKey(role?: string | null): string | null {
 }
 
 export default function SettingsTab() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { profile, session, signOut, refreshProfile } = useAuth();
   const qc = useQueryClient();
@@ -215,244 +225,258 @@ export default function SettingsTab() {
         />
       }
     >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        automaticallyAdjustKeyboardInsets
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl
-            refreshing={devicesRefetching}
-            onRefresh={() => refetchDevices()}
-            tintColor={colors.primary[500]}
-          />
-        }
+      {/* iOS scrolls the focused field into view itself
+       *  (automaticallyAdjustKeyboardInsets); edge-to-edge Android needs
+       *  the view to shrink. */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "android" ? "height" : undefined}
+        keyboardVerticalOffset={insets.top + 52}
       >
-        {/* Identity card — role + email at a glance. */}
-        <Card style={styles.account}>
-          <Avatar name={profile?.fullName} size={56} />
-          <View style={styles.accountText}>
-            <Txt v="headline" numberOfLines={1}>
-              {profile?.fullName ?? "—"}
-            </Txt>
-            {email ? (
-              <Txt v="subhead" color={colors.neutral[500]} numberOfLines={1}>
-                {email}
+        <ScrollView
+          contentContainerStyle={styles.container}
+          automaticallyAdjustKeyboardInsets
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={devicesRefetching}
+              onRefresh={() => refetchDevices()}
+              tintColor={colors.primary[500]}
+              colors={[colors.primary[500]]}
+            />
+          }
+        >
+          {/* Identity card — role + email at a glance. */}
+          <Card style={styles.account}>
+            <Avatar name={profile?.fullName} size={56} />
+            <View style={styles.accountText}>
+              <Txt v="headline" numberOfLines={1}>
+                {profile?.fullName ?? "—"}
               </Txt>
-            ) : null}
-            {roleKey ? (
-              <Badge label={t(roleKey)} tone="info" dot={false} style={styles.roleBadge} />
-            ) : null}
-          </View>
-          <RoundButton
-            icon="edit"
-            variant="subtle"
-            onPress={() => toggle("profile")}
-            accessibilityLabel={t("common.edit")}
-          />
-        </Card>
-
-        {/* ── Konto ── */}
-        <Group label={t("mobile.more.sectionAccount")}>
-          <ListRow
-            title={t("mobile.ui.settings.personalData")}
-            subtitle={t("mobile.ui.settings.personalDataHint")}
-            leading={<RowIcon icon="user" tone="brand" />}
-            trailing={expandIcon("profile")}
-            chevron={false}
-            onPress={() => toggle("profile")}
-          />
-          {open === "profile" ? (
-            <View style={styles.panel}>
-              <InputField
-                label={t("settings.myAccount.fullName")}
-                value={fullName}
-                onChangeText={setFullName}
-              />
-              <InputField
-                label={t("settings.myAccount.phone")}
-                value={phone}
-                onChangeText={(v) => {
-                  phoneTouched.current = true;
-                  setPhone(v);
-                }}
-                placeholder="+49 …"
-                keyboardType="phone-pad"
-                autoCorrect={false}
-              />
-              <Button
-                label={t("settings.save")}
-                onPress={saveProfile}
-                loading={profilePending}
-                size="md"
-              />
-            </View>
-          ) : null}
-          <Divider />
-          <ListRow
-            title={t("settings.account.language")}
-            leading={<RowIcon icon="globe" tone="info" />}
-            trailing={
-              <View style={styles.valueRow}>
-                <Txt v="subhead" color={colors.neutral[500]}>
-                  {t(`mobile.ui.settings.lang.${locale}`)}
+              {email ? (
+                <Txt v="subhead" color={colors.neutral[500]} numberOfLines={1}>
+                  {email}
                 </Txt>
-                {expandIcon("language")}
-              </View>
-            }
-            chevron={false}
-            onPress={() => toggle("language")}
-          />
-          {open === "language"
-            ? LOCALES.map((l) => (
-                <View key={l}>
-                  <Divider inset={64} />
-                  <ListRow
-                    title={t(`mobile.ui.settings.lang.${l}`)}
-                    leading={<View style={styles.optionIndent} />}
-                    trailing={
-                      l === locale ? (
-                        <Icon name="check" size={18} color={colors.primary[600]} strokeWidth={2.5} />
-                      ) : null
-                    }
-                    chevron={false}
-                    onPress={() => void onPickLocale(l)}
-                  />
-                </View>
-              ))
-            : null}
-        </Group>
+              ) : null}
+              {roleKey ? (
+                <Badge label={t(roleKey)} tone="info" dot={false} style={styles.roleBadge} />
+              ) : null}
+            </View>
+            <RoundButton
+              icon="edit"
+              variant="subtle"
+              onPress={() => toggle("profile")}
+              accessibilityLabel={t("common.edit")}
+            />
+          </Card>
 
-        {/* ── Sicherheit ── */}
-        <Group label={t("settings.security.title")}>
-          <ListRow
-            title={t("settings.security.twoFactor")}
-            subtitle={
-              mfa?.hasVerifiedTotp
-                ? t("mobile.ui.settings.authenticatorApp")
-                : t("settings.security.twoFactorOff")
-            }
-            leading={<RowIcon icon="shield" tone="success" />}
-            badge={
-              mfa ? (
-                <Badge
-                  label={
-                    mfa.hasVerifiedTotp
-                      ? t("settings.security.enabled")
-                      : t("settings.security.disabled")
-                  }
-                  tone={mfa.hasVerifiedTotp ? "success" : "neutral"}
+          {/* ── Konto ── */}
+          <Group label={t("mobile.more.sectionAccount")}>
+            <ListRow
+              title={t("mobile.ui.settings.personalData")}
+              subtitle={t("mobile.ui.settings.personalDataHint")}
+              leading={<RowIcon icon="user" tone="brand" />}
+              trailing={expandIcon("profile")}
+              chevron={false}
+              onPress={() => toggle("profile")}
+            />
+            {open === "profile" ? (
+              <View style={styles.panel}>
+                <InputField
+                  label={t("settings.myAccount.fullName")}
+                  value={fullName}
+                  onChangeText={setFullName}
+                  autoCapitalize="words"
+                  autoComplete="name"
                 />
-              ) : null
-            }
-            trailing={expandIcon("twoFactor")}
-            chevron={false}
-            onPress={() => toggle("twoFactor")}
-          />
-          {open === "twoFactor" ? (
-            <View style={styles.panel}>
-              <Txt v="subhead" color={colors.neutral[600]}>
-                {mfa?.hasVerifiedTotp
-                  ? t("settings.security.twoFactorOn")
-                  : t("settings.security.twoFactorOff")}
-              </Txt>
-              {mfa?.hasVerifiedTotp && profile?.role === "employee" && (
+                <InputField
+                  label={t("settings.myAccount.phone")}
+                  value={phone}
+                  onChangeText={(v) => {
+                    phoneTouched.current = true;
+                    setPhone(v);
+                  }}
+                  placeholder="+49 …"
+                  keyboardType="phone-pad"
+                  autoCorrect={false}
+                />
                 <Button
-                  label={t("settings.security.disable")}
-                  variant="outline"
+                  label={t("settings.save")}
+                  onPress={saveProfile}
+                  loading={profilePending}
                   size="md"
-                  onPress={onDisable2FA}
-                  loading={mfaPending}
                 />
-              )}
-              {mfa?.hasVerifiedTotp && profile?.role !== "employee" && (
-                <Txt v="caption" color={colors.neutral[500]}>
-                  {t("settings.security.mandatoryNote")}
-                </Txt>
-              )}
-              {!mfa?.hasVerifiedTotp && profile?.role !== "employee" && (
-                <Txt v="caption" color={colors.neutral[500]}>
-                  {t("settings.security.enrolOnWeb")}
-                </Txt>
-              )}
-            </View>
-          ) : null}
-          <Divider />
-          <ListRow
-            title={t("settings.sessions.title")}
-            subtitle={devicesSub}
-            leading={<RowIcon icon="settings" tone="neutral" />}
-            trailing={expandIcon("sessions")}
-            chevron={false}
-            onPress={() => toggle("sessions")}
-          />
-          {open === "sessions" ? (
-            <View style={styles.panel}>
-              {devicesLoading && (
-                <Txt v="subhead" color={colors.neutral[500]} style={styles.center}>
-                  {t("settings.sessions.loading")}
-                </Txt>
-              )}
-              {!devicesLoading && (devices ?? []).length === 0 && (
-                <Txt v="subhead" color={colors.neutral[500]} style={styles.center}>
-                  {t("settings.sessions.none")}
-                </Txt>
-              )}
-              {(devices ?? []).map((d, i) => (
-                <View key={d.id}>
-                  {i > 0 ? <Divider /> : null}
-                  <View style={styles.deviceRow}>
-                    <View style={styles.deviceText}>
-                      <Txt v="bodyStrong" numberOfLines={1}>
-                        {d.device_label}
-                      </Txt>
-                      <Txt v="mono" color={colors.neutral[500]} style={styles.deviceMeta} numberOfLines={1}>
-                        {d.geo_label ?? t("settings.sessions.geoUnknown")} ·{" "}
-                        {format(parseISO(d.last_seen_at), "d LLL · HH:mm", { locale: dfLocale() })}
-                      </Txt>
-                    </View>
-                    <Button
-                      label={t("settings.sessions.revoke")}
-                      variant="danger"
-                      size="md"
-                      onPress={() => onRevokeDevice(d.id)}
+              </View>
+            ) : null}
+            <Divider />
+            <ListRow
+              title={t("settings.account.language")}
+              leading={<RowIcon icon="globe" tone="info" />}
+              trailing={
+                <View style={styles.valueRow}>
+                  <Txt v="subhead" color={colors.neutral[500]}>
+                    {t(`mobile.ui.settings.lang.${locale}`)}
+                  </Txt>
+                  {expandIcon("language")}
+                </View>
+              }
+              chevron={false}
+              onPress={() => toggle("language")}
+            />
+            {open === "language"
+              ? LOCALES.map((l) => (
+                  <View key={l}>
+                    <Divider inset={64} />
+                    <ListRow
+                      title={t(`mobile.ui.settings.lang.${l}`)}
+                      leading={<View style={styles.optionIndent} />}
+                      trailing={
+                        l === locale ? (
+                          <Icon name="check" size={18} color={colors.primary[600]} strokeWidth={2.5} />
+                        ) : null
+                      }
+                      chevron={false}
+                      onPress={() => void onPickLocale(l)}
                     />
                   </View>
-                </View>
-              ))}
-              {devices && devices.length > 1 && (
-                <Button
-                  label={t("settings.sessions.signOutOthers")}
-                  variant="outline"
-                  size="md"
-                  icon="logout"
-                  onPress={onSignOutOthers}
-                />
-              )}
-            </View>
-          ) : null}
-        </Group>
+                ))
+              : null}
+          </Group>
 
-        {/* ── App ── */}
-        <Group label={t("mobile.ui.settings.appSection")}>
-          <ListRow
-            title={t("mobile.ui.settings.version")}
-            leading={<RowIcon icon="file-text" tone="neutral" />}
-            trailing={
-              <Txt v="mono" color={colors.neutral[500]}>
-                {versionText}
-              </Txt>
-            }
-            chevron={false}
+          {/* ── Sicherheit ── */}
+          <Group label={t("settings.security.title")}>
+            <ListRow
+              // Short label: "Zwei-Faktor-Authentifizierung" is one unbreakable
+              // word that doesn't fit next to the status badge on a phone.
+              title={t("mobile.ui.settings.twoFactorShort")}
+              subtitle={
+                mfa?.hasVerifiedTotp
+                  ? t("mobile.ui.settings.authenticatorApp")
+                  : t("settings.security.twoFactorOff")
+              }
+              leading={<RowIcon icon="shield" tone="success" />}
+              badge={
+                mfa ? (
+                  <Badge
+                    label={
+                      mfa.hasVerifiedTotp
+                        ? t("settings.security.enabled")
+                        : t("settings.security.disabled")
+                    }
+                    tone={mfa.hasVerifiedTotp ? "success" : "neutral"}
+                  />
+                ) : null
+              }
+              trailing={expandIcon("twoFactor")}
+              chevron={false}
+              onPress={() => toggle("twoFactor")}
+            />
+            {open === "twoFactor" ? (
+              <View style={styles.panel}>
+                <Txt v="subhead" color={colors.neutral[600]}>
+                  {mfa?.hasVerifiedTotp
+                    ? t("settings.security.twoFactorOn")
+                    : t("settings.security.twoFactorOff")}
+                </Txt>
+                {mfa?.hasVerifiedTotp && profile?.role === "employee" && (
+                  <Button
+                    label={t("settings.security.disable")}
+                    variant="outline"
+                    size="md"
+                    onPress={onDisable2FA}
+                    loading={mfaPending}
+                  />
+                )}
+                {mfa?.hasVerifiedTotp && profile?.role !== "employee" && (
+                  <Txt v="caption" color={colors.neutral[500]}>
+                    {t("settings.security.mandatoryNote")}
+                  </Txt>
+                )}
+                {!mfa?.hasVerifiedTotp && profile?.role !== "employee" && (
+                  <Txt v="caption" color={colors.neutral[500]}>
+                    {t("settings.security.enrolOnWeb")}
+                  </Txt>
+                )}
+              </View>
+            ) : null}
+            <Divider />
+            <ListRow
+              title={t("settings.sessions.title")}
+              subtitle={devicesSub}
+              leading={<RowIcon icon="settings" tone="neutral" />}
+              trailing={expandIcon("sessions")}
+              chevron={false}
+              onPress={() => toggle("sessions")}
+            />
+            {open === "sessions" ? (
+              <View style={styles.panel}>
+                {devicesLoading && (
+                  <Txt v="subhead" color={colors.neutral[500]} style={styles.center}>
+                    {t("settings.sessions.loading")}
+                  </Txt>
+                )}
+                {!devicesLoading && (devices ?? []).length === 0 && (
+                  <Txt v="subhead" color={colors.neutral[500]} style={styles.center}>
+                    {t("settings.sessions.none")}
+                  </Txt>
+                )}
+                {(devices ?? []).map((d, i) => (
+                  <View key={d.id}>
+                    {i > 0 ? <Divider /> : null}
+                    <View style={styles.deviceRow}>
+                      <View style={styles.deviceText}>
+                        <Txt v="bodyStrong" numberOfLines={1}>
+                          {d.device_label}
+                        </Txt>
+                        <Txt v="mono" color={colors.neutral[500]} style={styles.deviceMeta} numberOfLines={1}>
+                          {d.geo_label ?? t("settings.sessions.geoUnknown")} ·{" "}
+                          {format(parseISO(d.last_seen_at), "d LLL · HH:mm", { locale: dfLocale() })}
+                        </Txt>
+                      </View>
+                      <Button
+                        label={t("settings.sessions.revoke")}
+                        variant="danger"
+                        size="md"
+                        onPress={() => onRevokeDevice(d.id)}
+                      />
+                    </View>
+                  </View>
+                ))}
+                {devices && devices.length > 1 && (
+                  <Button
+                    label={t("settings.sessions.signOutOthers")}
+                    variant="outline"
+                    size="md"
+                    icon="logout"
+                    onPress={onSignOutOthers}
+                  />
+                )}
+              </View>
+            ) : null}
+          </Group>
+
+          {/* ── App ── */}
+          <Group label={t("mobile.ui.settings.appSection")}>
+            <ListRow
+              title={t("mobile.ui.settings.version")}
+              leading={<RowIcon icon="file-text" tone="neutral" />}
+              trailing={
+                <Txt v="mono" color={colors.neutral[500]}>
+                  {versionText}
+                </Txt>
+              }
+              chevron={false}
+            />
+          </Group>
+
+          <Button
+            label={t("nav.logout") ?? "Sign out"}
+            onPress={() => signOut()}
+            variant="danger"
+            icon="logout"
           />
-        </Group>
-
-        <Button
-          label={t("nav.logout") ?? "Sign out"}
-          onPress={() => signOut()}
-          variant="danger"
-          icon="logout"
-        />
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }

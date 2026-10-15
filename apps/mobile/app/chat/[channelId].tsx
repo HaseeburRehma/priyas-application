@@ -19,6 +19,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -35,6 +36,7 @@ import { useAuth } from "@/lib/auth-context";
 import {
   channelDisplayName,
   channelKind,
+  isPropertyChannel,
   loadChannelMembers,
   loadChannelMessages,
   loadMyChannels,
@@ -210,14 +212,25 @@ export default function ChatThread() {
     }
   }, [channelId, draft]);
 
-  // Auto-scroll to bottom whenever the message list grows.
+  // Stay pinned to the newest message. A single timed scrollToEnd lands
+  // part-way up on Android while variable-height rows are still being
+  // measured, so also follow content-size changes (until the user
+  // scrolls up) and the keyboard opening.
+  const stickToBottom = useRef(true);
   useEffect(() => {
     if (!messages.length) return;
+    stickToBottom.current = true;
     const id = setTimeout(() => {
       listRef.current?.scrollToEnd({ animated: true });
     }, 60);
     return () => clearTimeout(id);
   }, [messages.length]);
+  useEffect(() => {
+    const sub = Keyboard.addListener("keyboardDidShow", () => {
+      listRef.current?.scrollToEnd({ animated: true });
+    });
+    return () => sub.remove();
+  }, []);
 
   const activeTypers = Array.from(typing.values()).map((v) => v.name);
 
@@ -277,7 +290,7 @@ export default function ChatThread() {
         />
         {kind === "channel" ? (
           <IconChip
-            icon={channel?.is_private ? "lock" : "hash"}
+            icon={channel?.is_private ? "lock" : channel && isPropertyChannel(channel) ? "building" : "hash"}
             tone={care ? "error" : channel?.is_private ? "info" : "brand"}
             size={40}
             iconSize={20}
@@ -310,6 +323,12 @@ export default function ChatThread() {
             extraData={members}
             keyExtractor={(m) => m.id}
             contentContainerStyle={[styles.msgList, messages.length === 0 && styles.msgListEmpty]}
+            onContentSizeChange={() => {
+              if (stickToBottom.current) listRef.current?.scrollToEnd({ animated: false });
+            }}
+            onScrollBeginDrag={() => {
+              stickToBottom.current = false;
+            }}
             keyboardShouldPersistTaps="handled"
             ListEmptyComponent={
               <EmptyState

@@ -241,14 +241,14 @@ function StatCard({
 }) {
   return (
     <View style={styles.stat}>
-      <Txt v="overline" color={colors.neutral[500]} numberOfLines={1}>
+      <Txt v="overline" color={colors.neutral[500]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
         {label}
       </Txt>
       <Txt v="title" color={colors.secondary[500]} numberOfLines={1}>
         {value}
       </Txt>
       {sub ? (
-        <Txt v="caption" color={subColor} numberOfLines={1}>
+        <Txt v="caption" color={subColor} numberOfLines={2}>
           {sub}
         </Txt>
       ) : null}

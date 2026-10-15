@@ -291,70 +291,72 @@ function NextShiftHero({ shift: s, now, onOpen }: { shift: Upcoming; now: Date; 
   const address = s.address ?? null;
 
   return (
-    <View style={styles.hero}>
-      <GradientFill
-        id="homeHero"
-        stops={[
-          [0, colors.primary[500]],
-          [1, colors.primary[700]],
-        ]}
-      />
+    <View style={styles.heroShadow}>
+      <View style={styles.hero}>
+        <GradientFill
+          id="homeHero"
+          stops={[
+            [0, colors.primary[500]],
+            [1, colors.primary[700]],
+          ]}
+        />
 
-      <View style={styles.heroTop}>
-        <Txt v="overline" color="rgba(255,255,255,0.85)">
-          {t("mobile.ui.home.nextShift")}
-        </Txt>
-        {countdown ? (
-          <View style={styles.heroPill}>
-            <Txt v="caption" color={colors.white}>
-              {countdown}
-            </Txt>
-          </View>
-        ) : null}
-      </View>
-
-      <Txt v="headline" color={colors.white} numberOfLines={2}>
-        {s.client_name} · {s.property_name}
-      </Txt>
-
-      <View style={{ gap: 6 }}>
-        <View style={styles.heroLine}>
-          <Icon name="clock" size={16} color={colors.white} />
-          <Txt v="callout" color={colors.white} numberOfLines={1} style={{ flex: 1 }}>
-            {dayLabel(start, now, "long")} · {format(start, "HH:mm")} – {format(end, "HH:mm")} ·{" "}
-            {fmtNumber(hoursBetween(start, end))} h
+        <View style={styles.heroTop}>
+          <Txt v="overline" color="rgba(255,255,255,0.85)">
+            {t("mobile.ui.home.nextShift")}
           </Txt>
+          {countdown ? (
+            <View style={styles.heroPill}>
+              <Txt v="caption" color={colors.white}>
+                {countdown}
+              </Txt>
+            </View>
+          ) : null}
         </View>
-        {address ? (
+
+        <Txt v="headline" color={colors.white} numberOfLines={2}>
+          {s.client_name} · {s.property_name}
+        </Txt>
+
+        <View style={{ gap: 6 }}>
           <View style={styles.heroLine}>
-            <Icon name="map-pin" size={16} color={colors.white} />
+            <Icon name="clock" size={16} color={colors.white} />
             <Txt v="callout" color={colors.white} numberOfLines={1} style={{ flex: 1 }}>
-              {address}
+              {dayLabel(start, now, "long")} · {format(start, "HH:mm")} – {format(end, "HH:mm")} ·{" "}
+              {fmtNumber(hoursBetween(start, end))} h
             </Txt>
           </View>
-        ) : null}
-      </View>
+          {address ? (
+            <View style={styles.heroLine}>
+              <Icon name="map-pin" size={16} color={colors.white} />
+              <Txt v="callout" color={colors.white} numberOfLines={1} style={{ flex: 1 }}>
+                {address}
+              </Txt>
+            </View>
+          ) : null}
+        </View>
 
-      <View style={styles.heroActions}>
-        <Pressable
-          onPress={onOpen}
-          accessibilityRole="button"
-          style={({ pressed }) => [styles.heroBtn, pressed && { opacity: 0.9 }]}
-        >
-          <Icon name={running ? "arrow-right" : "login"} size={20} color={colors.primary[700]} />
-          <Txt v="bodyStrong" color={colors.primary[700]}>
-            {running ? t("mobile.ui.home.openShift") : t("schedule.checkIn")}
-          </Txt>
-        </Pressable>
-        {address ? (
-          <RoundButton
-            icon="navigation"
-            size={50}
-            color={colors.primary[600]}
-            accessibilityLabel={t("mobile.ui.shift.route")}
-            onPress={() => openInMaps(address)}
-          />
-        ) : null}
+        <View style={styles.heroActions}>
+          <Pressable
+            onPress={onOpen}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.heroBtn, pressed && { opacity: 0.9 }]}
+          >
+            <Icon name={running ? "arrow-right" : "login"} size={20} color={colors.primary[700]} />
+            <Txt v="bodyStrong" color={colors.primary[700]}>
+              {running ? t("mobile.ui.home.openShift") : t("schedule.checkIn")}
+            </Txt>
+          </Pressable>
+          {address ? (
+            <RoundButton
+              icon="navigation"
+              size={50}
+              color={colors.primary[600]}
+              accessibilityLabel={t("mobile.ui.shift.route")}
+              onPress={() => openInMaps(address)}
+            />
+          ) : null}
+        </View>
       </View>
     </View>
   );
@@ -500,13 +502,13 @@ const styles = StyleSheet.create({
   section: { gap: spacing[3] },
   emptyLine: { textAlign: "center", paddingVertical: spacing[6], paddingHorizontal: spacing[4] },
 
+  heroShadow: { borderRadius: 20, backgroundColor: colors.primary[600], ...shadow.md },
   hero: {
     gap: spacing[3],
     padding: 18,
     borderRadius: 20,
     overflow: "hidden",
     backgroundColor: colors.primary[600],
-    ...shadow.md,
   },
   heroTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing[2] },
   heroPill: {
@@ -535,7 +537,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[3],
     paddingHorizontal: 14,
   },
-  timeCol: { width: 50, gap: 2 },
+  timeCol: { minWidth: 50, gap: 2 },
   bar: { width: 3, alignSelf: "stretch", borderRadius: 2 },
 
   trainingRow: {

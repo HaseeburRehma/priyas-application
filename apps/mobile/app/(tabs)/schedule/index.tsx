@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
   dayDot: { width: 5, height: 5, borderRadius: 3 },
   dayHead: { flexDirection: "row", alignItems: "center", gap: spacing[3], marginTop: 4 },
   agendaRow: { flexDirection: "row", gap: spacing[3] },
-  timeCol: { width: 48, paddingTop: 14, gap: 2 },
+  timeCol: { minWidth: 48, paddingTop: 14, gap: 2 },
   agendaCard: { flex: 1, flexDirection: "row", gap: spacing[3], padding: 14 },
   statusBar: { width: 4, borderRadius: 2, alignSelf: "stretch" },
   titleRow: { flexDirection: "row", alignItems: "center", gap: spacing[2] },

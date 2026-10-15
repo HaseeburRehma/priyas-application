@@ -179,7 +179,7 @@ export default function DashboardTab() {
             <Txt v="title" color={colors.secondary[500]} numberOfLines={1} adjustsFontSizeToFit>
               {t(`dashboard.${greetKey}`)}, {firstName} 👋
             </Txt>
-            <Txt v="subhead" color={colors.neutral[500]} numberOfLines={1}>
+            <Txt v="subhead" color={colors.neutral[500]} numberOfLines={2}>
               {t("mobile.ui.dashboard.subtitle", { date: todayLabel })}
             </Txt>
           </View>
@@ -525,14 +525,14 @@ function ChartStat({
 }) {
   return (
     <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
-      <Txt v="overline" color={colors.neutral[500]} numberOfLines={1}>
+      <Txt v="overline" color={colors.neutral[500]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
         {label}
       </Txt>
       <Txt v="kpi" color={colors.secondary[500]} numberOfLines={1} adjustsFontSizeToFit>
         {value}
       </Txt>
       {sub ? (
-        <Txt v="caption" color={subColor} numberOfLines={1}>
+        <Txt v="caption" color={subColor} numberOfLines={2}>
           {sub}
         </Txt>
       ) : null}
@@ -755,7 +755,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: spacing[3],
   },
-  todayTime: { width: 44 },
+  todayTime: { minWidth: 44 },
   todayDot: { width: 8, height: 8, borderRadius: 4 },
   unassigned: {
     width: 30,
@@ -770,6 +770,6 @@ const styles = StyleSheet.create({
   },
   teamRow: { flexDirection: "row", alignItems: "center", gap: spacing[3] },
   teamBar: { width: 84 },
-  teamPct: { width: 48, textAlign: "right" },
+  teamPct: { minWidth: 48, textAlign: "right" },
   activityRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing[3] },
 });

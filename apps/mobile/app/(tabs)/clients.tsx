@@ -271,6 +271,7 @@ export default function ClientsTab() {
               refreshing={clientsQuery.isFetching}
               onRefresh={refresh}
               tintColor={colors.primary[500]}
+              colors={[colors.primary[500]]}
             />
           }
           ListEmptyComponent={
@@ -299,13 +300,13 @@ function StatCard({
 }) {
   return (
     <View style={styles.statCard}>
-      <Txt v="overline" color={colors.neutral[500]} numberOfLines={1}>
+      <Txt v="overline" color={colors.neutral[500]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
         {label}
       </Txt>
       <Txt v="title" color={colors.secondary[500]} numberOfLines={1}>
         {value}
       </Txt>
-      <Txt v="caption" color={subColor} numberOfLines={1}>
+      <Txt v="caption" color={subColor} numberOfLines={2}>
         {sub}
       </Txt>
     </View>

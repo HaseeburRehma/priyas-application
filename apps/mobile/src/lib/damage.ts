@@ -75,7 +75,9 @@ export async function loadMyDamageReports(
   if (paths.length > 0) {
     const { data: urls } = await supabase.storage
       .from(BUCKET)
-      .createSignedUrls(paths, 60 * 60);
+      // The list is persisted for offline use (24 h); sign for a week so
+      // a cold start doesn't show expired, blank thumbnails.
+      .createSignedUrls(paths, 7 * 24 * 60 * 60);
     for (const u of urls ?? []) {
       if (u.path && u.signedUrl) signed.set(u.path, u.signedUrl);
     }

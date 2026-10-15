@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -47,6 +48,9 @@ export default function Setup2FA() {
   const [factorId, setFactorId] = useState<string | null>(null);
   const [qrSvg, setQrSvg] = useState<string>("");
   const [secret, setSecret] = useState<string>("");
+  // otpauth:// link — lets someone enrolling on this very phone hand the
+  // secret to their authenticator app instead of scanning their own screen.
+  const [otpUri, setOtpUri] = useState<string>("");
   const [code, setCode] = useState("");
   const [pending, setPending] = useState(false);
 
@@ -63,6 +67,7 @@ export default function Setup2FA() {
       setFactorId(data.id);
       setQrSvg((data.totp.qr_code as unknown as string) ?? "");
       setSecret(data.totp.secret);
+      setOtpUri(data.totp.uri ?? "");
     })();
   }, [supabase]);
 
@@ -151,6 +156,19 @@ export default function Setup2FA() {
                   {secret}
                 </Txt>
               </View>
+            ) : null}
+            {otpUri ? (
+              <Button
+                label={t("mobile.ui.setup2fa.openApp")}
+                icon="shield"
+                variant="outline"
+                size="md"
+                onPress={() =>
+                  Linking.openURL(otpUri).catch(() =>
+                    Alert.alert(t("mobile.ui.setup2fa.noApp")),
+                  )
+                }
+              />
             ) : null}
           </Card>
 

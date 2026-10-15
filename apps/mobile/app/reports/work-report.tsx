@@ -270,7 +270,7 @@ export default function WorkReportScreen() {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <Card style={styles.stat}>
-      <Txt v="overline" color={colors.neutral[500]} numberOfLines={1}>
+      <Txt v="overline" color={colors.neutral[500]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
         {label}
       </Txt>
       <Txt v="kpi" color={colors.secondary[500]} numberOfLines={1} adjustsFontSizeToFit>
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
   stat: { flex: 1, minWidth: 0, gap: 6, paddingVertical: 12, paddingHorizontal: 12 },
   dayRow: { gap: 10, paddingVertical: 12, paddingHorizontal: 14 },
   dayLine: { flexDirection: "row", alignItems: "center", gap: spacing[3] },
-  dayCol: { width: 44, alignItems: "center", gap: 1 },
+  dayCol: { minWidth: 44, alignItems: "center", gap: 1 },
   totalBar: {
     flexDirection: "row",
     alignItems: "center",

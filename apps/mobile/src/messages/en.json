@@ -2154,7 +2154,8 @@
       "damage": "Damage",
       "chat": "Chat",
       "system": "System",
-      "other": "Other"
+      "other": "Other",
+      "client": "Clients"
     }
   },
   "vacation": {
@@ -3180,7 +3181,7 @@
     "more": {
       "tabLabel": "More",
       "title": "More",
-      "subtitle": "Every screen you didn't put on the main tab bar.",
+      "subtitle": "All other areas and settings.",
       "employees": "Employees",
       "employeesHint": "Full team roster",
       "properties": "Properties",
@@ -3357,7 +3358,7 @@
         "done": "Completed"
       },
       "watchCta": "Watch video",
-      "noVideoUrl": "No video URL",
+      "noVideoUrl": "Video coming soon",
       "markCompletedCta": "Mark completed",
       "playerFailed": "Could not open the video inline. Please tap Watch video to open in your browser."
     },
@@ -3640,7 +3641,8 @@
           "de": "Deutsch",
           "en": "English",
           "ta": "தமிழ்"
-        }
+        },
+        "twoFactorShort": "Two-factor sign-in"
       },
       "employees": {
         "serviceFilter": "Filter by service line",
@@ -3679,7 +3681,16 @@
         "available": "Available",
         "daysValue": "{n} days",
         "ofTotal": "of {n}",
-        "nextLeave": "Next vacation"
+        "nextLeave": "Next vacation",
+        "sinceDate": "Since {date}",
+        "tenureYears": {
+          "one": "{count} year",
+          "other": "{count} years"
+        },
+        "tenureMonths": {
+          "one": "{count} month",
+          "other": "{count} months"
+        }
       },
       "invoices": {
         "openSub": "{n} awaiting payment",
@@ -3707,7 +3718,9 @@
         "itemsCount": "{n} items",
         "evPayment": "Payment received · {amount}",
         "evEmailSent": "Sent by email",
-        "evCreated": "Invoice created"
+        "evCreated": "Invoice created",
+        "emptyAllTitle": "No invoices yet",
+        "emptyAllBody": "Invoices show up here once they're created in the web app."
       },
       "alltagshilfe": {
         "running": "In progress",
@@ -3757,6 +3770,13 @@
         "totalWeek": "Total week {n}",
         "shifts": "Shifts",
         "hoursShort": "{h} h"
+      },
+      "planShift": {
+        "invalidDateTime": "Please check the date (DD.MM.YYYY) and time (HH:MM)."
+      },
+      "setup2fa": {
+        "openApp": "Open in authenticator app",
+        "noApp": "No authenticator app found. Please enter the key above manually."
       }
     }
   },

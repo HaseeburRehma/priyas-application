@@ -95,16 +95,19 @@ export default function ShiftDetail() {
           if (perm.status !== "granted") {
             Alert.alert(t("schedule.gpsPermTitle"), t("schedule.gpsPermBody"));
           } else {
-            const pos = await Location.getCurrentPositionAsync({
-              accuracy: Location.Accuracy.Balanced,
-            });
-            lat = pos.coords.latitude;
-            lng = pos.coords.longitude;
-            accuracy = pos.coords.accuracy ?? null;
-            distance =
-              shift?.property.lat != null && shift?.property.lng != null
-                ? distanceMeters({ lat, lng }, { lat: shift.property.lat, lng: shift.property.lng })
-                : null;
+            // Location off / no fix indoors used to throw here and abort
+            // the check-in silently. GPS is evidence, not a gate: fall
+            // back to the last known fix, else record without coordinates.
+            const pos = await currentPositionOrNull();
+            if (pos) {
+              lat = pos.coords.latitude;
+              lng = pos.coords.longitude;
+              accuracy = pos.coords.accuracy ?? null;
+              distance =
+                shift?.property.lat != null && shift?.property.lng != null
+                  ? distanceMeters({ lat, lng }, { lat: shift.property.lat, lng: shift.property.lng })
+                  : null;
+            }
             if (distance != null && distance > 500) {
               const proceed = await confirm(
                 t("schedule.farFromSiteTitle"),
@@ -134,6 +137,11 @@ export default function ShiftDetail() {
         await qc.invalidateQueries({ queryKey: ["shift-entries", id] });
         await qc.invalidateQueries({ queryKey: ["my-shifts"] });
         await qc.invalidateQueries({ queryKey: ["my-self"] });
+      } catch (err) {
+        Alert.alert(
+          t("schedule.actionFailed"),
+          err instanceof Error ? err.message : String(err),
+        );
       } finally {
         setPending(false);
       }
@@ -492,6 +500,25 @@ function openInMaps(address: string) {
   Linking.openURL(url).catch(() => {
     void Linking.openURL(`https://maps.google.com/?q=${q}`);
   });
+}
+
+/**
+ * Best-effort GPS fix: a fresh reading (max 12 s), else the last known
+ * position from the past 10 minutes, else null. Never throws.
+ */
+async function currentPositionOrNull(): Promise<Location.LocationObject | null> {
+  try {
+    return await Promise.race([
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 12_000)),
+    ]);
+  } catch {
+    try {
+      return await Location.getLastKnownPositionAsync({ maxAge: 10 * 60_000 });
+    } catch {
+      return null;
+    }
+  }
 }
 
 const styles = StyleSheet.create({

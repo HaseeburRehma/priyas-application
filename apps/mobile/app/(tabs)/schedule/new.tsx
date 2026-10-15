@@ -19,6 +19,7 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   loadEligibleEmployees,
@@ -61,9 +62,10 @@ export default function PlanShiftScreen() {
 
   const [propId, setPropId] = useState<string | null>(null);
   const [empId, setEmpId] = useState<string | null>(null);
-  const [dateStr, setDateStr] = useState<string>(() =>
-    new Date().toISOString().slice(0, 10),
-  );
+  const insets = useSafeAreaInsets();
+  // Local calendar date — toISOString() is UTC and showed "yesterday"
+  // between midnight and 2 a.m. German time.
+  const [dateStr, setDateStr] = useState<string>(() => formatLocalDate(new Date()));
   const [startStr, setStartStr] = useState<string>("09:00");
   const [endStr, setEndStr] = useState<string>("11:00");
   const [notes, setNotes] = useState<string>("");
@@ -120,6 +122,12 @@ export default function PlanShiftScreen() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["my-shifts"] });
+      // Tab routes stay mounted — start the next plan from a clean form.
+      setPropId(null);
+      setEmpId(null);
+      setNotes("");
+      setPropSearch("");
+      setDateStr(formatLocalDate(new Date()));
       Alert.alert(
         t("mobile.planShift.savedTitle"),
         t("mobile.planShift.savedBody"),
@@ -142,7 +150,11 @@ export default function PlanShiftScreen() {
     <Screen header={<NavHeader title={t("mobile.planShift.title")} />} scroll={false}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        // Android is edge-to-edge, so the window no longer resizes for the
+        // keyboard — the view has to make room itself on both platforms.
+        // The offset covers the status bar + NavHeader above this view.
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={insets.top + NAV_HEADER_HEIGHT}
       >
         <ScrollView
           style={{ flex: 1 }}
@@ -270,8 +282,9 @@ export default function PlanShiftScreen() {
             icon="calendar"
             value={dateStr}
             onChangeText={setDateStr}
-            placeholder="YYYY-MM-DD"
+            placeholder="TT.MM.JJJJ"
             autoCapitalize="none"
+            keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "default"}
           />
           <View style={styles.grid2}>
             <View style={styles.gridCell}>
@@ -283,6 +296,7 @@ export default function PlanShiftScreen() {
                 onChangeText={setStartStr}
                 placeholder="HH:MM"
                 autoCapitalize="none"
+                keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "default"}
               />
             </View>
             <View style={styles.gridCell}>
@@ -294,6 +308,7 @@ export default function PlanShiftScreen() {
                 onChangeText={setEndStr}
                 placeholder="HH:MM"
                 autoCapitalize="none"
+                keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "default"}
               />
             </View>
           </View>
@@ -384,19 +399,62 @@ function Chosen({
   );
 }
 
-function serviceLabel(e: EligibleEmployee): string {
+function serviceLabel(e: EligibleEmployee): string | undefined {
   return e.service_line === "alltagshilfe"
     ? t("mobile.employees.service.alltagshilfe")
     : e.service_line === "priya"
       ? t("mobile.employees.service.priya")
-      : "—";
+      : undefined;
 }
 
+/** Height of the kit NavHeader row, for keyboard offsets. */
+const NAV_HEADER_HEIGHT = 52;
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+function formatLocalDate(d: Date): string {
+  return `${pad2(d.getDate())}.${pad2(d.getMonth() + 1)}.${d.getFullYear()}`;
+}
+
+/**
+ * Accepts "15.10.2026", "15.10.26" or "2026-10-15" plus "9:00", "09:00"
+ * or "9.00", interpreted in the device's local timezone. Throws
+ * "invalid_datetime" for anything else instead of a raw RangeError.
+ */
 function combine(dateStr: string, timeStr: string): string {
-  // Build "YYYY-MM-DDTHH:MM:00" and let the platform interpret it in the
-  // device's local timezone (Supabase timestamptz stores it as UTC).
-  const iso = `${dateStr}T${timeStr}:00`;
-  const d = new Date(iso);
+  const ds = dateStr.trim();
+  const ts = timeStr.trim();
+  let y: number, mo: number, da: number;
+  const de = ds.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})$/);
+  const iso = ds.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (de) {
+    da = Number(de[1]);
+    mo = Number(de[2]);
+    const yy = de[3] ?? "";
+    y = yy.length === 2 ? 2000 + Number(yy) : Number(yy);
+  } else if (iso) {
+    y = Number(iso[1]);
+    mo = Number(iso[2]);
+    da = Number(iso[3]);
+  } else {
+    throw new Error("invalid_datetime");
+  }
+  const tm = ts.match(/^(\d{1,2})[:.](\d{2})$/);
+  if (!tm) throw new Error("invalid_datetime");
+  const h = Number(tm[1]);
+  const mi = Number(tm[2]);
+  const d = new Date(y, mo - 1, da, h, mi, 0, 0);
+  // Reject roll-overs like 31.02. or 25:00.
+  if (
+    Number.isNaN(d.getTime()) ||
+    d.getFullYear() !== y ||
+    d.getMonth() !== mo - 1 ||
+    d.getDate() !== da ||
+    d.getHours() !== h ||
+    d.getMinutes() !== mi
+  ) {
+    throw new Error("invalid_datetime");
+  }
   return d.toISOString();
 }
 
@@ -408,6 +466,7 @@ function translateError(code: string): string {
     not_signed_in: t("mobile.planShift.errorNotSignedIn"),
     no_org: t("mobile.planShift.errorNoOrg"),
     no_property: t("mobile.planShift.errorNoProperty"),
+    invalid_datetime: t("mobile.ui.planShift.invalidDateTime"),
   };
   return map[code] ?? code;
 }

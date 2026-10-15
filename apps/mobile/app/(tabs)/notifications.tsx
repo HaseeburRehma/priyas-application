@@ -251,6 +251,8 @@ function categoryLook(row: NotificationRow): { icon: IconName; tone: Tone } {
       return { icon: "camera", tone: "error" };
     case "chat":
       return { icon: "chat", tone: "info" };
+    case "client":
+      return { icon: "users", tone: "brand" };
     case "system":
       return { icon: "settings", tone: "neutral" };
     default:
