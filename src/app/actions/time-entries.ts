@@ -11,13 +11,19 @@ import {
   PermissionError,
   requirePermission,
 } from "@/lib/rbac/permissions";
-import { distanceMeters } from "@/lib/utils/geo";
+import { distanceMeters, geofenceLimitMeters } from "@/lib/utils/geo";
 import { routes } from "@/lib/constants/routes";
 import { getCachedUser } from "@/lib/api/current-user";
 
 type ActionResult<T = void> =
   | { ok: true; data: T }
-  | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+  | {
+      ok: false;
+      error: string;
+      /** Machine-readable reason the UI can branch on. */
+      code?: "far_from_site";
+      fieldErrors?: Record<string, string[]>;
+    };
 
 async function audit(
   action: string,
@@ -56,7 +62,7 @@ async function audit(
  */
 export async function checkInAction(
   raw: unknown,
-): Promise<ActionResult<{ id: string; distance_m: number; warned: boolean }>> {
+): Promise<ActionResult<{ id: string; distance_m: number | null; warned: boolean }>> {
   try {
     await requirePermission("time.checkin");
   } catch (err) {
@@ -125,10 +131,15 @@ export async function checkInAction(
     shift.employee_id ?? (emp as { id: string } | null)?.id ?? null;
   if (!employeeId) return { ok: false, error: "Shift has no employee" };
 
-  // Distance check
-  let distance = 0;
+  // Distance check. GPS is evidence, not a gate (same rule as the mobile
+  // app): no fix → record without coordinates; outside the fence → staff
+  // must confirm, then it's recorded with its distance for managers to
+  // review. The DB trigger (000070) recomputes distance_m server-side.
+  let distance: number | null = null;
   let warned = false;
   if (
+    input.latitude != null &&
+    input.longitude != null &&
     shift.property?.latitude != null &&
     shift.property?.longitude != null
   ) {
@@ -138,16 +149,20 @@ export async function checkInAction(
       Number(shift.property.latitude),
       Number(shift.property.longitude),
     );
-    const radius = Number(shift.property.gps_radius_m ?? 100);
-    if (distance > radius) {
-      // We still record the attempt as a warning row so managers can see
-      // it during review, but reject the action with the distance hint.
+    const limit = geofenceLimitMeters(
+      Number(shift.property.gps_radius_m ?? 100),
+      input.accuracy_m,
+    );
+    if (distance > limit) {
       warned = true;
-      return {
-        ok: false,
-        error: `Du bist ${Math.round(distance)} m vom Objekt entfernt (max. ${radius} m).`,
-        fieldErrors: { latitude: ["außerhalb des Radius"] },
-      };
+      if (!input.confirm_far) {
+        return {
+          ok: false,
+          code: "far_from_site",
+          error: `Du bist ${Math.round(distance)} m vom Objekt entfernt (erlaubt: ${Math.round(limit)} m).`,
+          fieldErrors: { latitude: ["außerhalb des Radius"] },
+        };
+      }
     }
   }
 
@@ -175,8 +190,8 @@ export async function checkInAction(
       property_id: shift.property_id,
       kind: input.kind,
       occurred_at: new Date().toISOString(),
-      latitude: input.latitude,
-      longitude: input.longitude,
+      latitude: input.latitude ?? null,
+      longitude: input.longitude ?? null,
       accuracy_m: input.accuracy_m ?? null,
       distance_m: distance,
       manual: false,
@@ -187,7 +202,7 @@ export async function checkInAction(
   let resolvedId: string | null = null;
   if (error) {
     if (error.code !== "23505") {
-      return { ok: false, error: error.message };
+      return { ok: false, error: clockErrorMessage(error.message) };
     }
     // Conflict path: the row already existed. Fetch it so the caller still
     // gets a usable id.
@@ -207,20 +222,20 @@ export async function checkInAction(
   }
   const data = { id: resolvedId };
 
-  // Mark the shift as in-progress on first check-in.
-  if (input.kind === "check_in") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await ((supabase.from("shifts") as any))
-      .update({ status: "in_progress" })
-      .eq("id", input.shift_id)
-      .neq("status", "completed");
-  }
+  // Shift status (in_progress on check-in, completed on check-out) is set
+  // by the time_entries trigger (000070): staff can't UPDATE shifts, so
+  // doing it from here was a silent no-op for them.
 
   await audit(
     input.kind,
     (data as { id: string }).id,
-    input.kind === "check_in" ? "GPS check-in." : "GPS check-out.",
-    { distance_m: Math.round(distance) },
+    input.latitude == null
+      ? input.kind === "check_in" ? "Check-in ohne GPS." : "Check-out ohne GPS."
+      : input.kind === "check_in" ? "GPS check-in." : "GPS check-out.",
+    {
+      distance_m: distance == null ? null : Math.round(distance),
+      outside_radius: warned,
+    },
   );
 
   revalidatePath(routes.schedule);
@@ -232,6 +247,16 @@ export async function checkInAction(
       warned,
     },
   };
+}
+
+/** Map the 000070 trigger's error codes to a message staff can act on. */
+function clockErrorMessage(raw: string): string {
+  if (raw.includes("must_check_in_first")) return "Du musst zuerst einchecken.";
+  if (raw.includes("not_your_shift")) return "Diese Schicht ist dir nicht zugewiesen.";
+  if (raw.includes("shift_cancelled")) return "Diese Schicht wurde storniert.";
+  if (raw.includes("shift_not_found")) return "Schicht nicht gefunden.";
+  if (raw.includes("occurred_at_out_of_range")) return "Ungültige Uhrzeit.";
+  return "Zeiterfassung fehlgeschlagen. Bitte erneut versuchen.";
 }
 
 /**
@@ -572,10 +597,20 @@ export async function completeShiftAction(
   }
   const supabase = await createSupabaseServerClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await ((supabase.from("shifts") as any))
+  const { data: updated, error } = await ((supabase.from("shifts") as any))
     .update({ status: "completed", completed_at: new Date().toISOString() })
-    .eq("id", shift_id);
-  if (error) return { ok: false, error: error.message };
+    .eq("id", shift_id)
+    .select("id");
+  if (error) return { ok: false, error: "Schicht konnte nicht abgeschlossen werden." };
+  // RLS lets only dispatchers/admins update shifts; for staff the update
+  // matches 0 rows without an error. Their shift completes on check-out
+  // (trigger 000070), so report it instead of a false "done".
+  if (((updated as unknown[] | null) ?? []).length === 0) {
+    return {
+      ok: false,
+      error: "Die Schicht wird mit dem Auschecken automatisch abgeschlossen.",
+    };
+  }
   await audit("complete", shift_id, "Schicht als erledigt bestätigt.");
   revalidatePath(routes.schedule);
   return { ok: true, data: { id: shift_id } };

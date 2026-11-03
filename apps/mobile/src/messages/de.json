@@ -3432,7 +3432,9 @@
         "gpsHint": "Beim Einchecken wird dein Standort mit dem Objekt abgeglichen.",
         "actionsHint": "Pause und Auschecken sind nach dem Einchecken verfügbar.",
         "area": "Bereich",
-        "statusNoShow": "Nicht erschienen"
+        "statusNoShow": "Nicht erschienen",
+        "queuedTitle": "Offline gespeichert",
+        "queuedBody": "Keine Verbindung. Deine Zeit ist auf dem Handy gespeichert und wird gesendet, sobald du wieder online bist."
       },
       "dashboard": {
         "subtitle": "{date} · Das passiert heute",

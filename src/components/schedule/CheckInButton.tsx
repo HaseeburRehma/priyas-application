@@ -80,13 +80,13 @@ export function CheckInButton({
 
   async function handleCheckIn(kind: "check_in" | "check_out") {
     setLocating(true);
-    let pos: Pos;
+    // GPS is evidence, not a gate (same as the mobile app): no fix or a
+    // denied permission still records the event, without coordinates.
+    let pos: Pos | null = null;
     try {
       pos = await getCurrentPosition();
     } catch {
-      toast.error(t("locationDenied"));
-      setLocating(false);
-      return;
+      toast.warning(t("locationDenied"));
     }
     setLocating(false);
     start(async () => {
@@ -96,22 +96,25 @@ export function CheckInButton({
       // must catch it ourselves and tell the user plainly instead of
       // leaving the button stuck on its pending state.
       try {
-        const r = await checkInAction({
+        const payload = {
           shift_id: shiftId,
           kind,
-          latitude: pos.latitude,
-          longitude: pos.longitude,
-          accuracy_m: pos.accuracy_m,
-        });
+          latitude: pos?.latitude ?? null,
+          longitude: pos?.longitude ?? null,
+          accuracy_m: pos?.accuracy_m ?? null,
+        };
+        let r = await checkInAction(payload);
+        if (!r.ok && r.code === "far_from_site") {
+          // Outside the property's radius: let staff confirm they're on
+          // site; the row keeps its distance for managers to review.
+          if (!window.confirm(`${r.error}\n\n${t("farConfirm")}`)) return;
+          r = await checkInAction({ ...payload, confirm_far: true });
+        }
         if (!r.ok) {
           toast.error(r.error);
           return;
         }
-        toast.success(
-          kind === "check_in"
-            ? t("checkedIn", { default: "Checked in." })
-            : t("checkedOut", { default: "Checked out." }),
-        );
+        toast.success(kind === "check_in" ? t("checkedIn") : t("checkedOut"));
         router.refresh();
       } catch {
         toast.error(

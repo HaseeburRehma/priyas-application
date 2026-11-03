@@ -3432,7 +3432,9 @@
         "gpsHint": "Your location is checked against the site when you check in.",
         "actionsHint": "Break and check-out become available after check-in.",
         "area": "Area",
-        "statusNoShow": "No-show"
+        "statusNoShow": "No-show",
+        "queuedTitle": "Saved offline",
+        "queuedBody": "No connection. Your time is saved on the phone and will be sent once you're back online."
       },
       "dashboard": {
         "subtitle": "{date} · Here's what's happening today",

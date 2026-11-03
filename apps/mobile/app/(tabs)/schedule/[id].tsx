@@ -42,6 +42,7 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import {
   distanceMeters,
+  geofenceLimitMeters,
   insertTimeEntry,
   loadMyShifts,
   loadShiftEntries,
@@ -108,7 +109,10 @@ export default function ShiftDetail() {
                   ? distanceMeters({ lat, lng }, { lat: shift.property.lat, lng: shift.property.lng })
                   : null;
             }
-            if (distance != null && distance > 500) {
+            if (
+              distance != null &&
+              distance > geofenceLimitMeters(shift?.property.radiusM, accuracy)
+            ) {
               const proceed = await confirm(
                 t("schedule.farFromSiteTitle"),
                 t("schedule.farFromSiteBody"),
@@ -129,10 +133,18 @@ export default function ShiftDetail() {
           lng,
           accuracy,
           distance,
+          orgId: profile.orgId,
+          propertyId: shift?.property.id ?? null,
         });
         if (!r.ok) {
           Alert.alert(t("schedule.actionFailed"), r.error);
           return;
+        }
+        if (r.queued) {
+          Alert.alert(
+            t("mobile.ui.shift.queuedTitle"),
+            t("mobile.ui.shift.queuedBody"),
+          );
         }
         await qc.invalidateQueries({ queryKey: ["shift-entries", id] });
         await qc.invalidateQueries({ queryKey: ["my-shifts"] });
@@ -146,7 +158,7 @@ export default function ShiftDetail() {
         setPending(false);
       }
     },
-    [profile?.employeeId, id, shift, qc],
+    [profile?.employeeId, profile?.orgId, id, shift, qc],
   );
 
   const header = <NavHeader title={t("mobile.ui.shift.title")} />;
@@ -250,7 +262,8 @@ export default function ShiftDetail() {
         </View>
 
         {checkInDistance != null ? (
-          <Notice tone={checkInDistance > 500 ? "warning" : "success"} icon="navigation">
+          <Notice
+            tone={checkInDistance > geofenceLimitMeters(shift.property.radiusM, null) ? "warning" : "success"} icon="navigation">
             {t("mobile.ui.shift.checkInDistance", { distance: fmtDistance(checkInDistance) })}
           </Notice>
         ) : state.stage === "before" ? (

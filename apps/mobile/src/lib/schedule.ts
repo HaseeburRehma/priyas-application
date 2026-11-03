@@ -5,6 +5,7 @@
 import Constants from "expo-constants";
 import { startOfWeek } from "date-fns";
 import { getSupabase } from "@/lib/supabase";
+import { enqueue } from "@/lib/outbox";
 
 export type ShiftRow = {
   id: string;
@@ -20,6 +21,8 @@ export type ShiftRow = {
     address: string | null;
     lat: number | null;
     lng: number | null;
+    /** Geofence radius in metres (properties.gps_radius_m, default 100). */
+    radiusM?: number;
     address_line1?: string | null;
     floor?: string | null;
     building_section?: string | null;
@@ -47,6 +50,7 @@ type SRow = {
     city: string | null;
     latitude: number | string | null;
     longitude: number | string | null;
+    gps_radius_m: number | null;
     floor: string | null;
     building_section: string | null;
     clients: { id: string; display_name: string; customer_type: string | null };
@@ -88,7 +92,7 @@ export async function loadMyShifts(employeeId: string): Promise<ShiftRow[]> {
   const { data } = await supabase
     .from("shifts")
     .select(
-      "id, starts_at, ends_at, status, notes, properties!inner(id, name, address_line1, postal_code, city, latitude, longitude, floor, building_section, clients!inner(id, display_name, customer_type))",
+      "id, starts_at, ends_at, status, notes, properties!inner(id, name, address_line1, postal_code, city, latitude, longitude, gps_radius_m, floor, building_section, clients!inner(id, display_name, customer_type))",
     )
     .eq("employee_id", employeeId)
     .is("deleted_at", null)
@@ -108,6 +112,7 @@ export async function loadMyShifts(employeeId: string): Promise<ShiftRow[]> {
       address: joinAddress(s.properties),
       lat: num(s.properties.latitude),
       lng: num(s.properties.longitude),
+      radiusM: s.properties.gps_radius_m ?? 100,
       address_line1: s.properties.address_line1,
       floor: s.properties.floor,
       building_section: s.properties.building_section,
@@ -168,11 +173,49 @@ export async function insertTimeEntry(args: {
   accuracy?: number | null;
   /** Distance to the property in metres, if computed. */
   distance?: number | null;
-}): Promise<{ ok: true } | { ok: false; error: string }> {
+  /** Needed to queue the event when the phone is offline. */
+  orgId?: string | null;
+  propertyId?: string | null;
+}): Promise<{ ok: true; queued?: boolean } | { ok: false; error: string }> {
   const supabase = getSupabase();
+  const occurredAt = new Date().toISOString();
+  // No signal (basement, lift): keep the tap's own timestamp in the
+  // outbox and send it on the next foreground. The DB trigger (000070)
+  // re-checks ownership and order when it lands.
+  const queueOffline = async () => {
+    if (!args.orgId || !args.propertyId) return null;
+    await enqueue({
+      kind: "time_entry_insert",
+      dedupe_key: `${args.shiftId}:${args.kind}:${occurredAt.slice(0, 16)}`,
+      row: {
+        org_id: args.orgId,
+        shift_id: args.shiftId,
+        employee_id: args.employeeId,
+        property_id: args.propertyId,
+        kind: args.kind,
+        occurred_at: occurredAt,
+        latitude: args.lat,
+        longitude: args.lng,
+        accuracy_m: args.accuracy ?? null,
+      },
+    });
+    return { ok: true as const, queued: true };
+  };
   // Validate state client-side (best-effort). RLS + server checks still
   // final-guard, but this gives a snappier error for the common case.
-  const existing = await loadShiftEntries(args.shiftId, args.employeeId);
+  const { data: existingRows, error: exErr } = await supabase
+    .from("time_entries")
+    .select("kind")
+    .eq("shift_id", args.shiftId)
+    .eq("employee_id", args.employeeId);
+  if (exErr) {
+    if (isNetworkError(exErr.message)) {
+      const q = await queueOffline();
+      if (q) return q;
+    }
+    return { ok: false, error: exErr.message };
+  }
+  const existing = (existingRows ?? []) as Array<{ kind: TimeEntry["kind"] }>;
   const hasIn = existing.some((e) => e.kind === "check_in");
   const hasOut = existing.some((e) => e.kind === "check_out");
   const openBreak =
@@ -202,7 +245,13 @@ export async function insertTimeEntry(args: {
     .select("org_id, property_id")
     .eq("id", args.shiftId)
     .maybeSingle();
-  if (shErr) return { ok: false, error: shErr.message };
+  if (shErr) {
+    if (isNetworkError(shErr.message)) {
+      const q = await queueOffline();
+      if (q) return q;
+    }
+    return { ok: false, error: shErr.message };
+  }
   const shift = sh as { org_id: string; property_id: string } | null;
   if (!shift) return { ok: false, error: "shift_not_found" };
 
@@ -212,7 +261,7 @@ export async function insertTimeEntry(args: {
     employee_id: args.employeeId,
     property_id: shift.property_id,
     kind: args.kind,
-    occurred_at: new Date().toISOString(),
+    occurred_at: occurredAt,
     latitude: args.lat,
     longitude: args.lng,
     accuracy_m: args.accuracy ?? null,
@@ -221,17 +270,15 @@ export async function insertTimeEntry(args: {
   });
   // check_in/check_out are unique per shift (partial index): a duplicate
   // tap or a retry lands as 23505 — treat it as already done, like the web.
-  if (error && error.code !== "23505") return { ok: false, error: error.message };
-
-  if (args.kind === "check_in") {
-    // Mirror the web: flag the shift as running. Only dispatchers/admins
-    // may update shifts (RLS), so for field staff this is a silent no-op.
-    await supabase
-      .from("shifts")
-      .update({ status: "in_progress" })
-      .eq("id", args.shiftId)
-      .eq("status", "scheduled");
+  if (error && error.code !== "23505") {
+    if (isNetworkError(error.message)) {
+      const q = await queueOffline();
+      if (q) return q;
+    }
+    return { ok: false, error: error.message };
   }
+  // Shift status (in_progress / completed) is set by the time_entries
+  // trigger (000070) — staff can't update shifts themselves.
   return { ok: true };
 }
 
@@ -383,6 +430,32 @@ async function announceAssignedShift(shiftId: string): Promise<void> {
   } catch {
     // Best-effort.
   }
+}
+
+/** fetch() failing in React Native / the browser, as surfaced by supabase-js. */
+export function isNetworkError(message: string | null | undefined): boolean {
+  const m = (message ?? "").toLowerCase();
+  return (
+    m.includes("network request failed") ||
+    m.includes("failed to fetch") ||
+    m.includes("fetch failed") ||
+    m.includes("network error")
+  );
+}
+
+/**
+ * Distance beyond which staff must confirm they're on site: the
+ * property's radius plus the fix's accuracy, capped at 100 m of slack.
+ * Same rule as the web (src/lib/utils/geo.ts geofenceLimitMeters).
+ */
+export function geofenceLimitMeters(
+  radiusM: number | null | undefined,
+  accuracyM: number | null | undefined,
+): number {
+  const radius = Number.isFinite(radiusM) && (radiusM as number) > 0 ? (radiusM as number) : 100;
+  const slack =
+    Number.isFinite(accuracyM) && (accuracyM as number) > 0 ? Math.min(accuracyM as number, 100) : 0;
+  return radius + slack;
 }
 
 /** Haversine distance in metres, for GPS proximity checks. */

@@ -1218,7 +1218,14 @@
       "nowInRange": "GPS location verified",
       "notInWindow": "Outside shift window — check in anyway",
       "checkedInAlready": "You are clocked in",
-      "checkedOutAlready": "Shift finished — mark as complete"
+      "checkedOutAlready": "Shift finished — mark as complete",
+      "locating": "Getting your location…",
+      "locationDenied": "No GPS location — recording without location.",
+      "checkedIn": "Checked in.",
+      "checkedOut": "Checked out.",
+      "completed": "Shift marked complete.",
+      "offlineError": "No connection — please try again once you're back online.",
+      "farConfirm": "Are you on site anyway? The distance is saved for review."
     }
   },
   "employees": {

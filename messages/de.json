@@ -1218,7 +1218,14 @@
       "nowInRange": "GPS-Standort bestätigt",
       "notInWindow": "Außerhalb des Zeitfensters — trotzdem einchecken",
       "checkedInAlready": "Du bist eingecheckt",
-      "checkedOutAlready": "Einsatz beendet — als erledigt markieren"
+      "checkedOutAlready": "Einsatz beendet — als erledigt markieren",
+      "locating": "Standort wird ermittelt…",
+      "locationDenied": "Kein GPS-Standort — wird ohne Standort erfasst.",
+      "checkedIn": "Eingecheckt.",
+      "checkedOut": "Ausgecheckt.",
+      "completed": "Einsatz als erledigt markiert.",
+      "offlineError": "Keine Verbindung — bitte erneut versuchen, sobald du wieder online bist.",
+      "farConfirm": "Bist du trotzdem vor Ort? Die Entfernung wird für die Prüfung gespeichert."
     }
   },
   "employees": {

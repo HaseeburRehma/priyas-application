@@ -32,6 +32,7 @@ export type OutboxAction =
         occurred_at: string; // ISO — the moment the user tapped, not the moment we send
         latitude: number | null;
         longitude: number | null;
+        accuracy_m?: number | null;
       };
     }
   | {
@@ -102,8 +103,21 @@ export async function pending(): Promise<OutboxEntry[]> {
   return readAll();
 }
 
-/** Drain — remove successes, keep failures with attempts++ / last_error. */
-export async function drain(): Promise<{ sent: number; failed: number }> {
+let draining: Promise<{ sent: number; failed: number }> | null = null;
+
+/** Drain — remove successes, keep failures with attempts++ / last_error.
+ *  Overlapping calls (foreground + timer) share one run so a queued
+ *  break isn't sent twice. */
+export function drain(): Promise<{ sent: number; failed: number }> {
+  if (!draining) {
+    draining = drainOnce().finally(() => {
+      draining = null;
+    });
+  }
+  return draining;
+}
+
+async function drainOnce(): Promise<{ sent: number; failed: number }> {
   const entries = await readAll();
   if (entries.length === 0) return { sent: 0, failed: 0 };
 
@@ -165,5 +179,13 @@ export function bindOutboxAutoDrain(): () => void {
       void drain().catch(() => {});
     }
   });
-  return () => sub.remove();
+  // A cleaner who checks in offline usually keeps the app open; retry
+  // every minute while foregrounded so the event lands once signal is back.
+  const timer = setInterval(() => {
+    if (AppState.currentState === "active") void drain().catch(() => {});
+  }, 60_000);
+  return () => {
+    sub.remove();
+    clearInterval(timer);
+  };
 }
