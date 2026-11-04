@@ -16,8 +16,10 @@ export const config = {
      *     must be served WITHOUT auth redirects. A redirect on /sw.js
      *     trips the ServiceWorker spec's "no redirect" rule; a redirect
      *     on the manifest returns HTML and breaks the JSON parse.
+     *   - mobile-version.json — the mobile app's update check reads it
+     *     signed out, so it must not redirect to /login
      *   - Common bot endpoints (robots.txt, sitemap.xml)
      */
-    "/((?!_next/static|_next/image|favicon.ico|sw\\.js|manifest\\.webmanifest|robots\\.txt|sitemap\\.xml|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sw\\.js|manifest\\.webmanifest|mobile-version\\.json|robots\\.txt|sitemap\\.xml|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
