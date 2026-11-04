@@ -3779,6 +3779,17 @@
       "setup2fa": {
         "openApp": "Open in authenticator app",
         "noApp": "No authenticator app found. Please enter the key above manually."
+      },
+      "update": {
+        "otaTitle": "Update ready",
+        "otaBody": "A new version of the app has been downloaded. Restart now?",
+        "restart": "Restart",
+        "later": "Later",
+        "storeTitle": "New version available",
+        "storeBody": "Version {version} is available in the store. Please update the app.",
+        "requiredTitle": "Update required",
+        "requiredBody": "This app version is no longer supported. Please install version {version} from the store to continue.",
+        "update": "Update"
       }
     }
   },

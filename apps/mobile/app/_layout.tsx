@@ -31,6 +31,7 @@ import { JetBrainsMono_500Medium } from "@expo-google-fonts/jetbrains-mono/500Me
 import { JetBrainsMono_700Bold } from "@expo-google-fonts/jetbrains-mono/700Bold";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { i18n, loadSavedLocale, onLocaleChange, saveLocale } from "@/lib/i18n";
+import { bindAppUpdateChecks } from "@/lib/app-updates";
 import { bindOutboxAutoDrain } from "@/lib/outbox";
 import { bindNotificationTapHandler, registerPushToken } from "@/lib/push";
 import { colors } from "@/lib/theme";
@@ -170,6 +171,10 @@ function AuthGate() {
   // Drain the offline outbox on every app-foreground so queued
   // clock-ins / damage reports sync as soon as we're reachable again.
   useEffect(() => bindOutboxAutoDrain(), []);
+
+  // Over-the-air JS updates + "new store version" / "update required"
+  // prompts. See src/lib/app-updates.ts.
+  useEffect(() => bindAppUpdateChecks(), []);
 
   useEffect(() => {
     if (loading) return;
