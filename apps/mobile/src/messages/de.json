@@ -1084,7 +1084,7 @@
     "gpsPermTitle": "Standort benötigt",
     "gpsPermBody": "Priya’s benötigt Standortzugriff, um beim Einchecken zu prüfen, dass du am Objekt bist.",
     "farFromSiteTitle": "Weit vom Objekt",
-    "farFromSiteBody": "Du bist mehr als 500 m vom gespeicherten Standort entfernt. Trotzdem einchecken?",
+    "farFromSiteBody": "Du bist weiter vom gespeicherten Standort des Objekts entfernt als erlaubt. Trotzdem einchecken? Das Büro sieht die Entfernung.",
     "cancel": "Abbrechen",
     "proceed": "Trotzdem einchecken",
     "entry": {

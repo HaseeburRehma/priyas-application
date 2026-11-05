@@ -1084,7 +1084,7 @@
     "gpsPermTitle": "Location needed",
     "gpsPermBody": "Priya's needs location access to verify you're at the property when you check in.",
     "farFromSiteTitle": "Far from property",
-    "farFromSiteBody": "You are more than 500 m from the property location on file. Are you sure you want to check in here?",
+    "farFromSiteBody": "You are further from the property's saved location than allowed. Check in anyway? The office will see the distance.",
     "cancel": "Cancel",
     "proceed": "Check in anyway",
     "entry": {
