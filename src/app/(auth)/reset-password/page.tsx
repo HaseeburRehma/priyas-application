@@ -28,6 +28,7 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -60,6 +61,10 @@ export default function ResetPasswordPage() {
       window.history.replaceState(null, "", url.pathname + (url.searchParams.get("invite") ? "?invite=1" : ""));
 
       const { data } = await supabase.auth.getUser();
+      // Show whose password is being set: if the link failed but the
+      // browser already holds someone else's session, the form would
+      // otherwise silently change that account's password.
+      setEmail(data.user?.email ?? null);
       setPhase(data.user ? "ready" : "invalid");
     })();
   }, []);
@@ -110,6 +115,11 @@ export default function ResetPasswordPage() {
 
         {(phase === "ready" || phase === "saving") && (
           <form onSubmit={onSubmit} noValidate className="flex flex-col gap-3">
+            {email && (
+              <p className="rounded-md bg-tertiary-200 px-3 py-2 text-[13px] text-neutral-700">
+                Konto / Account: <strong>{email}</strong>
+              </p>
+            )}
             <input
               type="password"
               autoComplete="new-password"
