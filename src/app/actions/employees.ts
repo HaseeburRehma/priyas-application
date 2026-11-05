@@ -177,11 +177,12 @@ export async function createEmployeeAction(
             role: input.role,
             phone: input.phone || null,
           },
-          // The invitee lands on the standard auth callback which then
-          // routes them to /dashboard once their profile + employees
-          // rows are linked by handle_new_user().
+          // Land on /reset-password so the invitee sets a password —
+          // without one they can't sign in to the mobile app. The
+          // session arrives in the URL hash, which survives the
+          // callback's redirect.
           redirectTo: `${env.NEXT_PUBLIC_APP_URL}/api/auth/callback?next=${encodeURIComponent(
-            routes.dashboard,
+            routes.resetPassword,
           )}`,
         },
       );
@@ -567,8 +568,12 @@ export async function bulkInviteEmployeesAction(
             role: "employee",
             phone: emp.phone,
           },
+          // Land on /reset-password so the invitee sets a password —
+          // without one they can't sign in to the mobile app. The
+          // session arrives in the URL hash, which survives the
+          // callback's redirect.
           redirectTo: `${env.NEXT_PUBLIC_APP_URL}/api/auth/callback?next=${encodeURIComponent(
-            routes.dashboard,
+            routes.resetPassword,
           )}`,
         },
       );
